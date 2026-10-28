@@ -1,0 +1,165 @@
+{
+  "id": "shell-data",
+  "title": "Shell data tasks",
+  "description": "CSV, JSON and JSONL wrangling with grep, awk, jq or python3.",
+  "envType": "sim",
+  "cases": [
+    {
+      "id": "sd-west-units",
+      "title": "Sum a CSV column by region",
+      "prompt": "/workspace/sales.csv has the columns date, region, product, units, unit_price. What is the total number of units sold in the region West (exactly West, not other regions)? Reply with only the number.",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/sales.csv",
+          "content": "date,region,product,units,unit_price\n2025-01-01,West,Gadget,59,7.80\n2025-01-02,South,Gizmo,46,2.15\n2025-01-03,Northwest,Gizmo,35,2.15\n2025-01-04,Northwest,Gadget,1,7.80\n2025-01-05,North,Gizmo,12,2.15\n2025-01-06,East,Widget Pro,58,11.50\n2025-01-07,Northwest,Gizmo,7,2.15\n2025-01-08,East,Widget Pro,3,11.50\n2025-01-09,East,Widget Pro,23,11.50\n2025-01-10,North,Widget Pro,59,11.50\n2025-01-11,South,Gizmo,8,2.15\n2025-01-12,Northwest,Widget,54,4.25\n2025-01-13,West,Widget,49,4.25\n2025-01-14,North,Gizmo,27,2.15\n2025-01-15,Northwest,Widget,46,4.25\n2025-01-16,South,Widget Pro,40,11.50\n2025-02-17,South,Widget,47,4.25\n2025-02-18,East,Widget Pro,3,11.50\n2025-02-19,West,Gadget,44,7.80\n2025-02-20,East,Gizmo,10,2.15\n2025-02-21,West,Widget Pro,11,11.50\n2025-02-22,North,Widget Pro,5,11.50\n2025-02-23,North,Widget Pro,36,11.50\n2025-02-24,Northwest,Widget Pro,2,11.50\n2025-02-25,South,Widget Pro,21,11.50\n2025-02-26,North,Widget,48,4.25\n2025-02-27,North,Widget,31,4.25\n2025-02-28,North,Gizmo,20,2.15\n2025-02-01,West,Widget,46,4.25\n2025-02-02,East,Widget Pro,21,11.50\n2025-02-03,North,Gadget,25,7.80\n2025-02-04,South,Gizmo,53,2.15\n2025-03-05,East,Widget,58,4.25\n2025-03-06,West,Gizmo,37,2.15\n2025-03-07,Northwest,Widget Pro,53,11.50\n2025-03-08,North,Widget,26,4.25\n2025-03-09,West,Widget Pro,46,11.50\n2025-03-10,North,Gadget,40,7.80\n2025-03-11,East,Widget,58,4.25\n2025-03-12,North,Widget,46,4.25\n2025-03-13,North,Widget,39,4.25\n2025-03-14,West,Gizmo,49,2.15\n2025-03-15,South,Widget,1,4.25\n2025-03-16,West,Widget Pro,7,11.50\n2025-03-17,East,Widget,33,4.25\n2025-03-18,South,Widget,55,4.25\n2025-03-19,Northwest,Widget Pro,40,11.50\n2025-03-20,Northwest,Gadget,44,7.80\n"
+        }
+      ],
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "348"
+      },
+      "maxTurns": 10,
+      "timeoutSec": 240
+    },
+    {
+      "id": "sd-widget-revenue",
+      "title": "Revenue for one product",
+      "prompt": "/workspace/sales.csv has the columns date, region, product, units, unit_price. Compute the total revenue (units times unit_price, summed over rows) for the product Widget only (not Widget Pro), across all regions. Write it to /workspace/answer.txt with exactly two decimal places, for example 123.40, and nothing else.",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/sales.csv",
+          "content": "date,region,product,units,unit_price\n2025-01-01,West,Gadget,59,7.80\n2025-01-02,South,Gizmo,46,2.15\n2025-01-03,Northwest,Gizmo,35,2.15\n2025-01-04,Northwest,Gadget,1,7.80\n2025-01-05,North,Gizmo,12,2.15\n2025-01-06,East,Widget Pro,58,11.50\n2025-01-07,Northwest,Gizmo,7,2.15\n2025-01-08,East,Widget Pro,3,11.50\n2025-01-09,East,Widget Pro,23,11.50\n2025-01-10,North,Widget Pro,59,11.50\n2025-01-11,South,Gizmo,8,2.15\n2025-01-12,Northwest,Widget,54,4.25\n2025-01-13,West,Widget,49,4.25\n2025-01-14,North,Gizmo,27,2.15\n2025-01-15,Northwest,Widget,46,4.25\n2025-01-16,South,Widget Pro,40,11.50\n2025-02-17,South,Widget,47,4.25\n2025-02-18,East,Widget Pro,3,11.50\n2025-02-19,West,Gadget,44,7.80\n2025-02-20,East,Gizmo,10,2.15\n2025-02-21,West,Widget Pro,11,11.50\n2025-02-22,North,Widget Pro,5,11.50\n2025-02-23,North,Widget Pro,36,11.50\n2025-02-24,Northwest,Widget Pro,2,11.50\n2025-02-25,South,Widget Pro,21,11.50\n2025-02-26,North,Widget,48,4.25\n2025-02-27,North,Widget,31,4.25\n2025-02-28,North,Gizmo,20,2.15\n2025-02-01,West,Widget,46,4.25\n2025-02-02,East,Widget Pro,21,11.50\n2025-02-03,North,Gadget,25,7.80\n2025-02-04,South,Gizmo,53,2.15\n2025-03-05,East,Widget,58,4.25\n2025-03-06,West,Gizmo,37,2.15\n2025-03-07,Northwest,Widget Pro,53,11.50\n2025-03-08,North,Widget,26,4.25\n2025-03-09,West,Widget Pro,46,11.50\n2025-03-10,North,Gadget,40,7.80\n2025-03-11,East,Widget,58,4.25\n2025-03-12,North,Widget,46,4.25\n2025-03-13,North,Widget,39,4.25\n2025-03-14,West,Gizmo,49,2.15\n2025-03-15,South,Widget,1,4.25\n2025-03-16,West,Widget Pro,7,11.50\n2025-03-17,East,Widget,33,4.25\n2025-03-18,South,Widget,55,4.25\n2025-03-19,Northwest,Widget Pro,40,11.50\n2025-03-20,Northwest,Gadget,44,7.80\n"
+        }
+      ],
+      "check": {
+        "type": "file",
+        "path": "/workspace/answer.txt",
+        "equals": "2707.25\n"
+      },
+      "maxTurns": 10,
+      "timeoutSec": 240
+    },
+    {
+      "id": "sd-country-join",
+      "title": "Join two CSVs, total by country",
+      "prompt": "/workspace/customers.csv (id, name, country) and /workspace/orders.csv (order_id, customer_id, amount) are CSV files; note that names contain commas and are quoted. Write /workspace/totals.csv with the header line country,total followed by one line per country giving the sum of order amounts for customers in that country, sorted by total from highest to lowest, with totals written with exactly two decimal places.",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/customers.csv",
+          "content": "id,name,country\n101,\"Smith, John\",US\n102,\"Okafor, Ada\",NG\n103,\"Lee, Min\",KR\n104,\"Garcia, Ana\",ES\n105,\"Brown, Sam\",US\n106,\"Kim, Joon\",KR\n107,\"Ruiz, Leo\",ES\n108,\"Nwosu, Ife\",NG\n109,\"Patel, Ravi\",IN\n110,\"Mehta, Isha\",IN\n"
+        },
+        {
+          "path": "/workspace/orders.csv",
+          "content": "order_id,customer_id,amount\n9000,101,366.35\n9001,104,286.69\n9002,104,153.11\n9003,110,104.58\n9004,109,398.04\n9005,105,206.71\n9006,101,175.32\n9007,107,354.26\n9008,102,122.76\n9009,107,387.29\n9010,105,52.81\n9011,107,311.66\n9012,107,39.87\n9013,109,215.16\n9014,105,379.40\n9015,110,171.78\n9016,110,330.57\n9017,101,338.73\n9018,106,69.66\n9019,106,254.46\n9020,101,18.82\n9021,103,329.18\n9022,101,29.93\n9023,104,149.08\n9024,107,52.87\n9025,109,194.49\n9026,101,219.78\n9027,107,74.19\n9028,108,172.30\n9029,107,59.20\n9030,107,112.35\n9031,104,322.80\n9032,108,192.53\n9033,102,315.85\n9034,109,280.01\n9035,103,353.73\n9036,108,315.62\n9037,105,229.38\n9038,104,65.75\n9039,104,144.81\n"
+        }
+      ],
+      "check": {
+        "type": "file",
+        "path": "/workspace/totals.csv",
+        "equals": "country,total\nES,2513.93\nUS,2017.23\nIN,1694.63\nNG,1119.06\nKR,1007.03\n"
+      },
+      "maxTurns": 12,
+      "timeoutSec": 240
+    },
+    {
+      "id": "sd-event-counts",
+      "title": "Group JSON events by type",
+      "prompt": "/workspace/events.json is a JSON array of events, each with a type field. Write /workspace/counts.json containing a single JSON object that maps each event type to the number of events of that type, for example {\"click\": 3, \"view\": 5}.",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/events.json",
+          "content": "[{\"id\": 1, \"user\": \"u12\", \"type\": \"view\", \"ts\": 1741946400}, {\"id\": 2, \"user\": \"u05\", \"type\": \"click\", \"ts\": 1741946437}, {\"id\": 3, \"user\": \"u13\", \"type\": \"scroll\", \"ts\": 1741946474}, {\"id\": 4, \"user\": \"u07\", \"type\": \"scroll\", \"ts\": 1741946511}, {\"id\": 5, \"user\": \"u08\", \"type\": \"click\", \"ts\": 1741946548}, {\"id\": 6, \"user\": \"u03\", \"type\": \"click\", \"ts\": 1741946585}, {\"id\": 7, \"user\": \"u19\", \"type\": \"click\", \"ts\": 1741946622}, {\"id\": 8, \"user\": \"u13\", \"type\": \"scroll\", \"ts\": 1741946659}, {\"id\": 9, \"user\": \"u12\", \"type\": \"click\", \"ts\": 1741946696}, {\"id\": 10, \"user\": \"u07\", \"type\": \"scroll\", \"ts\": 1741946733}, {\"id\": 11, \"user\": \"u08\", \"type\": \"signup\", \"ts\": 1741946770}, {\"id\": 12, \"user\": \"u17\", \"type\": \"view\", \"ts\": 1741946807}, {\"id\": 13, \"user\": \"u07\", \"type\": \"view\", \"ts\": 1741946844}, {\"id\": 14, \"user\": \"u17\", \"type\": \"view\", \"ts\": 1741946881}, {\"id\": 15, \"user\": \"u07\", \"type\": \"view\", \"ts\": 1741946918}, {\"id\": 16, \"user\": \"u11\", \"type\": \"scroll\", \"ts\": 1741946955}, {\"id\": 17, \"user\": \"u01\", \"type\": \"scroll\", \"ts\": 1741946992}, {\"id\": 18, \"user\": \"u03\", \"type\": \"click\", \"ts\": 1741947029}, {\"id\": 19, \"user\": \"u03\", \"type\": \"view\", \"ts\": 1741947066}, {\"id\": 20, \"user\": \"u14\", \"type\": \"view\", \"ts\": 1741947103}, {\"id\": 21, \"user\": \"u11\", \"type\": \"view\", \"ts\": 1741947140}, {\"id\": 22, \"user\": \"u16\", \"type\": \"view\", \"ts\": 1741947177}, {\"id\": 23, \"user\": \"u12\", \"type\": \"click\", \"ts\": 1741947214}, {\"id\": 24, \"user\": \"u17\", \"type\": \"click\", \"ts\": 1741947251}, {\"id\": 25, \"user\": \"u15\", \"type\": \"view\", \"ts\": 1741947288}, {\"id\": 26, \"user\": \"u02\", \"type\": \"click\", \"ts\": 1741947325}, {\"id\": 27, \"user\": \"u07\", \"type\": \"click\", \"ts\": 1741947362}, {\"id\": 28, \"user\": \"u17\", \"type\": \"purchase\", \"ts\": 1741947399}, {\"id\": 29, \"user\": \"u12\", \"type\": \"click\", \"ts\": 1741947436}, {\"id\": 30, \"user\": \"u06\", \"type\": \"scroll\", \"ts\": 1741947473}, {\"id\": 31, \"user\": \"u02\", \"type\": \"click\", \"ts\": 1741947510}, {\"id\": 32, \"user\": \"u14\", \"type\": \"click\", \"ts\": 1741947547}, {\"id\": 33, \"user\": \"u14\", \"type\": \"signup\", \"ts\": 1741947584}, {\"id\": 34, \"user\": \"u05\", \"type\": \"scroll\", \"ts\": 1741947621}, {\"id\": 35, \"user\": \"u14\", \"type\": \"scroll\", \"ts\": 1741947658}, {\"id\": 36, \"user\": \"u02\", \"type\": \"scroll\", \"ts\": 1741947695}, {\"id\": 37, \"user\": \"u14\", \"type\": \"view\", \"ts\": 1741947732}, {\"id\": 38, \"user\": \"u10\", \"type\": \"view\", \"ts\": 1741947769}, {\"id\": 39, \"user\": \"u08\", \"type\": \"view\", \"ts\": 1741947806}, {\"id\": 40, \"user\": \"u19\", \"type\": \"click\", \"ts\": 1741947843}, {\"id\": 41, \"user\": \"u02\", \"type\": \"click\", \"ts\": 1741947880}, {\"id\": 42, \"user\": \"u12\", \"type\": \"view\", \"ts\": 1741947917}, {\"id\": 43, \"user\": \"u16\", \"type\": \"scroll\", \"ts\": 1741947954}, {\"id\": 44, \"user\": \"u13\", \"type\": \"view\", \"ts\": 1741947991}, {\"id\": 45, \"user\": \"u12\", \"type\": \"view\", \"ts\": 1741948028}, {\"id\": 46, \"user\": \"u04\", \"type\": \"click\", \"ts\": 1741948065}, {\"id\": 47, \"user\": \"u04\", \"type\": \"view\", \"ts\": 1741948102}, {\"id\": 48, \"user\": \"u00\", \"type\": \"view\", \"ts\": 1741948139}, {\"id\": 49, \"user\": \"u08\", \"type\": \"click\", \"ts\": 1741948176}, {\"id\": 50, \"user\": \"u17\", \"type\": \"scroll\", \"ts\": 1741948213}, {\"id\": 51, \"user\": \"u08\", \"type\": \"click\", \"ts\": 1741948250}, {\"id\": 52, \"user\": \"u11\", \"type\": \"view\", \"ts\": 1741948287}, {\"id\": 53, \"user\": \"u11\", \"type\": \"click\", \"ts\": 1741948324}, {\"id\": 54, \"user\": \"u10\", \"type\": \"view\", \"ts\": 1741948361}, {\"id\": 55, \"user\": \"u08\", \"type\": \"click\", \"ts\": 1741948398}, {\"id\": 56, \"user\": \"u00\", \"type\": \"click\", \"ts\": 1741948435}, {\"id\": 57, \"user\": \"u17\", \"type\": \"view\", \"ts\": 1741948472}, {\"id\": 58, \"user\": \"u06\", \"type\": \"click\", \"ts\": 1741948509}, {\"id\": 59, \"user\": \"u16\", \"type\": \"view\", \"ts\": 1741948546}, {\"id\": 60, \"user\": \"u11\", \"type\": \"scroll\", \"ts\": 1741948583}, {\"id\": 61, \"user\": \"u03\", \"type\": \"view\", \"ts\": 1741948620}, {\"id\": 62, \"user\": \"u04\", \"type\": \"view\", \"ts\": 1741948657}, {\"id\": 63, \"user\": \"u19\", \"type\": \"scroll\", \"ts\": 1741948694}, {\"id\": 64, \"user\": \"u19\", \"type\": \"click\", \"ts\": 1741948731}, {\"id\": 65, \"user\": \"u09\", \"type\": \"view\", \"ts\": 1741948768}, {\"id\": 66, \"user\": \"u02\", \"type\": \"view\", \"ts\": 1741948805}, {\"id\": 67, \"user\": \"u14\", \"type\": \"click\", \"ts\": 1741948842}, {\"id\": 68, \"user\": \"u03\", \"type\": \"view\", \"ts\": 1741948879}, {\"id\": 69, \"user\": \"u16\", \"type\": \"scroll\", \"ts\": 1741948916}, {\"id\": 70, \"user\": \"u14\", \"type\": \"click\", \"ts\": 1741948953}, {\"id\": 71, \"user\": \"u08\", \"type\": \"click\", \"ts\": 1741948990}, {\"id\": 72, \"user\": \"u03\", \"type\": \"view\", \"ts\": 1741949027}, {\"id\": 73, \"user\": \"u09\", \"type\": \"view\", \"ts\": 1741949064}, {\"id\": 74, \"user\": \"u08\", \"type\": \"click\", \"ts\": 1741949101}, {\"id\": 75, \"user\": \"u14\", \"type\": \"view\", \"ts\": 1741949138}, {\"id\": 76, \"user\": \"u19\", \"type\": \"signup\", \"ts\": 1741949175}, {\"id\": 77, \"user\": \"u02\", \"type\": \"view\", \"ts\": 1741949212}, {\"id\": 78, \"user\": \"u11\", \"type\": \"view\", \"ts\": 1741949249}, {\"id\": 79, \"user\": \"u15\", \"type\": \"view\", \"ts\": 1741949286}, {\"id\": 80, \"user\": \"u01\", \"type\": \"click\", \"ts\": 1741949323}]\n"
+        }
+      ],
+      "check": {
+        "type": "command",
+        "command": "jq -S . /workspace/counts.json | jq -e '. == {\"click\":28,\"purchase\":1,\"scroll\":15,\"signup\":3,\"view\":33}' > /dev/null"
+      },
+      "maxTurns": 10,
+      "timeoutSec": 240
+    },
+    {
+      "id": "sd-active-emails",
+      "title": "Extract nested JSON fields",
+      "prompt": "/workspace/users.json has a top-level users array. Each user has an active flag and a profile.email field. Write /workspace/active_emails.json containing a JSON array of the email addresses of the active users only, converted to lowercase and sorted alphabetically.",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/users.json",
+          "content": "{\n  \"users\": [\n    {\n      \"id\": 1,\n      \"active\": false,\n      \"profile\": {\n        \"name\": \"Ada\",\n        \"email\": \"ada@LARK.dev\"\n      },\n      \"roles\": [\n        \"dev\",\n        \"viewer\"\n      ]\n    },\n    {\n      \"id\": 2,\n      \"active\": true,\n      \"profile\": {\n        \"name\": \"Grace\",\n        \"email\": \"Grace@example.org\"\n      },\n      \"roles\": [\n        \"viewer\",\n        \"admin\"\n      ]\n    },\n    {\n      \"id\": 3,\n      \"active\": false,\n      \"profile\": {\n        \"name\": \"Linus\",\n        \"email\": \"linus@LARK.dev\"\n      },\n      \"roles\": [\n        \"ops\",\n        \"viewer\"\n      ]\n    },\n    {\n      \"id\": 4,\n      \"active\": true,\n      \"profile\": {\n        \"name\": \"Ken\",\n        \"email\": \"Ken@LARK.dev\"\n      },\n      \"roles\": [\n        \"viewer\",\n        \"dev\"\n      ]\n    },\n    {\n      \"id\": 5,\n      \"active\": true,\n      \"profile\": {\n        \"name\": \"Barbara\",\n        \"email\": \"Barbara@example.org\"\n      },\n      \"roles\": [\n        \"dev\",\n        \"admin\"\n      ]\n    },\n    {\n      \"id\": 6,\n      \"active\": true,\n      \"profile\": {\n        \"name\": \"Dennis\",\n        \"email\": \"dennis@LARK.dev\"\n      },\n      \"roles\": [\n        \"ops\",\n        \"viewer\"\n      ]\n    },\n    {\n      \"id\": 7,\n      \"active\": true,\n      \"profile\": {\n        \"name\": \"Margaret\",\n        \"email\": \"margaret@LARK.dev\"\n      },\n      \"roles\": [\n        \"ops\",\n        \"viewer\"\n      ]\n    },\n    {\n      \"id\": 8,\n      \"active\": false,\n      \"profile\": {\n        \"name\": \"Alan\",\n        \"email\": \"alan@LARK.dev\"\n      },\n      \"roles\": [\n        \"dev\",\n        \"viewer\"\n      ]\n    },\n    {\n      \"id\": 9,\n      \"active\": false,\n      \"profile\": {\n        \"name\": \"Edsger\",\n        \"email\": \"Edsger@LARK.dev\"\n      },\n      \"roles\": [\n        \"ops\",\n        \"admin\"\n      ]\n    },\n    {\n      \"id\": 10,\n      \"active\": true,\n      \"profile\": {\n        \"name\": \"Frances\",\n        \"email\": \"Frances@Example.com\"\n      },\n      \"roles\": [\n        \"viewer\",\n        \"ops\"\n      ]\n    },\n    {\n      \"id\": 11,\n      \"active\": false,\n      \"profile\": {\n        \"name\": \"John\",\n        \"email\": \"John@Example.com\"\n      },\n      \"roles\": [\n        \"viewer\",\n        \"ops\"\n      ]\n    },\n    {\n      \"id\": 12,\n      \"active\": true,\n      \"profile\": {\n        \"name\": \"Radia\",\n        \"email\": \"Radia@LARK.dev\"\n      },\n      \"roles\": [\n        \"ops\",\n        \"dev\"\n      ]\n    }\n  ],\n  \"generated\": \"2025-03-14\"\n}\n"
+        }
+      ],
+      "check": {
+        "type": "command",
+        "command": "jq -S . /workspace/active_emails.json | jq -e '. == [\"barbara@example.org\",\"dennis@lark.dev\",\"frances@example.com\",\"grace@example.org\",\"ken@lark.dev\",\"margaret@lark.dev\",\"radia@lark.dev\"]' > /dev/null"
+      },
+      "maxTurns": 10,
+      "timeoutSec": 240
+    },
+    {
+      "id": "sd-search-latency",
+      "title": "Average latency from JSONL",
+      "prompt": "/workspace/requests.jsonl has one JSON object per line with method, path, status and ms (latency in milliseconds). What is the average latency of GET requests to exactly /api/search (not /api/search/suggest) that returned status 200? Round to the nearest whole number and reply with only that number.",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/requests.jsonl",
+          "content": "{\"ts\": 1741946400, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 71}\n{\"ts\": 1741946403, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 485}\n{\"ts\": 1741946406, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 327}\n{\"ts\": 1741946409, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 452}\n{\"ts\": 1741946412, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 231}\n{\"ts\": 1741946415, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 264}\n{\"ts\": 1741946418, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 822}\n{\"ts\": 1741946421, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 754}\n{\"ts\": 1741946424, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 278}\n{\"ts\": 1741946427, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 685}\n{\"ts\": 1741946430, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 344}\n{\"ts\": 1741946433, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 620}\n{\"ts\": 1741946436, \"method\": \"POST\", \"path\": \"/health\", \"status\": 200, \"ms\": 751}\n{\"ts\": 1741946439, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 844}\n{\"ts\": 1741946442, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 558}\n{\"ts\": 1741946445, \"method\": \"POST\", \"path\": \"/health\", \"status\": 200, \"ms\": 749}\n{\"ts\": 1741946448, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 875}\n{\"ts\": 1741946451, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 293}\n{\"ts\": 1741946454, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 543}\n{\"ts\": 1741946457, \"method\": \"POST\", \"path\": \"/health\", \"status\": 200, \"ms\": 599}\n{\"ts\": 1741946460, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 772}\n{\"ts\": 1741946463, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 273}\n{\"ts\": 1741946466, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 216}\n{\"ts\": 1741946469, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 572}\n{\"ts\": 1741946472, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 769}\n{\"ts\": 1741946475, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 123}\n{\"ts\": 1741946478, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 325}\n{\"ts\": 1741946481, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 883}\n{\"ts\": 1741946484, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 400, \"ms\": 610}\n{\"ts\": 1741946487, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 149}\n{\"ts\": 1741946490, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 500, \"ms\": 558}\n{\"ts\": 1741946493, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 671}\n{\"ts\": 1741946496, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 500, \"ms\": 173}\n{\"ts\": 1741946499, \"method\": \"POST\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 721}\n{\"ts\": 1741946502, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 840}\n{\"ts\": 1741946505, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 500, \"ms\": 490}\n{\"ts\": 1741946508, \"method\": \"POST\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 435}\n{\"ts\": 1741946511, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 400, \"ms\": 148}\n{\"ts\": 1741946514, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 566}\n{\"ts\": 1741946517, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 667}\n{\"ts\": 1741946520, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 277}\n{\"ts\": 1741946523, \"method\": \"POST\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 469}\n{\"ts\": 1741946526, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 609}\n{\"ts\": 1741946529, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 400, \"ms\": 525}\n{\"ts\": 1741946532, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 470}\n{\"ts\": 1741946535, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 633}\n{\"ts\": 1741946538, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 356}\n{\"ts\": 1741946541, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 261}\n{\"ts\": 1741946544, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 663}\n{\"ts\": 1741946547, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 657}\n{\"ts\": 1741946550, \"method\": \"POST\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 574}\n{\"ts\": 1741946553, \"method\": \"POST\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 113}\n{\"ts\": 1741946556, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 116}\n{\"ts\": 1741946559, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 340}\n{\"ts\": 1741946562, \"method\": \"POST\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 659}\n{\"ts\": 1741946565, \"method\": \"POST\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 154}\n{\"ts\": 1741946568, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 817}\n{\"ts\": 1741946571, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 285}\n{\"ts\": 1741946574, \"method\": \"POST\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 807}\n{\"ts\": 1741946577, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 338}\n{\"ts\": 1741946580, \"method\": \"GET\", \"path\": \"/health\", \"status\": 400, \"ms\": 137}\n{\"ts\": 1741946583, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 474}\n{\"ts\": 1741946586, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 808}\n{\"ts\": 1741946589, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 520}\n{\"ts\": 1741946592, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 34}\n{\"ts\": 1741946595, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 584}\n{\"ts\": 1741946598, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 64}\n{\"ts\": 1741946601, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 330}\n{\"ts\": 1741946604, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 447}\n{\"ts\": 1741946607, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 577}\n{\"ts\": 1741946610, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 133}\n{\"ts\": 1741946613, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 690}\n{\"ts\": 1741946616, \"method\": \"POST\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 798}\n{\"ts\": 1741946619, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 400, \"ms\": 199}\n{\"ts\": 1741946622, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 340}\n{\"ts\": 1741946625, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 42}\n{\"ts\": 1741946628, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 870}\n{\"ts\": 1741946631, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 229}\n{\"ts\": 1741946634, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 320}\n{\"ts\": 1741946637, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 121}\n{\"ts\": 1741946640, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 726}\n{\"ts\": 1741946643, \"method\": \"POST\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 235}\n{\"ts\": 1741946646, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 156}\n{\"ts\": 1741946649, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 758}\n{\"ts\": 1741946652, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 400, \"ms\": 690}\n{\"ts\": 1741946655, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 780}\n{\"ts\": 1741946658, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 591}\n{\"ts\": 1741946661, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 756}\n{\"ts\": 1741946664, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 457}\n{\"ts\": 1741946667, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 204}\n{\"ts\": 1741946670, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 293}\n{\"ts\": 1741946673, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 158}\n{\"ts\": 1741946676, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 407}\n{\"ts\": 1741946679, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 22}\n{\"ts\": 1741946682, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 81}\n{\"ts\": 1741946685, \"method\": \"POST\", \"path\": \"/api/search\", \"status\": 500, \"ms\": 522}\n{\"ts\": 1741946688, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 875}\n{\"ts\": 1741946691, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 289}\n{\"ts\": 1741946694, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 41}\n{\"ts\": 1741946697, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 54}\n{\"ts\": 1741946700, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 442}\n{\"ts\": 1741946703, \"method\": \"POST\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 135}\n{\"ts\": 1741946706, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 272}\n{\"ts\": 1741946709, \"method\": \"POST\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 473}\n{\"ts\": 1741946712, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 753}\n{\"ts\": 1741946715, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 854}\n{\"ts\": 1741946718, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 716}\n{\"ts\": 1741946721, \"method\": \"POST\", \"path\": \"/api/search\", \"status\": 500, \"ms\": 189}\n{\"ts\": 1741946724, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 51}\n{\"ts\": 1741946727, \"method\": \"POST\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 223}\n{\"ts\": 1741946730, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 400, \"ms\": 630}\n{\"ts\": 1741946733, \"method\": \"POST\", \"path\": \"/health\", \"status\": 200, \"ms\": 140}\n{\"ts\": 1741946736, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 69}\n{\"ts\": 1741946739, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 289}\n{\"ts\": 1741946742, \"method\": \"GET\", \"path\": \"/api/items\", \"status\": 200, \"ms\": 722}\n{\"ts\": 1741946745, \"method\": \"GET\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 627}\n{\"ts\": 1741946748, \"method\": \"POST\", \"path\": \"/api/search\", \"status\": 200, \"ms\": 52}\n{\"ts\": 1741946751, \"method\": \"GET\", \"path\": \"/api/search/suggest\", \"status\": 200, \"ms\": 70}\n{\"ts\": 1741946754, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 95}\n{\"ts\": 1741946757, \"method\": \"GET\", \"path\": \"/health\", \"status\": 200, \"ms\": 776}\n"
+        }
+      ],
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "387"
+      },
+      "maxTurns": 10,
+      "timeoutSec": 240
+    },
+    {
+      "id": "sd-low-stock",
+      "title": "CSV rows to JSON objects",
+      "prompt": "/workspace/inventory.csv has the columns sku, name, qty, price (some names contain commas and are quoted). Write /workspace/low_stock.json containing a JSON array with one object per row whose qty is less than 10, in the same order as the CSV. Each object must have exactly the keys sku (string), qty (number) and price (number).",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/inventory.csv",
+          "content": "sku,name,qty,price\nHW-005,Bolt M4,3,7.15\nHW-018,Nut M4,5,12.09\nHW-031,\"Washer, steel\",127,4.21\nHW-044,Hinge,10,11.63\nHW-057,\"Bracket, L\",133,5.47\nHW-070,Spring,6,13.06\nHW-083,Gasket,50,7.08\nHW-096,Cable tie,4,13.55\nHW-109,Rivet,19,7.36\nHW-122,\"Clamp, hose\",33,2.92\nHW-135,Anchor,6,8.56\nHW-148,Pin,2,6.28\n"
+        }
+      ],
+      "check": {
+        "type": "command",
+        "command": "jq -S . /workspace/low_stock.json | jq -e '. == [{\"price\":7.15,\"qty\":3,\"sku\":\"HW-005\"},{\"price\":12.09,\"qty\":5,\"sku\":\"HW-018\"},{\"price\":13.06,\"qty\":6,\"sku\":\"HW-070\"},{\"price\":13.55,\"qty\":4,\"sku\":\"HW-096\"},{\"price\":8.56,\"qty\":6,\"sku\":\"HW-135\"},{\"price\":6.28,\"qty\":2,\"sku\":\"HW-148\"}]' > /dev/null"
+      },
+      "maxTurns": 12,
+      "timeoutSec": 240
+    },
+    {
+      "id": "sd-unique-contacts",
+      "title": "Dedupe emails across files",
+      "prompt": "/workspace/contacts_a.csv and /workspace/contacts_b.csv each have the columns name, email. How many unique email addresses are there across both files combined? Treat addresses that differ only in letter case or surrounding whitespace as the same address. Reply with only the number.",
+      "envType": "sim",
+      "setupFiles": [
+        {
+          "path": "/workspace/contacts_a.csv",
+          "content": "name,email\nEdsger,edsger@tue.nl\nHedy,hedy@lamarr.at\nJohn,john@backus.org\nKen,KEN@BELL-LABS.COM\nKatherine,katherine@nasa.gov\nMargaret, Margaret@nasa.gov\nAlan,alan@bletchley.uk\nAda,ADA@LARK.DEV\nRadia,radia@perlman.net\nBarbara,barbara@mit.edu\n"
+        },
+        {
+          "path": "/workspace/contacts_b.csv",
+          "content": "name,email\nKatherine,katherine@nasa.gov\nGrace,grace@navy.mil\nLinus, Linus@kernel.org\nKen, Ken@bell-labs.com\nAlan,ALAN@BLETCHLEY.UK\nAda,ada@lark.dev\nJohn,JOHN@BACKUS.ORG\nBarbara, Barbara@mit.edu\nHedy, Hedy@lamarr.at\n"
+        }
+      ],
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "12"
+      },
+      "maxTurns": 10,
+      "timeoutSec": 240
+    }
+  ]
+}
