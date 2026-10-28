@@ -1,0 +1,4 @@
+{
+  "title": "Implement a duration parser",
+  "prompt": "Implement parse_duration in /workspace/duration.py exactly as its docstring describes. Use only the Python standard library. Some tests are in /workspace/tests; run them with: cd /workspace && python3 -m unittest discover -s tests"
+}

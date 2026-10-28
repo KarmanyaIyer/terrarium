@@ -1,0 +1,4 @@
+{
+  "title": "Fix state bugs across modules",
+  "prompt": "The tests in /workspace/tests fail for the small package in /workspace/inventory (models.py and service.py). Find and fix the bugs in the package so it behaves as the docstrings describe; there is more than one. Do not edit the tests. Run them with: cd /workspace && python3 -m unittest discover -s tests"
+}

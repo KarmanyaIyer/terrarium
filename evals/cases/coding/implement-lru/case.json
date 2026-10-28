@@ -1,0 +1,4 @@
+{
+  "title": "Implement an LRU cache class",
+  "prompt": "Implement the LRUCache class in /workspace/lru.py exactly as its docstring describes. Use only the Python standard library. Some tests are in /workspace/tests; run them with: cd /workspace && python3 -m unittest discover -s tests"
+}

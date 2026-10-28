@@ -1,0 +1,4 @@
+{
+  "title": "Refactor duplicated code",
+  "prompt": "/workspace/report.py has three functions that repeat the same grouping logic. Refactor it: add a helper function _summarize(rows, key_func) that holds the shared logic (key_func takes a row and returns its group key), and rewrite revenue_by_region, revenue_by_product and revenue_by_month so each one just calls _summarize. Their behavior must not change. The tests must keep passing; run them with: cd /workspace && python3 -m unittest discover -s tests"
+}

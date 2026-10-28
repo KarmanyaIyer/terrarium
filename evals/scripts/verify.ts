@@ -91,6 +91,11 @@ function runVm(suite: EvalSuite, c: EvalCase): Outcome {
   cpSync(ref, ws, { recursive: true });
   const after = run();
   if (after.status !== 0) return { ok: false, detail: `reference fails: ${(after.stdout + after.stderr).slice(-600)}` };
+  if (existsSync(join(ws, "tests"))) {
+    const env = { ...process.env, PYTHONDONTWRITEBYTECODE: "1" };
+    const visible = spawnSync("python3", ["-m", "unittest", "discover", "-s", "tests"], { cwd: ws, encoding: "utf8", env, timeout: 120_000 });
+    if (visible.status !== 0) return { ok: false, detail: `visible tests fail on reference: ${visible.stderr.slice(-400)}` };
+  }
   return { ok: true, detail: "" };
 }
 
