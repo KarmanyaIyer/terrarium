@@ -370,6 +370,7 @@ export interface EvalCase {
   title: string;
   prompt: string;
   envType: EnvType | "none";
+  network?: NetworkMode; // env network mode for this case; default "off"
   setupFiles?: { path: string; content: string }[];
   hiddenFiles?: { path: string; content: string }[]; // grader-only (root-owned, unreadable to agent)
   check: EvalCheck;
@@ -458,4 +459,36 @@ export type WsClientMessage = { type: "subscribe"; sessionIds: Id[] } | { type: 
 export interface ApiError {
   error: string;
   detail?: string;
+}
+
+// ---------- Request bodies (added by UI; additive) ----------
+
+export interface UpdateEnvRequest {
+  name?: string;
+  network?: NetworkMode;
+}
+
+export interface SnapshotEnvRequest {
+  label?: string;
+}
+
+/** POST /api/envs/:id/fork. snapshotId omitted = fork the current state. */
+export interface ForkEnvRequest {
+  name?: string;
+  snapshotId?: Id;
+}
+
+/** POST /api/envs/:id/reset. snapshotId omitted = back to the env's base (clean image or base snapshot). */
+export interface ResetEnvRequest {
+  snapshotId?: Id;
+}
+
+export interface SendMessageRequest {
+  text: string;
+}
+
+export interface UpdateModelRequest {
+  defaultContext?: number;
+  defaultMaxOutput?: number;
+  sampling?: Partial<ModelInfo["sampling"]>;
 }
