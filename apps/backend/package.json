@@ -1,0 +1,24 @@
+{
+  "name": "@terrarium/backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "test": "node --test 'src/**/*.test.ts'",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@earendil-works/gondolin": "0.14.0",
+    "@earendil-works/pi-agent-core": "1.4.0",
+    "@earendil-works/pi-ai": "1.4.0",
+    "@terrarium/shared": "workspace:*",
+    "diff": "9.0.0",
+    "just-bash": "3.6.0",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/ws": "^8.18.2",
+    "typescript": "7.0.2"
+  }
+}

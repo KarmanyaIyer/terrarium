@@ -1,0 +1,10 @@
+node_modules/
+models/
+data/
+.venv/
+dist/
+target/
+research/scratch/
+src-tauri/binaries/
+*.log
+.DS_Store
