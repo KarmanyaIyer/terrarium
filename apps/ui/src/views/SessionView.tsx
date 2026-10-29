@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, PanelRight, Square, Trash2 } from "lucide-react
 import type { HarnessProfile, NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
 import { act, openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
-import { fmtInt, fmtMs, plural } from "../lib/format";
+import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
 import { ConfirmButton, Popover, Segmented, Switch, usePop } from "../components/ui";
 import { EnvChip, NetIcon } from "../components/Sidebar";
@@ -14,8 +14,8 @@ import { Composer } from "./session/Composer";
 import { Check } from "lucide-react";
 
 export const HARNESS: { id: HarnessProfile; label: string; title: string }[] = [
-  { id: "terrarium", label: "terrarium", title: "Our ~125-token prompt and 4 tools: bash, read, write, edit" },
-  { id: "pi-stock", label: "pi-stock", title: "Pi coding agent's own prompt and tools (1.4.0), for comparison" },
+  { id: "terrarium", label: "terrarium", title: "~125-token prompt; tools bash, read, write, edit" },
+  { id: "pi-stock", label: "pi-stock", title: "Pi coding agent 1.4.0 prompt and tools" },
   { id: "chat", label: "chat", title: "No tools, no environment" },
 ];
 
@@ -38,7 +38,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={300}>
         <div className="menu">
           {HARNESS.map((h) => {
-            const disabled = running || (h.id !== "chat" && !s.envId) || (h.id === "chat" && !!s.envId && false);
+            const disabled = running || (h.id !== "chat" && !s.envId);
             return (
               <button
                 key={h.id}
@@ -53,7 +53,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
                 {h.id === s.harness ? <Check size={12} /> : <span style={{ width: 13 }} />}
                 <span>
                   <span className="mono">{h.label}</span>
-                  <span className="dim menu-sub">{!running && !s.envId && h.id !== "chat" ? "Needs an environment; chats have none" : h.title}</span>
+                  <span className="dim menu-sub">{!running && !s.envId && h.id !== "chat" ? "Needs an environment" : h.title}</span>
                 </span>
               </button>
             );
@@ -106,9 +106,15 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
             <span className="dim">eval</span> {evalRun.suiteTitle} <span className="dim mono">{s.evalCaseId}</span>
           </button>
         )}
+        {/* whole items wrap onto a hidden second line instead of being cut mid-word */}
         <span className="sh-stats num dim">
-          {plural(stats.calls, "call")}  {plural(stats.tools, "tool")}  {fmtInt(stats.prompt + stats.completion)} tok  {fmtMs(stats.ms)}
-          {stats.errors ? <span className="err-text">  {stats.errors} failed</span> : null}
+          <span>{plural(stats.calls, "call")}</span>
+          {s.envId || stats.tools ? <span>{plural(stats.tools, "tool")}</span> : null}
+          {stats.errors ? <span className="err-text" title="Tool calls with a non-zero exit or error, plus failed model calls">{stats.errors} failed</span> : null}
+          <span title={`Summed over all model calls: ${fmtInt(stats.prompt)} prompt + ${fmtInt(stats.completion)} output tokens`}>
+            {fmtTok(stats.prompt)} in, {fmtTok(stats.completion)} out
+          </span>
+          <span title="Wall time from the first message">{fmtMs(stats.ms)}</span>
         </span>
         <span className="blk-spacer" />
         {running && (
@@ -280,7 +286,7 @@ export function SessionView({ id }: { id: string }) {
           {timelineOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           <span>Timeline</span>
         </button>
-        {timelineOpen && trace?.loaded && d.items.length > 0 && <Timeline d={d} sessionStatus={s.status} />}
+        {timelineOpen && trace?.loaded && d.items.length > 0 && <Timeline d={d} sessionStatus={s.status} hasEnv={!!s.envId} />}
       </div>
       {!trace?.loaded ? (
         <div className="empty">Loading events…</div>

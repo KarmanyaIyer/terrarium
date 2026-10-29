@@ -27,6 +27,15 @@ function Leaf({ v }: { v: unknown }) {
   return <span className="jv-null">{String(v)}</span>;
 }
 
+/** Collapsed object: its first scalar fields (role, name, id...) so a list of messages is scannable. */
+function summary(entries: (readonly [string, unknown])[], arr: boolean): string {
+  if (arr) return `${entries.length} items`;
+  const scalars = entries.filter(([, x]) => x === null || typeof x !== "object").slice(0, 2);
+  if (!scalars.length) return `${entries.length} keys`;
+  const parts = scalars.map(([k, x]) => `${k}: ${typeof x === "string" ? JSON.stringify(x.length > 48 ? `${x.slice(0, 48)}…` : x) : String(x)}`);
+  return entries.length > scalars.length ? `${parts.join(", ")}, +${entries.length - scalars.length}` : parts.join(", ");
+}
+
 const Node = memo(function Node({ k, v, depth, open: open0, last }: { k?: string; v: unknown; depth: number; open: number; last: boolean }) {
   const isObj = v !== null && typeof v === "object";
   const [open, setOpen] = useState(depth < open0);
@@ -55,7 +64,7 @@ const Node = memo(function Node({ k, v, depth, open: open0, last }: { k?: string
         <span className="jv-punct">{o}</span>
         {!open && (
           <>
-            <span className="jv-summary">{arr ? `${entries.length} items` : `${entries.length} keys`}</span>
+            <span className="jv-summary">{summary(entries, arr)}</span>
             <span className="jv-punct">
               {c}
               {!last && ","}

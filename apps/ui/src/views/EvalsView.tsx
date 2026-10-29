@@ -262,7 +262,18 @@ function RunView({ runId }: { runId: string }) {
           <tbody>
             {run.cases.map((c) => (
               <tr key={c.id} className={c.id === caseSel ? "sel" : undefined}>
-                <td className="ev-case" onClick={() => setCaseSel(c.id === caseSel ? null : c.id)}>
+                <td
+                  className="ev-case"
+                  tabIndex={0}
+                  aria-expanded={c.id === caseSel}
+                  onClick={() => setCaseSel(c.id === caseSel ? null : c.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setCaseSel(c.id === caseSel ? null : c.id);
+                    }
+                  }}
+                >
                   <div className="truncate">{c.title}</div>
                   <div className="mono dim2 ev-case-id">{c.id}</div>
                 </td>
@@ -372,7 +383,9 @@ function CaseDetail({ c, results, onClose }: { c: EvalCase; results?: EvalResult
                     <button className="cell-link" title="Open in Models" onClick={() => openView({ kind: "models" })}>
                       {modelName(models, r.modelId)}
                     </button>
-                    <span className="dim mono truncate ev-case-result-detail">{r.detail ?? ""}</span>
+                    <span className="dim mono truncate ev-case-result-detail" title={r.detail}>
+                      {r.detail ?? ""}
+                    </span>
                     {r.envId && (
                       <button
                         className="btn sm ghost"
@@ -597,7 +610,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
           </div>
           <div className="md-actions">
             <button className="btn primary" disabled={!picked.length || busy} onClick={() => void start()}>
-              {busy ? <Loader2 className="spin" /> : <Play />} Run {plural(n, "case")} x {plural(picked.length, "model")}
+              {busy ? <Loader2 className="spin" /> : <Play />} Run {plural(n, "case")} × {plural(picked.length, "model")}
             </button>
             <span className="dim num">{plural(cells, "cell")}</span>
           </div>
@@ -625,7 +638,19 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
             </thead>
             <tbody>
               {suite.cases.map((c) => (
-                <tr key={c.id} className={`click${c.id === caseSel ? " sel" : ""}`} onClick={() => setCaseSel(c.id === caseSel ? null : c.id)}>
+                <tr
+                  key={c.id}
+                  className={`click${c.id === caseSel ? " sel" : ""}`}
+                  tabIndex={0}
+                  aria-expanded={c.id === caseSel}
+                  onClick={() => setCaseSel(c.id === caseSel ? null : c.id)}
+                  onKeyDown={(e) => {
+                    if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      setCaseSel(c.id === caseSel ? null : c.id);
+                    }
+                  }}
+                >
                   <td>
                     <div className="truncate">{c.title}</div>
                     <div className="mono dim2 ev-case-id">{c.id}</div>

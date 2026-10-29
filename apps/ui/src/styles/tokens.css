@@ -37,8 +37,8 @@
   /* ink */
   --fg-1: #18211c;
   --fg-2: #4b5650;
-  --fg-3: #7d8781;
-  --fg-4: #a8b0ab;
+  --fg-3: #646e68; /* 4.4:1 on bg-0, 4.9:1 on bg-1 */
+  --fg-4: #858e88; /* 3.1:1 on bg-1: ids and tertiary metadata only */
   --fg-inverse: #f2f5f3;
 
   /* accent = the agent: live edge, running, selection, primary action */
@@ -79,6 +79,11 @@
   --c-backend: #8d9690;
   --c-free: #e2e6e3;
   --c-other-mem: #c6ccc8;
+  --ink-on-model: #ffffff;
+  --ink-on-pre: #10335e;
+  --ink-on-bash: #ffffff;
+  --ink-on-other: #1b1b1b;
+  --ink-on-err: #ffffff;
 
   /* file change kinds (git convention) */
   --add: #137a2f;
@@ -124,8 +129,8 @@
 
     --fg-1: #e3e8e5;
     --fg-2: #a3aca7;
-    --fg-3: #737d78;
-    --fg-4: #525b57;
+    --fg-3: #868f8a; /* 5.1:1 on bg-1 */
+    --fg-4: #666f6a; /* 3.3:1 on bg-1 */
     --fg-inverse: #18211c;
 
     --accent: #3d8be6;
@@ -162,6 +167,11 @@
     --c-backend: #6f7974;
     --c-free: #252a28;
     --c-other-mem: #3b423f;
+    --ink-on-model: #10161c;
+    --ink-on-pre: #ffffff;
+    --ink-on-bash: #1b1b1b;
+    --ink-on-other: #ffffff;
+    --ink-on-err: #1b1b1b;
 
     --add: #4cc764;
     --mod: #e0a83a;

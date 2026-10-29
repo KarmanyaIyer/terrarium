@@ -100,6 +100,7 @@ export class FixtureBackend implements Backend {
   };
   private runs: EvalRunDetail[] = [];
   private lazyCells = new Map<Id, () => Built>();
+  private cellStats = new Map<Id, { durationMs: number; tokens: { prompt: number; completion: number } }>();
   private liveIds = { fix: "", invoiceEnv: "" };
   private noise = 0;
 
@@ -282,8 +283,6 @@ export class FixtureBackend implements Backend {
           if (suiteId === "boundary" && st === "fail") st = "pass";
           const res: EvalResult = { caseId: c.id, modelId: m, status: st };
           if (st === "pass" || st === "fail" || st === "error") {
-            res.durationMs = Math.round((suite.envType === "none" ? 2500 : suite.envType === "vm" ? 41_000 : 9_000) * (0.5 + pick(k * 3) * 1.6));
-            res.tokens = { prompt: Math.round(1300 + pick(k) * 9000), completion: Math.round(90 + pick(k * 5) * 900) };
             res.detail =
               st === "pass"
                 ? suite.envType === "none"
@@ -296,7 +295,9 @@ export class FixtureBackend implements Backend {
                       ? "grader exit 1: 2 failed, 5 passed"
                       : "out.txt: expected 'hello terrarium', got 'hello terrarium\\n\\n'"
                   : "oMLX returned 503: model is loading";
-            this.attachCellSession(id, suite, c, m, st, startedAt + k * 20_000);
+            const cell = this.attachCellSession(id, suite, c, m, st, startedAt + k * 20_000);
+            res.durationMs = cell.durationMs;
+            res.tokens = cell.tokens;
             res.sessionId = `es_${id}_${c.id}_${m}`;
             res.envId = this.sessions.get(res.sessionId)?.envId ?? undefined;
           }
@@ -325,9 +326,18 @@ export class FixtureBackend implements Backend {
     this.every(5200, () => this.advanceRun(live, skill));
   }
 
-  private attachCellSession(runId: Id, suite: EvalSuite, c: EvalCase, modelId: Id, st: CellOutcome | string, t0: number) {
+  /** Creates the cell's fork env and session; returns its duration and tokens so the matrix matches the transcript. */
+  private attachCellSession(
+    runId: Id,
+    suite: EvalSuite,
+    c: EvalCase,
+    modelId: Id,
+    st: CellOutcome | string,
+    t0: number,
+  ): { durationMs: number; tokens: { prompt: number; completion: number } } {
     const sid = `es_${runId}_${c.id}_${modelId}`;
-    if (this.sessions.has(sid)) return;
+    const known = this.cellStats.get(sid);
+    if (known) return known;
     let envId: Id | null = null;
     if (c.envType !== "none") {
       envId = `ee_${runId}_${c.id}_${modelId}`.slice(0, 64);
@@ -365,8 +375,18 @@ export class FixtureBackend implements Backend {
       evalCaseId: c.id,
     });
     const outcome: CellOutcome = st === "pass" ? "pass" : st === "error" ? "error" : "fail";
-    this.lazyCells.set(sid, () => buildEvalCell(sid, envId, modelId, c.prompt, c.envType, outcome));
+    const built = buildEvalCell(sid, envId, modelId, c, outcome);
+    this.lazyCells.set(sid, () => built);
+    const stats = {
+      durationMs: built.duration,
+      tokens: built.calls.reduce(
+        (a, x) => ({ prompt: a.prompt + (x.detail.usage?.promptTokens ?? 0), completion: a.completion + (x.detail.usage?.completionTokens ?? 0) }),
+        { prompt: 0, completion: 0 },
+      ),
+    };
+    this.cellStats.set(sid, stats);
     if (envId) this.fs.get(envId)?.sessionStart.set(sid, new Map(this.fs.get(envId)!.files));
+    return stats;
   }
 
   private recount(run: EvalRunDetail) {
@@ -392,13 +412,16 @@ export class FixtureBackend implements Backend {
     const st: EvalResult["status"] = this.inference.status !== "ready" ? "error" : roll < (skill[r.modelId] ?? 0.5) ? "pass" : roll > 0.97 ? "error" : "fail";
     const suite = SUITES.find((s) => s.id === run.suiteId)!;
     const c = suite.cases.find((cc) => cc.id === r.caseId)!;
-    this.attachCellSession(run.id, suite, c, r.modelId, st, Date.now() - 40_000);
     const sid = `es_${run.id}_${c.id}_${r.modelId}`;
+    const { durationMs, tokens } = this.attachCellSession(run.id, suite, c, r.modelId, st, Date.now() - 40_000);
+    // the cell just finished: its session started one duration ago
+    const cell = this.sessions.get(sid);
+    if (cell) cell.createdAt = cell.updatedAt = Date.now() - durationMs;
     run.results[idx] = {
       ...r,
       status: st,
-      durationMs: Math.round(28_000 + roll * 50_000),
-      tokens: { prompt: Math.round(2100 + roll * 8000), completion: Math.round(150 + roll * 700) },
+      durationMs,
+      tokens,
       detail:
         st === "pass"
           ? "grader exit 0"
@@ -675,8 +698,12 @@ export class FixtureBackend implements Backend {
       this.putEnv({
         ...cur,
         status: "running",
-        facts: req.type === "vm" ? VM_FACTS(vm!.cpus, vm!.memoryMiB, vm!.diskMiB, 590) : SIM_FACTS(sim!.python, sim!.javascript),
-        diskBytes: req.type === "vm" ? 618_659_840 : 2048,
+        // facts are gathered when the env comes up, so they are fresh
+        facts: {
+          ...(req.type === "vm" ? VM_FACTS(vm!.cpus, vm!.memoryMiB, vm!.diskMiB, 590) : SIM_FACTS(sim!.python, sim!.javascript)),
+          gatheredAt: Date.now(),
+        },
+        diskBytes: req.type === "vm" ? 618_659_840 : Math.max(2048, Object.values(files).reduce((a, t) => a + t.length, 0)),
       });
     }, req.type === "vm" ? 1900 : 450);
     return clone(e);
@@ -841,67 +868,89 @@ export class FixtureBackend implements Backend {
     await sleep(e.type === "vm" ? 60 + Math.random() * 120 : 8);
     if (e.status !== "running") return { exitCode: 125, stdout: "", stderr: `env is ${e.status}\n`, durationMs: 0, truncated: false };
     const files = this.fs.get(id)!.files;
-    const cmd = req.command.trim();
-    const [head, ...rest] = cmd.split(/\s+/);
-    const arg = rest.filter((a) => !a.startsWith("-"))[0];
+    const user = e.type === "sim" ? "agent" : req.as === "root" ? "root" : "agent";
     const abs = (p?: string) => (!p ? "/workspace" : p.startsWith("/") ? p.replace(/\/$/, "") : `/workspace/${p}`.replace(/\/$/, ""));
+    const runOne = (cmd: string): { out: string; err: string; code: number } => {
+      const [head, ...rest] = cmd.split(/\s+/);
+      const arg = rest.filter((a) => !a.startsWith("-"))[0];
+      let out = "";
+      let err = "";
+      let code = 0;
+      switch (head) {
+        case "ls": {
+          const dir = abs(arg);
+          const names = new Set<string>();
+          for (const p of files.keys()) if (p.startsWith(dir + "/")) names.add(p.slice(dir.length + 1).split("/")[0]);
+          if (!names.size && dir !== "/workspace") {
+            err = `ls: ${arg}: No such file or directory\n`;
+            code = 1;
+          } else if (rest.some((r) => r.startsWith("-l")))
+            out = [...names].sort().map((n) => `${files.has(`${dir}/${n}`) ? "-rw-r--r--" : "drwxr-xr-x"}    1 agent    agent   ${String(files.get(`${dir}/${n}`)?.length ?? 4096).padStart(8)} Oct 28 18:20 ${n}`).join("\n") + "\n";
+          else out = [...names].sort().join("\n") + "\n";
+          break;
+        }
+        case "cat": {
+          const c = files.get(abs(arg));
+          if (c == null) {
+            err = `cat: can't open '${arg}': No such file or directory\n`;
+            code = 1;
+          } else out = c;
+          break;
+        }
+        case "pwd":
+          out = "/workspace\n";
+          break;
+        case "whoami":
+          out = `${user}\n`;
+          break;
+        case "id":
+          out = user === "root" ? "uid=0(root) gid=0(root) groups=0(root)\n" : "uid=1000(agent) gid=1000(agent) groups=1000(agent)\n";
+          break;
+        case "uname":
+          out = e.type === "vm" ? "Linux terrarium 6.12.48-0-virt #1-Alpine SMP PREEMPT_DYNAMIC aarch64 Linux\n" : "just-bash\n";
+          break;
+        case "echo":
+          out = rest.join(" ") + "\n";
+          break;
+        case "python3":
+        case "python":
+          out = rest[0] === "--version" ? "Python 3.12.12\n" : "";
+          if (rest[0] !== "--version") {
+            err = "fixture shell: only `python3 --version` is simulated\n";
+            code = 2;
+          }
+          break;
+        case "df":
+          out = e.type === "vm" ? "Filesystem      Size  Used Avail Use% Mounted on\n/dev/vda        3.9G  612M  3.1G  17% /\n" : "df: not available in just-bash\n";
+          break;
+        case "ip":
+          out = "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    inet 10.0.2.15/24 scope global eth0\n";
+          break;
+        default:
+          err = `sh: ${head}: not found (fixture shell simulates ls, cat, pwd, whoami, id, uname, echo, df, ip)\n`;
+          code = 127;
+      }
+      return { out, err, code };
+    };
+    // `a; b` runs both, `a && b` stops at the first failure
     let out = "";
     let err = "";
     let code = 0;
-    const user = e.type === "sim" ? "agent" : req.as === "root" ? "root" : "agent";
-    switch (head) {
-      case "ls": {
-        const dir = abs(arg);
-        const names = new Set<string>();
-        for (const p of files.keys()) if (p.startsWith(dir + "/")) names.add(p.slice(dir.length + 1).split("/")[0]);
-        if (!names.size && dir !== "/workspace") {
-          err = `ls: ${arg}: No such file or directory\n`;
-          code = 1;
-        } else if (rest.some((r) => r.startsWith("-l")))
-          out = [...names].sort().map((n) => `${files.has(`${dir}/${n}`) ? "-rw-r--r--" : "drwxr-xr-x"}    1 agent    agent   ${String(files.get(`${dir}/${n}`)?.length ?? 4096).padStart(8)} Oct 28 18:20 ${n}`).join("\n") + "\n";
-        else out = [...names].sort().join("\n") + "\n";
-        break;
+    let skip = false;
+    for (const part of req.command.trim().split(/\s*(;|&&)\s*/)) {
+      if (part === ";") {
+        skip = false;
+        continue;
       }
-      case "cat": {
-        const c = files.get(abs(arg));
-        if (c == null) {
-          err = `cat: can't open '${arg}': No such file or directory\n`;
-          code = 1;
-        } else out = c;
-        break;
+      if (part === "&&") {
+        skip = code !== 0;
+        continue;
       }
-      case "pwd":
-        out = "/workspace\n";
-        break;
-      case "whoami":
-        out = `${user}\n`;
-        break;
-      case "id":
-        out = user === "root" ? "uid=0(root) gid=0(root) groups=0(root)\n" : "uid=1000(agent) gid=1000(agent) groups=1000(agent)\n";
-        break;
-      case "uname":
-        out = e.type === "vm" ? "Linux terrarium 6.12.48-0-virt #1-Alpine SMP PREEMPT_DYNAMIC aarch64 Linux\n" : "just-bash\n";
-        break;
-      case "echo":
-        out = rest.join(" ") + "\n";
-        break;
-      case "python3":
-      case "python":
-        out = rest[0] === "--version" ? "Python 3.12.12\n" : "";
-        if (rest[0] !== "--version") {
-          err = "fixture shell: only `python3 --version` is simulated\n";
-          code = 2;
-        }
-        break;
-      case "df":
-        out = e.type === "vm" ? "Filesystem      Size  Used Avail Use% Mounted on\n/dev/vda        3.9G  612M  3.1G  17% /\n" : "df: not available in just-bash\n";
-        break;
-      case "ip":
-        out = "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    inet 10.0.2.15/24 scope global eth0\n";
-        break;
-      default:
-        err = `sh: ${head}: not found (fixture shell simulates ls, cat, pwd, whoami, id, uname, echo, df, ip)\n`;
-        code = 127;
+      if (!part || skip) continue;
+      const r = runOne(part);
+      out += r.out;
+      err += r.err;
+      code = r.code;
     }
     return { exitCode: code, stdout: out, stderr: err, durationMs: Math.round(performance.now() - t), truncated: false };
   }
@@ -999,16 +1048,18 @@ export class FixtureBackend implements Backend {
     const s = this.sessions.get(id);
     if (!s) throw new ApiRequestError(404, "session not found");
     if (s.status === "running") throw new ApiRequestError(409, "A run is in progress");
-    const built =
-      id === this.liveIds.fix
-        ? buildInvoiceContinue(id, s.envId!, s.lastSeq)
-        : buildReply(
-            { sessionId: id, envId: s.envId, modelId: s.modelId, window: s.contextWindow, maxOut: s.maxOutputTokens, thinking: false, ...this.conversation(id) },
-            "continue",
-            s.lastSeq,
-            this.lastPrompt(id),
-          );
-    if (id !== this.liveIds.fix) built.steps = built.steps.filter((x) => x.body.type !== "user_message");
+    // the scripted continuation only fits the run that ended at the output cap
+    const lastEnd = this.events.get(id)!.findLast((e) => e.type === "run_end");
+    const scripted = id === this.liveIds.fix && lastEnd?.type === "run_end" && lastEnd.reason === "length";
+    const built = scripted
+      ? buildInvoiceContinue(id, s.envId!, s.lastSeq)
+      : buildReply(
+          { sessionId: id, envId: s.envId, modelId: s.modelId, window: s.contextWindow, maxOut: s.maxOutputTokens, thinking: false, ...this.conversation(id) },
+          "continue",
+          s.lastSeq,
+          this.lastPrompt(id),
+        );
+    if (!scripted) built.steps = built.steps.filter((x) => x.body.type !== "user_message");
     this.play(id, built, Date.now());
   }
 

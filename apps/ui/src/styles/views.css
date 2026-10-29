@@ -867,3 +867,57 @@ select.input {
     display: none;
   }
 }
+
+/* models table: secondary columns go first so Memory, State and Load stay on screen.
+   Everything dropped here is repeated in the expanded row. */
+.models-view {
+  container-type: inline-size;
+}
+@container (max-width: 1180px) {
+  .models-table th:nth-child(6),
+  .models-table td:nth-child(6),
+  .models-table th:nth-child(7),
+  .models-table td:nth-child(7) {
+    display: none;
+  }
+}
+@container (max-width: 1000px) {
+  .models-table th:nth-child(5),
+  .models-table td:nth-child(5),
+  .models-table th:nth-child(8),
+  .models-table td:nth-child(8) {
+    display: none;
+  }
+}
+@container (max-width: 860px) {
+  .models-table th:nth-child(4),
+  .models-table td:nth-child(4),
+  .models-table th:nth-child(10),
+  .models-table td:nth-child(10) {
+    display: none;
+  }
+}
+/* the expanded row spans every column, so it is never hidden */
+.models-table tr.detail-row td {
+  display: table-cell !important;
+}
+
+/* eval matrix: the Check column (also shown in the case panel) goes before model columns clip */
+.ev-main {
+  container-type: inline-size;
+}
+@container (max-width: 760px) {
+  .ev-check-h,
+  .ev-matrix .ev-check {
+    display: none;
+  }
+  .ev-case-h {
+    min-width: 150px;
+  }
+}
+.md-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: var(--fs-sm);
+}

@@ -86,6 +86,10 @@ function useGlobalKeys() {
       if (e.key === "Escape" && !e.defaultPrevented) {
         const st = useStore.getState();
         if (st.paletteOpen || st.newEnvOpen) return;
+        // Esc in a text field cancels that field; only the composer's Esc stops the run
+        const t = e.target as HTMLElement | null;
+        const editable = !!t && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT");
+        if (editable && !t.classList.contains("composer-input")) return;
         const s = currentSession();
         if (s?.status === "running") {
           e.preventDefault();

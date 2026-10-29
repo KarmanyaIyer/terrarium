@@ -89,7 +89,13 @@ export function EnvTab({ env }: { env: EnvSummary }) {
               setEditing(false);
               if (name.trim() && name !== env.name) void act("Rename", (b) => b.updateEnv(env.id, { name: name.trim() })).then(putEnv);
             }}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              if (e.key === "Escape") {
+                setName(env.name);
+                setEditing(false);
+              }
+            }}
           />
         ) : (
           <h2 onDoubleClick={() => setEditing(true)} title="Double-click to rename">
@@ -315,10 +321,10 @@ export function EnvTab({ env }: { env: EnvSummary }) {
               <Sparkline points={series.rss} format={(v) => fmtBytes(v)} max={memMax} label="RSS" color="var(--c-vm)" />
             </div>
             <div className="spark-box">
-              <div className="spark-label">
-                CPU <span className="dim">100% = 1 core</span>
+              <div className="spark-label" title="100% = one full core">
+                CPU{f?.cpus ? <span className="dim num"> of {f.cpus * 100}%</span> : null}
               </div>
-              <Sparkline points={series.cpu} format={(v) => fmtPct(v)} max={100} label="CPU" color="var(--c-model)" />
+              <Sparkline points={series.cpu} format={(v) => fmtPct(v)} max={(f?.cpus ?? 1) * 100} label="CPU" color="var(--c-model)" />
             </div>
           </div>
         )}

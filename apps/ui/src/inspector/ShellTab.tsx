@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { CornerDownLeft, Loader2 } from "lucide-react";
+import { CornerDownLeft, Loader2, Play } from "lucide-react";
 import type { EnvSummary, ExecResult } from "@terrarium/shared";
-import { act } from "../state/store";
+import { act, useStore } from "../state/store";
 import { clockTime, exactTime, fmtMs } from "../lib/format";
 import { ansiSpans } from "../components/Ansi";
 import { Expander, Segmented } from "../components/ui";
@@ -52,7 +52,25 @@ export function ShellTab({ env }: { env: EnvSummary }) {
   return (
     <div className="shelltab">
       <div className="shell-log selectable">
-        {entries.length === 0 && <div className="empty">{up ? "Run a command in this environment" : `Environment is ${env.status}`}</div>}
+        {entries.length === 0 && (
+          <div className="empty">
+            {up ? "No commands yet" : `${env.name} is ${env.status}`}
+            {(env.status === "stopped" || env.status === "error") && (
+              <button
+                className="btn sm"
+                type="button"
+                onClick={() =>
+                  void act("Start", (b) => b.startEnv(env.id)).then((e) => {
+                    if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
+                  })
+                }
+              >
+                <Play /> Start
+              </button>
+            )}
+            {env.status === "starting" && <Loader2 size={13} className="spin dim" />}
+          </div>
+        )}
         {entries.map((e) => (
           <div key={e.id} className="shell-entry">
             <div className="shell-cmd">

@@ -66,7 +66,18 @@ export function HomeView() {
               const env = s.envId ? envs[s.envId] : undefined;
               const used = s.context ? s.context.systemAndTools + s.context.history : undefined;
               return (
-                <tr key={s.id} onClick={() => openSession(s.id)} className="click">
+                <tr
+                  key={s.id}
+                  onClick={() => openSession(s.id)}
+                  onKeyDown={(e) => {
+                    if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      openSession(s.id);
+                    }
+                  }}
+                  tabIndex={0}
+                  className="click"
+                >
                   <td className="truncate strong">{s.title}</td>
                   <td>
                     {env ? (

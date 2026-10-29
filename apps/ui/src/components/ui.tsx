@@ -127,7 +127,15 @@ export function ConfirmButton(props: {
       </button>
     );
   return (
-    <span ref={ref} className="confirm-inline" onKeyDown={(e) => e.key === "Escape" && setArmed(false)}>
+    <span
+      ref={ref}
+      className="confirm-inline"
+      onKeyDown={(e) => {
+        if (e.key !== "Escape") return;
+        e.preventDefault();
+        setArmed(false);
+      }}
+    >
       <button
         type="button"
         className={`btn${sm} danger solid`}

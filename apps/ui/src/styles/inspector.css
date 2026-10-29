@@ -211,6 +211,10 @@
 .tree-row.sel .tree-tw {
   color: color-mix(in srgb, var(--accent-fg) 75%, transparent);
 }
+.tree-row.sel .fc-badge {
+  color: var(--accent);
+  background: var(--accent-fg);
+}
 .tree-row.step:not(.sel) {
   background: var(--accent-wash);
 }
@@ -447,6 +451,13 @@
   display: flex;
   align-items: center;
 }
+.jv-branch > * {
+  flex: none;
+  white-space: pre;
+}
+.jv-branch > .jv-summary {
+  flex: 0 1 auto;
+}
 .jv-branch:hover {
   background: var(--bg-hover);
 }
@@ -479,9 +490,13 @@
 }
 .jv-summary {
   color: var(--fg-3);
-  font-family: var(--font-ui);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   margin: 0 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .jv-actions {
   position: absolute;
@@ -919,4 +934,9 @@
 }
 .snap-main .truncate {
   display: block;
+}
+
+.net-full {
+  white-space: pre-wrap;
+  word-break: break-all;
 }

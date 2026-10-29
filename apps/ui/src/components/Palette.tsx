@@ -55,7 +55,7 @@ export function Palette() {
       out.push({
         id: `s:${s.id}`,
         label: s.title,
-        hint: `${s.envId ? envs[s.envId]?.name ?? "env" : "chat"}  ${relTime(s.updatedAt)}`,
+        hint: `${s.envId ? (envs[s.envId]?.name ?? "env") : "chat"} · ${s.status === "running" ? "running" : relTime(s.updatedAt)}`,
         icon: s.envId ? <TerminalSquare size={13} /> : <MessageSquare size={13} />,
         group: "Sessions",
         run: () => openSession(s.id),
@@ -64,7 +64,7 @@ export function Palette() {
       out.push({
         id: `e:${e.id}`,
         label: e.name,
-        hint: `${e.type === "vm" ? "VM" : "SIM"}  ${e.status}  network ${e.network}`,
+        hint: `${e.type === "vm" ? "VM" : "SIM"} · ${e.status} · network ${e.network}`,
         icon: <Server size={13} />,
         group: "Environments",
         run: () => openEnv(e.id),
@@ -80,13 +80,25 @@ export function Palette() {
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return items
+    const hits = items
       .map((it) => ({ it, s: score(ql, `${it.label} ${it.hint ?? ""}`) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => (ql ? b.s - a.s : 0))
-      .map((x) => x.it)
       .slice(0, 40);
+    // keep each group together (ordered by its best hit) so a group header appears once
+    const order = new Map<string, number>();
+    hits.forEach((x, i) => {
+      if (!order.has(x.it.group)) order.set(x.it.group, i);
+    });
+    return hits
+      .map((x, i) => ({ ...x, i }))
+      .sort((a, b) => order.get(a.it.group)! - order.get(b.it.group)! || a.i - b.i)
+      .map((x) => x.it);
   }, [items, q]);
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    listRef.current?.querySelector(".menu-item.active")?.scrollIntoView({ block: "nearest" });
+  }, [idx, filtered]);
 
   if (!open) return null;
   const close = () => useStore.setState({ paletteOpen: false });
@@ -125,7 +137,7 @@ export function Palette() {
             }
           }}
         />
-        <div className="palette-list">
+        <div className="palette-list" ref={listRef} role="listbox">
           {filtered.length === 0 && <div className="empty">No match</div>}
           {filtered.map((it, i) => {
             const head = it.group !== lastGroup ? it.group : null;
@@ -133,7 +145,14 @@ export function Palette() {
             return (
               <div key={it.id}>
                 {head && <div className="menu-label">{head}</div>}
-                <button className={`menu-item${i === idx ? " active" : ""}`} onMouseEnter={() => setIdx(i)} onClick={() => run(it)}>
+                <button
+                  className={`menu-item${i === idx ? " active" : ""}`}
+                  role="option"
+                  aria-selected={i === idx}
+                  tabIndex={-1}
+                  onMouseMove={() => i !== idx && setIdx(i)}
+                  onClick={() => run(it)}
+                >
                   {it.icon}
                   <span className="truncate">{it.label}</span>
                   {it.hint && <span className="dim palette-hint truncate">{it.hint}</span>}
