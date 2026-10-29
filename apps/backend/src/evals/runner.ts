@@ -304,7 +304,7 @@ export class EvalRunner {
           base.id,
           { name: `eval ${suite.id}/${c.id} (${modelId})`, snapshotId: base.snapshotId, network: c.network ?? "off", seedFiles: c.setupFiles ?? [] },
           { ephemeral: true, id: ownedId },
-        );
+        ).catch((err) => this.forkFailed(runId, c.id, modelId, ownedId, err));
         envId = env.id;
       }
       const session = await this.sessions.create(
@@ -354,6 +354,16 @@ export class EvalRunner {
     }
   }
 
+  /**
+   * A case's fork failed: there is no env to open, so the result stops naming one and the half-made env (status
+   * error, if the fork got as far as inserting it) is removed. The case then errors with the fork's reason.
+   */
+  private async forkFailed(runId: string, caseId: string, modelId: string, envId: string, err: unknown): Promise<never> {
+    this.store.run("UPDATE eval_results SET env_id = NULL WHERE run_id = ? AND case_id = ? AND model_id = ?", runId, caseId, modelId);
+    if (this.envs.exists(envId)) await this.envs.delete(envId).catch((e) => log.warn(`removing failed fork ${envId} failed`, e));
+    throw new Error(`environment fork failed: ${errorMessage(err)}`);
+  }
+
   private tokens(sessionId: string): { prompt: number; completion: number } {
     let prompt = 0;
     let completion = 0;
@@ -380,7 +390,7 @@ export class EvalRunner {
     if (check.type === "isolation") return gradeIsolation({ store: this.store, policy: this.policy, sessionId, canary: canary.token, runtime: rt, probe: check.probe });
     if (!rt) return { pass: false, detail: `${check.type} check needs an environment` };
     if (check.type === "file") return gradeFile(rt, check);
-    if (check.type === "tests") return gradeTests(rt, check, c.hiddenFiles);
-    return gradeCommand(rt, check);
+    const g = check.type === "tests" ? await gradeTests(rt, check, c.hiddenFiles) : await gradeCommand(rt, check);
+    return c.network && c.network !== "off" ? { ...g, detail: `${g.detail}\nnetwork off while grading (the case ran with ${c.network})` } : g;
   }
 }

@@ -81,10 +81,17 @@ class FakeSim implements Partial<EnvRuntime> {
   async killAgentProcesses() {}
 }
 
+/** Makes the next env creation (a case fork) fail after the env row exists. */
+let failNextCreate = false;
+
 const fakeSim = {
   type: "sim",
   async create(spec) {
     mkdirSync(spec.dir, { recursive: true });
+    if (failNextCreate) {
+      failNextCreate = false;
+      throw new Error("disk full");
+    }
     return new FakeSim(spec.id, spec.dir) as unknown as EnvRuntime;
   },
   async open(spec) {
@@ -163,6 +170,35 @@ test("a case env refuses the shell, network, other sessions and lifecycle ops fr
       "no user command ran in the case env",
     );
     assert.equal(store.get<{ network: string }>("SELECT network FROM envs WHERE id = ?", env.id)?.network, "off");
+  } finally {
+    off();
+  }
+});
+
+test("a case whose fork fails errors with the reason and names no env; the half-made env is removed", { timeout: 60_000 }, async () => {
+  // The base env exists from the first test; its next fork fails inside the driver, after the env row is inserted.
+  const seen = new Set<string>();
+  const off = hub.listen((m) => {
+    if (m.type === "env" && m.env.name.startsWith("eval tool-basics/")) seen.add(m.env.id);
+  });
+  try {
+    const before = new Set(envs.list().map((e) => e.id));
+    failNextCreate = true;
+    const run = await runner.start({ suiteId: "tool-basics", modelIds: [MODEL.id], harness: "terrarium", sampleSize: 1 });
+    let d = runner.detail(run.id);
+    for (let i = 0; i < 300 && d.status === "running"; i++) {
+      await sleep(100);
+      d = runner.detail(run.id);
+    }
+    const r = d.results[0];
+    assert.equal(r.status, "error");
+    assert.equal(r.envId, undefined, "the result names no env");
+    assert.equal(r.detail, "environment fork failed: disk full");
+    assert.equal(store.get<{ env_id: string | null }>("SELECT env_id FROM eval_results WHERE run_id = ?", run.id)?.env_id, null);
+    const failed = [...seen].filter((id) => !before.has(id));
+    assert.equal(failed.length, 1, "the fork did insert an env");
+    assert.equal(envs.exists(failed[0]), false, "and it is gone");
+    assert.equal(r.sessionId, undefined);
   } finally {
     off();
   }
