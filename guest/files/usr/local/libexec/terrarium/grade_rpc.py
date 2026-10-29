@@ -834,7 +834,7 @@ for _n in ("__iter__", "__len__", "__getitem__", "__setitem__", "__delitem__", "
 
 # Process-wide settings CPython keeps in C, where no module attribute changes for the watchers to see. Mirrored: a
 # call to one of these setters on either side is made again in the other process before that one's code runs.
-_PROC_MIRROR = (("gc", ("enable", "disable", "set_threshold", "set_debug")), ("sys", ("setswitchinterval", "set_int_max_str_digits")), ("socket", ("setdefaulttimeout",)), ("threading", ("stack_size",)))
+_PROC_MIRROR = (("gc", ("enable", "disable", "set_threshold", "set_debug")), ("sys", ("setswitchinterval", "set_int_max_str_digits")), ("socket", ("setdefaulttimeout",)), ("threading", ("stack_size",)), ("_thread", ("stack_size",)))
 # Not mirrored (handlers and trace functions are code; timers, limits and the priority act on the process that set
 # them): once one side's code has called a function of a group that changes it, the other side calling any function
 # of that group is a grader error.

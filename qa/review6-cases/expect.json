@@ -59,7 +59,7 @@
     "unsetenv_hidden_lenient": [false, "known-lenient"],
     "stdin_seek_lenient": [false, "known-lenient"],
     "stdin_write_lenient": [false, "known-lenient"],
-    "stack_bypass_lenient": [false, "known-lenient"],
+    "stack_bypass_lenient": [false, "fail"],
     "path_import_lenient": [false, "known-lenient"],
     "thread_env_lenient": [false, "known-lenient"]
   },
