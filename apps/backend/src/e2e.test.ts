@@ -25,7 +25,11 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
     const env = await app.envs.create({
       name: "e2e",
       type: "sim",
-      seedFiles: [{ path: "/workspace/numbers.txt", content: "values\n3\n5\n\n10\n" }],
+      seedFiles: [
+        { path: "/workspace/numbers.txt", content: "values\n3\n5\n\n10\n" },
+        // Crashes on the header line: the second run has to read the traceback and fix it.
+        { path: "/workspace/spread.py", content: 'nums = [int(x) for x in open("/workspace/numbers.txt").read().split("\\n")]\nprint(max(nums) - min(nums))\n' },
+      ],
     });
     const thinking = process.env.TERRARIUM_E2E_THINKING === undefined ? undefined : process.env.TERRARIUM_E2E_THINKING === "1";
     const s = await app.sessions.create({ envId: env.id, modelId: MODEL, harness: "terrarium", contextWindow: WINDOW, ...(thinking !== undefined ? { thinking } : {}) });
@@ -48,13 +52,19 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
 
     // Long session: keep going in the same 8K window. Every call must get a real output budget and real replies.
     const follow = [
+      "Run /workspace/spread.py with python3. It should print the difference between the largest and smallest number. Fix it if it fails and run it again.",
       "Change avg.py to also print the minimum and maximum, one per line after the average. Run it.",
-      "Add a short module docstring and a main() function to avg.py, keep the behaviour the same, and run it again.",
       "Write /workspace/test_avg.py with two small checks of your functions using assert, and run it with python3.",
       "Show me the final avg.py with cat, then summarize what you changed in two sentences.",
     ];
     const reasons: string[] = [];
     for (const text of follow) reasons.push((await app.sessions.run(s.id, text, { maxTurns: 15 })).reason);
+    // The seeded bug: a failing python3 run, then the file edited, then a passing run printing 7.
+    const runs = events.filter((e) => e.type === "tool_end" && e.name === "bash" && /spread\.py/.test(JSON.stringify(events.find((x) => x.type === "tool_start" && x.toolCallId === e.toolCallId))));
+    assert.ok(runs.some((e) => e.type === "tool_end" && e.exitCode !== 0), "spread.py failed at least once");
+    assert.ok(events.some((e) => e.type === "fs_change" && e.changes.some((c) => c.path === "/workspace/spread.py" && c.kind === "modified")), "spread.py was fixed");
+    const spread = await app.envs.exec(env.id, { command: "python3 spread.py", as: "agent" });
+    assert.equal(spread.stdout.trim(), "7", `spread.py output: ${spread.stdout} ${spread.stderr}`);
 
     const starts = events.filter((e) => e.type === "model_call_start");
     const ends = events.filter((e) => e.type === "model_call_end");
@@ -79,7 +89,7 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
         const x = e as any;
         const info =
           e.type === "tool_start" ? `${x.name} ${JSON.stringify(x.args).slice(0, 80)}`
-          : e.type === "tool_end" ? `${x.name} exit=${x.exitCode ?? "-"} ${x.durationMs}ms files=${x.fileChanges}`
+          : e.type === "tool_end" ? `${x.name}${x.isError ? " ERROR" : ""} exit=${x.exitCode ?? "-"} ${x.durationMs}ms files=${x.fileChanges}`
           : e.type === "model_call_start" ? `est=${x.promptTokensEst} max_tokens=${x.maxTokens}`
           : e.type === "model_call_end" ? `${x.finishReason} prompt=${x.usage?.promptTokens} out=${x.usage?.completionTokens} ttft=${Math.round(x.timing?.ttftMs ?? 0)}ms gen=${x.timing?.genTps?.toFixed?.(1)}tok/s`
           : e.type === "assistant_message" ? `text=${JSON.stringify(x.text).slice(0, 60)} calls=${x.toolCalls.length}`

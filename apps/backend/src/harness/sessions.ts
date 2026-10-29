@@ -351,6 +351,7 @@ export class SessionManager {
   async delete(id: string): Promise<void> {
     const r = this.row(id);
     if (this.isRunning(id)) await this.stop(id);
+    if (this.isRunning(id)) throw new HttpError(409, "session is still stopping; try again shortly");
     this.store.tx(() => {
       this.store.run("DELETE FROM events WHERE session_id = ?", id);
       this.store.run("DELETE FROM model_calls WHERE session_id = ?", id);

@@ -16,7 +16,14 @@ Scope: `apps/backend/**` except `src/envs/vm/**`, `src/policy/**` (VM agent) and
 - [x] Server: HTTP + WS, Host/Origin/token gate, every DESIGN route
 - [x] Eval runner + graders (answer, file, command, isolation with canary, speed)
 - [x] Tests (unit/integration) + e2e against real oMLX
-- [ ] Final report
+- [x] Final report
+
+## Results (2026-10-28)
+- Unit/integration: 97 tests, 96 pass, 1 skipped (e2e, gated by TERRARIUM_E2E=1).
+- e2e thinking off, 8K window: 5 runs all `done`, 32 model calls, max prompt 5614, max_tokens 2048 on
+  every call, 0 one-token replies, seeded spread.py crash read and fixed (prints 7), avg.py prints 6.0.
+- e2e thinking on, 8K window: 28 calls, max_tokens 4096 on every call, 6 compactions, 0 one-token replies.
+- oMLX stopped after each run; no leftover processes.
 
 ## Decisions
 - Stream fn calls pi-ai's openai-completions `stream` directly (not `streamSimple`), so pi-ai's
@@ -35,6 +42,10 @@ Scope: `apps/backend/**` except `src/envs/vm/**`, `src/policy/**` (VM agent) and
   Canary per run in `data/canary/<runId>/` (host only), deleted at run end.
 - Eval runs unload a model they loaded before the next model starts (24 GB Mac).
 - `model_type_override: "llm"` only for Qwen3.5 (Gemma 4 unified and Prism Bonsai need the VLM path).
+- Compaction protects the latest user message (current instruction), drops earlier exchanges first; the
+  "files changed so far" list is seeded from the session's stored fs_change events so it spans runs.
+- Session delete returns 409 if the run has not stopped within the 15 s stop wait (no orphan events).
+- QA: self-review only. T3 child rule says no subagents unless the brief asks, so no independent QA agent.
 
 ## Hurdles
 - FastAPI 0.162 `_IncludedRouter` broke route filtering; admin prefix is `/admin`. Fixed with an ASGI allowlist.
@@ -42,3 +53,5 @@ Scope: `apps/backend/**` except `src/envs/vm/**`, `src/policy/**` (VM agent) and
 - dcg blocks `rm -rf` on dynamic paths and pipes into interpreters; used Write-tool scripts and literal paths.
 - `manifestTree` crashed when a dir became a file with deleted children (found by test, fixed).
 - Machine load average ~400 during e2e: decode ~6 tok/s on Qwen3.5-4B.
+- e2e trace showed compaction dropping later user instructions in long sessions; fixed (see Decisions).
+- dcg blocks `rm -rf`/`mv` under `/var/folders`; the macOS `trash` command works for temp data dirs.
