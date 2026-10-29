@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, test } from "node:test";
 import type { TraceEvent } from "@terrarium/shared";
 import { Hub } from "../hub.ts";
+import { sha256 } from "../store/blobs.ts";
 import { Store } from "../store/db.ts";
+import { BlobGc } from "../store/gc.ts";
 import { startFakeOpenAI, type FakeOpenAI } from "../test-support/fake-openai.ts";
 import { SessionTracer } from "../trace.ts";
 import { Gateway } from "./gateway.ts";
@@ -122,4 +124,39 @@ test("rejects a wrong gateway key and unknown call ids", async () => {
   });
   assert.equal(r.status, 404);
   gateway.cancel("c7", "unused");
+});
+
+test("blob GC keeps the request of a call still in flight (review 2, #11)", async () => {
+  let release!: () => void;
+  const held = new Promise<void>((r) => (release = r));
+  const slow = new Gateway(store, { baseUrl: () => fake.origin, apiKey: () => "upstream-key", ensureReady: () => held });
+  await slow.listen();
+  try {
+    const body = { model: "m", stream: false, messages: [{ role: "user", content: "a long call" }] };
+    const reg = slow.register({ tracer: tracer(), callId: "c-long", modelId: "m", turn: 1, contextWindow: 8192, maxTokens: 64, promptTokensEst: 10 });
+    const res = fetch(`${reg.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${slow.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    let start: TraceEvent | undefined;
+    for (let i = 0; i < 100 && !start; i++) {
+      await new Promise((r) => setTimeout(r, 10));
+      start = events.find((e) => e.type === "model_call_start" && e.callId === "c-long");
+    }
+    assert.ok(start, "the call started");
+    const sha = sha256(JSON.stringify(body));
+    assert.equal(start.type === "model_call_start" && start.requestBlob, sha, "the start event names the request blob");
+    assert.equal(store.get("SELECT id FROM model_calls WHERE id = 'c-long'"), undefined, "no row yet: the call is running");
+    // The call has been running past GC's grace period and a deletion triggers a sweep.
+    const old = new Date(Date.now() - 3600_000);
+    utimesSync(join(store.blobs.dir, sha.slice(0, 2), sha), old, old);
+    await new BlobGc(store).run({ graceMs: 60_000 });
+    assert.ok(store.blobs.has(sha), "request blob survives the sweep");
+    release();
+    await (await res).text();
+    await reg.result;
+    const row = store.get<{ request_blob: string }>("SELECT request_blob FROM model_calls WHERE id = 'c-long'")!;
+    assert.equal(row.request_blob, sha);
+    assert.deepEqual(store.blobs.getJson(sha), body);
+  } finally {
+    release();
+    await slow.close();
+  }
 });

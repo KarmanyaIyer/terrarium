@@ -304,6 +304,7 @@ export type TraceEvent = EventBase &
         promptTokensEst: number;
         contextWindow: number;
         maxTokens: number;
+        requestBlob?: string; // exact request bytes, named from the start so blob GC keeps them during a long call
       }
     | { type: "model_delta"; callId: Id; kind: "text" | "thinking" | "toolcall"; delta: string } // streamed only
     | {

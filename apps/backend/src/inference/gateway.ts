@@ -175,6 +175,8 @@ export class Gateway {
     } catch {}
     const streamed = requestJson.stream === true;
 
+    // The start event names the request blob: the model_calls row only exists once the call ends, and blob GC
+    // must not sweep the request of a call that is still running.
     const start = ctx.tracer.emit({
       type: "model_call_start",
       callId,
@@ -183,6 +185,7 @@ export class Gateway {
       promptTokensEst: ctx.promptTokensEst,
       contextWindow: ctx.contextWindow,
       maxTokens: ctx.maxTokens,
+      requestBlob,
     });
     const startedAt = Date.now();
     const asm = new SseAssembler();
