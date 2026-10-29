@@ -3,7 +3,7 @@
 Scope: review 3 fixes (dual grading, RPC v2, exact token counts, env ownership, VM slots, reaper, UI). Codex
 (grading, framed as Python-semantics comparison), Grok 4.7 (tokens, env/UI); every finding checked by the reviewer.
 
-Status: open.
+Status: all fixed (2026-10-29). Records: TODO_13.md (strict isolated grader), TODO_14.md (tokens/UI/VM).
 
 ## Findings
 1. **High (grade integrity; not a regression): forged plain run + a case where the isolated run is more lenient than
@@ -57,3 +57,44 @@ grading (finding 1), token counting (3, 8, 9).
 ## Tests (Linux)
 Backend 180: 151 pass, 21 fail (all sandbox-exec), 8 skipped; with a sandbox-exec stub 173 pass, 3 fail (macOS
 profile tests). UI 7/7, tsc 0/0, vite OK, verify.ts 41/41, datasets 0 failures, review 3 probes 16/16 match plain.
+
+## Fixes
+Principle: the isolated run is sound (never a pass Python wouldn't give); anything it can't reproduce exactly is a
+grader error, so a forged plain run can only turn a fail into a disagreement.
+- 1 **Fixed** (419f63d): returned lists/dicts/sets/bytearrays are the candidate's own objects, linked both ways and
+  synced before every message; overridden methods run in the candidate, never on base data; exceptions arrive as real
+  types with args, attributes, cause, context; test-side built-in subclasses preserved; defaultdict keeps its factory.
+  23 leniency probes x forged plain run: each a disagreement, never a pass (grade-probes, vm.test.ts).
+- 4 **Fixed** (419f63d): `!=` and ordering follow `__eq__`'s rule: the candidate's answer counts only when the data
+  agree, else `Inexact`. Probe `ne_lie`.
+- 5 **Fixed** (419f63d): both processes share one random PYTHONHASHSEED. Probe `hash_seed`.
+- 6 **Fixed** (419f63d): context managers, `mock.patch.object(m, ...)`, ints of any size, exception attributes, nested
+  tuples (memoized), copy/deepcopy of one object, `type(x) is m.Cls`, kwargs. Still grader errors (never passes,
+  listed in guest/README.md): pickling candidate objects, deep-copying structures holding them, test classes
+  subclassing candidate classes, some stdlib-derived classes.
+- 7 **Fixed** (419f63d): per-message work scales with what changed (refcount holding, pointer memcmp); perf_bsearch
+  6.2 s -> 1.0 s. perf_held6k stays a visible error at the sync cap.
+- 12 **Fixed** (419f63d): one candidate call at a time across test threads; stray candidate threads are a grader error.
+- Weakrefs (found in the adversarial pass) **Fixed** (925ac73): test-side weak references die as in one process, else
+  `Inexact`.
+- 2 **Fixed** (e8b7139): the window remedy raises the cap that cut the reply and says both values.
+- 3 **Fixed** (8025131, e8b7139, 92bc010): suggestion sized by compaction's rule; `POST /api/sessions/:id/retry`
+  re-runs the refused request (or the refused step mid-run); the trace says whether the refused message was kept.
+  Live: 13,878-token paste at 8K -> 32K suggested, retried, counted = server, answered correctly.
+- 8 **Fixed** (8025131, 9a0f621): tokenizer failure -> estimates that err high (>= 1.09x real on 25 text kinds), held
+  to the window, one warning per run.
+- 9 **Fixed** (8025131, 92bc010): Stop cancels a count; estimates for the rest of the run after one failure; 20 s
+  timeout (120 s for a run's first count, which may wait on a model load).
+- 10 **Fixed** (a4ea414): `Promise.race` then recount. 11 **Fixed** (8025131, e8b7139): 409 "environment deleted";
+  Send/Continue/Retry disabled with the reason.
+- Nits **Fixed** (a4ea414, e8b7139, af15378): net log asks for 5,001 rows; same-millisecond live row kept; pid-only
+  krun record must name the env's own disk; verify_datasets timeout 2 x case timeout.
+
+Known residual gaps (documented in guest/README.md; each needs an unusual assertion): `type()` of candidate functions,
+modules and generators; logging handlers; stdlib state changed without mock.patch; locale/tzset; candidate exception
+tracebacks; weakrefs to slotted classes; `id()` of a dropped and returned object.
+
+## Tests after fixes (macOS)
+Backend 199: 197 pass, 2 skipped (gated). grade tests 32/32; review 4 probes 39/39; review 3 probes match plain
+(perf_held6k documented); verify.ts all pass; HumanEval 164/164, MBPP 427/427; guest/verify.sh policy 16/16,
+vm.test.ts 21/21; VM + reaper 28/28; UI 13/13; tsc clean; vite build OK.
