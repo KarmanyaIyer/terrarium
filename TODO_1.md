@@ -48,7 +48,12 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
       protected from making room, eval-owned envs read-only mid-grade, VMs can't outlive the backend (guard + reaper)
 - [x] Backend 150/152 (2 gated), real-VM 22/22, verify.ts 41/41, all 599 references pass; repackaged, launch + quit
       checked (no leftover processes)
-- [ ] Review 3 on the Legion (delta f47fc4a..2545a56)
+- [x] Review 3 on the Legion (delta f47fc4a..2545a56): 9 findings (qa/REVIEW_3_delta.md), all fixed. Grading
+      redesigned: every tests check graded twice (isolated RPC + plain unittest), pass needs both, disagreement is a
+      visible grader error (TODO_10); backend/UI items (TODO_11); exact prompt token counts via oMLX tokenizer, oversized
+      tool outputs shortened with a marker, over-window prompts refused with numbers (TODO_12); network off while grading
+- [x] Backend 178/180 (2 gated), real-VM 19/19, e2e with Qwen3.5 4B (21 calls, 0 one-token replies); repackaged
+- [ ] Review 4 on the Legion (delta 2545a56..6141a5e)
 - [ ] Switchboard: "Local models" card (commit 5e87b58 there) points at retired local_llms; s-switchboard still
       has someone else's uncommitted continuity work, so left untouched. Terrarium is a Mac app and needs no card.
 
@@ -75,3 +80,9 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
   `legion` = legion:/home/karvi/Projects/g-terrarium (receive.denyCurrentBranch updateInstead); review worktree
   at /home/karvi/Projects/g-terrarium-review.
 - oMLX fails the whole response on unparseable tool calls (incomplete_tool_call); harness retries up to 2x.
+- The RPC grader kept producing semantic mismatches with plain unittest (5 in review 2, ~10 in review 3), each a
+  silent false pass or fail. Dual grading turns any remaining mismatch into a visible disagreement instead.
+- Token estimates by character ratio were ~30% low on digit-heavy text (Qwen tokenizes each digit), so oMLX rejected
+  requests; counting via oMLX /v1/tokenize is exact.
+- cua-driver can't type into the Tauri WKWebView composer (background or foreground); live checks go through the
+  gated e2e test or the dev UI in a browser instead.
