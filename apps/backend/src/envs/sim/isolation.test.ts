@@ -36,6 +36,24 @@ test("sandbox profile denies network, file writes and exec of other binaries", (
   assert.doesNotMatch(exec.stdout, /RAN/, `exec: ${exec.stdout}`);
 });
 
+test("deny-default profile: no reads outside the code it runs, no Mach services, no other processes (review 1, #11)", () => {
+  const probe = (code: string) => sandboxed(`try { ${code}; console.log("ALLOWED") } catch (e) { console.log(e.code ?? e.message) }`).stdout.trim();
+  // Readable without a sandbox, denied inside it.
+  for (const p of ["/etc/passwd", "/Library/Preferences", "/Applications", "/Users", "/private/var/log", "/opt", "/tmp"]) {
+    if (!existsSync(p)) continue;
+    const op = p.endsWith("passwd") ? `require("fs").readFileSync(${JSON.stringify(p)})` : `require("fs").readdirSync(${JSON.stringify(p)})`;
+    assert.match(probe(op), /EPERM|EACCES/, p);
+  }
+  // A process outside the sandbox (this test) can't be signalled; the worker can still signal itself.
+  assert.match(probe(`process.kill(${process.pid}, 0)`), /EPERM/);
+  assert.equal(probe("process.kill(process.pid, 0)"), "ALLOWED");
+  // Mach/XPC lookups fail: DNS through mDNSResponder is the easy one to observe from node.
+  const dns = sandboxed(`require("dns").lookup("apple.com", (e) => console.log(e ? e.code : "RESOLVED"))`);
+  assert.doesNotMatch(dns.stdout, /RESOLVED/, dns.stdout);
+  assert.match(buildProfile(), /^\(deny default\)$/m);
+  assert.doesNotMatch(buildProfile(), /allow default|mach-lookup|iokit|network/);
+});
+
 let dir: string;
 let rt: EnvRuntime;
 const attempts: NetAttempt[] = [];
