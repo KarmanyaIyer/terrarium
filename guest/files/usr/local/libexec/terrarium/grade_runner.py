@@ -41,6 +41,9 @@ MODULE_LOCAL = frozenset(("__name__", "__spec__", "__loader__", "__path__", "__p
 # `from m import *` reading a module's namespace for its names (3.12+: an intrinsic call; before, its own opcode).
 STAR = (dis.opmap["CALL_INTRINSIC_1"], 2) if "CALL_INTRINSIC_1" in dis.opmap else (dis.opmap.get("IMPORT_STAR"), None)
 _IMPORTING = frozenset(("importlib", "importlib._bootstrap", "importlib._bootstrap_external", "_frozen_importlib", "_frozen_importlib_external", "importlib.util"))
+# inspect.getsource and linecache pass a module's namespace to linecache for its __loader__: they get the stand-in
+# module's own (the source is read from the tests' copy of the file, as the candidate's loader would have read it).
+_SOURCE_READERS = frozenset(("inspect", "linecache"))
 
 
 class CandidateNamespace(dict):
@@ -59,7 +62,8 @@ class CandidateNamespace(dict):
 
 def module_namespace(mod, ref, f):
     """A candidate module's __dict__ for the code in frame f: its names for `from m import *`, its values for
-    mock.patch; for anything else (vars(m), doctest) a grader error, as its namespace is in the other process."""
+    mock.patch; the stand-in's own for the import system and source readers; for anything else (vars(m), doctest)
+    a grader error, as its namespace is in the other process."""
     co = f.f_code.co_code
     if 0 <= f.f_lasti < len(co) - 1 and co[f.f_lasti] == STAR[0] and STAR[1] in (None, co[f.f_lasti + 1]):
         names = CLIENT.call("names", [ref])
@@ -69,7 +73,7 @@ def module_namespace(mod, ref, f):
     who = f.f_globals.get("__name__")
     if who == "unittest.mock":
         return CandidateNamespace(ref)
-    if who in _IMPORTING:
+    if who in _IMPORTING or who in _SOURCE_READERS:
         return types.ModuleType.__getattribute__(mod, "__dict__")
     raise Inexact("code read the namespace of candidate module %s (vars(), __dict__): it is in the candidate's process" % types.ModuleType.__getattribute__(mod, "__name__"))
 

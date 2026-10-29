@@ -2567,7 +2567,9 @@ def _make_forwarder(p, desc):
         # Its asend()/athrow() can't be passed on through a stand-in: using one is a grader error.
         head, body = "async def", "raise Inexact('the candidate\\'s async generators can\\'t be used from the tests\\' process')\n  yield"
     elif flags & _CO_COROUTINE:
-        head, body = "async def", "return await _terrarium_p(%s)" % args
+        # The candidate's coroutine is made at the first step (one process makes it at the call, running none of its
+        # code) and run by the candidate's process one step at a time for the tests' event loop.
+        head, body = "async def", "return await _await_candidate(_terrarium_p(%s))" % args
     elif flags & _CO_GENERATOR:
         # Calling it returns the stand-in for the candidate's generator at once (one process creates the generator at
         # the call, running none of its code); its code is flagged a generator's for inspect, as the candidate's is.
@@ -2611,6 +2613,43 @@ def _fwd_annotate(p):
         return getattr(p, "__annotations__")
 
     return __annotate__
+
+
+@types.coroutine
+def _await_candidate(c):
+    """Await candidate coroutine c (its proxy) in the tests' event loop: the candidate's process runs it one step at
+    a time (Server._step). Where it yields to the loop (asyncio.sleep(0)) this yields too, so the loop's other tasks
+    run in between as in one process; what is thrown in (a task's cancellation) goes on to it. Closed or finalized
+    here, the candidate's coroutine is left alone: it is closed when the candidate lets go of it."""
+    p = proxy_rid(c)
+    if p is None:
+        raise Inexact("a candidate coroutine function returned something other than a candidate coroutine")
+    how, v = "send", None
+    while True:
+        r = p[0].call("step", [c, v], how=how)
+        if type(r) is not tuple or len(r) != 2 or r[0] not in (0, 1, 2):
+            raise p[0]._fail("candidate broke the grading protocol (bad coroutine step)")
+        if r[0] == 0:
+            return r[1]
+        if r[0] == 2:
+            raise Inexact("the candidate's coroutine waited on something other than the event loop's next turn: the tests' event loop is in their process")
+        try:
+            v, how = (yield), "send"
+        except GeneratorExit:
+            return None
+        except BaseException as e:  # noqa: B036 - thrown in: passed on
+            v, how = e, "throw"
+
+
+class _NoLoop:
+    """The running event loop a candidate coroutine sees while the tests' loop runs it (Server._step): that loop is
+    in the tests' process, so using it (a future, a task, a timer, current_task()) is a grader error."""
+
+    def __getattribute__(self, name):
+        raise Inexact("the candidate's coroutine used the running event loop (%s), which is in the tests' process" % clip(name, 60))
+
+    def __hash__(self):
+        raise Inexact("the candidate's coroutine used the running event loop, which is in the tests' process")
 
 
 def _gen_wrap(p, me):
@@ -5254,11 +5293,30 @@ class Server(Side):
             return special(obj, name)(*got[1:])
         if op == "patch":
             return self._patch(name, req.get("attr"), obj)
+        if op == "step":
+            return self._step(obj, req.get("how"), got[1] if len(got) == 2 else None)
         if op == "copy":
             import copy as _copy
 
             return _copy.deepcopy(obj) if req.get("deep") else _copy.copy(obj)
         raise ProtocolError("unknown op %r" % clip(op, 40))
+
+    def _step(self, c, how, v):
+        """One step of candidate coroutine c for the tests' event loop (_await_candidate): (0, its result) once it
+        returns, (1, None) where it yielded to the loop, (2, None) where it yielded anything else. Its asyncio sees
+        a running loop that is a grader error to use (_NoLoop)."""
+        if type(c) is not types.CoroutineType or how not in ("send", "throw"):
+            raise ProtocolError("bad coroutine step")
+        aio = _std("_asyncio") or _std("asyncio.events")
+        prev = aio._get_running_loop()
+        aio._set_running_loop(_NoLoop())
+        try:
+            y = c.send(v) if how == "send" else c.throw(v)
+        except StopIteration as e:
+            return (0, e.value)
+        finally:
+            aio._set_running_loop(prev)
+        return (1, None) if y is None else (2, None)
 
     def _status(self):
         """Between tests: nothing changed what the tests can see since the last answer (a thread of the candidate's).
