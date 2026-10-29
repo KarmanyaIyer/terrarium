@@ -87,6 +87,7 @@ export class EvalRunner {
   private policy: PolicyModule;
   private dataDir: string;
   private active = new Map<string, ActiveRun>();
+  private bases = new Map<EnvType, Promise<{ id: string; snapshotId: string }>>();
 
   constructor(opts: { store: Store; hub: Hub; envs: EnvManager; sessions: SessionManager; inference: InferenceService; policy: PolicyModule; dataDir: string }) {
     this.store = opts.store;
@@ -244,12 +245,15 @@ export class EvalRunner {
     try {
       for (const modelId of config.modelIds) {
         if (active.stopped) break;
+        const wasLoaded = (await this.inference.model(modelId))?.loaded ?? false;
         const speed = suite.cases.filter((c) => c.check.type === "speed");
         const vm = suite.cases.filter((c) => c.check.type !== "speed" && c.envType === "vm");
         const light = suite.cases.filter((c) => c.check.type !== "speed" && c.envType !== "vm");
         const one = (c: EvalCase) => (active.stopped ? Promise.resolve() : this.runCase(runId, suite, c, modelId, config, active, canary));
         await pool(speed, 1, one); // alone, so timings aren't shared with other requests
         await Promise.all([pool(light, 2, one), pool(vm, 1, one)]);
+        // One model resident at a time: unload what this run loaded before the next model starts.
+        if (!wasLoaded) await this.inference.unload(modelId).catch((err) => log.warn(`unloading ${modelId} failed`, err));
       }
     } finally {
       rmSync(canaryDir, { recursive: true, force: true });
@@ -258,7 +262,17 @@ export class EvalRunner {
   }
 
   /** Clean base env per type (never run itself); case envs are forks of its factory snapshot. */
-  private async baseEnv(type: EnvType): Promise<{ id: string; snapshotId: string }> {
+  private baseEnv(type: EnvType): Promise<{ id: string; snapshotId: string }> {
+    let p = this.bases.get(type);
+    if (!p) {
+      p = this.ensureBase(type);
+      this.bases.set(type, p);
+      p.catch(() => this.bases.delete(type));
+    }
+    return p;
+  }
+
+  private async ensureBase(type: EnvType): Promise<{ id: string; snapshotId: string }> {
     const id = BASE_ENV[type];
     if (!this.envs.exists(id)) await this.envs.create({ name: `eval base (${type})`, type, network: "off" }, { ephemeral: true, id });
     const snap = this.envs.snapshots(id).find((s) => s.kind === "factory");

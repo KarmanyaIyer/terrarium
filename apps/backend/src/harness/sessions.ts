@@ -324,7 +324,8 @@ export class SessionManager {
       model,
       thinking,
       patch.contextWindow ?? Math.min(r.context_window, model.nativeContext),
-      patch.maxOutputTokens ?? (windowChanged && patch.contextWindow !== undefined ? undefined : r.max_output_tokens),
+      // A new window, model or thinking mode gets that combination's default output budget unless one is given.
+      patch.maxOutputTokens ?? (windowChanged ? undefined : r.max_output_tokens),
     );
     const title = patch.title !== undefined ? patch.title.trim().slice(0, 200) || r.title : r.title;
     this.store.run(

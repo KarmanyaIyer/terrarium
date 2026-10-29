@@ -27,7 +27,8 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
       type: "sim",
       seedFiles: [{ path: "/workspace/numbers.txt", content: "values\n3\n5\n\n10\n" }],
     });
-    const s = await app.sessions.create({ envId: env.id, modelId: MODEL, harness: "terrarium", contextWindow: WINDOW });
+    const thinking = process.env.TERRARIUM_E2E_THINKING === undefined ? undefined : process.env.TERRARIUM_E2E_THINKING === "1";
+    const s = await app.sessions.create({ envId: env.id, modelId: MODEL, harness: "terrarium", contextWindow: WINDOW, ...(thinking !== undefined ? { thinking } : {}) });
     assert.equal(s.contextWindow, WINDOW);
 
     const t0 = Date.now();
@@ -67,7 +68,7 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
     const counts: Record<string, number> = {};
     for (const e of events) counts[e.type] = (counts[e.type] ?? 0) + 1;
     const lines = [
-      `model ${MODEL}, window ${WINDOW}, session maxOutput ${s.maxOutputTokens}`,
+      `model ${MODEL}, window ${WINDOW}, thinking ${s.thinking}, session maxOutput ${s.maxOutputTokens}`,
       `first run: ${first.reason} in ${Math.round(firstMs / 1000)} s, ${tools.length} tool calls; avg.py prints ${JSON.stringify(out.stdout.trim())}`,
       `follow-up runs: ${reasons.join(", ")}`,
       `model calls: ${ends.length}; max prompt ${maxPrompt} tokens; min max_tokens sent ${minBudget}; one-token replies ${oneToken.length}`,
@@ -96,7 +97,7 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
 
     const req = app.store.get<{ request_blob: string }>("SELECT request_blob FROM model_calls WHERE session_id = ? ORDER BY seq DESC LIMIT 1", s.id);
     const body = app.store.blobs.getJson<Record<string, any>>(req!.request_blob)!;
-    assert.equal(body.chat_template_kwargs?.enable_thinking, false);
+    assert.equal(body.chat_template_kwargs?.enable_thinking, s.thinking);
     assert.ok(body.max_tokens >= 512, `last request max_tokens ${body.max_tokens}`);
     assert.equal(oneToken.length, 0, "no one-token replies");
     assert.ok(minBudget >= 512, `smallest output budget sent was ${minBudget}`);

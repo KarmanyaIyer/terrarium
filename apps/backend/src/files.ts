@@ -57,8 +57,12 @@ export class FileViews {
     const env = this.envs.get(envId);
     let rt = await this.envs.inspect(envId);
     if (!rt && env.type === "sim" && env.status !== "error") {
-      await this.envs.start(envId);
-      rt = await this.envs.inspect(envId);
+      try {
+        await this.envs.start(envId);
+        rt = await this.envs.inspect(envId);
+      } catch {
+        rt = null; // released eval env or broken storage: fall back to stored manifests
+      }
     }
     return rt;
   }
