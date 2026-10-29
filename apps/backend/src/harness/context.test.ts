@@ -215,10 +215,37 @@ test("over the window: the suggested window is one compaction keeps the message 
   assert.equal(req.max_tokens, 4096, "the full output cap");
   const um = of(s.id, "user_message");
   assert.equal(um.length, 2);
-  assert.equal(um[1].retry, true);
+  assert.equal(um[1].retry, "message");
   assert.equal(um[1].text, text);
   assert.equal(of(s.id, "run_end").at(-1)!.reason, "done");
   assert.throws(() => sessions.retry(s.id), /nothing to retry: the latest message already has a reply/);
+});
+
+test("refused mid-run, after tool steps: the detail says so, and Retry runs that step again instead of failing", async () => {
+  const env = await envs.create({ name: "midrun", type: "sim" });
+  const s = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium", contextWindow: 4096 });
+  // The model's own tool call is too big to leave reply room; compaction keeps the newest step, so it can't help.
+  const start = fake.requests.length;
+  reply = (_b, n) => (n === start ? { toolCall: { name: "bash", args: { command: `echo ${paste(1000)} > /dev/null` } } } : { text: "Done." });
+  assert.equal((await sessions.run(s.id, "Echo some notes.", { maxTurns: 5 })).reason, "error");
+  assert.equal(fake.requests.length, start + 1, "the step after the tool call was refused, not sent");
+  const err = of(s.id, "error").at(-1)!;
+  assert.equal(err.code, "context_overflow");
+  assert.doesNotMatch(err.detail!, /without a reply/, "the message has replies (the tool step)");
+  assert.match(err.detail!, /The run stopped before this step; its steps so far are kept\. Retry runs this step again/);
+
+  await sessions.update(s.id, { contextWindow: err.data!.suggestedWindow as number });
+  sessions.retry(s.id);
+  await settled(s.id);
+  assert.equal(fake.requests.length, start + 2, "the refused step was sent");
+  const req = fake.requests[start + 1];
+  assert.equal(req.messages.at(-1).role, "tool", "from the latest tool result");
+  assert.equal(req.messages.filter((m: { role: string }) => m.role === "user").length, 1, "nothing added");
+  const um = of(s.id, "user_message").at(-1)!;
+  assert.equal(um.retry, "step");
+  assert.equal(um.text, "Echo some notes.");
+  assert.equal(of(s.id, "run_end").at(-1)!.reason, "done");
+  assert.throws(() => sessions.retry(s.id), /nothing to retry/);
 });
 
 test("a new message after a refused one: the trace says whether the model sees the refused one (review 4, #3)", async () => {
@@ -318,4 +345,24 @@ test("PromptCounter: exact with a tokenizer, an estimate that errs high without,
   const es = await e.countSystem(sys);
   assert.equal(es.exact, false);
   assert.ok(es.tokens >= conservativeTokens("You are terse."), `system estimate ${es.tokens}`);
+});
+
+test("PromptCounter: each run's first count may wait for the model to load (evicted since the last run), later ones don't", async () => {
+  const msgs = [{ role: "user", content: "hi", timestamp: 0 }] as AgentMessage[];
+  const body = async (m: unknown[]) => ({ messages: m });
+  const seen: (boolean | undefined)[] = [];
+  let fail = true;
+  const tok = {
+    countChat: async (_b: unknown, _s?: AbortSignal, mayLoad?: boolean) => (seen.push(mayLoad), fail ? Promise.reject(new Error("loading")) : 5),
+    countText: async (_m: string, _t: string, _s?: AbortSignal, mayLoad?: boolean) => (seen.push(mayLoad), 1),
+  };
+  const calibrator = new TokenCalibrator();
+  await new PromptCounter({ modelId: "m", tokenizer: tok, calibrator, body }).count(msgs);
+  fail = false;
+  const run = new PromptCounter({ modelId: "m", tokenizer: tok, calibrator, body });
+  await run.count(msgs);
+  await run.count(msgs);
+  await run.countText("x");
+  await new PromptCounter({ modelId: "m", tokenizer: tok, calibrator, body }).countText("x");
+  assert.deepEqual(seen, [true, true, false, false, true]);
 });

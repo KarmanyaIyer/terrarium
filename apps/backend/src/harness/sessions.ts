@@ -49,6 +49,9 @@ export interface RunOptions {
   timeoutMs?: number;
 }
 
+/** What a Retry runs again (retry()): the unanswered user message, or the step after the latest tool results. */
+type Retry = "message" | "step";
+
 export interface RunOutcome {
   reason: RunEndReason;
   finalText: string;
@@ -430,14 +433,17 @@ export class SessionManager {
   }
 
   /**
-   * Send the latest user message again: the one a refused or failed run left without a reply (e.g. over the context
-   * window, before the window was raised). It stays the current instruction, so compaction never drops it.
+   * Run again what a refused or failed run left without a reply (e.g. over the context window, before the window was
+   * raised): the latest user message ("message"), or the step after its latest tool results ("step"). Nothing is added
+   * to the conversation, so it stays the newest step, which compaction keeps.
    */
   retry(id: string): SessionSummary {
     this.assertNotEval(id);
-    const pending = this.unanswered(this.row(id));
-    if (!pending) throw new HttpError(409, "nothing to retry: the latest message already has a reply");
-    this.startRun(id, textOf((pending as { content: unknown }).content), {}, true);
+    const t = sanitizeTranscript(this.loadTranscript(this.row(id)));
+    const last = t.at(-1);
+    if (last?.role !== "user" && last?.role !== "toolResult") throw new HttpError(409, "nothing to retry: the latest message already has a reply");
+    const message = t.findLast((m) => m.role === "user");
+    this.startRun(id, message ? textOf((message as { content: unknown }).content) : "", {}, last.role === "user" ? "message" : "step");
     return this.get(id);
   }
 
@@ -458,7 +464,7 @@ export class SessionManager {
     return this.startRun(id, text, opts);
   }
 
-  private startRun(id: string, text: string, opts: RunOptions, retry = false): Promise<RunOutcome> {
+  private startRun(id: string, text: string, opts: RunOptions, retry?: Retry): Promise<RunOutcome> {
     const r = this.row(id);
     const live = this.liveFor(id);
     if (live.running) throw new HttpError(409, "session is already running");
@@ -516,7 +522,7 @@ export class SessionManager {
     this.store.run("UPDATE sessions SET transcript_blob = ? WHERE id = ?", blob, id);
   }
 
-  private async runInner(live: Live, text: string, opts: RunOptions, retry = false): Promise<RunOutcome> {
+  private async runInner(live: Live, text: string, opts: RunOptions, retry?: Retry): Promise<RunOutcome> {
     const id = live.id;
     const r = this.row(id);
     const tracer = live.tracer;
@@ -530,7 +536,7 @@ export class SessionManager {
     let timeout: NodeJS.Timeout | undefined;
     const envId = r.harness !== "chat" ? r.env_id : null;
 
-    tracer.emit(retry ? { type: "user_message", text, retry: true } : { type: "user_message", text });
+    tracer.emit(retry ? { type: "user_message", text, retry } : { type: "user_message", text });
     // A new message after one that got no reply: that one becomes an earlier turn, which compaction drops first.
     const earlier = retry ? undefined : this.unanswered(r);
     let earlierFate = false;
@@ -918,7 +924,8 @@ export class SessionManager {
         ? `Raise the context window to ${fmt(need)} (output cap ${fmt(c.maxOutput)})${taskTokens > window / 2 ? ", or send a shorter message" : ""}, then retry.`
         : `This is more than the model's ${fmt(c.model.nativeContext)}-token native context: send a shorter message or start a new session.`,
     );
-    if (task) parts.push("Your message is kept in the conversation without a reply. Retry sends it again; a new message instead sends it as an earlier turn, which compaction drops first.");
+    if (task && msgs.at(-1) === task) parts.push("Your message is kept in the conversation without a reply. Retry sends it again; a new message instead sends it as an earlier turn, which compaction drops first.");
+    else if (task) parts.push("The run stopped before this step; its steps so far are kept. Retry runs this step again; a new message instead starts a new turn, and compaction drops these steps first.");
     return {
       message,
       detail: parts.join("\n"),

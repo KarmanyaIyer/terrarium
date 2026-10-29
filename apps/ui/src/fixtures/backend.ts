@@ -1083,7 +1083,7 @@ export class FixtureBackend implements Backend {
       s.lastSeq,
       this.lastPrompt(id),
     );
-    for (const x of built.steps) if (x.body.type === "user_message") x.body = { ...x.body, retry: true };
+    for (const x of built.steps) if (x.body.type === "user_message") x.body = { ...x.body, retry: "message" };
     this.play(id, built, Date.now());
   }
 

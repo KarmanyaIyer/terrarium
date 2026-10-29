@@ -318,7 +318,7 @@ interface EventBase {
 
 export type TraceEvent = EventBase &
   (
-    | { type: "user_message"; text: string; retry?: true } // retry: the latest message sent again (it is already in the transcript)
+    | { type: "user_message"; text: string; retry?: "message" | "step" } // retry: the unanswered latest message sent again, or the step after the latest tool results run again (both already in the transcript; text is the latest message)
     | { type: "turn_start"; turn: number }
     | {
         type: "model_call_start";

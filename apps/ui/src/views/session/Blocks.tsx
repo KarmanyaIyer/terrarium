@@ -31,7 +31,7 @@ export const UserBlock = memo(function UserBlock({ it, t0 }: { it: UserItem; t0:
     return (
       <div className="row-ev" onClick={() => select({ kind: "event", seq: it.seq })}>
         <RotateCcw size={12} />
-        <span>Sent your message again</span>
+        <span>{it.retry === "step" ? "Ran the refused step again" : "Sent your message again"}</span>
         <span className="dim truncate row-note" title={it.text}>
           {it.text.split("\n")[0]}
         </span>
@@ -628,9 +628,10 @@ function ShortenedLine({ s, d }: { s: ShortenedOutput; d: Derived }) {
 }
 
 /**
- * A message refused as over the window: the remedy the error names, then Retry, which sends the same message again as
- * the current instruction (a new message would make it an earlier turn, which compaction drops first). Only on the
- * latest message, not on eval sessions, and only when compaction can keep the message in the window it sets.
+ * A request refused as over the window: the remedy the error names, then Retry, which makes the same request again (the
+ * unanswered message, or the step after the latest tool results) as the newest step; a new message would make it an
+ * earlier turn, which compaction drops first. Only on the latest turn, not on eval sessions, and only when compaction
+ * can keep the prompt in the window it sets.
  */
 function OverflowActions({ data, session, latest }: { data: Record<string, number | string>; session: SessionSummary; latest: boolean }) {
   const models = useStore((s) => s.models);
@@ -667,7 +668,7 @@ function OverflowActions({ data, session, latest }: { data: Record<string, numbe
           <RotateCcw /> Raise context window to {fmtCtx(raise.contextWindow)} and retry
         </button>
       ) : (
-        <button className="btn primary" disabled={running || !!blocked} title={blocked ? `Can't retry: ${blocked}` : "Send this message again"} onClick={retry}>
+        <button className="btn primary" disabled={running || !!blocked} title={blocked ? `Can't retry: ${blocked}` : "Make the refused request again"} onClick={retry}>
           <RotateCcw /> Retry
         </button>
       )}

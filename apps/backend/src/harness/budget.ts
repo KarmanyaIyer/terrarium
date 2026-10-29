@@ -170,10 +170,10 @@ export interface PromptCount {
   basis?: CountBasis;
 }
 
-/** The server's tokenizer (inference/tokens.ts), or a fake in tests. */
+/** The server's tokenizer (inference/tokens.ts), or a fake in tests. `mayLoad`: the model may need loading first. */
 export interface ChatTokenizer {
-  countChat(body: { model: string; messages: unknown[]; tools?: unknown[]; chat_template_kwargs?: Record<string, unknown> }, signal?: AbortSignal): Promise<number>;
-  countText(model: string, text: string, signal?: AbortSignal): Promise<number>;
+  countChat(body: { model: string; messages: unknown[]; tools?: unknown[]; chat_template_kwargs?: Record<string, unknown> }, signal?: AbortSignal, mayLoad?: boolean): Promise<number>;
+  countText(model: string, text: string, signal?: AbortSignal, mayLoad?: boolean): Promise<number>;
 }
 
 export interface PromptCounterOptions {
@@ -194,6 +194,8 @@ export class PromptCounter {
   /** Tokens the server counted beyond our count on the last call (0 when they agree). */
   private correction = 0;
   private failed: string | null = null;
+  /** A count succeeded this run, so the model is loaded (the first may wait for oMLX to load it). */
+  private counted = false;
 
   constructor(opts: PromptCounterOptions) {
     this.opts = opts;
@@ -262,7 +264,9 @@ export class PromptCounter {
             ...(body.chat_template_kwargs ? { chat_template_kwargs: body.chat_template_kwargs as Record<string, unknown> } : {}),
           },
           this.opts.signal?.(),
+          !this.counted,
         );
+        this.counted = true;
         return { tokens: n + this.correction, exact: true, tokenized: n, basis };
       } catch (err) {
         this.fellBack(err);
@@ -287,7 +291,9 @@ export class PromptCounter {
   async countText(text: string): Promise<PromptCount> {
     if (this.usable) {
       try {
-        return { tokens: await this.opts.tokenizer!.countText(this.opts.modelId, text, this.opts.signal?.()), exact: true };
+        const n = await this.opts.tokenizer!.countText(this.opts.modelId, text, this.opts.signal?.(), !this.counted);
+        this.counted = true;
+        return { tokens: n, exact: true };
       } catch (err) {
         this.fellBack(err);
       }
