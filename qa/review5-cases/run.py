@@ -50,6 +50,10 @@ EXPECT = {
     # 5: identity of values that cross by value
     "tuple_identity": (False, "fail"),
     "tuple_identity_ok": (True, "pass"),
+    "str_identity": (False, "fail"),
+    "str_identity_ok": (True, "pass"),
+    "ident_cache": (False, "fail"),
+    "interned_ok": (True, "pass"),
     # 6: namedtuples (3.13+ adds __replace__)
     "ntuple_replace": (True, "pass"),
 }

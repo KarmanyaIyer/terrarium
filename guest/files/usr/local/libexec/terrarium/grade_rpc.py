@@ -692,6 +692,34 @@ _INF = float("inf")
 _NINF = float("-inf")
 _FLOATS = ("nan", "inf", "-inf")
 _BIG = 1 << BIG_INT_BITS
+# Value keys: sweep every key once the table has grown to this, then at twice what survives.
+VALUE_SWEEP = 4096
+
+
+def _interned_check():
+    """Whether a str is interned (a string another process interns arrives interned, so `x is "lit"` answers as in
+    one process): sys._is_interned (3.13+), else the CPython 3.12 object header read through ctypes, checked here
+    first; else every string counts as not interned."""
+    f = getattr(sys, "_is_interned", None)
+    if f is not None:
+        return f
+    try:
+        import ctypes
+
+        off = 4 * ctypes.sizeof(ctypes.c_ssize_t)  # ob_refcnt, ob_type, length, hash; then the state bits
+        state = ctypes.c_uint32.from_address
+
+        def check(s):
+            return state(id(s) + off).value & 3 != 0
+
+        if check(sys.intern("terrarium_interned_probe")) and not check("".join(["terrarium", "_not_interned"])):
+            return check
+    except Exception:
+        pass
+    return lambda s: False
+
+
+_interned = _interned_check()
 
 
 def _tz(tz):
@@ -711,49 +739,94 @@ def _untz(v):
     return datetime.timezone(off) if v[3] is None else datetime.timezone(off, str(v[3]))
 
 
+class Args(tuple):
+    """A call's arguments (or keyword items): crosses as a plain tuple, without a key (no code sees this tuple)."""
+
+    __slots__ = ()
+
+
 class Encoder:
     """Encodes the values of one message. side._special(enc, v, depth, key) sees every non-scalar first and may
     return its own tag (links, references); plain data goes by value; built-ins by name; anything else through
-    side._objref(enc, v, depth, key). key: v is (part of) a dict key or set element. A tuple or frozenset met
-    twice in a message is sent once and referenced after."""
+    side._objref(enc, v, depth, key). key: v is (part of) a dict key or set element.
+
+    A by-value object keeps its identity across messages: the first time it crosses it gets a key (a JSON list
+    [key, value] for a str, int or float, a "k" field on a tag), after that it crosses as [key], and the other side
+    answers with its own copy. Each side keeps its keyed objects while its code or the other side's may still hold
+    them (Side._vsweep). Objects every process shares need none (small ints, '' and one-character latin-1 strings,
+    ()); nor do numbers in a container's contents (bulk), which would cost a key each for large lists. A tuple,
+    frozenset or namedtuple holding anything but plain data gets none either: keeping it would keep the objects in it
+    alive after the tests (or candidate) let go of them."""
 
     def __init__(self, side, names):
         self.side = side
         self.names = names
-        self.memo = {}  # id -> alias number (tuples, frozensets, exceptions)
+        self.memo = {}  # id -> alias number (exceptions)
         self.busy = set()  # ids being encoded: a tuple inside itself (through a list) can't cross
         self.keep = []  # holds everything in memo, so ids stay theirs for the whole message
         self.nans = {}  # id -> number: one NaN object met twice arrives as one object
+        self.bulk = False  # encoding a container's contents
+        self.vmade = []  # value keys this message made (forgotten if it isn't sent)
+        self.refs = 0  # references (not plain data) encoded so far
 
     def enc(self, v, depth=0, key=False):
         t = type(v)
-        if v is None or t is bool or t is str:
+        if v is None or t is bool:
             return v
+        if t is str:
+            if len(v) < 2 and v < "Ā":
+                return v
+            k = self.side.vkey.get(id(v))
+            if k is not None:
+                return [k]
+            k = self.new_key(v)
+            return [k, v, 1] if _interned(v) else [k, v]
         if t is int:
-            return v if -_BIG < v < _BIG else {"t": "int", "v": format(v, "x")}
+            if -6 < v < 257 or (self.bulk and -_BIG < v < _BIG):
+                return v
+            if self.bulk:
+                return {"t": "int", "v": format(v, "x")}
+            k = self.side.vkey.get(id(v))
+            if k is not None:
+                return [k]
+            return [self.new_key(v), v] if -_BIG < v < _BIG else {"t": "int", "v": format(v, "x"), "k": self.new_key(v)}
         if t is float:
+            if not self.bulk:
+                k = self.side.vkey.get(id(v))
+                if k is not None:
+                    return [k]
             if v != v:
                 self.keep.append(v)
-                return {"t": "float", "v": "nan", "n": self.nans.setdefault(id(v), len(self.nans))}
-            if v in (_INF, _NINF):
-                return {"t": "float", "v": repr(v)}
-            return v
+                tag = {"t": "float", "v": "nan", "n": self.nans.setdefault(id(v), len(self.nans))}
+            elif v in (_INF, _NINF):
+                tag = {"t": "float", "v": repr(v)}
+            else:
+                return v if self.bulk else [self.new_key(v), v]
+            if not self.bulk:
+                tag["k"] = self.new_key(v)
+            return tag
         if depth > MAX_DEPTH:
             raise Unsendable("value nested too deeply")
+        d = depth + 1
+        if t is Args:
+            return {"t": "tuple", "v": [self.enc(x, d) for x in tuple.__iter__(v)]}
         r = self.side._special(self, v, depth, key)
         if r is not None:
+            if type(r) is dict and r["t"] not in _VALUE_TAGS:
+                self.refs += 1
             return r
-        d = depth + 1
         if t is tuple or t is frozenset:
-            return self.aliased(v, lambda: {"t": "tuple" if t is tuple else "frozenset", "v": [self.enc(x, d, key or t is frozenset) for x in v]})
+            if t is tuple and not v:
+                return {"t": "tuple", "v": []}
+            return self.keyed(v, lambda: {"t": "tuple" if t is tuple else "frozenset", "v": [self.enc(x, d, key or t is frozenset) for x in v]})
         if t is bytes:
-            return {"t": "bytes", "v": base64.b64encode(v).decode("ascii")}
+            return self.keyed(v, lambda: {"t": "bytes", "v": base64.b64encode(v).decode("ascii")})
         if t is complex:
-            return {"t": "complex", "v": [self.enc(v.real, d), self.enc(v.imag, d)]}
+            return self.keyed(v, lambda: {"t": "complex", "v": [self.enc(v.real, d), self.enc(v.imag, d)]})
         if t is decimal.Decimal:
-            return {"t": "decimal", "v": str(v)}
+            return self.keyed(v, lambda: {"t": "decimal", "v": str(v)})
         if t is fractions.Fraction:
-            return {"t": "fraction", "v": [self.enc(v.numerator, d), self.enc(v.denominator, d)]}
+            return self.keyed(v, lambda: {"t": "fraction", "v": [self.enc(v.numerator, d), self.enc(v.denominator, d)]})
         if t is datetime.datetime or t is datetime.time:
             tz = v.tzinfo
             spec = None if tz is None else _tz(tz)
@@ -761,21 +834,50 @@ class Encoder:
                 tag = {"t": t.__name__, "v": v.replace(tzinfo=None).isoformat(), "fold": v.fold}
                 if spec is not None:
                     tag["tz"] = spec
-                return tag
+                return self.keyed(v, lambda: tag)
         if t is datetime.date:
-            return {"t": "date", "v": v.isoformat()}
+            return self.keyed(v, lambda: {"t": "date", "v": v.isoformat()})
         if t is datetime.timedelta:
-            return {"t": "timedelta", "v": [v.days, v.seconds, v.microseconds]}
+            return self.keyed(v, lambda: {"t": "timedelta", "v": [v.days, v.seconds, v.microseconds]})
         if t is datetime.timezone:
-            return {"t": "timezone", "v": _tz(v)}
+            return self.keyed(v, lambda: {"t": "timezone", "v": _tz(v)})
         if t is slice:
-            return {"t": "slice", "v": [self.enc(x, d) for x in (v.start, v.stop, v.step)]}
+            return self.keyed(v, lambda: {"t": "slice", "v": [self.enc(x, d) for x in (v.start, v.stop, v.step)]})
         if t is range:
-            return {"t": "range", "v": [self.enc(x, d) for x in (v.start, v.stop, v.step)]}
+            return self.keyed(v, lambda: {"t": "range", "v": [self.enc(x, d) for x in (v.start, v.stop, v.step)]})
         n = self.names.get(id(v))
         if n is not None:
             return {"t": "builtin", "v": n}
+        self.refs += 1
         return self.side._objref(self, v, depth, key)
+
+    def new_key(self, v):
+        side = self.side
+        k = side.next_v
+        side.next_v += side.sign
+        side.vkey[id(v)] = k
+        side.vobj[k] = v
+        side.vnew.append(k)
+        self.vmade.append(k)
+        return k
+
+    def keyed(self, v, build):
+        """build()'s tag for by-value object v with its new key (if it holds only plain data), or [key] if v crossed
+        before."""
+        k = self.side.vkey.get(id(v))
+        if k is not None:
+            return [k]
+        if id(v) in self.busy:
+            raise Unsendable("a %s that contains itself can't be sent" % type(v).__name__)
+        self.busy.add(id(v))
+        refs = self.refs
+        try:
+            tag = build()
+        finally:
+            self.busy.discard(id(v))
+        if self.refs == refs:
+            tag["k"] = self.new_key(v)
+        return tag
 
     def aliased(self, v, build):
         """build()'s tag for v, or an alias to it if v was already sent in this message."""
@@ -796,6 +898,10 @@ class Encoder:
         return tag
 
 
+# Tags _special() gives for plain data (no reference to an object a side must keep alive).
+_VALUE_TAGS = frozenset(("ntuple", "senum"))
+
+
 class Decoder:
     """Inverse of Encoder for one message; never runs sent code. side._container(dec, tag, kind, depth) builds a
     linked container, side._resolve(dec, tag, depth) every other side-specific tag. after: calls to make once
@@ -811,6 +917,8 @@ class Decoder:
     def dec(self, x, depth=0):
         if x is None or isinstance(x, (bool, int, float, str)):
             return x
+        if type(x) is list:
+            return self.side._vin(x)
         if depth > MAX_DEPTH + 4:
             raise ProtocolError("value nested too deeply")
         if not isinstance(x, dict) or not isinstance(x.get("t"), str):
@@ -831,42 +939,42 @@ class Decoder:
             if t == "frozenset":
                 return self.register(x, frozenset([self.dec(i, d) for i in v]))
             if t == "bytes":
-                return base64.b64decode(v, validate=True)
+                return self.register(x, base64.b64decode(v, validate=True))
             if t == "int":
                 if not isinstance(v, str) or len(v) > MAX_MSG:
                     raise ProtocolError("bad int")
-                return int(v, 16)
+                return self.register(x, int(v, 16))
             if t == "float":
                 if v not in _FLOATS:
                     raise ProtocolError("bad float")
                 n = x.get("n")
                 if v != "nan" or type(n) is not int:
-                    return float(v)
+                    return self.register(x, float(v))
                 # Separately computed NaNs are separate objects; one sent twice in a message stays one.
                 if n not in self.nans:
                     self.nans[n] = float(v)
-                return self.nans[n]
+                return self.register(x, self.nans[n])
             if t == "complex":
-                return complex(self.number(v[0], d), self.number(v[1], d))
+                return self.register(x, complex(self.number(v[0], d), self.number(v[1], d)))
             if t == "decimal":
-                return decimal.Decimal(str(v))
+                return self.register(x, decimal.Decimal(str(v)))
             if t == "fraction":
-                return fractions.Fraction(self.number(v[0], d), self.number(v[1], d))
+                return self.register(x, fractions.Fraction(self.number(v[0], d), self.number(v[1], d)))
             if t in ("datetime", "time"):
                 out = getattr(datetime, t).fromisoformat(str(v))
                 if "tz" in x:
                     out = out.replace(tzinfo=_untz(x["tz"]))
-                return out.replace(fold=1) if x.get("fold") == 1 else out
+                return self.register(x, out.replace(fold=1) if x.get("fold") == 1 else out)
             if t == "date":
-                return datetime.date.fromisoformat(str(v))
+                return self.register(x, datetime.date.fromisoformat(str(v)))
             if t == "timedelta":
-                return datetime.timedelta(days=int(v[0]), seconds=int(v[1]), microseconds=int(v[2]))
+                return self.register(x, datetime.timedelta(days=int(v[0]), seconds=int(v[1]), microseconds=int(v[2])))
             if t == "timezone":
-                return _untz(v)
+                return self.register(x, _untz(v))
             if t == "slice":
-                return slice(self.dec(v[0], d), self.dec(v[1], d), self.dec(v[2], d))
+                return self.register(x, slice(self.dec(v[0], d), self.dec(v[1], d), self.dec(v[2], d)))
             if t == "range":
-                return range(self.number(v[0], d), self.number(v[1], d), self.number(v[2], d))
+                return self.register(x, range(self.number(v[0], d), self.number(v[1], d), self.number(v[2], d)))
             if t == "builtin":
                 obj = self.names.get(v) if isinstance(v, str) else None
                 if obj is None:
@@ -896,6 +1004,9 @@ class Decoder:
             if type(a) is not int or a in self.alias:
                 raise ProtocolError("bad alias")
             self.alias[a] = obj
+        k = x.get("k")
+        if k is not None:
+            self.side._vput(k, obj)
         return obj
 
 
@@ -909,10 +1020,11 @@ _RAW = frozenset((int, str, float, bool, type(None)))
 
 
 def _raw_items(items):
-    """items as plain JSON values when that is exact and cheap to tell (all small ints, or all strings), else None."""
+    """items as plain JSON values when that is exact and cheap to tell (all ints in JSON's range, or all strings every
+    process shares: '' and one latin-1 character), else None."""
     ts = set(map(type, items))
     if ts <= _STRS:
-        return list(items)
+        return list(items) if not items or (max(map(len, items)) < 2 and max(items) < "\u0100") else None
     if ts <= _INTS and (not items or (-_BIG < min(items) and max(items) < _BIG)):
         return list(items)
     return None
@@ -955,10 +1067,77 @@ class Side:
         self.links[0] = []
         self.free = self._refs(0)
         del self.links[0]
+        # By-value objects that crossed (Encoder): key -> object, id -> key. Keys are numbered like links.
+        self.vobj = {}
+        self.vkey = {}
+        self.next_v = sign
+        self.vnew = []  # keys made or received since this side last sent
+        self.vlast = []  # keys made or received before that: measured at this send
+        self.vdrops = []  # keys this side forgot, for the other side to forget too
+        self.vsweep_at = VALUE_SWEEP
+        self.vobj[0] = float("nan")
+        self.vfree = self._vrefs(0)
+        del self.vobj[0]
 
     def _refs(self, n):
         obj = self.links[n]
         return sys.getrefcount(obj)
+
+    def _vrefs(self, k):
+        obj = self.vobj.get(k)
+        return 0 if obj is None else sys.getrefcount(obj)
+
+    def _vin(self, x):
+        """A keyed value from the other side: [key] (one that crossed before) or [key, value] / [key, str, 1]
+        (interned) for a str, int or float crossing the first time."""
+        n = len(x)
+        k = x[0] if n else None
+        if type(k) is not int:
+            raise ProtocolError("bad value key")
+        if n == 1:
+            obj = self.vobj.get(k)
+            if obj is None:
+                raise ProtocolError("unknown value key")
+            return obj
+        obj = x[1] if n in (2, 3) else None
+        t = type(obj)
+        if t is not str and t is not int and t is not float:
+            raise ProtocolError("bad keyed value")
+        if n == 3:
+            if x[2] != 1 or t is not str:
+                raise ProtocolError("bad keyed value")
+            obj = sys.intern(obj)
+        self._vput(k, obj)
+        return obj
+
+    def _vput(self, k, obj):
+        """Register the other side's key k for obj, this side's copy of its object."""
+        if type(k) is not int or k * self.sign >= 0 or k in self.vobj:
+            raise ProtocolError("bad value key")
+        self.vobj[k] = obj
+        self.vkey.setdefault(id(obj), k)
+        self.vnew.append(k)
+
+    def _vforget(self, k):
+        obj = self.vobj.pop(k, None)
+        if obj is not None and self.vkey.get(id(obj)) == k:
+            del self.vkey[id(obj)]
+
+    def _vsweep(self):
+        """Forget keyed objects this side's code no longer holds (the table's is the only reference): this side can't
+        compare them with anything again, so the other side may forget its copy's key too, whoever holds that. Keys
+        are measured one send after they appear (most are a call's arguments or result, gone by then); all of them
+        once the table doubles."""
+        full = len(self.vobj) >= self.vsweep_at
+        todo = list(self.vobj) if full else self.vlast
+        self.vlast, self.vnew = [] if full else self.vnew, []
+        free, refs, drops = self.vfree, self._vrefs, self.vdrops
+        for k in todo:
+            if refs(k) == free:
+                self._vforget(k)
+                drops.append(k)
+        if full:
+            self.vsweep_at = max(VALUE_SWEEP, 2 * len(self.vobj))
 
     def _holds(self, n, cache):
         """Whether this side's code can reach link n: it is in the storage of a link this side holds, or something
@@ -1088,7 +1267,14 @@ class Side:
         return obj
 
     def _contents(self, enc, obj, base, depth):
-        """The tag carrying container obj's own contents, read through base."""
+        """The tag carrying container obj's own contents, read through base (numbers in it unkeyed: Encoder)."""
+        bulk, enc.bulk = enc.bulk, True
+        try:
+            return self._contents_bulk(enc, obj, base, depth)
+        finally:
+            enc.bulk = bulk
+
+    def _contents_bulk(self, enc, obj, base, depth):
         d = depth + 1
         e = enc.enc
         if base is list:
@@ -1179,6 +1365,9 @@ class Side:
                 seen = len(self.refd)
         obj = None
         self._sweep()
+        self._vsweep()
+        if self.vdrops:
+            msg["vdrop"], self.vdrops = self.vdrops, []
         if sync:
             msg["sync"] = sync
         if self.to_report:
@@ -1244,10 +1433,12 @@ class Side:
             for n, base, new in updates:
                 store(self.links[n], base, new)
                 self._snap(n)
-        for key in ("held", "loose", "unlink"):
+        for key in ("held", "loose", "unlink", "vdrop"):
             v = msg.get(key)
             if v is not None and not (isinstance(v, list) and all(type(n) is int for n in v)):
                 raise ProtocolError("bad %s list" % key)
+        for k in msg.get("vdrop") or ():
+            self._vforget(k)
         for n in msg.get("held") or ():
             if n in self.links:
                 self.other.add(n)
@@ -1434,7 +1625,7 @@ def _forward(name):
 
         def method(self, *args, **kwargs):
             c, rid = _target(self)
-            return c.call("call", [self, args, tuple(kwargs.items())])
+            return c.call("call", [self, Args(args), Args(map(Args, kwargs.items()))])
 
     else:
 
@@ -1587,7 +1778,7 @@ def _m_call(cls, *args, **kwargs):
     info = _info(cls)
     if info is None:
         return type.__call__(cls, *args, **kwargs)
-    return info[0].call("call", [cls, args, tuple(kwargs.items())])
+    return info[0].call("call", [cls, Args(args), Args(map(Args, kwargs.items()))])
 
 
 def _m_new(meta, name, bases, ns, **kw):
@@ -2011,7 +2202,7 @@ class Client(Side):
         fields = ntuple_fields(t)
         if fields is not None and t is not tuple and _plain_ntuple(t):
             self.ntuples[(t.__name__, fields)] = t
-            return {"t": "ntuple", "n": t.__name__, "f": list(fields), "v": [enc.enc(x, depth + 1, key) for x in tuple.__iter__(v)]}
+            return enc.keyed(v, lambda: {"t": "ntuple", "n": t.__name__, "f": list(fields), "v": [enc.enc(x, depth + 1, key) for x in tuple.__iter__(v)]})
         if _is_std_enum(t):
             return {"t": "senum", "c": type_path(t), "n": v._name_}
         return None
@@ -2363,6 +2554,8 @@ class Client(Side):
         except BaseException:
             for n in self.made:
                 self._unlink(n)
+            for k in enc.vmade:
+                self._vforget(k)
             self.refd = set()
             self.state = saved
             raise
@@ -2559,7 +2752,7 @@ class TestObject:
     def __call__(self, *args, **kwargs):
         if not self._f.get("call"):
             raise TypeError("'%s' object is not callable" % self._f.get("type", "object"))
-        return self._srv.call_back("call", [self, args, tuple(kwargs.items())])
+        return self._srv.call_back("call", [self, Args(args), Args(map(Args, kwargs.items()))])
 
     def __get__(self, obj, cls=None):
         if obj is None or not self._f.get("fn"):
@@ -2818,7 +3011,7 @@ class Server(Side):
             return None
         key_ = self.ntuple_keys.get(t)
         if key_ is not None:
-            return {"t": "ntuple", "n": key_[0], "f": list(key_[1]), "v": [enc.enc(x, depth + 1, key) for x in tuple.__iter__(v)]}
+            return enc.keyed(v, lambda: {"t": "ntuple", "n": key_[0], "f": list(key_[1]), "v": [enc.enc(x, depth + 1, key) for x in tuple.__iter__(v)]})
         if isinstance(v, type):
             return self._class_tag(enc, v, depth)
         if isinstance(v, BaseException):
@@ -3296,6 +3489,8 @@ class Server(Side):
             except BaseException as e:  # noqa: B036 - candidate code may run while encoding
                 for n in self.made:
                     self._unlink(n)
+                for k in enc.vmade:
+                    self._vforget(k)
                 self.refd = set()
                 if "rep" not in msg:
                     raise
@@ -3324,13 +3519,14 @@ class Server(Side):
             st = msg.get("st")
             if isinstance(st, dict):
                 st = dict(st)
-                for name in ("print", "input", "argv"):
-                    if st.get(name) is not None:
-                        st[name] = dec.dec(st[name])
+                # In the order the tests' side encoded them (a value's key comes before references to it).
                 for name in ("stdout", "stderr", "stdin"):
                     v = st.get(name)
                     if isinstance(v, list) and len(v) >= 2:
                         st[name] = v[:-1] + [dec.dec(v[-1])]
+                for name in ("print", "input", "argv"):
+                    if st.get(name) is not None:
+                        st[name] = dec.dec(st[name])
                 ws = st.get("warnings")
                 if ws is not None:
                     if not (isinstance(ws, list) and len(ws) == 3):
