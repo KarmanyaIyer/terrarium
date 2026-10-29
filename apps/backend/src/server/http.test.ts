@@ -52,7 +52,7 @@ test("token is required and compared exactly", async () => {
   const ok = await req("/api/state", { headers: auth });
   assert.equal(ok.status, 200);
   const state = JSON.parse(ok.body);
-  assert.deepEqual(Object.keys(state).sort(), ["budget", "envs", "evalRuns", "inference", "models", "sessions", "versions"]);
+  assert.deepEqual(Object.keys(state).sort(), ["budget", "downloads", "envs", "evalRuns", "inference", "models", "sessions", "settings", "versions"]);
 });
 
 test("Host must be exactly 127.0.0.1:<port> or localhost:<port>", async () => {
