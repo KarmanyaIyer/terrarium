@@ -108,7 +108,7 @@ export function EnvTab({ env }: { env: EnvSummary }) {
       </div>
 
       <div className="env-actions">
-        {env.status === "stopped" || env.status === "error" ? (
+        {env.released ? null : env.status === "stopped" || env.status === "error" ? (
           <button className="btn sm" disabled={busy} onClick={() => void act("Start", (b) => b.startEnv(env.id)).then(putEnv)}>
             <Play /> Start
           </button>
@@ -117,19 +117,24 @@ export function EnvTab({ env }: { env: EnvSummary }) {
             <Square /> Stop
           </button>
         )}
-        <SnapshotButton env={env} onDone={() => setRev((r) => r + 1)} />
-        <button className="btn sm" disabled={busy} onClick={() => void act("Fork", (b) => b.forkEnv(env.id, {})).then((e) => e && openEnv(e.id))}>
-          <GitFork /> Fork
-        </button>
-        <ConfirmButton
-          small
-          label="Reset"
-          icon={<RotateCcw />}
-          confirmLabel={env.baseSnapshotId ? "Reset to base snapshot" : "Reset to clean image"}
-          disabled={busy || running}
-          title="Discard all changes in this environment"
-          onConfirm={() => act("Reset", (b) => b.resetEnv(env.id, {})).then(putEnv)}
-        />
+        {/* a released eval fork has no storage left to start, snapshot, fork or reset */}
+        {!env.released && (
+          <>
+            <SnapshotButton env={env} onDone={() => setRev((r) => r + 1)} />
+            <button className="btn sm" disabled={busy} onClick={() => void act("Fork", (b) => b.forkEnv(env.id, {})).then((e) => e && openEnv(e.id))}>
+              <GitFork /> Fork
+            </button>
+            <ConfirmButton
+              small
+              label="Reset"
+              icon={<RotateCcw />}
+              confirmLabel={env.baseSnapshotId ? "Reset to base snapshot" : "Reset to clean image"}
+              disabled={busy || running}
+              title="Discard all changes in this environment"
+              onConfirm={() => act("Reset", (b) => b.resetEnv(env.id, {})).then(putEnv)}
+            />
+          </>
+        )}
         <ConfirmButton
           small
           className="danger"
@@ -144,22 +149,26 @@ export function EnvTab({ env }: { env: EnvSummary }) {
       <div className="env-net">
         <NetIcon mode={env.network} size={13} />
         <span className="dim">Network</span>
-        <Segmented<NetworkMode>
-          small
-          value={env.network}
-          onChange={(v) => void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then(putEnv)}
-          options={[
-            { value: "off", label: "Off", title: "Every connection denied" },
-            { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN" },
-            { value: "web", label: "Web", title: "Public HTTP/HTTPS; private, loopback, link-local ranges still denied" },
-          ]}
-        />
+        {env.released ? (
+          <span>{env.network}</span>
+        ) : (
+          <Segmented<NetworkMode>
+            small
+            value={env.network}
+            onChange={(v) => void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then(putEnv)}
+            options={[
+              { value: "off", label: "Off", title: "Every connection denied" },
+              { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN" },
+              { value: "web", label: "Web", title: "Public HTTP/HTTPS; private, loopback, link-local ranges still denied" },
+            ]}
+          />
+        )}
       </div>
 
       <section className="env-sec">
         <h3>Facts</h3>
         {!f ? (
-          <div className="dim">{env.status === "starting" ? "Gathering from the environment" : "Not gathered yet; start the environment"}</div>
+          <div className="dim">{env.status === "starting" ? "Gathering from the environment" : "Not gathered"}</div>
         ) : (
           <dl className="kv facts">
             <dt>Isolation</dt>
@@ -351,7 +360,7 @@ export function EnvTab({ env }: { env: EnvSummary }) {
                       <span className={`chip ${s.kind === "factory" ? "" : s.kind === "auto" ? "accent" : ""}`}>{s.kind}</span> {fmtBytes(s.bytes)} <Time ts={s.createdAt} />
                     </div>
                   </div>
-                  <div className="snap-actions">
+                  <div className="snap-actions" hidden={env.released}>
                     <ConfirmButton
                       small
                       className="ghost"

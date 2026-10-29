@@ -29,6 +29,12 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
   const pop = usePop();
   const running = s.status === "running";
   const cur = HARNESS.find((h) => h.id === s.harness);
+  if (s.evalRunId)
+    return (
+      <span className="hdr-btn static" title={`Harness: ${cur?.title ?? s.harness}`}>
+        <span className="dim">harness</span> {s.harness}
+      </span>
+    );
   return (
     <>
       <button ref={pop.ref} className="hdr-btn" onClick={pop.toggle} title={`Harness: ${cur?.title ?? s.harness}`}>
@@ -140,7 +146,7 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
         {env ? (
           <button className="hdr-btn env" onClick={() => openEnv(env.id, "env")} title={env.facts?.isolation ?? env.name}>
             <span className={`dot ${env.status}`} />
-            {env.name}
+            <span className="truncate">{env.name}</span>
             <EnvChip type={env.type} />
           </button>
         ) : (
@@ -150,14 +156,26 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
         )}
         <ModelPicker session={s} />
         <HarnessPicker s={s} />
-        <Switch
-          on={s.thinking}
-          label="Thinking"
-          disabled={running || model?.thinking === "none"}
-          title={model?.thinking === "none" ? `${model.name} has no thinking mode` : "enable_thinking in the chat template; thinking tokens count against the output cap"}
-          onChange={(v) => patchSession(s.id, { thinking: v })}
-        />
-        {env && (
+        {s.evalRunId ? (
+          <span className="hdr-btn static">
+            <span className="dim">thinking</span> {s.thinking ? "on" : "off"}
+          </span>
+        ) : (
+          <Switch
+            on={s.thinking}
+            label="Thinking"
+            disabled={running || model?.thinking === "none"}
+            title={model?.thinking === "none" ? `${model.name} has no thinking mode` : "enable_thinking in the chat template; thinking tokens count against the output cap"}
+            onChange={(v) => patchSession(s.id, { thinking: v })}
+          />
+        )}
+        {env && s.evalRunId && (
+          <span className="hdr-btn static">
+            <NetIcon mode={env.network} />
+            <span className="dim">network</span> {env.network}
+          </span>
+        )}
+        {env && !s.evalRunId && (
           <div className="hdr-net">
             <NetIcon mode={env.network} />
             <Segmented<NetworkMode>

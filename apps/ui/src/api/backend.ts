@@ -63,6 +63,7 @@ export interface Backend {
   getNet(id: Id, limit?: number): Promise<NetEntry[]>;
 
   createSession(req: CreateSessionRequest): Promise<SessionSummary>;
+  getSession(id: Id): Promise<SessionSummary>;
   updateSession(id: Id, req: UpdateSessionRequest): Promise<SessionSummary>;
   getEvents(id: Id, after?: number): Promise<TraceEvent[]>;
   sendMessage(id: Id, text: string): Promise<void>;

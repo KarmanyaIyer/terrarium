@@ -51,6 +51,8 @@ export interface Trace {
   error?: string;
   live: Record<string, LiveCall>; // by callId, until assistant_message arrives
   liveOut: Record<string, OutChunk[]>; // by toolCallId, until tool_end arrives
+  // calls and tool calls that started while this trace was subscribed: their live buffers hold every chunk
+  whole: Record<string, true>;
 }
 
 export interface Toast {
@@ -94,7 +96,9 @@ export interface Store extends Prefs {
 
   traces: Record<Id, Trace>;
   samples: ResourceSample[];
-  net: Record<Id, NetEntry[]>; // by env
+  net: Record<Id, NetEntry[]>; // by env, oldest latest-attempt first
+  netLimit: Record<Id, number>; // rows asked for; a response that long may have left older rows out
+  netCapped: Record<Id, boolean>;
   evalDetails: Record<Id, EvalRunDetail>;
   suites: EvalSuite[] | null;
 
@@ -125,6 +129,8 @@ export const useStore = create<Store>()(() => ({
   traces: {},
   samples: [],
   net: {},
+  netLimit: {},
+  netCapped: {},
   evalDetails: {},
   suites: null,
   view: { kind: "home" },
@@ -187,9 +193,11 @@ export async function act<T>(label: string, fn: (b: Backend) => Promise<T>): Pro
 // ---------- hydrate + live updates ----------
 
 function hydrate(state: AppState) {
+  // the state lists no eval case sessions; keep the ones fetched when opened
+  const evalSessions = Object.values(get().sessions).filter((x) => x.evalRunId);
   set({
     envs: Object.fromEntries(state.envs.map((x) => [x.id, x])),
-    sessions: Object.fromEntries(state.sessions.map((x) => [x.id, x])),
+    sessions: Object.fromEntries([...evalSessions, ...state.sessions].map((x) => [x.id, x])),
     models: state.models,
     inference: state.inference,
     budget: state.budget,
@@ -203,18 +211,23 @@ let disconnect: (() => void) | null = null;
 
 export async function startBackend(backend: Backend) {
   disconnect?.();
-  set({ backend, conn: "connecting", ready: false, traces: {}, samples: [], net: {}, evalDetails: {}, suites: null });
+  subscribed = new Set();
+  set({ backend, conn: "connecting", ready: false, traces: {}, samples: [], net: {}, netLimit: {}, netCapped: {}, evalDetails: {}, suites: null });
   disconnect = backend.connect({
     onMessage: handleMessage,
     onStatus: (conn, detail) => {
       const was = get().conn;
       set({ conn, connDetail: detail });
-      if (conn === "open" && was !== "open") void resync();
+      if (conn === "open" && was !== "open") {
+        // deltas sent while the socket was down are gone; the persisted events come back through fillGap
+        for (const id of subscribed) resetLive(id);
+        void resync();
+      }
     },
   });
 }
 
-/** After (re)connect: refresh state and fill gaps in every loaded trace. */
+/** After (re)connect: refresh state, fill gaps in every loaded trace, reload every loaded network log. */
 async function resync() {
   const b = get().backend;
   if (!b) return;
@@ -224,6 +237,7 @@ async function resync() {
     set({ connDetail: `GET /api/state failed: ${String(err)}` });
   }
   for (const id of Object.keys(get().traces)) void fillGap(id);
+  for (const envId of Object.keys(get().net)) void loadNet(envId);
   syncSubscriptions();
 }
 
@@ -260,9 +274,8 @@ function handleMessage(msg: WsMessage) {
       set((s) => {
         const cur = s.net[msg.entry.envId];
         if (!cur) return {};
-        // A known id is a repeat count update for a collapsed row.
-        if (cur.some((x) => x.id === msg.entry.id)) return { net: { ...s.net, [msg.entry.envId]: cur.map((x) => (x.id === msg.entry.id ? msg.entry : x)) } };
-        return { net: { ...s.net, [msg.entry.envId]: [...cur, msg.entry] } };
+        // A known id is a repeat of a collapsed row: it moves to the end, where its latest attempt now sorts.
+        return { net: { ...s.net, [msg.entry.envId]: [...cur.filter((x) => x.id !== msg.entry.id), msg.entry] } };
       });
       break;
     case "env_fs":
@@ -313,7 +326,13 @@ export function onEnvFs(fn: (envId: Id) => void) {
 }
 
 function emptyTrace(): Trace {
-  return { events: [], contiguous: 0, loaded: false, live: {}, liveOut: {} };
+  return { events: [], contiguous: 0, loaded: false, live: {}, liveOut: {}, whole: {} };
+}
+
+/** Live buffers that missed chunks (trace not subscribed, socket down) are dropped rather than shown with a hole. */
+function resetLive(id: Id) {
+  const t = get().traces[id];
+  if (t && (Object.keys(t.live).length || Object.keys(t.liveOut).length || Object.keys(t.whole).length)) putTrace(id, { ...t, live: {}, liveOut: {}, whole: {} });
 }
 
 function onTrace(ev: TraceEvent) {
@@ -322,8 +341,12 @@ function onTrace(ev: TraceEvent) {
     const s = get().sessions[ev.sessionId];
     if (s) set((st) => ({ sessions: { ...st.sessions, [s.id]: { ...s, context: ev.usage } } }));
   }
-  const t = get().traces[ev.sessionId];
+  let t = get().traces[ev.sessionId];
   if (!t) return; // not loaded; ignore stray events
+  if (ev.type === "model_call_start" || ev.type === "tool_start") {
+    t = { ...t, whole: { ...t.whole, [ev.type === "tool_start" ? ev.toolCallId : ev.callId]: true } };
+    putTrace(ev.sessionId, t);
+  }
 
   if (STREAMED.has(ev.type)) {
     if (ev.type === "model_delta") {
@@ -404,10 +427,16 @@ function mergeEvents(id: Id, incoming: TraceEvent[]) {
 }
 
 const gapInflight = new Set<Id>();
+const gapAgain = new Set<Id>();
+/** Fetches every persisted event after the last contiguous one; a request made while one is in flight runs after it. */
 async function fillGap(id: Id) {
   const b = get().backend;
   const t = get().traces[id];
-  if (!b || !t || gapInflight.has(id)) return;
+  if (!b || !t) return;
+  if (gapInflight.has(id)) {
+    gapAgain.add(id);
+    return;
+  }
   gapInflight.add(id);
   try {
     const evs = await b.getEvents(id, t.contiguous || undefined);
@@ -416,6 +445,7 @@ async function fillGap(id: Id) {
     /* next reconnect retries */
   } finally {
     gapInflight.delete(id);
+    if (gapAgain.delete(id)) void fillGap(id);
   }
 }
 
@@ -423,7 +453,11 @@ export async function loadTrace(id: Id, force = false) {
   const b = get().backend;
   if (!b) return;
   const cur = get().traces[id];
-  if (cur?.loaded && !force) return;
+  // Only the open session is subscribed, so a trace loaded earlier misses whatever happened while another was open.
+  if (cur?.loaded && !force) {
+    syncSubscriptions();
+    return fillGap(id);
+  }
   if (!cur) putTrace(id, emptyTrace());
   syncSubscriptions();
   try {
@@ -437,30 +471,44 @@ export async function loadTrace(id: Id, force = false) {
   }
 }
 
+let subscribed = new Set<Id>();
+
 /** The open session gets trace events; others only get `session` summaries. */
 export function syncSubscriptions() {
   const s = get();
   const ids = new Set<Id>();
   if (s.view.kind === "session") ids.add(s.view.id);
+  for (const id of ids) if (!subscribed.has(id)) resetLive(id);
+  subscribed = ids;
   s.backend?.subscribe([...ids]);
 }
 
 // ---------- navigation ----------
 
-export function openSession(id: Id, sel?: Selection) {
+/** The inspector shows the open session's env. */
+function followEnv(sess: SessionSummary) {
   const s = get();
-  const sess = s.sessions[id];
   set({
-    view: { kind: "session", id },
-    selection: sel ?? null,
-    filesFocus: null,
-    inspectorEnvId: sess ? sess.envId : s.inspectorEnvId,
-    expandedEnvs: sess?.envId ? { ...s.expandedEnvs, [sess.envId]: true } : s.expandedEnvs,
+    inspectorEnvId: sess.envId,
+    expandedEnvs: sess.envId ? { ...s.expandedEnvs, [sess.envId]: true } : s.expandedEnvs,
   });
-  if (!sess?.envId && (s.inspectorTab === "files" || s.inspectorTab === "network" || s.inspectorTab === "shell"))
-    set({ inspectorTab: "request" });
+  if (!sess.envId && (s.inspectorTab === "files" || s.inspectorTab === "network" || s.inspectorTab === "shell")) set({ inspectorTab: "request" });
+}
+
+export function openSession(id: Id, sel?: Selection) {
+  const sess = get().sessions[id];
+  set({ view: { kind: "session", id }, selection: sel ?? null, filesFocus: null });
+  if (sess) followEnv(sess);
   void loadTrace(id);
   syncSubscriptions();
+  // eval case sessions are not in /api/state: fetch the summary, then follow its env
+  if (!sess)
+    void act("Session", (b) => b.getSession(id)).then((x) => {
+      if (!x) return;
+      set((st) => ({ sessions: { ...st.sessions, [x.id]: x } }));
+      const v = get().view;
+      if (v.kind === "session" && v.id === id) followEnv(x);
+    });
 }
 
 export function openView(view: View) {
@@ -501,16 +549,31 @@ export function currentSession(): SessionSummary | undefined {
   return s.view.kind === "session" ? s.sessions[s.view.id] : undefined;
 }
 
-export async function loadNet(envId: Id) {
+export const NET_LIMIT = 1000;
+export const NET_LIMIT_MAX = 5000; // the backend's cap per request
+
+const latestAttempt = (e: NetEntry) => e.lastTs ?? e.ts;
+
+/** Newest `limit` rows by latest attempt (the backend's order), merged with live rows that arrived meanwhile. */
+export async function loadNet(envId: Id, limit = get().netLimit[envId] ?? NET_LIMIT) {
   const b = get().backend;
   if (!b) return;
   try {
-    const entries = await b.getNet(envId, 1000);
+    const entries = await b.getNet(envId, limit);
     set((s) => {
-      const live = s.net[envId] ?? [];
-      const ids = new Set(entries.map((x) => x.id));
-      const merged = [...entries, ...live.filter((x) => !ids.has(x.id))].sort((a, b) => a.ts - b.ts);
-      return { net: { ...s.net, [envId]: merged } };
+      const fetched = new Map(entries.map((x) => [x.id, x]));
+      // a live row newer than the fetched copy (more repeats) wins
+      const live = (s.net[envId] ?? []).filter((x) => {
+        const f = fetched.get(x.id);
+        if (f && latestAttempt(x) > latestAttempt(f)) fetched.delete(x.id);
+        return !fetched.has(x.id);
+      });
+      const merged = [...fetched.values(), ...live].sort((a, b) => latestAttempt(a) - latestAttempt(b));
+      return {
+        net: { ...s.net, [envId]: merged },
+        netLimit: { ...s.netLimit, [envId]: limit },
+        netCapped: { ...s.netCapped, [envId]: entries.length >= limit },
+      };
     });
   } catch (err) {
     toast(`Network log: ${String(err)}`);

@@ -1,16 +1,17 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, CircleX, FileDiff, Loader2, Minimize2, Play, Wrench } from "lucide-react";
-import type { SessionSummary } from "@terrarium/shared";
+import type { SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
 import type { CallItem, Derived, RowItem, ToolItem, UserItem } from "../../lib/trace";
 import { argsObj, changeCounts, toolFailed, toolKind, toolLabel } from "../../lib/trace";
 import { act, select, showFilesFor, useStore } from "../../state/store";
-import { exactTime, fmtBytes, fmtInt, fmtMs, fmtTok, fmtTps, offsetTime } from "../../lib/format";
+import { exactTime, fmtBytes, fmtCtx, fmtInt, fmtMs, fmtTok, fmtTps, offsetTime } from "../../lib/format";
+import { CONTEXT_CHOICES, estimate } from "../../lib/memory";
 import { Markdown } from "../../components/Markdown";
 import { partialFields } from "../../lib/partialJson";
 import { ansiSpans, stripAnsi } from "../../components/Ansi";
 import { DiffView } from "../../components/DiffView";
 import { CopyButton, Expander, useNow } from "../../components/ui";
-import { modelName } from "../../components/ModelPicker";
+import { fitLabel, modelName } from "../../components/ModelPicker";
 
 function Stamp({ ts, t0 }: { ts: number; t0: number }) {
   return (
@@ -144,6 +145,11 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
             <>
               <span>{fmtInt(it.start.promptTokensEst)} →</span>
               <span className="live-count">{pending ? "prefill" : `${fmtInt(liveTok)} tok`}</span>
+              {it.livePartial && (
+                <span className="chip warn" title="Opened mid-reply: what streamed before is not shown until the reply ends">
+                  partial
+                </span>
+              )}
               <span className="dim">{fmtMs(now - it.start.ts)}</span>
             </>
           ) : (
@@ -338,6 +344,11 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
         <span className="blk-spacer" />
         {live ? (
           <span className="tool-status num">
+            {it.livePartial && (
+              <span className="chip warn" title="Opened mid-run: output from before is not shown until the call ends">
+                partial
+              </span>
+            )}
             <Loader2 size={11} className="spin" /> {fmtMs(now - it.start.ts)}
           </span>
         ) : (
@@ -428,27 +439,50 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
 
 // ---------- rows ----------
 
+function patchSession(label: string, id: string, p: UpdateSessionRequest) {
+  void act(label, (b) => b.updateSession(id, p)).then((s) => {
+    if (s) useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
+  });
+}
+
 function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSummary; d: Derived }) {
+  const models = useStore((s) => s.models);
+  const sample = useStore((s) => s.samples[s.samples.length - 1]);
+  const memBudget = useStore((s) => s.budget);
   if (it.event.type !== "warning") return null;
   const data = it.event.data ?? {};
   const n = (k: string) => (typeof data[k] === "number" ? (data[k] as number) : undefined);
+  // the call this warning is about: the last one that ended before it
+  let call: CallItem | undefined;
+  for (const c of d.calls) if (c.end && c.end.seq < it.seq) call = c;
+  const usage = call?.end?.usage;
   const window = n("contextWindow") ?? session.contextWindow;
-  const prompt = n("promptTokens");
+  const prompt = n("promptTokens") ?? usage?.promptTokens;
+  // maxTokens is this call's budget: the output cap, or less when the prompt left less room in the window
+  const budget = n("maxTokens") ?? call?.start.maxTokens ?? session.maxOutputTokens;
   const cap = n("maxOutputTokens") ?? session.maxOutputTokens;
-  const gen = n("completionTokens");
-  const reasoning = n("reasoningTokens");
+  const byWindow = budget < cap;
+  const gen = n("completionTokens") ?? usage?.completionTokens;
+  const reasoning = n("reasoningTokens") ?? usage?.reasoningTokens;
   const isLast = d.items[d.items.length - 1]?.seq <= it.seq + 1 || d.items.slice(d.items.indexOf(it) + 1).every((x) => x.kind === "row");
-  const nextCap = cap * 2;
-  const canRaise = prompt != null && prompt + nextCap <= window && session.maxOutputTokens < nextCap;
-  const thinkingAte = reasoning != null && gen != null && reasoning >= gen * 0.8;
   const running = session.status === "running";
+  const model = models.find((m) => m.id === session.modelId);
+
+  // Raising the cap helps only when the cap set the limit; the backend keeps it 1,024 under the window.
+  const nextCap = Math.min(cap * 2, window - 1024);
+  const canRaiseCap = !byWindow && nextCap > cap && nextCap > session.maxOutputTokens;
+  // When the window set it, a bigger window is the remedy (Continue also compacts older turns first).
+  const nextWindow = CONTEXT_CHOICES.find((c) => c > window && (!model || c <= model.nativeContext));
+  const canRaiseWindow = byWindow && nextWindow != null && session.contextWindow <= window;
+  const windowFit = canRaiseWindow && model && !model.loaded ? fitLabel(estimate(model, nextWindow, sample, memBudget, models), sample?.system.freeBytes) : null;
+  const thinkingAte = session.thinking && reasoning != null && gen != null && gen > 0 && reasoning >= gen * 0.8;
+
   return (
     <div className="warn-box">
       <div className="warn-title">
         <AlertTriangle size={14} />
-        Reply cut off at the output cap
+        {byWindow ? "Reply cut off: context window full" : "Reply cut off at the output cap"}
       </div>
-      <div className="warn-msg">{it.event.message}</div>
       <div className="warn-nums num">
         <div>
           <span>Context window</span>
@@ -458,6 +492,12 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
           <span>Prompt</span>
           <b>{fmtInt(prompt)}</b>
         </div>
+        {byWindow && (
+          <div title="What the window had left for this reply after the prompt">
+            <span>Room left</span>
+            <b>{fmtInt(budget)}</b>
+          </div>
+        )}
         <div>
           <span>Output cap</span>
           <b>{fmtInt(cap)}</b>
@@ -466,41 +506,36 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
           <span>Generated</span>
           <b>{fmtInt(gen)}</b>
         </div>
-        {reasoning != null && (
+        {reasoning ? (
           <div>
             <span>of which thinking</span>
             <b>{fmtInt(reasoning)}</b>
           </div>
-        )}
+        ) : null}
       </div>
-      {isLast && (
+      {isLast && !session.evalRunId && (
         <div className="warn-actions">
           <button className="btn primary" disabled={running} onClick={() => void act("Continue", (b) => b.continueSession(session.id))}>
             <Play /> Continue
           </button>
-          {canRaise && (
-            <button
-              className="btn"
-              disabled={running}
-              onClick={() =>
-                void act("Raise output cap", (b) => b.updateSession(session.id, { maxOutputTokens: nextCap })).then((s) => {
-                  if (s) useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-                })
-              }
-            >
+          {canRaiseCap && (
+            <button className="btn" disabled={running} onClick={() => patchSession("Raise output cap", session.id, { maxOutputTokens: nextCap })}>
               Raise output cap to {fmtInt(nextCap)}
             </button>
           )}
-          {thinkingAte && session.thinking && (
+          {canRaiseWindow && (
             <button
               className="btn"
               disabled={running}
-              onClick={() =>
-                void act("Turn off thinking", (b) => b.updateSession(session.id, { thinking: false })).then((s) => {
-                  if (s) useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-                })
-              }
+              title={model && !model.loaded ? `${model.name} loads at ${fmtCtx(nextWindow)} on the next call` : `${model?.name ?? session.modelId} reloads at ${fmtCtx(nextWindow)} on the next call`}
+              onClick={() => patchSession("Raise context window", session.id, { contextWindow: nextWindow, maxOutputTokens: session.maxOutputTokens })}
             >
+              Raise context window to {fmtCtx(nextWindow)}
+              {windowFit && windowFit.cls !== "ok" && <span className={`${windowFit.cls}-text`}>{windowFit.text}</span>}
+            </button>
+          )}
+          {thinkingAte && (
+            <button className="btn" disabled={running} onClick={() => patchSession("Turn off thinking", session.id, { thinking: false })}>
               Turn off thinking
             </button>
           )}
@@ -574,7 +609,7 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
       }
       const reasonCls = ev.reason === "done" ? "" : ev.reason === "stopped" ? "warn" : "err";
       // a run you stopped, or one that hit the turn limit, picks up where it left off
-      const resumable = (ev.reason === "stopped" || ev.reason === "max_turns") && idx === d.items.length - 1 && session.status === "idle";
+      const resumable = (ev.reason === "stopped" || ev.reason === "max_turns") && idx === d.items.length - 1 && session.status === "idle" && !session.evalRunId;
       return (
         <div className="row-ev run-end">
           <span className="run-end-line" />

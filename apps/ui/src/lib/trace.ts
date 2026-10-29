@@ -21,6 +21,7 @@ export interface CallItem {
   end?: Ev<"model_call_end">;
   msg?: Ev<"assistant_message">;
   live?: LiveCall;
+  livePartial?: boolean; // opened mid-stream: the live text lacks what streamed before
   repair?: Ev<"harness_repair">;
   toolIds: string[];
 }
@@ -40,6 +41,7 @@ export interface ToolItem {
   fsSeq?: number;
   net: { seq: number; entry: NetEntry }[];
   live?: OutChunk[];
+  livePartial?: boolean;
 }
 
 export interface RowItem {
@@ -221,6 +223,10 @@ export function derive(trace: Trace | undefined): Derived {
     for (const [id, out] of Object.entries(trace.liveOut)) {
       const t = tools.get(id);
       if (t && !t.end) t.live = out;
+    }
+    if (running) {
+      for (const c of calls.values()) if (!c.msg && !c.end) c.livePartial = !trace.whole[c.callId];
+      for (const t of tools.values()) if (!t.end) t.livePartial = !trace.whole[t.toolCallId];
     }
   }
 

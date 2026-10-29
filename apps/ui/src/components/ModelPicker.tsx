@@ -54,6 +54,17 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
       if (s) useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
     });
 
+  // an eval case keeps the model and settings it was graded with
+  if (session.evalRunId)
+    return (
+      <span className="hdr-btn static" title={`${current ? `${current.id}\n${current.params} ${current.quant}` : session.modelId}\noutput cap ${fmtInt(session.maxOutputTokens)}`}>
+        <span className={`dot ${current?.loaded ? "ready" : ""}`} />
+        <span className="hdr-model-name">{current?.name ?? session.modelId}</span>
+        <span className="dim">{current?.quant}</span>
+        <span className="dim num">{fmtCtx(ctx)}</span>
+      </span>
+    );
+
   return (
     <>
       <button ref={pop.ref} className="hdr-btn model" onClick={pop.toggle} title={current ? `${current.id}\n${current.params} ${current.quant}` : session.modelId}>

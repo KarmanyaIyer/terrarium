@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
-import { act, loadNet, select, useStore } from "../state/store";
-import { clockTime, exactTime, fmtBytes } from "../lib/format";
+import { act, loadNet, NET_LIMIT_MAX, select, useStore } from "../state/store";
+import { clockTime, exactTime, fmtBytes, fmtInt } from "../lib/format";
 import { Segmented } from "../components/ui";
 import { NetIcon } from "../components/Sidebar";
 
 export function NetworkTab({ env, session }: { env: EnvSummary; session?: SessionSummary }) {
   const entries = useStore((s) => s.net[env.id]);
+  const capped = useStore((s) => !!s.netCapped[env.id]);
+  const limit = useStore((s) => s.netLimit[env.id]);
   const selection = useStore((s) => s.selection);
   const traceEvents = useStore((s) => (session ? s.traces[session.id]?.events : undefined));
   const [decision, setDecision] = useState<"all" | "allow" | "deny">("all");
@@ -37,31 +39,51 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
   }, [selId]);
 
   const all = entries ?? [];
-  const denied = all.filter((e) => e.decision === "deny").length;
+  // a row stands for `repeats` identical attempts
+  let attempts = 0;
+  let denied = 0;
+  for (const e of all) {
+    attempts += e.repeats ?? 1;
+    if (e.decision === "deny") denied += e.repeats ?? 1;
+  }
 
   return (
     <div className="nettab">
       <div className="net-mode">
         <NetIcon mode={env.network} size={13} />
         <span className="dim">Mode</span>
-        <Segmented<NetworkMode>
-          small
-          value={env.network}
-          ariaLabel="Network mode"
-          onChange={(v) =>
-            void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then((e) => {
-              if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
-            })
-          }
-          options={[
-            { value: "off", label: "Off", title: "Every connection denied" },
-            { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN" },
-            { value: "web", label: "Web", title: "Public HTTP/HTTPS; private, loopback, link-local ranges still denied" },
-          ]}
-        />
+        {env.released ? (
+          <span>{env.network}</span>
+        ) : (
+          <Segmented<NetworkMode>
+            small
+            value={env.network}
+            ariaLabel="Network mode"
+            onChange={(v) =>
+              void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then((e) => {
+                if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
+              })
+            }
+            options={[
+              { value: "off", label: "Off", title: "Every connection denied" },
+              { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN" },
+              { value: "web", label: "Web", title: "Public HTTP/HTTPS; private, loopback, link-local ranges still denied" },
+            ]}
+          />
+        )}
         <span className="blk-spacer" />
-        <span className="dim num">
-          {all.length} logged, <span className={denied ? "err-text" : undefined}>{denied} denied</span>
+        {capped && (
+          <span className="chip warn num" title={`The log has more rows; only the ${fmtInt(all.length)} with the latest attempts are loaded`}>
+            latest {fmtInt(all.length)}
+          </span>
+        )}
+        {capped && limit != null && limit < NET_LIMIT_MAX && (
+          <button className="btn sm ghost" onClick={() => void loadNet(env.id, NET_LIMIT_MAX)}>
+            Load {fmtInt(NET_LIMIT_MAX)}
+          </button>
+        )}
+        <span className="dim num" title={attempts !== all.length ? `${fmtInt(all.length)} rows; identical attempts share a row` : undefined}>
+          {fmtInt(attempts)} attempt{attempts === 1 ? "" : "s"}, <span className={denied ? "err-text" : undefined}>{fmtInt(denied)} denied</span>
         </span>
       </div>
       <div className="net-filters">
@@ -118,7 +140,7 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
                     }}
                   >
                     <td className="num dim nowrap" title={e.repeats && e.lastTs ? `${exactTime(e.ts)} to ${exactTime(e.lastTs)}` : exactTime(e.ts)}>
-                      {clockTime(e.ts)}
+                      {clockTime(e.lastTs ?? e.ts)}
                       {e.repeats && e.repeats > 1 ? <div className="net-repeats">×{e.repeats}</div> : null}
                     </td>
                     <td className="net-url">

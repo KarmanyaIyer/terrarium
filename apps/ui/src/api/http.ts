@@ -133,6 +133,9 @@ export class HttpBackend implements Backend {
   createSession(req: CreateSessionRequest) {
     return this.req<SessionSummary>("POST", "/api/sessions", req);
   }
+  getSession(id: Id) {
+    return this.req<SessionSummary>("GET", `/api/sessions/${e(id)}`);
+  }
   updateSession(id: Id, req: UpdateSessionRequest) {
     return this.req<SessionSummary>("PATCH", `/api/sessions/${e(id)}`, req);
   }

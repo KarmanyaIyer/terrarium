@@ -54,8 +54,8 @@ export function ShellTab({ env }: { env: EnvSummary }) {
       <div className="shell-log selectable">
         {entries.length === 0 && (
           <div className="empty">
-            {up ? "No commands yet" : `${env.name} is ${env.status}`}
-            {(env.status === "stopped" || env.status === "error") && (
+            {up ? "No commands yet" : env.released ? `${env.name}: storage released` : `${env.name} is ${env.status}`}
+            {(env.status === "stopped" || env.status === "error") && !env.released && (
               <button
                 className="btn sm"
                 type="button"
@@ -136,7 +136,7 @@ export function ShellTab({ env }: { env: EnvSummary }) {
           className="input mono shell-field"
           value={cmd}
           disabled={!up}
-          placeholder={up ? "ls -la /workspace" : `Start ${env.name} to run commands`}
+          placeholder={up ? "ls -la /workspace" : env.released ? "" : `Start ${env.name} to run commands`}
           onChange={(e) => setCmd(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "ArrowUp" && cmds.length) {

@@ -980,6 +980,13 @@ export class FixtureBackend implements Backend {
     return clone(s);
   }
 
+  async getSession(id: Id) {
+    await sleep(20);
+    const s = this.sessions.get(id);
+    if (!s) throw new ApiRequestError(404, "session not found");
+    return clone(s);
+  }
+
   async updateSession(id: Id, req: UpdateSessionRequest) {
     await sleep(40);
     const s = this.sessions.get(id);

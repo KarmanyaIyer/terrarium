@@ -59,6 +59,7 @@ export interface EnvSummary {
   diskBytes?: number;
   createdAt: Millis;
   ephemeral: boolean; // eval forks; hidden from sidebar by default
+  released?: boolean; // eval fork whose storage was freed after its run: trace and file history only
 }
 
 export interface Snapshot {
