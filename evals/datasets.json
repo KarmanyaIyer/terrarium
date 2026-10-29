@@ -1,0 +1,99 @@
+{
+  "datasets": [
+    {
+      "id": "gsm8k",
+      "title": "GSM8K",
+      "description": "Grade-school math word problems (test split); graded on the final number.",
+      "dataset": "GSM8K test",
+      "url": "https://github.com/openai/grade-school-math",
+      "license": "MIT",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "envType": "none",
+      "total": 1319,
+      "defaultSampleSize": 25,
+      "files": [
+        {
+          "name": "test.jsonl",
+          "url": "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/grade_school_math/data/test.jsonl",
+          "sha256": "3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14",
+          "bytes": 749738
+        }
+      ]
+    },
+    {
+      "id": "mmlu",
+      "title": "MMLU (subject mix)",
+      "description": "Four-choice questions from 12 MMLU subjects, sampled evenly across subjects.",
+      "dataset": "MMLU test (cais/mmlu data.tar)",
+      "url": "https://huggingface.co/datasets/cais/mmlu",
+      "license": "MIT",
+      "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+      "envType": "none",
+      "total": 2524,
+      "defaultSampleSize": 24,
+      "subjects": [
+        "elementary_mathematics",
+        "high_school_physics",
+        "college_computer_science",
+        "computer_security",
+        "machine_learning",
+        "college_biology",
+        "clinical_knowledge",
+        "high_school_geography",
+        "high_school_macroeconomics",
+        "philosophy",
+        "world_religions",
+        "high_school_us_history"
+      ],
+      "files": [
+        {
+          "name": "data.tar",
+          "url": "https://huggingface.co/datasets/cais/mmlu/resolve/c30699e8356da336a370243923dbaf21066bb9fe/data.tar",
+          "sha256": "bec563ba4bac1d6aaf04141cd7d1605d7a5ca833e38f994051e818489592989b",
+          "bytes": 166184960,
+          "extract": "data/test/"
+        }
+      ]
+    },
+    {
+      "id": "humaneval",
+      "title": "HumanEval",
+      "description": "Complete a Python function from its docstring; graded by the dataset's tests inside the VM.",
+      "dataset": "HumanEval",
+      "url": "https://github.com/openai/human-eval",
+      "license": "MIT",
+      "revision": "b9453e8f1865df0a0057a1383767caa400acfbcf",
+      "envType": "vm",
+      "total": 164,
+      "defaultSampleSize": 10,
+      "files": [
+        {
+          "name": "HumanEval.jsonl.gz",
+          "url": "https://raw.githubusercontent.com/openai/human-eval/b9453e8f1865df0a0057a1383767caa400acfbcf/data/HumanEval.jsonl.gz",
+          "sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+          "bytes": 44877
+        }
+      ]
+    },
+    {
+      "id": "mbpp",
+      "title": "MBPP (sanitized)",
+      "description": "Write a Python function from a one-line description; graded by the dataset's asserts inside the VM.",
+      "dataset": "MBPP sanitized",
+      "url": "https://github.com/google-research/google-research/tree/master/mbpp",
+      "license": "CC-BY-4.0",
+      "revision": "f82046ba5aabbbb427dbfd38a254d26bff08b533",
+      "envType": "vm",
+      "total": 427,
+      "defaultSampleSize": 10,
+      "files": [
+        {
+          "name": "sanitized-mbpp.json",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/f82046ba5aabbbb427dbfd38a254d26bff08b533/mbpp/sanitized-mbpp.json",
+          "sha256": "ca95deaa9a01ef0a6f439f88bcf0dd3db3563d22f22aad6cae04ebb9a8d8c8e9",
+          "bytes": 255053
+        }
+      ]
+    }
+  ]
+}

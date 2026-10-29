@@ -14,7 +14,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { EvalCase, EvalCheck, EvalSuite } from "@terrarium/shared";
+import type { EvalCase, EvalCheck, EvalSuite } from "../../packages/shared/src/index.ts";
 
 const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = resolve(EVALS, "..");
@@ -38,6 +38,7 @@ function gradeAnswer(check: Extract<EvalCheck, { type: "answer" }>, reply: strin
     case "choice":
       return (text.match(/\b([A-D])\b/)?.[1] ?? "") === check.expected;
   }
+  return false;
 }
 
 async function runSim(suite: EvalSuite, c: EvalCase): Promise<Outcome> {
