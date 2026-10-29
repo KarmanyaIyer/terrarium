@@ -375,29 +375,83 @@ META_DUNDERS = ("__getitem__", "__iter__", "__len__", "__contains__", "__reverse
 
 # ---------- process state both sides share ----------
 
-GRADER_CODE = frozenset((sys._getframe().f_code.co_filename,))
+# The grader's code, by its module globals (frames are told apart by f_globals, which reading doesn't audit).
+GRADER_CODE = frozenset((id(globals()),))
 
 
-def grader_frames(files):
-    """How many frames on this thread's stack run code from files (the grader's), the caller's included."""
+def grader_frames(code):
+    """How many frames on this thread's stack run code (module globals ids) of the grader's, the caller's included."""
     n = 0
     f = sys._getframe(1)
     while f is not None:
-        if f.f_code.co_filename in files:
+        if id(f.f_globals) in code:
             n += 1
         f = f.f_back
     return n
 
 
-def code_frames(files):
-    """How many frames on this thread's stack run code not from files (the tests', the candidate's, the library's)."""
+def code_frames(code):
+    """How many frames on this thread's stack run code not the grader's (the tests', the candidate's, the library's)."""
     n = 0
     f = sys._getframe(1)
     while f is not None:
-        if f.f_code.co_filename not in files:
+        if id(f.f_globals) not in code:
             n += 1
         f = f.f_back
     return n
+
+
+# Attribute reads CPython audits ("object.__getattr__") that reach a frame or its code.
+_FRAME_READS = frozenset(("tb_frame", "f_code", "gi_frame", "gi_code", "cr_frame", "cr_code", "ag_frame", "ag_code"))
+# Modules whose frame reads count as their caller's (unittest's own reporting reads tracebacks through them).
+_FRAME_HELPERS = frozenset(("traceback", "linecache"))
+
+
+def guard_frames(readers, foreign, hit, unittest_reads):
+    """An audit hook: code reading a frame of the grader's code (foreign: module globals ids) gets hit(why) raised,
+    unless the reader is the grader (readers) or, with unittest_reads, unittest's own machinery. Such frames stand
+    in for the other process's code, so what a test or candidate reads there (frame names, a traceback through the
+    other side, inspect.stack() in a callback) isn't what one process would show it. Can't be removed once added."""
+    busy = set()
+    ident = threading.get_ident
+    getframe = sys._getframe
+    frame_type = types.FrameType
+
+    def hook(event, args):
+        if event != "object.__getattr__" or args[1] not in _FRAME_READS:
+            return
+        tid = ident()
+        if tid in busy:
+            return
+        busy.add(tid)
+        try:
+            obj, name = args[0], args[1]
+            f = obj if name == "f_code" else getattr(obj, "tb_frame" if name == "tb_frame" else name[:3] + "frame", None)
+            if type(f) is not frame_type or id(f.f_globals) not in foreign:
+                return
+            r = getframe(1)
+            while r is not None:
+                g = r.f_globals
+                if id(g) in readers:
+                    return
+                mod = g.get("__name__")
+                if unittest_reads and type(mod) is str and (mod == "unittest" or mod.startswith("unittest.")):
+                    return
+                if mod not in _FRAME_HELPERS:
+                    break
+                r = r.f_back
+        finally:
+            busy.discard(tid)
+        raise hit("code read a frame of the grader's (%s): the grader's frames stand in for the other process's code, so frame names, tracebacks through the other side and stack inspection can't be what one process would show" % name)
+
+    sys.addaudithook(hook)
+
+
+def synthetic_traceback():
+    """A real traceback object for a test's traceback crossing to the candidate (`__exit__`'s third argument): it is
+    one, and not None, as there; its frame is the grader's, which the frame guard keeps candidate code from reading."""
+    f = sys._getframe()
+    return types.TracebackType(None, f, f.f_lasti, f.f_lineno)
 
 
 def padded(n, fn):
@@ -519,6 +573,119 @@ def warnings_set(filters):
 
     warnings.filters[:] = filters
     warnings._filters_mutated()
+
+
+# sys.argv in both runs and on both sides, as `python3 -m unittest test_hidden` has it.
+TEST_ARGV = ("python3 -m unittest", "test_hidden")
+_getcwd, _chdir, _umask = os.getcwd, os.chdir, os.umask
+_monotonic = time.monotonic
+_tzset = getattr(time, "tzset", None)
+try:
+    import _locale
+except ImportError:  # pragma: no cover - CPython always has it
+    _locale = None
+
+
+def umask_now(last):
+    """The process umask, read by setting the value last seen (so there is no window with another one unless it
+    changed, which a thread creating files could see)."""
+    cur = _umask(last)
+    if cur != last:
+        _umask(cur)
+    return cur
+
+
+def locale_now():
+    try:
+        return _locale.setlocale(_locale.LC_ALL, None)
+    except Exception:
+        return None
+
+
+def locale_set(name):
+    """Set every locale category as the other side has them; whether this side now reports the same."""
+    try:
+        _locale.setlocale(_locale.LC_ALL, name)
+    except Exception:
+        return False
+    return locale_now() == name
+
+
+def tz_now():
+    """What time.tzset() last set: tzname, timezone, altzone, daylight."""
+    return [time.tzname[0], time.tzname[1], time.timezone, time.altzone, time.daylight]
+
+
+def env_raw():
+    """os.environ's encoded storage (CPython): comparing it is cheaper than decoding the environment."""
+    raw = getattr(os.environ, "_data", None)
+    return raw if type(raw) is dict else None
+
+
+def env_diff(last, now):
+    return {"set": {k: v for k, v in now.items() if last.get(k) != v}, "del": [k for k in last if k not in now]}
+
+
+def env_apply(diff):
+    """Apply env_diff() output; False if a variable can't be set here as it was there."""
+    if not isinstance(diff, dict) or not isinstance(diff.get("set") or {}, dict) or not isinstance(diff.get("del") or [], list):
+        raise ProtocolError("bad environment")
+    for k, v in (diff.get("set") or {}).items():
+        if type(k) is not str or type(v) is not str:
+            raise ProtocolError("bad environment")
+        try:
+            os.environ[k] = v
+        except (ValueError, OSError):
+            return False
+    for k in diff.get("del") or ():
+        if type(k) is not str:
+            raise ProtocolError("bad environment")
+        try:
+            os.environ.pop(k, None)
+        except (ValueError, OSError):
+            return False
+    return True
+
+
+def cwd_out(cur, root):
+    """A working directory as the other side should take it: relative to this side's copy of the workspace
+    (each side has its own), else absolute."""
+    if cur == root:
+        return ["rel", "."]
+    base = root.rstrip(os.sep) + os.sep
+    return ["rel", cur[len(base):]] if cur.startswith(base) else ["abs", cur]
+
+
+def cwd_in(v, root):
+    if not (isinstance(v, list) and len(v) == 2 and v[0] in ("rel", "abs") and type(v[1]) is str):
+        raise ProtocolError("bad working directory")
+    return os.path.normpath(os.path.join(root, v[1])) if v[0] == "rel" else v[1]
+
+
+def path_changed(obj, snap):
+    """Whether sys.path is no longer obj holding exactly snap (by identity: no one's __eq__ runs)."""
+    p = sys.path
+    return p is not obj or len(p) != len(snap) or any(map(is_not, p, snap))
+
+
+def path_entry_in(v, root):
+    """A sys.path entry from the other side (cwd_out() form), as it names the same place here."""
+    if not (isinstance(v, list) and len(v) == 2 and v[0] in ("rel", "abs") and type(v[1]) is str):
+        raise ProtocolError("bad path entry")
+    if v[0] == "abs":
+        return v[1]
+    return root if v[1] == "." else os.path.join(root, v[1])
+
+
+def path_compose(own, base, entries, j, e):
+    """The candidate's sys.path for the tests' one: entries (mapped) with the candidate's own entries (own, its
+    interpreter's path, base, in it) around the interpreter's entries the tests' path has at [j, e): what one process
+    started as `python3 -m unittest` in the workspace has. None if own doesn't hold base."""
+    n = len(base)
+    for k in range(len(own) - n + 1):
+        if own[k : k + n] == base:
+            return entries[:j] + own[:k] + entries[j:e] + own[k + n :] + entries[e:]
+    return None
 
 
 _INF = float("inf")
@@ -1455,6 +1622,8 @@ META_FORWARDABLE = frozenset(META_DUNDERS) | frozenset(("__instancecheck__", "__
 _NO_IMPORT = frozenset(("antigravity", "this", "idlelib", "tkinter", "turtle", "turtledemo", "__main__"))
 _BASE_SET = {n: d.__set__ for n, d in vars(BaseException).items() if n in ("args", "__cause__", "__context__", "__suppress_context__")}
 _PLAIN = frozenset(BUILTIN_TYPES.values()) | LINK_TYPES
+# A test object of a class built on one of these crosses as TestData (built-in code would take the real one as data).
+_DATA_KINDS = DATA_BASES
 _WEAK_ERR = "a weak reference the tests held to a candidate object died while the candidate still had the object"
 
 
@@ -1483,11 +1652,18 @@ class Client(Side):
         self.candidate_secs = 0.0
         left = None if deadline is None else deadline - time.monotonic()
         self.sync_limit = SYNC_LIMIT if left is None else max(SYNC_MIN, SYNC_SHARE * left)
-        self.state = {}  # process state last sent
+        self.state = {}  # process state as both sides last had it
+        self.ended = None  # process state the candidate changed that this process can't take: every later call fails
         self.orig = {"stdout": sys.stdout, "stderr": sys.stderr, "stdin": sys.stdin, "print": builtins.print, "input": builtins.input}
+        self.stdin_obj = None  # the tests' io.StringIO stdin the candidate last got the text of
         self.env0 = dict(os.environ)
-        self.cwd0 = os.getcwd()
-        self.argv0 = list(sys.argv)
+        self.cwd0 = _getcwd()
+        self.path_obj, self.path0 = sys.path, list(sys.path)
+        self.path_base = tuple(sys.path)  # the interpreter's own entries (the runner adds none)
+        self.path_lists = {id(sys.path): (sys.path, 0)}  # the tests' sys.path lists: (list, number the candidate knows it by)
+        self.umask0 = umask_now(0o022)
+        self.locale0 = locale_now()
+        self.tz0 = tz_now()
         import warnings
 
         self.warn_orig = (warnings.showwarning, warnings._showwarnmsg_impl)
@@ -1829,6 +2005,9 @@ class Client(Side):
             return tag
         if isinstance(v, BaseException):
             return enc.aliased(v, lambda: self._test_exception(enc, v, depth))
+        if t is types.TracebackType:
+            # A real traceback there (`__exit__`'s third argument), the test's own one when it comes back.
+            return {"t": "ttb", "id": self._callback_id(v)}
         fields = ntuple_fields(t)
         if fields is not None and t is not tuple and _plain_ntuple(t):
             self.ntuples[(t.__name__, fields)] = t
@@ -1847,6 +2026,8 @@ class Client(Side):
         self.callback_ids[id(v)] = k
         t = type(v)
         f = {"type": clip(t.__name__, 100)}
+        if isinstance(v, type) or any(issubclass(t, b) for b in _DATA_KINDS):
+            f["data"] = True
         if callable(v):
             f["call"] = True
             if t is types.FunctionType:
@@ -1859,12 +2040,17 @@ class Client(Side):
             f["it"] = True
         return {"t": "tobj", "id": k, "f": f}
 
-    def _test_exception(self, enc, e, depth):
-        k = self.callback_ids.get(id(e))
-        if k is None or self.callbacks.get(k) is not e:
+    def _callback_id(self, v):
+        """The number test object v is known by on the candidate's side (registered for good)."""
+        k = self.callback_ids.get(id(v))
+        if k is None or self.callbacks.get(k) is not v:
             k = len(self.callbacks) + 1
-            self.callbacks[k] = e
-            self.callback_ids[id(e)] = k
+            self.callbacks[k] = v
+            self.callback_ids[id(v)] = k
+        return k
+
+    def _test_exception(self, enc, e, depth):
+        k = self._callback_id(e)
         t = type(e)
         mro = [type_path(c) for c in _MRO(t)[:32]]
         base = next((c for c in _MRO(t) if c in BUILTIN_EXCEPTIONS), BaseException)
@@ -1907,7 +2093,7 @@ class Client(Side):
             return self._class(rid, desc, dec, d)
         if t == "link":
             return self._got(x.get("id"))
-        if t in ("tobj", "texc"):
+        if t in ("tobj", "texc", "ttb"):
             obj = self.callbacks.get(x.get("id"), _NO)
             if obj is _NO:
                 raise ProtocolError("unknown test object")
@@ -1929,47 +2115,75 @@ class Client(Side):
 
     # process state the candidate's code shares with the tests in one process
 
+    def _stdin_key(self, cur):
+        if cur is self.orig["stdin"]:
+            return ("orig", None)
+        if proxy_rid(cur) is not None:
+            return ("cand", cur)
+        if type(cur) is io.StringIO and not cur.closed:
+            return ("sio", cur, cur.tell(), len(cur.getvalue()))
+        return ("other", cur)
+
     def _state(self, enc):
+        """The process state the tests changed since the candidate last had it (sent before candidate code runs)."""
         st = {}
         s = self.state
+        if path_changed(*s.get("path", (self.path_obj, self.path0))):
+            st["path"] = self._path_state()
+            s["path"] = (sys.path, list(sys.path))
         for name in ("stdout", "stderr"):
             cur = getattr(sys, name)
-            kind = "orig" if cur is self.orig[name] else ("sio" if type(cur) is io.StringIO else "other")
-            if s.get(name, "orig") != kind:
-                st[name] = s[name] = kind
+            if cur is not s.get(name, self.orig[name]):
+                s[name] = cur
+                if cur is self.orig[name]:
+                    st[name] = ["orig"]
+                else:
+                    st[name] = ["cand" if proxy_rid(cur) is not None else "sio" if type(cur) is io.StringIO else "other", enc.enc(cur)]
         cur = sys.stdin
-        if cur is self.orig["stdin"]:
-            key = ("orig",)
-        elif type(cur) is io.StringIO and not cur.closed:
-            text = cur.getvalue()
-            key = ("sio", id(cur), cur.tell(), len(text))
-        else:
-            key = ("other", id(cur))
-        if s.get("stdin", ("orig",)) != key:
+        key, last = self._stdin_key(cur), s.get("stdin", ("orig", None))
+        if key[0] != last[0] or key[1] is not last[1] or key[2:] != last[2:]:
             s["stdin"] = key
-            st["stdin"] = [key[0], text[cur.tell():]] if key[0] == "sio" else [key[0]]
+            if key[0] == "orig":
+                st["stdin"] = ["orig"]
+            elif key[0] == "sio":
+                # The candidate reads the rest of the text; how far it read comes back with its answer.
+                self.stdin_obj = cur
+                st["stdin"] = ["sio", cur.getvalue()[cur.tell():], enc.enc(cur)]
+            else:
+                st["stdin"] = [key[0], enc.enc(cur)]
         for name in ("print", "input"):
             cur = getattr(builtins, name)
-            key = None if cur is self.orig[name] else id(cur)
-            if s.get(name) != key:
-                s[name] = key
-                st[name] = None if key is None else enc.enc(cur)
-        if sys.argv != s.get("argv", self.argv0):
-            s["argv"] = list(sys.argv)
-            st["argv"] = enc.enc(tuple(sys.argv))
-        raw = getattr(os.environ, "_data", None)
-        raw = dict(raw) if type(raw) is dict else None  # CPython's encoded copy: cheap to compare
+            if cur is not s.get(name, self.orig[name]):
+                s[name] = cur
+                st[name] = None if cur is self.orig[name] else enc.enc(cur)
+        if sys.argv is not s.get("argv"):
+            # A list is linked: changes either side makes to the same list reach the other.
+            s["argv"] = sys.argv
+            st["argv"] = enc.enc(sys.argv)
+        raw = env_raw()
         if raw is None or raw != s.get("env_raw"):
             env = dict(os.environ)
             last = s.get("env", self.env0)
             if env != last:
-                st["env"] = {"set": {k: v for k, v in env.items() if last.get(k) != v}, "del": [k for k in last if k not in env]}
+                st["env"] = env_diff(last, env)
                 s["env"] = env
-            s["env_raw"] = raw
-        cwd = os.getcwd()
+            s["env_raw"] = None if raw is None else dict(raw)
+        try:
+            cwd = _getcwd()
+        except OSError as e:
+            raise Inexact("the tests' working directory is gone (%s)" % e.strerror) from None
         if cwd != s.get("cwd", self.cwd0):
             s["cwd"] = cwd
-            st["cwd"] = None if cwd == self.cwd0 else cwd
+            st["cwd"] = cwd_out(cwd, self.cwd0)
+        um = umask_now(s.get("umask", self.umask0))
+        if um != s.get("umask", self.umask0):
+            s["umask"] = st["umask"] = um
+        lc = locale_now()
+        if lc != s.get("locale", self.locale0):
+            s["locale"] = st["locale"] = lc
+        tz = tz_now()
+        if tz != s.get("tz", self.tz0):
+            s["tz"] = st["tz"] = tz
         r = sys.modules.get("random")
         if r is not None and hasattr(r, "getstate"):
             rs = r.getstate()
@@ -1992,18 +2206,110 @@ class Client(Side):
             s["warnings"] = ws
         return st
 
-    def _apply_state(self, msg, dec):
+    def _path_state(self):
+        """sys.path as the tests changed it, for the candidate's imports: [list number, entries, j, e, base]. The
+        interpreter's own entries (base) are still in it, in order, at [j, e); the candidate's own (its workspace
+        first, as `python3 -m unittest` has the current directory) go around them as one process has them."""
+        cur = sys.path
+        if type(cur) is not list or any(type(p) is not str for p in cur):
+            raise Inexact("the tests set sys.path to something other than a list of str, which the candidate's process can't share")
+        base = self.path_base
+        first = next((i for i, p in enumerate(cur) if p is base[0]), None) if base else 0
+        last = next((i for i in range(len(cur) - 1, -1, -1) if cur[i] is base[-1]), None) if base else -1
+        if first is None or last is None or last < first or [p for p in cur[first : last + 1] if p in base] != list(base):
+            raise Inexact("the tests took the interpreter's own entries out of sys.path (or reordered them): where the candidate's process would have its own isn't known")
+        hit = self.path_lists.get(id(cur))
+        if hit is None or hit[0] is not cur:
+            hit = self.path_lists[id(cur)] = (cur, len(self.path_lists))
+        return [hit[1], [cwd_out(p, self.cwd0) if os.path.isabs(p) else ["abs", p] for p in cur], first, last + 1, [["abs", p] for p in base]]
+
+    def _end(self, why):
+        """Process state the two processes can no longer share: this call and every later one is a grader error."""
+        if self.ended is None:
+            self.ended = clip(why, 1000)
+
+    def _decode_cst(self, cst, dec):
+        """The candidate's process state changes, with their values decoded (before the message's sync)."""
+        if cst is None:
+            return {}
+        if not isinstance(cst, dict):
+            raise ProtocolError("bad candidate state")
+        out = dict(cst)
+        for name in ("stdout", "stderr", "stdin", "print", "input"):
+            v = cst.get(name)
+            if v is None:
+                continue
+            if not (isinstance(v, list) and (v == ["orig"] or (len(v) == 2 and v[0] == "obj"))):
+                raise ProtocolError("bad %s state" % name)
+            out[name] = None if v == ["orig"] else [dec.dec(v[1])]
+        if "argv" in cst:
+            out["argv"] = dec.dec(cst["argv"])
+        return out
+
+    def _apply_cst(self, cst):
+        """Process state the candidate's code changed: as it would be in one process, else the run ends."""
+        s = self.state
+        for name in ("stdout", "stderr", "stdin"):
+            if name in cst:
+                obj = self.orig[name] if cst[name] is None else cst[name][0]
+                setattr(sys, name, obj)
+                s[name] = self._stdin_key(obj) if name == "stdin" else obj
+        for name in ("print", "input"):
+            if name in cst:
+                obj = self.orig[name] if cst[name] is None else cst[name][0]
+                setattr(builtins, name, obj)
+                s[name] = obj
+        if "argv" in cst:
+            sys.argv = s["argv"] = cst["argv"]
+        if "env" in cst:
+            if not env_apply(cst["env"]):
+                self._end("the candidate set an environment variable the tests' process can't set")
+            s["env"] = dict(os.environ)
+            raw = env_raw()
+            s["env_raw"] = None if raw is None else dict(raw)
+        if "cwd" in cst:
+            where = cwd_in(cst["cwd"], self.cwd0)
+            try:
+                _chdir(where)
+            except OSError as e:
+                self._end("the candidate changed directory to %s, which the tests' process can't enter (%s)" % (clip(where, 200), e.strerror))
+            s["cwd"] = _getcwd()
+        if "umask" in cst:
+            um = cst["umask"]
+            if type(um) is not int or not 0 <= um <= 0o777:
+                raise ProtocolError("bad umask")
+            _umask(um)
+            s["umask"] = um
+        if "locale" in cst:
+            lc = cst["locale"]
+            if type(lc) is not str or not locale_set(lc):
+                self._end("the candidate set a locale the tests' process can't set the same way (%s)" % clip(lc, 200))
+            s["locale"] = locale_now()
+        if "tz" in cst:
+            # The environment (TZ) is already the candidate's: time.tzset() here gives the same zone, or the run ends.
+            if _tzset is not None:
+                _tzset()
+            if cst["tz"] != tz_now():
+                self._end("the candidate called time.tzset() with a time zone the tests' process can't reproduce")
+            s["tz"] = tz_now()
+
+    def _apply_state(self, msg, dec, cst):
         for entry in msg.get("out") or ():
-            if not (isinstance(entry, list) and len(entry) == 2 and entry[0] in ("stdout", "stderr") and isinstance(entry[1], str)):
+            if not (isinstance(entry, list) and len(entry) == 3 and entry[0] in ("stdout", "stderr") and isinstance(entry[1], str)):
                 raise ProtocolError("bad output")
-            getattr(sys, entry[0]).write(entry[1])
+            # Written to the stream the candidate's sys.stdout/stderr stood for when it wrote.
+            target = self.callbacks.get(entry[2])
+            if type(target) is not io.StringIO:
+                raise ProtocolError("bad output")
+            target.write(entry[1])
         used = msg.get("stdin")
         if used is not None:
-            cur = sys.stdin
-            if type(used) is not int or used < 0 or type(cur) is not io.StringIO or self.state.get("stdin", ("",))[0] != "sio":
+            cur = self.stdin_obj
+            if type(used) is not int or used < 0 or type(cur) is not io.StringIO:
                 raise ProtocolError("bad stdin use")
             cur.seek(cur.tell() + used)
-            self.state["stdin"] = ("sio", id(cur), cur.tell(), len(cur.getvalue()))
+            if sys.stdin is cur:
+                self.state["stdin"] = self._stdin_key(cur)
         rs = msg.get("random")
         if rs is not None:
             r = sys.modules.get("random")
@@ -2025,6 +2331,8 @@ class Client(Side):
         if msg.get("warnings") is not None:
             warnings_set(warnings_in(dec, msg["warnings"]))
             self.state["warnings"] = warnings_state()
+        if cst:
+            self._apply_cst(cst)
         if msg.get("weakalive"):
             self.weak_err = _WEAK_ERR
 
@@ -2097,8 +2405,9 @@ class Client(Side):
             if not isinstance(vals, list):
                 raise ProtocolError("bad values")
             got = [dec.dec(x) for x in vals]
+            cst = self._decode_cst(msg.get("cst"), dec)
             self._incoming(dec, msg)
-            self._apply_state(msg, dec)
+            self._apply_state(msg, dec, cst)
         except ProtocolError as e:
             raise self._fail("candidate broke the grading protocol (%s)" % e) from None
         except GraderError as e:
@@ -2115,12 +2424,16 @@ class Client(Side):
         try:
             if self.gone:
                 raise CandidateGone(self.gone)
+            if self.ended:
+                raise Inexact(self.ended)
             self.depth += 1
             try:
                 self._send({"req": dict(plain, op=op, ng=code_frames(GRADER_CODE))}, vals)
                 while True:
                     msg, got = self._receive()
                     if "rep" in msg:
+                        if self.ended:
+                            raise Inexact(self.ended)
                         r = self._reply(msg["rep"], got)
                         if self.weak_err is not None:
                             err, self.weak_err = self.weak_err, None
@@ -2209,7 +2522,7 @@ _HANDLE_OPS = {
 
 def _plain_ntuple(t):
     """A namedtuple class with nothing but what namedtuple() generates (the candidate gets an equivalent one)."""
-    allowed = {"__module__", "__doc__", "__slots__", "_fields", "_field_defaults", "__new__", "_make", "_replace", "__repr__", "_asdict", "__getnewargs__", "__match_args__", "__annotations__", "__orig_bases__", "__qualname__", "__firstlineno__", "__static_attributes__", "__annotate__", "__annotate_func__", "__annotations_cache__"}
+    allowed = {"__module__", "__doc__", "__slots__", "_fields", "_field_defaults", "__new__", "_make", "_replace", "__replace__", "__repr__", "_asdict", "__getnewargs__", "__match_args__", "__annotations__", "__orig_bases__", "__qualname__", "__firstlineno__", "__static_attributes__", "__annotate__", "__annotate_func__", "__annotations_cache__", "__classdictcell__"}
     for k in _MRO(t):
         if k is tuple or k is object:
             break
@@ -2314,6 +2627,41 @@ for _n in DUNDERS + UNSUPPORTED + ("__lt__", "__le__", "__gt__", "__ge__", "__re
         setattr(TestObject, _n, _poison_method(_n))
 
 
+class TestData(TestObject):
+    """A test object built-in code could take as built-in data in one process (an instance of a str, list, int, ...
+    subclass, or a class): a type check in C that a TestData fails (its name in the TypeError) ends the run."""
+
+    __slots__ = ()
+
+
+def _watch_raises(srv):
+    """Have every TypeError naming TestData poison the run, even one candidate code catches (sys.monitoring, 3.12+);
+    else (older Python) only the ones that reach the tests. Whether it watches."""
+    mon = getattr(sys, "monitoring", None)
+    if mon is None:
+        return False
+    for tool in (4, 3, 2, 1):
+        try:
+            mon.use_tool_id(tool, "terrarium-grader")
+            break
+        except ValueError:
+            continue
+    else:
+        return False
+
+    def on_raise(code, offset, exc):
+        if type(exc) is TypeError and _TEST_DATA in _safe_str(exc):
+            srv._poison(_DATA_ERR % clip(_safe_str(exc), 200))
+
+    mon.register_callback(tool, mon.events.RAISE, on_raise)
+    mon.set_events(tool, mon.events.RAISE)
+    return True
+
+
+_TEST_DATA = "TestData"
+_DATA_ERR = "the candidate's code used a test object where Python takes built-in data (%s): in one process it is the test's own str, list, number or class"
+
+
 class _Capture:
     """The candidate's sys.stdout/stderr while the test's is an io.StringIO: writes go to it, in order."""
 
@@ -2322,14 +2670,15 @@ class _Capture:
     newlines = None
     closed = False
 
-    def __init__(self, srv, name):
+    def __init__(self, srv, name, k):
         self._srv = srv
         self._name = name
+        self._k = k  # the test object (an io.StringIO) it stands for
 
     def write(self, s):
         if not isinstance(s, str):
             raise TypeError("string argument expected, got '%s'" % type(s).__name__)
-        self._srv._output(self._name, str.__str__(s))
+        self._srv._output(self._name, str.__str__(s), self._k)
         return len(s)
 
     def writelines(self, lines):
@@ -2387,8 +2736,19 @@ class Server(Side):
         self.poison = None
         self.out = []
         self.orig = {"stdout": sys.stdout, "stderr": sys.stderr, "stdin": sys.stdin, "print": builtins.print, "input": builtins.input}
-        self.env0 = dict(os.environ)
-        self.cwd0 = os.getcwd()
+        self.seen = dict(self.orig)  # each of those as the tests last had it here
+        self.standin = {}  # id(stand-in) -> (stand-in, the test object it stands for): _Capture, _Unmirrored, stdin
+        self.argv_obj = sys.argv
+        self.env_last = dict(os.environ)
+        raw = env_raw()
+        self.env_raw = None if raw is None else dict(raw)
+        self.cwd0 = self.cwd_last = _getcwd()
+        self.path_obj, self.path0 = sys.path, list(sys.path)
+        self.path_own = list(sys.path)  # this interpreter's path, with the workspace first
+        self.path_lists = {0: sys.path}  # the tests' sys.path lists by number: this side's list for each
+        self.umask = umask_now(0o022)
+        self.locale = locale_now()
+        self.tz = tz_now()
         self.stdin = None  # the test's stdin text, as an io.StringIO here
         self.stdin_pos = 0
         self.random = None  # random state last exchanged
@@ -2399,12 +2759,14 @@ class Server(Side):
         self.warn_orig = (warnings.showwarning, warnings._showwarnmsg_impl)
         self.warn = None  # warnings state last exchanged
         self.dec = None  # decimal context last exchanged
-        # The grader's code: this module's, and the worker script's below it.
+        # The grader's code: this module's, and the worker script's below it (by module globals).
         f, files = sys._getframe(), set(GRADER_CODE)
         while f is not None:
-            files.add(f.f_code.co_filename)
+            files.add(id(f.f_globals))
             f = f.f_back
         self.files = frozenset(files)
+        guard_frames(self.files, self.files, self._poison, False)
+        self.raises = _watch_raises(self)
 
     # failures the candidate's code can't hide
 
@@ -2413,13 +2775,13 @@ class Server(Side):
             self.poison = clip(why, 1000)
         return _Poisoned(why)
 
-    def _output(self, name, text):
+    def _output(self, name, text, k):
         if self.depth == 0:
             raise self._poison("the candidate's code wrote to sys.%s outside a call from the tests (a thread)" % name)
-        if self.out and self.out[-1][0] == name:
+        if self.out and self.out[-1][0] == name and self.out[-1][2] == k:
             self.out[-1][1] += text
         else:
-            self.out.append([name, text])
+            self.out.append([name, text, k])
 
     # values
 
@@ -2435,7 +2797,7 @@ class Server(Side):
 
     def _special(self, enc, v, depth, key):
         t = type(v)
-        if t is TestObject:
+        if t is TestObject or t is TestData:
             if v._srv is not self:
                 raise Unsendable("a test object from another grading run")
             return {"t": "tobj", "id": v._k}
@@ -2636,7 +2998,7 @@ class Server(Side):
                 f = x.get("f")
                 if type(k) is not int or not isinstance(f, dict):
                     raise ProtocolError("unknown test object")
-                obj = self.tobjs[k] = TestObject(self, k, f)
+                obj = self.tobjs[k] = (TestData if f.get("data") is True else TestObject)(self, k, f)
             return obj
         if t == "texc":
             k = x.get("id")
@@ -2644,6 +3006,15 @@ class Server(Side):
             if obj is None:
                 obj = self._test_exception(dec, k, x, d)
             return dec.register(x, obj)
+        if t == "ttb":
+            k = x.get("id")
+            obj = self.tobjs.get(k)
+            if obj is None:
+                if type(k) is not int:
+                    raise ProtocolError("bad test traceback")
+                obj = self.tobjs[k] = synthetic_traceback()
+                self.tobj_ids[id(obj)] = k  # sent back as the test's own traceback
+            return obj
         if t == "ntuple":
             name, fields = x.get("n"), x.get("f")
             if not isinstance(name, str) or not isinstance(fields, list) or not all(isinstance(f, str) for f in fields):
@@ -2712,45 +3083,88 @@ class Server(Side):
             return
         if not isinstance(st, dict):
             raise ProtocolError("bad state")
-        for name in ("stdout", "stderr"):
-            kind = st.get(name)
-            if kind == "orig":
-                setattr(sys, name, self.orig[name])
-            elif kind == "sio":
-                setattr(sys, name, _Capture(self, name))
-            elif kind == "other":
-                setattr(sys, name, _Unmirrored(self, "sys." + name))
-            elif kind is not None:
+        for name in ("stdout", "stderr", "stdin"):
+            v = st.get(name)
+            if v is None:
+                continue
+            if not isinstance(v, list) or not v or v[0] not in ("orig", "sio", "other", "cand"):
                 raise ProtocolError("bad stream state")
-        si = st.get("stdin")
-        if si is not None:
-            if si == ["orig"]:
-                sys.stdin, self.stdin = self.orig["stdin"], None
-            elif isinstance(si, list) and len(si) == 2 and si[0] == "sio" and isinstance(si[1], str):
-                sys.stdin = self.stdin = io.StringIO(si[1])
-                self.stdin_pos = 0
+            kind, test_obj = v[0], v[-1]
+            if kind == "orig":
+                obj = self.orig[name]
+            elif kind == "cand":
+                obj = test_obj  # the candidate's own object
+            elif name == "stdin" and kind == "sio":
+                if len(v) != 3 or not isinstance(v[1], str):
+                    raise ProtocolError("bad stdin state")
+                obj = io.StringIO(v[1])
+            elif kind == "sio" and isinstance(test_obj, TestObject):
+                obj = _Capture(self, name, test_obj._k)
             else:
-                sys.stdin, self.stdin = _Unmirrored(self, "sys.stdin"), None
+                obj = _Unmirrored(self, "sys." + name)
+            if kind in ("sio", "other"):
+                self.standin[id(obj)] = (obj, test_obj)
+            if name == "stdin":
+                self.stdin = obj if kind == "sio" else None
+                self.stdin_pos = 0
+            setattr(sys, name, obj)
+            self.seen[name] = obj
         for name in ("print", "input"):
             if name in st:
                 v = st[name]
-                setattr(builtins, name, self.orig[name] if v is None else v)
+                obj = self.orig[name] if v is None else v
+                setattr(builtins, name, obj)
+                self.seen[name] = obj
         if "argv" in st:
-            v = st["argv"]
-            if type(v) is not tuple:
-                raise ProtocolError("bad argv")
-            sys.argv = list(v)
+            sys.argv = self.argv_obj = st["argv"]
+        if "path" in st:
+            v = st["path"]
+            if not (isinstance(v, list) and len(v) == 5 and type(v[0]) is int and isinstance(v[1], list) and type(v[2]) is int and type(v[3]) is int and isinstance(v[4], list) and 0 <= v[2] <= v[3] <= len(v[1])):
+                raise ProtocolError("bad sys.path state")
+            new = path_compose(self.path_own, [path_entry_in(p, self.cwd0) for p in v[4]], [path_entry_in(p, self.cwd0) for p in v[1]], v[2], v[3])
+            if new is None:
+                self._poison("the candidate's interpreter has a different path from the tests' one: their sys.path changes can't be shared")
+            else:
+                lst = self.path_lists.get(v[0])
+                if lst is None:
+                    lst = self.path_lists[v[0]] = []
+                if lst != new:
+                    lst[:] = new
+                sys.path = lst
+            self.path_obj, self.path0 = sys.path, list(sys.path)
         env = st.get("env")
         if env is not None:
-            for k, v in (env.get("set") or {}).items():
-                os.environ[k] = v
-            for k in env.get("del") or ():
-                os.environ.pop(k, None)
+            if not env_apply(env):
+                self._poison("the tests set an environment variable the candidate's process can't set")
+            self.env_last = dict(os.environ)
+            raw = env_raw()
+            self.env_raw = None if raw is None else dict(raw)
         if "cwd" in st:
+            where = cwd_in(st["cwd"], self.cwd0)
             try:
-                os.chdir(self.cwd0 if st["cwd"] is None else st["cwd"])
+                _chdir(where)
             except OSError as e:
-                self._poison("the tests changed directory to %s, which the candidate process can't enter (%s)" % (clip(st["cwd"], 200), e.strerror))
+                self._poison("the tests changed directory to %s, which the candidate process can't enter (%s)" % (clip(where, 200), e.strerror))
+            try:
+                self.cwd_last = _getcwd()
+            except OSError:
+                self.cwd_last = None
+        if "umask" in st:
+            um = st["umask"]
+            if type(um) is not int or not 0 <= um <= 0o777:
+                raise ProtocolError("bad umask")
+            _umask(um)
+            self.umask = um
+        if "locale" in st:
+            if type(st["locale"]) is not str or not locale_set(st["locale"]):
+                self._poison("the tests set a locale the candidate's process can't set the same way (%s)" % clip(st["locale"], 200))
+            self.locale = locale_now()
+        if "tz" in st:
+            if _tzset is not None:
+                _tzset()
+            if st["tz"] != tz_now():
+                self._poison("the tests called time.tzset() with a time zone the candidate's process can't reproduce")
+            self.tz = tz_now()
         rs = st.get("random")
         if rs is not None:
             import random
@@ -2777,17 +3191,72 @@ class Server(Side):
             warnings._showwarnmsg_impl = self.warn_orig[1] if impl is None else impl
             self.warn = warnings_state()
 
+    def _slot(self, enc, cur):
+        """How the tests' side takes the candidate's sys.stdout (or stdin, print, ...) cur: its own original, the
+        test object a stand-in stands for, or the candidate's object (a proxy there; using it runs here)."""
+        hit = self.standin.get(id(cur))
+        if hit is not None and hit[0] is cur:
+            return ["obj", enc.enc(hit[1])]
+        return ["obj", enc.enc(cur)]
+
+    def _cst(self, enc):
+        """Process state the candidate's code changed since the tests last had it; what the tests' process can't
+        share ends the run."""
+        cst = {}
+        for mod, name in ((sys, "stdout"), (sys, "stderr"), (sys, "stdin"), (builtins, "print"), (builtins, "input")):
+            cur = getattr(mod, name)
+            if cur is not self.seen[name]:
+                self.seen[name] = cur
+                cst[name] = ["orig"] if cur is self.orig[name] else self._slot(enc, cur)
+        if sys.argv is not self.argv_obj:
+            self.argv_obj = sys.argv
+            cst["argv"] = enc.enc(sys.argv)
+        raw = env_raw()
+        if raw is None or raw != self.env_raw:
+            env = dict(os.environ)
+            if env != self.env_last:
+                cst["env"] = env_diff(self.env_last, env)
+                self.env_last = env
+            self.env_raw = None if raw is None else dict(raw)
+        try:
+            cwd = _getcwd()
+        except OSError as e:
+            self._poison("the candidate's working directory is gone (%s)" % e.strerror)
+            cwd = self.cwd_last
+        if cwd != self.cwd_last:
+            self.cwd_last = cwd
+            cst["cwd"] = cwd_out(cwd, self.cwd0)
+        um = umask_now(self.umask)
+        if um != self.umask:
+            self.umask = cst["umask"] = um
+        lc = locale_now()
+        if lc != self.locale:
+            self.locale = cst["locale"] = lc
+        tz = tz_now()
+        if tz != self.tz:
+            self.tz = cst["tz"] = tz
+        if path_changed(self.path_obj, self.path0):
+            self._poison("the candidate's code changed sys.path, which the tests' process can't share (its imports would differ)")
+        return cst
+
     def _report(self, msg, enc):
         """Output, stdin use and process state the candidate's code changed, for the tests' side."""
         if self.out:
             msg["out"], self.out = self.out, []
         if self.weak_alive:
             msg["weakalive"], self.weak_alive = self.weak_alive, []
-        if self.stdin is not None and sys.stdin is self.stdin and not self.stdin.closed:
+        if self.stdin is not None and not self.stdin.closed:
             pos = self.stdin.tell()
             if pos != self.stdin_pos:
                 msg["stdin"] = pos - self.stdin_pos
                 self.stdin_pos = pos
+        try:
+            cst = self._cst(enc)
+        except BaseException as e:  # noqa: B036 - a value that can't be sent ends the run
+            self._poison("the candidate's process state can't be sent to the tests: %s" % clip(_safe_str(e) or type(e).__name__, 200))
+            cst = None
+        if cst:
+            msg["cst"] = cst
         if self.random is not None:
             r = sys.modules.get("random")
             rs = r.getstate() if r is not None else None
@@ -2858,6 +3327,10 @@ class Server(Side):
                 for name in ("print", "input", "argv"):
                     if st.get(name) is not None:
                         st[name] = dec.dec(st[name])
+                for name in ("stdout", "stderr", "stdin"):
+                    v = st.get(name)
+                    if isinstance(v, list) and len(v) >= 2:
+                        st[name] = v[:-1] + [dec.dec(v[-1])]
                 ws = st.get("warnings")
                 if ws is not None:
                     if not (isinstance(ws, list) and len(ws) == 3):
@@ -2910,6 +3383,8 @@ class Server(Side):
             self.depth -= 1
             if isinstance(e, (ProtocolError, _Poisoned)) and self.poison is None:
                 self._poison("%s: %s" % (type(e).__name__, _safe_str(e)))
+            elif type(e) is TypeError and _TEST_DATA in _safe_str(e):
+                self._poison(_DATA_ERR % clip(_safe_str(e), 200))
             self._send({"rep": {"raise": True}}, [e])
             return
         self.depth -= 1

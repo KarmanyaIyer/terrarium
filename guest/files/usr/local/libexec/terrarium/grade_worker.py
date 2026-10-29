@@ -13,9 +13,10 @@ def main():
     workspace = args[args.index("--workspace") + 1]
     here = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, here)
-    from grade_rpc import Server
+    from grade_rpc import TEST_ARGV, Server
 
     sys.path.remove(here)
+    sys.argv = list(TEST_ARGV)  # as the tests' side and the plain run have it
     sys.path.insert(0, workspace)
     os.chdir(workspace)
     sock = socket.socket(fileno=fd)

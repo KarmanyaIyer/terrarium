@@ -30,7 +30,7 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from grade_rpc import CandidateGone, Client, Inexact, proxy_rid, std_module, type_path  # noqa: E402
+from grade_rpc import GRADER_CODE, TEST_ARGV, CandidateGone, Client, Inexact, guard_frames, proxy_rid, std_module, type_path  # noqa: E402
 
 sys.path.remove(HERE)
 
@@ -120,7 +120,7 @@ def short(err):
     return (lines[-1] if lines else err[0].__name__)[:300]
 
 
-EXC_LINE = re.compile(r"^[A-Za-z_][\w.]*(Error|Exception|Exit|Interrupt|Warning|CandidateGone|Unsendable)\b")
+EXC_LINE = re.compile(r"^[A-Za-z_][\w.]*(Error|Exception|Exit|Interrupt|Warning|CandidateGone|Unsendable|Inexact)\b")
 
 
 def summary(tb, kind):
@@ -268,6 +268,8 @@ def main():
     budget = opt("--budget")
     deadline = time.monotonic() + float(budget) if budget else None
 
+    # As `python3 -m unittest test_hidden` has it, in both runs (the isolated run's candidate side too).
+    sys.argv = list(TEST_ARGV)
     support = types.ModuleType("terrarium_grading")
     support.workspace = source
     support.stdlib = importlib.import_module
@@ -298,6 +300,9 @@ def main():
     sys.meta_path.insert(0, CandidateFinder(client, [m for m in (opt("--modules") or "").split(",") if m]))
     mirror_patches(client)
     refuse_log_asserts()
+    # Test code reading the grader's frames (a traceback through candidate code, a stack in a callback) can't see
+    # what one process would show: a grader error. The runner and unittest's own reporting may read them.
+    guard_frames(GRADER_CODE | {id(globals())}, GRADER_CODE, Inexact, True)
     run_tests(tests, results)
     results.write({"candidate": client.gone, "seconds": round(time.monotonic() - t0, 2)})
 
