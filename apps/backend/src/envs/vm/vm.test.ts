@@ -670,11 +670,15 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
         times[name] = Math.round(performance.now() - t0);
         const why = `${name}: ${s.verdict} ${testsGrade(s, code).detail}`;
         const p = s.plain ?? {};
-        assert.equal(!p.error && (p.expected ?? 0) > 0 && p.passed === p.expected, plainOk, `${name}: plain unittest. ${why}`);
+        // What `python -m unittest` says: the plain run counts a skip as a failure (skip_only), unittest doesn't.
+        const skipped = (p.failures ?? []).filter((f) => f.kind === "skipped").length;
+        const plainPass = !p.error && (p.expected ?? 0) > 0 && (p.passed ?? 0) + skipped === p.expected;
         if (iso === "known-lenient") {
-          gaps[name] = isoVerdict(s);
+          // Reported only: some depend on the guest (tz_lenient: without tzdata both zones are UTC, so plain passes).
+          gaps[name] = `plain ${plainPass ? "pass" : "fail"}, isolated ${isoVerdict(s)}`;
           continue;
         }
+        assert.equal(plainPass, plainOk, `${name}: plain unittest. ${why}`);
         assert.equal(isoVerdict(s), iso, why);
         if (REVIEW6_PERF.has(name)) assert.ok(times[name]! < 20_000, `${name} took ${times[name]}ms`);
         if (plainOk) continue;
