@@ -11,10 +11,12 @@ Tests: every check is graded twice, and passes only if both runs pass.
    the workspace or the grading.
 2. Copies the workspace three times under /var/lib/terrarium-grade/<id>/, all before any candidate code
    runs: `src`, root-owned, read-only and without symlinks, is what the hidden tests read as the candidate's
-   source; `ws`, agent-owned, is where the isolated run's candidate code runs; `plain/ws` is the plain run's,
-   in a root-only dir until that run starts.
+   source (`terrarium_grading.workspace`, in both runs); `ws`, agent-owned, is where the isolated run's
+   candidate code runs; `plain/ws` is the plain run's, in a root-only dir until that run starts. `cwd`, hard
+   links to `src`, is the isolated run's tests' working directory: the plain run's tests read relative paths
+   in the candidate's live copy, so those are checked against what candidate code changed in `ws`.
 3. Isolated run: the candidate side (grade_worker.py) as agent in `ws` and the test side (grade_runner.py) as
-   grader in `src`, connected by a socketpair and sharing one random hash seed, so the hidden tests never
+   grader in `cwd`, connected by a socketpair and sharing one random hash seed, so the hidden tests never
    share a process with candidate code. It must be sound: where it can't answer as one process would, it
    raises a grader error rather than answer. Its counts go to a grader-only dir; they are read, and
    everything it started is killed, before step 4.
@@ -193,9 +195,9 @@ def copy_tests(tests, dst):
     return os.path.join(dst, os.path.relpath(tests, root))
 
 
-def copy_workspace(src, dst):
-    """cp -a as root: keeps owners, modes and symlinks (never followed)."""
-    cp = subprocess.run(["/bin/cp", "-a", "--", src + "/.", dst + "/"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)
+def copy_workspace(src, dst, link=False):
+    """cp -a as root: keeps owners, modes and symlinks (never followed); link: files hard-linked, not copied."""
+    cp = subprocess.run(["/bin/cp", "-a"] + (["-l"] if link else []) + ["--", src + "/.", dst + "/"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)
     if cp.returncode != 0:
         raise RuntimeError("copying the workspace failed: %s" % cp.stderr.decode("utf-8", "replace").strip()[:300])
 
@@ -319,7 +321,7 @@ def outcome(runner, results, timed_out, timeout):
     return r
 
 
-def run_isolated(source, ws, out, tests, mods, timeout, gid, local, py):
+def run_isolated(source, tcwd, ws, out, tests, mods, timeout, gid, local, py):
     """Candidate code as agent in ws, the hidden tests as grader, over a socketpair."""
     results = os.path.join(out, "results.json")
     c_sock, t_sock = socket.socketpair()
@@ -336,14 +338,15 @@ def run_isolated(source, ws, out, tests, mods, timeout, gid, local, py):
     procs = []
     t0 = time.monotonic()
     try:
-        # The tests run in the sealed source copy, as the plain run's do in theirs: relative paths read the same.
+        # The tests run in a sealed copy of the workspace, as the plain run's do in theirs: relative paths read the same
+        # unless candidate code changed them (a grader error then).
         if local:
             env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", **seed)
             procs.append((subprocess.Popen(worker_cmd, cwd=ws, env=env, pass_fds=[c_sock.fileno()], start_new_session=True, **common), wid))
-            procs.append((subprocess.Popen(runner_cmd, cwd=source, env=env, pass_fds=[t_sock.fileno()], start_new_session=True, **common), rid))
+            procs.append((subprocess.Popen(runner_cmd, cwd=tcwd, env=env, pass_fds=[t_sock.fileno()], start_new_session=True, **common), rid))
         else:
             procs.append((subprocess.Popen([RUN, wid, "agent", ws] + worker_cmd, env=dict(AGENT_ENV, **seed), pass_fds=[c_sock.fileno()], **common), wid))
-            procs.append((subprocess.Popen([RUN, rid, "grader", source] + runner_cmd, env=dict(GRADER_ENV, **seed), pass_fds=[t_sock.fileno()], **common), rid))
+            procs.append((subprocess.Popen([RUN, rid, "grader", tcwd] + runner_cmd, env=dict(GRADER_ENV, **seed), pass_fds=[t_sock.fileno()], **common), rid))
         c_sock.close()
         t_sock.close()
         (worker, _), (runner, _) = procs
@@ -392,7 +395,7 @@ def run_plain(source, hold, pws, tests, timeout, gid, local, py):
 def grade_tests(tests, src, timeout, gid, local):
     kill_users(local)
     job = tempfile.mkdtemp(prefix="terrarium-grade-") if local else job_dir(gid)
-    source, ws, out, hold = (os.path.join(job, n) for n in ("src", "ws", "out", "plain"))
+    source, tcwd, ws, out, hold = (os.path.join(job, n) for n in ("src", "cwd", "ws", "out", "plain"))
     pws = os.path.join(hold, "ws")
     iso, plain = blank("not run"), blank("not run")
     stage = iso
@@ -402,11 +405,15 @@ def grade_tests(tests, src, timeout, gid, local):
             for d in (source, ws, pws):
                 shutil.copytree(src, d, symlinks=True)
             seal(source, local=True)
+            shutil.copytree(source, tcwd, symlinks=True)
             os.mkdir(out, 0o700)
         else:
             os.mkdir(source, 0o700)
             copy_workspace(src, source)
             seal(source)
+            os.mkdir(tcwd, 0o700)
+            copy_workspace(source, tcwd, link=True)
+            os.chmod(tcwd, 0o755)
             os.mkdir(ws, 0o755)
             os.chown(ws, AGENT_UID, AGENT_UID)
             copy_workspace(src, ws)
@@ -418,7 +425,7 @@ def grade_tests(tests, src, timeout, gid, local):
             os.chown(pws, AGENT_UID, AGENT_UID)
             copy_workspace(src, pws)
         py = sys.executable if local else "/usr/bin/python3"
-        iso = run_isolated(source, ws, out, tests, candidate_modules(ws), timeout, gid, local, py)
+        iso = run_isolated(source, tcwd, ws, out, tests, candidate_modules(ws), timeout, gid, local, py)
         # Its counts are read and its processes dead: nothing the plain run's code does can change them.
         shutil.rmtree(ws, ignore_errors=True)
         shutil.rmtree(out, ignore_errors=True)

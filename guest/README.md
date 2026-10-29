@@ -74,11 +74,12 @@ Results go to `data/vm-verify/latest.json`.
   - `grade.py` with `grade_rpc.py`, `grade_worker.py`, `grade_runner.py`: hidden-test grading (eval check
     type `tests`). As root it kills every agent process and, before any candidate code runs, copies the
     workspace three times into a job dir: `src` (root-owned, read-only, symlinks removed and never
-    followed; what the hidden tests read as the candidate's source, via `terrarium_grading.workspace`),
-    `ws` (agent-owned; the isolated run) and `plain/ws` (agent-owned, in a root-only dir until the plain
-    run). Then two runs of up to `--timeout` each:
+    followed; what the hidden tests read as the candidate's source, via `terrarium_grading.workspace`, in
+    both runs), `ws` (agent-owned; the isolated run) and `plain/ws` (agent-owned, in a root-only dir until
+    the plain run), plus `cwd` (hard links to `src`: the isolated run's tests' working directory). Then two
+    runs of up to `--timeout` each:
     - Isolated: the candidate's code in a worker as `agent` in `ws`, the hidden tests in a runner as
-      `grader` (`python3 -B -s -S -P`, cwd `src`), connected by a socketpair, both with one random
+      `grader` (`python3 -B -s -S -P`, cwd `cwd`), connected by a socketpair, both with one random
       `PYTHONHASHSEED`. Details below.
     - Plain: once the isolated run's processes are dead and its counts read (its `ws` and results are
       deleted), `grade_runner.py --plain` as `agent` in `plain/ws` with a copy of the tests: ordinary
@@ -171,11 +172,12 @@ Results go to `data/vm-verify/latest.json`.
       logger's handlers on the test side after candidate code added one is a grader error, and so are
       `assertLogs`/`assertNoLogs`. A stream the grader can't mirror (some other object) is a grader error
       when candidate code uses it. Each process has its own copy of the workspace (`ws`, and the tests'
-      sealed `src`): the tests looking at a path in theirs (open, listing, `os.stat`, `os.path.exists`,
+      sealed `cwd`): the tests looking at a path in theirs (open, listing, `os.stat`, `os.path.exists`,
       pathlib) that candidate code created, wrote, removed, renamed or changed the mode of in its copy, a
       directory holding one, or anything after candidate code started a process or called native code
       through ctypes, is a grader error; so is the tests changing their copy. Paths outside the workspace
-      (`tempfile`, `/tmp`) are the same file for both.
+      (`tempfile`, `/tmp`) are the same file for both, and so is `terrarium_grading.workspace` (`src`,
+      the copy taken before candidate code ran, in both runs).
     - Process introspection that can't see the other half is a grader error: `sys.getrefcount`,
       `gc.get_referrers`, `weakref.getweakrefcount` or `getweakrefs` of an object both processes share (a
       proxy, a linked container, a by-value object that crossed, a test object the candidate holds) on

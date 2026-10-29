@@ -926,7 +926,7 @@ _FS_CHANGE = {
     "shutil.rmtree": ((0, 1),),
     "sqlite3.connect": ((0, None),),
 }
-_FS_LOOK = {"open": ((0, None),), "os.listdir": ((0, None),), "os.scandir": ((0, None),), "os.listxattr": ((0, None),), "os.getxattr": ((0, None),), "sqlite3.connect": ((0, None),)}
+_FS_LOOK = {"open": ((0, None),), "os.listdir": ((0, None),), "os.scandir": ((0, None),), "os.chdir": ((0, None),), "os.listxattr": ((0, None),), "os.getxattr": ((0, None),), "sqlite3.connect": ((0, None),)}
 _FS_EVENTS = frozenset(_FS_CHANGE) | frozenset(_FS_LOOK)
 # After these anything in the workspace may have changed: another process, or native code.
 _FS_ANY = frozenset(("subprocess.Popen", "os.system", "os.exec", "os.posix_spawn", "os.spawn", "os.fork", "os.forkpty", "ctypes.dlopen", "ctypes.dlsym", "ctypes.call_function"))
@@ -934,6 +934,7 @@ _O_WRITE = os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND
 # Calls on the tests' side that look at files without an audit event (os.path's checks and pathlib go through them).
 _FS_CALLS = ("stat", "lstat", "access", "readlink")
 _FS_SQLITE = ("-journal", "-wal", "-shm")
+_FS_MEMORY = (":memory:", "", b":memory:", b"")  # sqlite3 databases that aren't files
 # Where a file operation from these (or the grader) isn't the code under test's: see fs_owner().
 _FS_OWNERS = frozenset(("unittest", "importlib", "_frozen_importlib", "_frozen_importlib_external", "zipimport"))
 
@@ -952,12 +953,18 @@ def fd_path(fd):
 
 def fs_where(p, dir_fd):
     """The absolute, normalized path an audit event's (or os call's) path argument names, relative to dir_fd where
-    that's set (>= 0); None where it can't be told."""
+    that's set (>= 0); None where it can't be told, False for a descriptor that isn't a file or directory (a pipe,
+    a socket)."""
     if p is None:
         p = "."
     elif type(p) is int:
+        try:
+            if os.fstat(p).st_mode & 0o170000 not in (0o100000, 0o040000):
+                return False
+        except (OSError, ValueError, OverflowError):
+            return False
         p = fd_path(p)
-        if p is None:
+        if p is None or not _isabs(p):
             return None
     elif type(p) is not str:
         try:
@@ -988,13 +995,11 @@ def fs_rel(path, roots):
     return None
 
 
-def fs_hit(rel, changed):
-    """Whether looking at rel can see a change at one of the changed paths: the same path, one inside it (a
-    directory's listing), or one holding it."""
-    if rel == "." and changed:
-        return True
+def fs_hit(rel, changed, inside=True):
+    """Whether looking at rel can see a change at one of the changed paths: the same path, one holding it, or (with
+    inside: a directory's listing or times) one inside it."""
     for c in changed:
-        if c == rel or c == "." or c.startswith(rel + "/") or rel.startswith(c + "/"):
+        if c == rel or c == "." or rel.startswith(c + "/") or (inside and (rel == "." or c.startswith(rel + "/"))):
             return True
     return False
 
@@ -3820,18 +3825,20 @@ class Client(Side):
                 if args[1] in ("__code__", "__defaults__", "__kwdefaults__") and self._standin_rid(args[0]) is not None and id(_getframe(1).f_globals) != own:
                     raise Inexact("the tests set %s of a candidate function's stand-in, which the candidate's own function wouldn't get" % args[1])
             elif ev in _FS_EVENTS:
-                write = ev in _FS_CHANGE and (ev != "open" or (type(args[2]) is int and args[2] & _O_WRITE and type(args[0]) is not int))
+                if ev == "sqlite3.connect" and type(args[0]) in (str, bytes) and args[0] in _FS_MEMORY:
+                    return
+                write = ev in _FS_CHANGE and ev != "sqlite3.connect" and (ev != "open" or (type(args[2]) is int and args[2] & _O_WRITE and type(args[0]) is not int))
                 if write or self.fs_changed or self.fs_any:
                     for i, j in _FS_CHANGE[ev] if write else _FS_LOOK.get(ev, ()):
-                        self._fs_check(args[i] if i < len(args) else None, args[j] if j is not None and j < len(args) else None, write, _getframe(1))
+                        self._fs_check(args[i] if i < len(args) else None, args[j] if j is not None and j < len(args) else None, write, _getframe(1), ev != "os.chdir")
 
         sys.addaudithook(code_guard)
 
         def fs_call(real):
-            def guarded(path, *args, **kwargs):
+            def guarded(*args, **kwargs):
                 if self.fs_changed or self.fs_any:
-                    self._fs_check(path, kwargs.get("dir_fd"), False, _getframe(1))
-                return real(path, *args, **kwargs)
+                    self._fs_check(args[0] if args else kwargs.get("path"), kwargs.get("dir_fd"), False, _getframe(1))
+                return real(*args, **kwargs)
 
             guarded.__name__ = guarded.__qualname__ = real.__name__
             guarded.__doc__ = real.__doc__
@@ -3876,9 +3883,10 @@ class Client(Side):
         n = self.link_of.get(id(x))
         return n is not None and self.links.get(n) is x
 
-    def _fs_check(self, p, dir_fd, write, f):
+    def _fs_check(self, p, dir_fd, write, f, inside=True):
         """A file operation by the tests (frame f) on path p, in their copy of the workspace: Inexact where one
-        process would see the candidate's changes there (or the tests' change would reach the candidate's code)."""
+        process would see the candidate's changes there, inside it unless only its existence counts (inside=False:
+        chdir), or the tests' change would reach the candidate's code."""
         tid = _get_ident()
         if tid in self.fs_busy:
             return
@@ -3887,6 +3895,8 @@ class Client(Side):
             if not fs_owner(f, _GRADER_GLOBALS):
                 return
             where = fs_where(p, dir_fd)
+            if where is False:
+                return
             rel = None
             if where is not None:
                 rel = fs_rel(where, self.fs_roots)
@@ -3896,13 +3906,15 @@ class Client(Side):
                     return
         finally:
             self.fs_busy.discard(tid)
-        what = clip(repr(p), 200) if rel is None else ("the workspace" if rel == "." else rel)
+        what = clip(repr(p), 200) if rel is None else ("its top directory" if rel == "." else rel)
         if write:
             raise Inexact("the tests changed %s in their copy of the workspace, which the candidate's process doesn't share (one process would see the change)" % what)
-        if rel is None or self.fs_any:
+        if rel is None:
+            raise Inexact("the tests looked at %s, a path the grader can't place, after the candidate's code changed its copy of the workspace (each process has its own; one process would see the change)" % what)
+        if self.fs_any:
             raise Inexact("the tests looked at %s after the candidate's code started a process or called native code, which could have changed its copy of the workspace (each process has its own; one process would see the change)" % what)
-        if fs_hit(rel, self.fs_changed):
-            raise Inexact("the tests looked at %s in their copy of the workspace, where the candidate's code changed %s in its own (each process has its own; one process would see the change)" % (what, ", ".join(sorted(c for c in self.fs_changed if fs_hit(rel, (c,))))[:200]))
+        if fs_hit(rel, self.fs_changed, inside):
+            raise Inexact("the tests looked at %s in their copy of the workspace, where the candidate's code changed %s in its own (each process has its own; one process would see the change)" % (what, ", ".join(sorted(c for c in self.fs_changed if fs_hit(rel, (c,), inside)))[:200]))
 
     def _hints_guard(self, real, evals):
         def guarded(obj, *args, **kwargs):
@@ -4287,9 +4299,11 @@ class Server(Side):
                 return
             for i, j in spec:
                 p = args[i] if i < len(args) else None
-                if ev == "sqlite3.connect" and p in (":memory:", "", b":memory:", b""):
+                if ev == "sqlite3.connect" and type(p) in (str, bytes) and p in _FS_MEMORY:
                     continue
                 where = fs_where(p, args[j] if j is not None and j < len(args) else None)
+                if where is False:
+                    continue
                 if where is None:
                     self._fs_note("*")
                     continue

@@ -26,7 +26,10 @@
     "fs_tests_write": [true, "inexact"],
     "fs_roundtrip_ok": [true, "pass"],
     "fs_tmp_ok": [true, "pass"],
-    "fs_unrelated_ok": [true, "pass"]
+    "fs_unrelated_ok": [true, "pass"],
+    "fs_sqlite_ok": [true, "pass"],
+    "fs_chdir_lenient": [false, "inexact"],
+    "fs_process_ok": [true, "pass"]
   },
   "2: context managers with an exception in the with body; test handles where built-in data is needed": {
     "ctx_cwd": [true, "pass"],
