@@ -161,9 +161,10 @@ export class EnvManager {
       .map((s) => ({ id: s.id, envId: s.env_id, label: s.label, kind: s.kind, bytes: s.bytes, createdAt: s.created_at }));
   }
 
+  /** Newest `limit` rows by their latest attempt, so a collapsed loop that started long ago stays in the window. */
   netLog(id: string, limit = 500): NetEntry[] {
     return this.store
-      .all<any>("SELECT * FROM net_log WHERE env_id = ? ORDER BY ts DESC LIMIT ?", id, Math.min(Math.max(limit, 1), 5000))
+      .all<any>("SELECT * FROM net_log WHERE env_id = ? ORDER BY COALESCE(last_ts, ts) DESC, ts DESC LIMIT ?", id, Math.min(Math.max(limit, 1), 5000))
       .map((r) => ({
         id: r.id,
         envId: r.env_id,

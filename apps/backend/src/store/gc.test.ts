@@ -150,4 +150,26 @@ test("identical net decisions collapse into one row with a count", async () => {
   assert.ok(broadcasts.length <= 5, `${broadcasts.length} broadcasts for 5002 attempts`);
   const listed = envs.netLog(env.id).find((e) => e.repeats);
   assert.equal(listed?.repeats, 5000);
+
+  // Review 2, #7: a deny loop that began before many other attempts is still in the newest-N window while it
+  // repeats, and an allow never folds into a deny.
+  const t1 = t0 + 200_000;
+  const loop = (ts: number) => emit({ ts, method: "GET", url: "http://10.9.9.9/", host: "10.9.9.9", ip: "10.9.9.9", decision: "deny", reason: "private range 10.9.9.9" });
+  loop(t1);
+  for (let i = 0; i < 30; i++) emit({ ts: t1 + 1 + i, method: "GET", url: `https://pypi.org/p${i}`, host: "pypi.org", ip: "151.101.0.223", decision: "allow", reason: "registries", status: 200 });
+  for (let i = 0; i < 10; i++) loop(t1 + 100 + i);
+  emit({ ts: t1 + 200, method: "GET", url: "http://10.9.9.9/", host: "10.9.9.9", ip: "10.9.9.9", decision: "allow", reason: "x" });
+  envs.flushNetRepeats();
+  const newest = envs.netLog(env.id, 5);
+  assert.deepEqual(
+    newest.map((e) => [e.url, e.decision, e.repeats ?? 1]),
+    [
+      ["http://10.9.9.9/", "allow", 1],
+      ["http://10.9.9.9/", "deny", 11],
+      ["https://pypi.org/p29", "allow", 1],
+      ["https://pypi.org/p28", "allow", 1],
+      ["https://pypi.org/p27", "allow", 1],
+    ],
+  );
+  assert.equal(newest[1].lastTs, t1 + 109);
 });
