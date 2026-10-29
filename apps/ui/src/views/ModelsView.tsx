@@ -263,6 +263,24 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
             presence <input className="input num" value={pres} placeholder="–" onChange={(e) => setPres(e.target.value)} />
           </label>
         </div>
+        <span>Model</span>
+        <div className="md-facts num">
+          <span>
+            <span className="dim">quant</span> {m.quant}
+          </span>
+          <span>
+            <span className="dim">disk</span> {fmtBytes(m.diskBytes)}
+          </span>
+          <span>
+            <span className="dim">tool calls</span> <span className="mono">{m.toolFormat}</span>
+          </span>
+          <span>
+            <span className="dim">thinking</span> {m.thinking}
+          </span>
+          <span>
+            <span className="dim">native context</span> {fmtCtx(m.nativeContext)}
+          </span>
+        </div>
         <span>Sessions</span>
         <div className="md-users">
           {users.length

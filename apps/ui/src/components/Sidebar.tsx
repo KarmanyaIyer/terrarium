@@ -30,12 +30,18 @@ export function EnvChip({ type }: { type: EnvSummary["type"] }) {
 
 function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
   return (
-    <div className={`sb-session${active ? " active" : ""}`} onClick={() => openSession(s.id)} role="button" tabIndex={0} onKeyDown={(e) => {
+    <div
+      className={`sb-session${active ? " active" : ""}`}
+      onClick={() => openSession(s.id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
         if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
           e.preventDefault();
           openSession(s.id);
         }
-      }}>
+      }}
+    >
       <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
       <span className="truncate sb-title">{s.title}</span>
       <Time ts={s.updatedAt} className="sb-time" />
