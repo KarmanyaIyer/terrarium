@@ -661,6 +661,64 @@ def tz_now():
     return [_time.tzname[0], _time.tzname[1], _time.timezone, _time.altzone, _time.daylight]
 
 
+# Loggers as neither process changed them: logging.disable() level, and root's (level, propagate, disabled).
+LOG_DEFAULT = [0, {"": [30, True, False]}]
+
+
+def log_levels():
+    """[logging.disable() level, {logger name ("" for root): [level, propagate, disabled]}] for the loggers that differ
+    from a new one (root always): how the loggers filter records, which both processes keep alike."""
+    lg = sys.modules.get("logging")
+    if lg is None:
+        return LOG_DEFAULT
+    root, mgr, cls = lg.root, lg.Logger.manager, lg.Logger
+    out = {"": [root.level, root.propagate, root.disabled]}
+    for name, x in list(mgr.loggerDict.items()):
+        if isinstance(x, cls):
+            st = [x.level, x.propagate, x.disabled]
+            if st != [0, True, False]:
+                out[name] = st
+    return [mgr.disable, out]
+
+
+def log_apply(st):
+    """Loggers as the other process has them (log_levels()); False if they can't be."""
+    if not (isinstance(st, list) and len(st) == 2 and type(st[0]) is int and isinstance(st[1], dict)):
+        raise ProtocolError("bad logging state")
+    lg = _std("logging")
+    cur = log_levels()
+    if st[0] != cur[0]:
+        lg.disable(st[0])
+    for name in set(cur[1]).union(st[1]):
+        want = st[1].get(name, [0, True, False])
+        if not (isinstance(want, list) and len(want) == 3 and type(want[0]) is int and type(want[1]) is bool and type(want[2]) is bool):
+            raise ProtocolError("bad logging state")
+        if cur[1].get(name) != want:
+            x = lg.root if name == "" else lg.getLogger(name)
+            x.setLevel(want[0])
+            x.propagate, x.disabled = want[1], want[2]
+    return log_levels() == st
+
+
+class _CandidateHandlers(list):
+    """A logger's handler list in the tests' process after the candidate's code added handlers or filters to that
+    logger in its own: what using it would answer isn't what one process would (the candidate's are elsewhere)."""
+
+    __slots__ = ()
+
+
+def _refuse_handlers(name):
+    def method(self, *args, **kwargs):
+        raise Inexact("logging: the candidate's code added handlers or filters to this logger in its own process, which the tests' process doesn't have")
+
+    method.__name__ = name
+    return method
+
+
+for _n in ("__iter__", "__len__", "__getitem__", "__setitem__", "__delitem__", "__contains__", "__bool__", "__eq__", "__ne__", "__reversed__", "__add__", "__iadd__", "__mul__", "__repr__", "append", "remove", "insert", "extend", "pop", "clear", "copy", "index", "count", "sort", "reverse"):
+    setattr(_CandidateHandlers, _n, _refuse_handlers(_n))
+
+
 def env_raw():
     """os.environ's encoded storage (CPython): comparing it is cheaper than decoding the environment."""
     raw = getattr(os.environ, "_data", None)
@@ -2109,6 +2167,107 @@ _DATA_KINDS = DATA_BASES
 _WEAK_ERR = "a weak reference the tests held to a candidate object died while the candidate still had the object"
 
 
+_CO_VARARGS, _CO_VARKEYWORDS, _CO_GENERATOR, _CO_COROUTINE, _CO_ASYNC_GENERATOR = 0x04, 0x08, 0x20, 0x80, 0x200
+# Readers of a stand-in function's or generator's code object that see only what is the candidate's in it (the
+# signature, flags, file and first line): inspect's signature, source and kind checks.
+_CODE_READERS = frozenset(("_signature_from_function", "_has_code_flag", "getfile", "findsource", "_signature_is_functionlike"))
+_CODE_ATTRS = frozenset(("__code__", "gi_code", "gi_frame"))
+
+
+def _make_forwarder(p, desc):
+    """A real function standing for candidate function p (its proxy): its signature, names, defaults, attributes
+    and kind (generator, coroutine) are the candidate function's; calling it calls that one. Its globals are this
+    module's, so its frames are the grader's (the frame guard keeps them from the tests)."""
+    names, argc, posonly, kwonly, flags = desc["vars"], desc["argc"], desc["posonly"], desc["kwonly"], desc["flags"]
+    defaults, kwdefaults = desc["defaults"], desc["kwdefaults"]
+    if any(not n.isidentifier() or keyword.iskeyword(n) or n.startswith("_terrarium") for n in names):
+        raise Inexact("the candidate function %s has a parameter the grader can't reproduce" % clip(desc["qual"], 100))
+    nd = len(defaults or ())
+    pos, kw, rest = names[:argc], names[argc : argc + kwonly], names[argc + kwonly :]
+    params, call = [], []
+    for j, n in enumerate(pos):
+        params.append(n + ("=None" if j >= argc - nd else ""))
+        call.append(n)
+        if j == posonly - 1:
+            params.append("/")
+    k = 0
+    if flags & _CO_VARARGS:
+        params.append("*" + rest[k])
+        call.append("*" + rest[k])
+        k += 1
+    elif kw:
+        params.append("*")
+    for n in kw:
+        params.append(n + ("=None" if kwdefaults is not None and n in kwdefaults else ""))
+        call.append("%s=%s" % (n, n))
+    if flags & _CO_VARKEYWORDS:
+        params.append("**" + rest[k])
+        call.append("**" + rest[k])
+    args = ", ".join(call)
+    if flags & _CO_ASYNC_GENERATOR:
+        # Its asend()/athrow() can't be passed on through a stand-in: using one is a grader error.
+        head, body = "async def", "raise Inexact('the candidate\\'s async generators can\\'t be used from the tests\\' process')\n  yield"
+    elif flags & _CO_COROUTINE:
+        head, body = "async def", "return await _terrarium_p(%s)" % args
+    elif flags & _CO_GENERATOR:
+        head, body = "def", "return (yield from _terrarium_p(%s))" % args
+    else:
+        head, body = "def", "return _terrarium_p(%s)" % args
+    src = "def _terrarium_make(_terrarium_p):\n %s _terrarium_f(%s):\n  %s\n return _terrarium_f\n" % (head, ", ".join(params), body)
+    ns = {}
+    exec(compile(src, "<terrarium>", "exec"), globals(), ns)
+    f = ns["_terrarium_make"](p)
+    co = f.__code__
+    kw = {"co_name": desc["co"], "co_filename": desc["file"], "co_firstlineno": desc["line"]}
+    if hasattr(co, "co_qualname"):
+        kw["co_qualname"] = desc["coq"]
+    f.__code__ = co.replace(**kw)
+    f.__name__, f.__qualname__, f.__module__, f.__doc__ = desc["name"], desc["qual"], desc["mod"], desc["doc"]
+    f.__defaults__, f.__kwdefaults__ = defaults, kwdefaults
+    f.__dict__ = desc["dict"]
+    if "ann" in desc:
+        f.__annotations__ = desc["ann"]
+    else:
+        f.__annotate__ = _fwd_annotate(p)
+    if desc.get("tp"):
+        f.__type_params__ = desc["tp"]
+    return f
+
+
+def _fwd_annotate(p):
+    def __annotate__(format):
+        if format != 1:
+            raise NotImplementedError
+        return dict(getattr(p, "__annotations__"))
+
+    return __annotate__
+
+
+def _gen_wrap(p):
+    """A real generator standing for candidate generator p (its proxy): what PEP 380's yield from does, without
+    asking p for an iterator (that would be this generator again)."""
+    try:
+        y = p.__next__()
+    except StopIteration as e:
+        return e.value
+    while True:
+        try:
+            sent = yield y
+        except GeneratorExit:
+            p.close()
+            raise
+        except BaseException as e:  # noqa: B036 - thrown in: passed on, as yield from does
+            try:
+                y = p.throw(e)
+            except StopIteration as e2:
+                return e2.value
+        else:
+            try:
+                y = p.__next__() if sent is None else p.send(sent)
+            except StopIteration as e:
+                return e.value
+
+
 class Client(Side):
     """Test side of the channel."""
 
@@ -2148,6 +2307,14 @@ class Client(Side):
         self.locale0 = locale_now()
         self.tz0 = tz_now()
         self.watch = None  # the tests' raw changes to standard-library modules and classes (install_guards)
+        self.state["loglevels"] = LOG_DEFAULT
+        self.fwd = weakref.WeakValueDictionary()  # rid -> the real function standing for candidate function rid
+        self.fwd_rids = weakref.WeakKeyDictionary()  # that function -> rid
+        self.fwd_desc = {}  # rid -> its decoded description, while its proxy lives
+        self.gens = weakref.WeakValueDictionary()  # rid -> the real generator standing for candidate generator rid
+        self.gen_rids = weakref.WeakKeyDictionary()  # that generator -> its proxy (kept as long as it)
+        self.fn_inexact = None  # why the tests' process can't have stand-in functions (their closures, globals)
+        self.module_inexact = None  # why it can't have stand-in modules (type() checks)
         self.std_orig = {}  # (path, name) -> (module dict or class, value before the tests' first change)
         import warnings
 
@@ -2196,6 +2363,7 @@ class Client(Side):
                 self.weak.add(rid)
             del self.ids[id(p)]
             del self.proxies[rid]
+            self.fwd_desc.pop(rid, None)
             self.release[rid] = None
         finally:
             self.lock.release()
@@ -2315,8 +2483,12 @@ class Client(Side):
         if any(_info(k) is None and k not in _PLAIN for k in mro):
             tails.append((self._tail(mro, is_meta, False), True))
         cls = None
+        if d.get("noweak") is True and not is_meta and layout.__weakrefoffset__ == 0 and layout.__dictoffset__ == 0 and layout.__itemsize__ == 0:
+            # As the candidate's class: no weak references (a __dict__ slot, which 3.12 manages as an unslotted
+            # class's dict, and no __weakref__).
+            ns["__slots__"] = ("__dict__",)
         for tail, inexact in tails:
-            # No __slots__: CPython 3.12 gives a slotted class whose MRO holds real Python classes their dict
+            # No other __slots__: CPython 3.12 gives a slotted class whose MRO holds real Python classes their dict
             # offset without the managed-dict flag (garbage to the collector). An unused instance dict is harmless.
             body = dict(ns, _terrarium_tail=tuple(tail), _terrarium_=(self, rid, d, real, inexact))
             try:
@@ -2497,6 +2669,12 @@ class Client(Side):
             name = std_module_name(v)
             if name is not None:
                 return {"t": "smod", "n": name}
+        if t is types.FunctionType or t is types.GeneratorType:
+            rid = self._standin_rid(v)
+            if rid is not None:
+                return {"t": "obj", "id": rid}
+        if t is types.MethodType and (self._standin_rid(v.__func__) is not None or proxy_rid(v.__func__) is not None):
+            return {"t": "meth", "f": enc.enc(v.__func__, depth + 1), "s": enc.enc(v.__self__, depth + 1)}
         fields = ntuple_fields(t)
         if fields is not None and t is not tuple and _plain_ntuple(t):
             self.ntuples[(t.__name__, fields)] = t
@@ -2561,10 +2739,20 @@ class Client(Side):
                 n = self.link_of.get(id(obj))
                 if n is not None and self.links.get(n) is obj:
                     self.touched.add(n)
-                return obj
-            if "c" not in x:
+            elif "c" not in x:
                 raise ProtocolError("unknown object %d" % rid)
-            return dec.register(x, self._instance(rid, x, dec, d))
+            else:
+                obj = dec.register(x, self._instance(rid, x, dec, d))
+            if "fn" in x:
+                return self._forwarder(rid, obj, x["fn"], dec, d)
+            if "gen" in x:
+                return self._gen_standin(rid, obj, x["gen"])
+            return obj
+        if t == "meth":
+            f, s = dec.dec(x.get("f"), d), dec.dec(x.get("s"), d)
+            if not callable(f):
+                raise ProtocolError("bad method")
+            return types.MethodType(f, s)
         if t == "class":
             rid = x.get("id")
             if type(rid) is not int:
@@ -2606,6 +2794,69 @@ class Client(Side):
                 raise Inexact("the candidate's code handed over the standard-library module %s, which the tests' process can't import" % clip(x.get("n"), 100))
             return m
         raise ProtocolError("unknown tag %r" % clip(t, 40))
+
+    def _forwarder(self, rid, p, raw, dec, d):
+        """The real function standing for candidate function rid (p its proxy), the same one while it lives."""
+        if isinstance(raw, dict):
+            desc = self._fn_desc(raw, dec, d)
+            self.fwd_desc[rid] = desc
+        else:
+            desc = self.fwd_desc.get(rid)
+        f = self.fwd.get(rid)
+        if f is not None:
+            return f
+        if desc is None:
+            raise ProtocolError("function %d without a description" % rid)
+        if self.fn_inexact is not None:
+            raise Inexact(self.fn_inexact)
+        f = _make_forwarder(p, desc)
+        self.fwd[rid] = f
+        self.fwd_rids[f] = rid
+        return f
+
+    def _fn_desc(self, raw, dec, d):
+        """A candidate function's description, its values decoded (in the order they were encoded)."""
+        out = {}
+        for key, kind in (("name", str), ("qual", str), ("co", str), ("coq", str), ("argc", int), ("posonly", int), ("kwonly", int), ("flags", int), ("line", int)):
+            v = raw.get(key)
+            if type(v) is not kind:
+                raise ProtocolError("bad function description")
+            out[key] = v
+        names = raw.get("vars")
+        if not (isinstance(names, list) and all(type(n) is str for n in names)):
+            raise ProtocolError("bad function description")
+        out["vars"] = names
+        out["file"] = path_entry_in(raw.get("file"), self.cwd0)
+        for key in ("mod", "doc", "defaults", "kwdefaults", "dict", "ann", "tp"):
+            if key in raw:
+                out[key] = dec.dec(raw[key], d)
+        if not (out["defaults"] is None or type(out["defaults"]) is tuple) or not (out["kwdefaults"] is None or type(out["kwdefaults"]) is dict) or type(out["dict"]) is not dict or ("ann" in out and type(out["ann"]) is not dict):
+            raise ProtocolError("bad function description")
+        if out["line"] < 1 or out["argc"] < out["posonly"] or len(names) != out["argc"] + out["kwonly"] + bool(out["flags"] & _CO_VARARGS) + bool(out["flags"] & _CO_VARKEYWORDS):
+            raise ProtocolError("bad function description")
+        return out
+
+    def _gen_standin(self, rid, p, names):
+        """The real generator standing for candidate generator rid (p its proxy), the same one while it lives."""
+        g = self.gens.get(rid)
+        if g is None:
+            if not (isinstance(names, list) and len(names) == 2 and all(type(n) is str for n in names)):
+                raise ProtocolError("bad generator")
+            g = _gen_wrap(p)
+            g.__name__, g.__qualname__ = names
+            self.gens[rid] = g
+            self.gen_rids[g] = (rid, p)
+        return g
+
+    def _standin_rid(self, v):
+        """The candidate rid a stand-in function or generator of this side's stands for, else None."""
+        t = type(v)
+        if t is types.FunctionType:
+            return self.fwd_rids.get(v)
+        if t is types.GeneratorType:
+            hit = self.gen_rids.get(v)
+            return None if hit is None else hit[0]
+        return None
 
     # process state the candidate's code shares with the tests in one process
 
@@ -2678,6 +2929,11 @@ class Client(Side):
         tz = tz_now()
         if tz != s.get("tz", self.tz0):
             s["tz"] = st["tz"] = tz
+        ll = log_levels()
+        if ll != s["loglevels"]:
+            if any(type(v[0]) is not int or type(v[1]) is not bool or type(v[2]) is not bool for v in ll[1].values()) or type(ll[0]) is not int:
+                raise Inexact("logging: the tests set a logger's level, propagate or disabled to something other than an int or bool")
+            s["loglevels"] = st["loglevels"] = ll
         r = sys.modules.get("random")
         if r is not None and hasattr(r, "getstate"):
             rs = r.getstate()
@@ -2821,6 +3077,17 @@ class Client(Side):
             if type(lc) is not str or not locale_set(lc):
                 self._end("the candidate set a locale the tests' process can't set the same way (%s)" % clip(lc, 200))
             s["locale"] = locale_now()
+        if "loglevels" in cst:
+            if not log_apply(cst["loglevels"]):
+                self._end("logging: the candidate's code set a logger's level in a way the tests' process can't")
+            s["loglevels"] = log_levels()
+        for name in cst.get("loghandlers") or ():
+            if not isinstance(name, str):
+                raise ProtocolError("bad logging state")
+            lg = _std("logging")
+            x = lg.root if name == "" else lg.getLogger(name)
+            if type(x.handlers) is not _CandidateHandlers:
+                x.handlers = _CandidateHandlers(list.copy(x.handlers))
         if "tz" in cst:
             # The environment (TZ) is already the candidate's: time.tzset() here gives the same zone, or the run ends.
             if _tzset is not None:
@@ -3114,6 +3381,45 @@ class Client(Side):
         both.__doc__ = collect.__doc__
         gc.collect = both
         builtins.id = self.candidate_id
+        # logging: the candidate's records stay in its process, so a handler or filter the tests add wouldn't see
+        # them (one writing to the process's own stdout or stderr shows nothing the tests can read), and its loggers
+        # wouldn't use the tests' logger class or record factory.
+        lg = _std("logging")
+        quiet = (self.orig["stdout"], self.orig["stderr"])
+
+        def adds(args):
+            h = args[1] if len(args) > 1 else None
+            if type(h) is lg.NullHandler or (type(h) is lg.StreamHandler and h.stream in quiet and not h.filters):
+                return
+            self._end("logging: the tests added a handler or filter, which the candidate's records (logged in its own process) wouldn't reach")
+
+        def setter(what):
+            def check(args):
+                self._end("logging: the tests called %s, which the candidate's loggers (in its own process) wouldn't use" % what)
+
+            return check
+
+        _guard(lg.Logger, "addHandler", adds)
+        _guard(lg.Logger, "addFilter", lambda args: adds(()))
+        for name in ("setLoggerClass", "setLogRecordFactory"):
+            _guard(lg, name, setter("logging." + name))
+        # A stand-in function's (or generator's) code object and frames are the grader's: only inspect's signature,
+        # source and kind checks read it for what is the candidate's in it (CPython audits these reads and writes).
+        own = id(globals())
+
+        def code_guard(ev, args):
+            if ev == "object.__getattr__":
+                if args[1] in _CODE_ATTRS and self._standin_rid(args[0]) is not None:
+                    f = _getframe(1)
+                    g = f.f_globals
+                    if id(g) == own or (g.get("__name__") == "inspect" and f.f_code.co_name in _CODE_READERS):
+                        return
+                    raise Inexact("code read %s of a candidate function or generator, whose stand-in in the tests' process has the grader's code" % args[1])
+            elif ev == "object.__setattr__":
+                if args[1] in ("__code__", "__defaults__", "__kwdefaults__") and self._standin_rid(args[0]) is not None and id(_getframe(1).f_globals) != own:
+                    raise Inexact("the tests set %s of a candidate function's stand-in, which the candidate's own function wouldn't get" % args[1])
+
+        sys.addaudithook(code_guard)
         # Last: the guards above aren't the tests' changes.
         w = StdWatch(self._std_changed)
         self.watch = w if w.ok else None
@@ -3383,6 +3689,9 @@ class Server(Side):
         self.patches = []  # the tests' mock.patch of standard-library objects: (path, attr, target, old value)
         self.std_saved = {}  # (path, name) -> this process's own value of a standard-library attribute the tests changed
         self.watch = None
+        self.loglevels = LOG_DEFAULT  # loggers as last exchanged
+        self.loghandlers = set()  # loggers the candidate's code added handlers or filters to ("" for root)
+        self.loghandlers_sent = set()
         self.rlimit = sys.getrecursionlimit()  # recursion limit last exchanged
         import warnings
 
@@ -3442,6 +3751,24 @@ class Server(Side):
         for mod, name in ((sys, "getrefcount"), (sys, "getsizeof"), (gc, "get_referrers"), (gc, "get_referents"), (wr, "getweakrefcount"), (wr, "getweakrefs")):
             _guard(mod, name, shared("%s.%s()" % (mod.__name__, name)))
         _guard(gc, "get_objects", never("gc.get_objects()"))
+        # logging: the tests' process can't have the candidate's handlers and filters (the logger's list there ends
+        # the run when used), nor its logger class or record factory.
+        lg = _std("logging")
+
+        def adds(args):
+            if args and isinstance(args[0], lg.Logger):
+                self.loghandlers.add("" if args[0] is lg.root else args[0].name)
+
+        def setter(what):
+            def check(args):
+                raise self._poison("the candidate's code called %s, which would change logging in the tests' process too" % what)
+
+            return check
+
+        _guard(lg.Logger, "addHandler", adds)
+        _guard(lg.Logger, "addFilter", adds)
+        for name in ("setLoggerClass", "setLogRecordFactory"):
+            _guard(lg, name, setter("logging." + name))
 
     # failures the candidate's code can't hide
 
@@ -3502,7 +3829,44 @@ class Server(Side):
             name = std_module_name(v)
             if name is not None:
                 return {"t": "smod", "n": name}
-        return self._object(enc, v, depth)
+        if t is types.MethodType:
+            return {"t": "meth", "f": enc.enc(v.__func__, depth + 1), "s": enc.enc(v.__self__, depth + 1)}
+        tag = self._object(enc, v, depth)
+        if t is types.FunctionType:
+            tag["fn"] = self._fn_desc(enc, v, depth + 1) if "c" in tag else 1
+        elif t is types.GeneratorType:
+            tag["gen"] = [str(v.__name__), str(v.__qualname__)]
+        return tag
+
+    def _fn_desc(self, enc, f, d):
+        """What the tests' side needs for a real function standing for f (_make_forwarder)."""
+        co = f.__code__
+        n = co.co_argcount + co.co_kwonlyargcount + bool(co.co_flags & _CO_VARARGS) + bool(co.co_flags & _CO_VARKEYWORDS)
+        name = co.co_filename
+        out = {
+            "name": str(f.__name__),
+            "qual": str(f.__qualname__),
+            "co": co.co_name,
+            "coq": getattr(co, "co_qualname", str(f.__qualname__)),
+            "argc": co.co_argcount,
+            "posonly": co.co_posonlyargcount,
+            "kwonly": co.co_kwonlyargcount,
+            "flags": co.co_flags & (_CO_VARARGS | _CO_VARKEYWORDS | _CO_GENERATOR | _CO_COROUTINE | _CO_ASYNC_GENERATOR),
+            "vars": list(co.co_varnames[:n]),
+            "file": cwd_out(name, self.cwd0) if _isabs(name) else ["abs", name],
+            "line": max(co.co_firstlineno, 1),
+            "mod": enc.enc(f.__module__, d),
+            "doc": enc.enc(f.__doc__, d),
+            "defaults": enc.enc(f.__defaults__, d),
+            "kwdefaults": enc.enc(f.__kwdefaults__, d),
+            "dict": enc.enc(f.__dict__, d),
+        }
+        if sys.version_info < (3, 14):
+            out["ann"] = enc.enc(f.__annotations__, d)
+        tp = getattr(f, "__type_params__", ())
+        if tp:
+            out["tp"] = enc.enc(tp, d)
+        return out
 
     def _objref(self, enc, v, depth, key):
         return self._object(enc, v, depth)
@@ -3640,6 +4004,8 @@ class Server(Side):
         out["fwd"], out["cmp"], out["unsup"] = fwd, cmp_, unsup
         if not is_meta:
             out["abcs"] = [enc.enc(a, d) for a in self._registered(cls, mro)]
+            if get["__weakrefoffset__"].__get__(cls) == 0:
+                out["noweak"] = True  # __slots__ without __weakref__: weakref.ref() of one is a TypeError
         return out
 
     def _registered(self, cls, mro):
@@ -3716,6 +4082,11 @@ class Server(Side):
             if not isinstance(m, collections.abc.Mapping) or x.get("n") not in m:
                 raise ProtocolError("unknown enum member")
             return m[x.get("n")]
+        if t == "meth":
+            f, s = dec.dec(x.get("f"), d), dec.dec(x.get("s"), d)
+            if not callable(f):
+                raise ProtocolError("bad method")
+            return types.MethodType(f, s)
         if t == "smod":
             m = import_std(x.get("n"))
             if m is None:
@@ -3849,6 +4220,11 @@ class Server(Side):
             if st["tz"] != tz_now():
                 self._poison("the tests called time.tzset() with a time zone the candidate's process can't reproduce")
             self.tz = tz_now()
+        if "loglevels" in st:
+            with _Quiet(self.watch):
+                if not log_apply(st["loglevels"]):
+                    self._poison("logging: the tests set a logger's level in a way the candidate's process can't")
+            self.loglevels = log_levels()
         rs = st.get("random")
         if rs is not None:
             import random
@@ -3957,6 +4333,15 @@ class Server(Side):
         tz = tz_now()
         if tz != self.tz:
             self.tz = cst["tz"] = tz
+        ll = log_levels()
+        if ll != self.loglevels:
+            if type(ll[0]) is not int or any(type(v[0]) is not int or type(v[1]) is not bool or type(v[2]) is not bool for v in ll[1].values()):
+                self._poison("logging: the candidate's code set a logger's level, propagate or disabled to something other than an int or bool")
+            else:
+                self.loglevels = cst["loglevels"] = ll
+        if self.loghandlers != self.loghandlers_sent:
+            cst["loghandlers"] = sorted(self.loghandlers - self.loghandlers_sent)
+            self.loghandlers_sent = set(self.loghandlers)
         if path_changed(self.path_obj, self.path0):
             self._poison("the candidate's code changed sys.path, which the tests' process can't share (its imports would differ)")
         return cst
@@ -4131,6 +4516,8 @@ class Server(Side):
         if op == "import":
             import importlib
 
+            if req.get("reload") is True:
+                return importlib.reload(sys.modules[str(name)])
             return importlib.import_module(str(name))
         if op == "gc":
             gen = got[0] if got else 2
@@ -4144,6 +4531,10 @@ class Server(Side):
         obj = got[0]
         if op == "id":
             return id(obj)
+        if op == "names":
+            if type(obj) is not types.ModuleType:
+                raise ProtocolError("names of a non-module")
+            return list(vars(obj))
         if op == "getattr":
             return getattr(obj, str(name))
         if op == "setattr":

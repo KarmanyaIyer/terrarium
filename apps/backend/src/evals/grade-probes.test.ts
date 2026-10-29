@@ -1,7 +1,8 @@
-// Review 3's and review 4's probes (qa/review3-probes, qa/review4-probes: m.py + tests.py each) through
-// grade.py --local and through plain `python3 -m unittest`: the grade must be what plain unittest says, or a
-// visible disagreement; never a pass where plain unittest fails, even when the plain run is forged to pass. The
-// perf probes must also grade in seconds (review 3, #3; review 4, #7).
+// Review 3's, review 4's and review 5's probes (qa/review3-probes, qa/review4-probes, qa/review5-cases: m.py +
+// tests.py each) through grade.py --local and through plain `python3 -m unittest`: the grade must be what plain
+// unittest says, or a visible disagreement; never a pass where plain unittest fails, even when the plain run is
+// forged to pass. The perf probes must also grade in seconds (review 3, #3; review 4, #7). Review 5's cases check
+// the isolated run's own verdict: pass, fail, or a grader error where it can't be what one process would give.
 
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
@@ -16,6 +17,7 @@ import { testsGrade, type GradeSummary } from "./graders.ts";
 const GRADE = join(HOST_HELPERS_DIR, "grade.py");
 const PROBES = join(REPO_DIR, "qa/review3-probes");
 const PROBES4 = join(REPO_DIR, "qa/review4-probes");
+const PROBES5 = join(REPO_DIR, "qa/review5-cases");
 // Replaces unittest's TestCase.run in the plain run, where the hidden tests share the candidate's process: the
 // plain run passes everything, so only the isolated run stands between such a candidate and a pass.
 const FORGE = [
@@ -56,10 +58,10 @@ interface Probe {
 }
 
 async function probe(name: string, timeout = 60, dir = PROBES, forged = false): Promise<Probe> {
-  const base = join(tmp, `${dir === PROBES ? "r3" : "r4"}-${name}${forged ? "-forged" : ""}`);
+  const base = join(tmp, `${dir === PROBES ? "r3" : dir === PROBES4 ? "r4" : "r5"}-${name}${forged ? "-forged" : ""}`);
   const ws = join(base, "ws");
   mkdirSync(ws, { recursive: true });
-  for (const f of readdirSync(join(dir, name))) if (f !== "tests.py") copyFileSync(join(dir, name, f), join(ws, f));
+  for (const f of readdirSync(join(dir, name))) if (f !== "tests.py") cpSync(join(dir, name, f), join(ws, f), { recursive: true });
   if (forged) writeFileSync(join(ws, "m.py"), FORGE + readFileSync(join(ws, "m.py"), "utf8"));
   const hidden = join(base, "test_hidden.py");
   copyFileSync(join(dir, name, "tests.py"), hidden);
@@ -158,3 +160,65 @@ test("review 4 probes: no leniency passes, even with a forged plain run; correct
     assert.deepEqual([s.verdict, g.pass, g.error], ["disagree", false, true], `${r.name} forged: ${g.detail}`);
   }
 });
+
+// Review 5: the isolated run alone (the plain run beside it can be forged) must never pass where plain unittest
+// fails; where it can't reproduce Python it ends in a grader error. Case -> [plain unittest passes, isolated verdict].
+type Iso = "pass" | "fail" | "inexact";
+const R5: Record<string, Record<string, [boolean, Iso]>> = {
+  "1: process state the candidate's code changes reaches the tests": {
+    env_leak: [false, "fail"], env_ok: [true, "pass"], cwd_leak: [false, "fail"], cwd_ok: [true, "pass"], argv_leak: [false, "fail"], argv_ok: [true, "pass"],
+    stdout_leak: [false, "fail"], stdout_swap: [true, "pass"], print_swap: [false, "fail"], print_hook: [true, "pass"],
+    syspath_leak: [false, "inexact"], syspath_tests: [true, "pass"], syspath_order: [true, "pass"], umask_ok: [true, "pass"], tz_ok: [true, "pass"], locale_ok: [true, "pass"],
+  },
+  "2: context managers with an exception in the with body; test handles where built-in data is needed": {
+    ctx_cwd: [true, "pass"], ctx_reraise: [false, "fail"], ctx_reraise_ok: [true, "pass"], ctx_tb: [true, "pass"], ctx_tb_names: [true, "inexact"], handle_typeerror: [false, "inexact"],
+  },
+  "3: logging, __slots__, function and module types, tracebacks, ids, standard-library assignments": {
+    log_handler: [false, "inexact"], log_levels_ok: [true, "pass"], log_config_leak: [false, "inexact"], log_basic_ok: [true, "pass"],
+    slots_weak: [true, "pass"], slots_weak_lenient: [false, "fail"],
+    func_type: [false, "fail"], func_type_ok: [true, "pass"], star_import: [true, "pass"], module_vars: [false, "inexact"], module_type: [false, "inexact"], module_reload: [true, "pass"],
+    tb_names: [false, "inexact"], id_cached: [false, "fail"],
+    stdlib_assign: [false, "inexact"], stdlib_assign_tests: [true, "pass"], class_assign: [false, "inexact"], class_assign_tests: [true, "pass"], class_descr_tests: [true, "inexact"],
+    sysmodules_tests: [true, "inexact"], mock_module_attr: [true, "pass"], std_module_arg: [true, "pass"],
+  },
+  "4: refcounts, referrers and process-wide counts of shared objects": {
+    refcount_leak: [false, "inexact"], gc_cycle_ok: [true, "pass"], cpu_time: [false, "inexact"], thread_leak: [false, "inexact"],
+  },
+  "5: identity of values that cross by value": {
+    tuple_identity: [false, "fail"], tuple_identity_ok: [true, "pass"], str_identity: [false, "fail"], str_identity_ok: [true, "pass"], ident_cache: [false, "fail"], interned_ok: [true, "pass"],
+  },
+  "6: namedtuple __replace__": { ntuple_replace: [true, "pass"] },
+};
+const GRADER_ERROR = /\b(Inexact|CandidateGone|Unsendable|GraderError|_Poisoned)\b/;
+
+function isoVerdict(s: GradeSummary): Iso {
+  const expected = s.expected ?? 0;
+  if (expected > 0 && s.passed === expected && !s.error) return "pass";
+  if (s.error || s.candidate || (s.failures ?? []).some((f) => GRADER_ERROR.test(f.message ?? ""))) return "inexact";
+  return "fail";
+}
+
+test("review 5 cases cover qa/review5-cases", () => {
+  const all = readdirSync(PROBES5, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+  const known = Object.values(R5).flatMap((g) => Object.keys(g));
+  assert.deepEqual(all.filter((n) => !known.includes(n)).sort(), []);
+  assert.deepEqual(known.filter((n) => !all.includes(n)).sort(), []);
+});
+
+for (const [item, cases] of Object.entries(R5)) {
+  test(`review 5, #${item}: the isolated run's own verdict`, { skip: !PY && "no python3 >= 3.10" }, async () => {
+    const names = Object.keys(cases);
+    const honest = await batches(names, (n) => probe(n, 30, PROBES5));
+    const lenient = names.filter((n) => !cases[n]![0]);
+    const forged = await batches(lenient, (n) => probe(n, 30, PROBES5, true));
+    for (const r of honest) {
+      const [plainOk, iso] = cases[r.name]!;
+      const s = r.summary;
+      const why = `${r.name}: ${s.verdict} ${testsGrade(s, r.code).detail}`;
+      assert.equal(r.plainOk, plainOk, `${r.name}: plain unittest`);
+      assert.equal(isoVerdict(s), iso, why);
+      if (!plainOk) assert.notEqual(s.verdict, "pass", why);
+    }
+    for (const r of forged) assert.notEqual(r.summary.verdict, "pass", `${r.name} forged: ${testsGrade(r.summary, r.code).detail}`);
+  });
+}

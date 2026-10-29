@@ -217,8 +217,12 @@ export function testsGrade(g: GradeSummary, exitCode: number | null): Grade & { 
  * own). Passes only when both runs counted at least one test and every one passed; the exit code alone is
  * never enough, and runs that disagree are a grader error.
  */
-export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { type: "tests" }>, hidden: EvalCase["hiddenFiles"]): Promise<Grade> {
-  if (rt.type !== "vm") return { pass: false, detail: "tests checks need a VM environment" };
+/** The guest grader's own summary of a tests check (null with its output if that can't be read). */
+export async function runTestsGrader(
+  rt: EnvRuntime,
+  check: Extract<EvalCheck, { type: "tests" }>,
+  hidden: EvalCase["hiddenFiles"],
+): Promise<{ summary: GradeSummary | null; exitCode: number | null; output: string }> {
   // Grading runs the agent's code again, and the plain run can read the hidden tests: no network from here on.
   await rt.setNetwork("off");
   await rt.killAgentProcesses();
@@ -231,14 +235,18 @@ export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { typ
     timeoutMs: (2 * timeout + 90) * 1000,
   });
   const last = r.stdout.trim().split("\n").pop() ?? "";
-  let g: GradeSummary;
   try {
-    g = JSON.parse(last) as GradeSummary;
+    return { summary: JSON.parse(last) as GradeSummary, exitCode: r.exitCode, output: "" };
   } catch {
-    const out = `${r.stdout}\n${r.stderr}`.trim();
-    return { pass: false, detail: `grader output unreadable (exit ${r.exitCode}${r.timedOut ? ", timed out" : ""})\n${out.slice(-1500)}` };
+    return { summary: null, exitCode: r.exitCode, output: `exit ${r.exitCode}${r.timedOut ? ", timed out" : ""}\n${`${r.stdout}\n${r.stderr}`.trim().slice(-1500)}` };
   }
-  const t = testsGrade(g, r.exitCode);
+}
+
+export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { type: "tests" }>, hidden: EvalCase["hiddenFiles"]): Promise<Grade> {
+  if (rt.type !== "vm") return { pass: false, detail: "tests checks need a VM environment" };
+  const { summary, exitCode, output } = await runTestsGrader(rt, check, hidden);
+  if (!summary) return { pass: false, detail: `grader output unreadable (${output})` };
+  const t = testsGrade(summary, exitCode);
   return { pass: t.pass, detail: t.detail, ...(t.error ? { error: true } : {}) };
 }
 

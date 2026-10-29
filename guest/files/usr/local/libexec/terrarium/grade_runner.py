@@ -14,6 +14,7 @@ Hidden tests can `import terrarium_grading` for `workspace` (a copy of the works
 candidate code ran, root-owned and read-only in the guest, for reading the candidate's source) and
 `stdlib(name)` (import a standard-library module locally)."""
 
+import dis
 import importlib.abc
 import importlib.machinery
 import importlib.util
@@ -36,7 +37,41 @@ sys.path.remove(HERE)
 
 CLIENT = None
 # Module attributes the import system owns on this side; everything else is the candidate module's.
-MODULE_LOCAL = frozenset(("__name__", "__spec__", "__loader__", "__path__", "__package__", "__cached__", "__dict__", "__class__", "_terrarium_ref"))
+MODULE_LOCAL = frozenset(("__name__", "__spec__", "__loader__", "__path__", "__package__", "__cached__", "__class__", "_terrarium_ref"))
+# `from m import *` reading a module's namespace for its names (3.12+: an intrinsic call; before, its own opcode).
+STAR = (dis.opmap["CALL_INTRINSIC_1"], 2) if "CALL_INTRINSIC_1" in dis.opmap else (dis.opmap.get("IMPORT_STAR"), None)
+_IMPORTING = frozenset(("importlib", "importlib._bootstrap", "importlib._bootstrap_external", "_frozen_importlib", "_frozen_importlib_external", "importlib.util"))
+
+
+class CandidateNamespace(dict):
+    """What mock.patch reads as a candidate module's __dict__ (`target.__dict__[name]`): the candidate's value."""
+
+    def __init__(self, ref):
+        dict.__init__(self)
+        self.ref = ref
+
+    def __missing__(self, name):
+        try:
+            return getattr(self.ref, name)
+        except AttributeError:
+            raise KeyError(name) from None
+
+
+def module_namespace(mod, ref, f):
+    """A candidate module's __dict__ for the code in frame f: its names for `from m import *`, its values for
+    mock.patch; for anything else (vars(m), doctest) a grader error, as its namespace is in the other process."""
+    co = f.f_code.co_code
+    if 0 <= f.f_lasti < len(co) - 1 and co[f.f_lasti] == STAR[0] and STAR[1] in (None, co[f.f_lasti + 1]):
+        names = CLIENT.call("names", [ref])
+        if not (isinstance(names, list) and all(type(n) is str for n in names)):
+            raise Inexact("the candidate module's names can't be read")
+        return dict.fromkeys(names)
+    who = f.f_globals.get("__name__")
+    if who == "unittest.mock":
+        return CandidateNamespace(ref)
+    if who in _IMPORTING:
+        return types.ModuleType.__getattribute__(mod, "__dict__")
+    raise Inexact("code read the namespace of candidate module %s (vars(), __dict__): it is in the candidate's process" % types.ModuleType.__getattribute__(mod, "__name__"))
 
 
 class ProxyModule(types.ModuleType):
@@ -46,6 +81,8 @@ class ProxyModule(types.ModuleType):
         ref = None if name in MODULE_LOCAL else types.ModuleType.__getattribute__(self, "__dict__").get("_terrarium_ref")
         if ref is None:
             return types.ModuleType.__getattribute__(self, name)
+        if name == "__dict__":
+            return module_namespace(self, ref, sys._getframe(1))
         return getattr(ref, name)
 
     def __setattr__(self, name, value):
@@ -68,6 +105,13 @@ class ProxyModule(types.ModuleType):
         return "<module %r (candidate)>" % types.ModuleType.__getattribute__(self, "__name__")
 
 
+# As type(m) shows a module: only `type(m) is types.ModuleType` tells them apart (MODULE_TYPE_CHECK).
+ProxyModule.__name__ = ProxyModule.__qualname__ = "module"
+ProxyModule.__module__ = "builtins"
+# A line of the tests comparing a type() with types.ModuleType: a candidate module's stand-in isn't one.
+MODULE_TYPE_CHECK = re.compile(r"^(?=.*\btype\().*\bModuleType\b", re.M)
+
+
 class CandidateLoader(importlib.abc.Loader):
     def __init__(self, client):
         self.client = client
@@ -76,6 +120,12 @@ class CandidateLoader(importlib.abc.Loader):
         return ProxyModule(spec.name)
 
     def exec_module(self, module):
+        if self.client.module_inexact is not None:
+            raise Inexact(self.client.module_inexact)
+        if "_terrarium_ref" in types.ModuleType.__getattribute__(module, "__dict__"):
+            # importlib.reload(): the candidate's process runs the module again.
+            self.client.call("import", name=module.__name__, reload=True)
+            return
         ref = self.client.module(module.__name__)
         if proxy_rid(ref) is None:
             raise ImportError("candidate module %s did not load" % module.__name__)
@@ -169,6 +219,10 @@ class Results:
 # The test process's own state that mock.patch can't reach in the candidate process through this hook: the
 # streams, argv and print/input are mirrored on every call instead (grade_rpc.Client._state).
 MIRRORED = {"sys": ("stdout", "stderr", "stdin", "argv"), "builtins": ("print", "input")}
+
+
+# What a candidate function's stand-in here (a real function) can't answer as the candidate's function would.
+FN_INTROSPECTION = re.compile(r"__closure__|__globals__|cell_contents|getclosurevars|func_closure|func_globals")
 
 
 def refuse_log_asserts():
@@ -300,6 +354,12 @@ def main():
     sys.meta_path.insert(0, CandidateFinder(client, [m for m in (opt("--modules") or "").split(",") if m]))
     refuse_log_asserts()
     client.install_guards()
+    with open(tests, encoding="utf-8", errors="replace") as f:
+        source = f.read()
+    if FN_INTROSPECTION.search(source):
+        client.fn_inexact = "the tests read functions' closures or globals: a candidate function stands in this process as a real function whose closure and globals are the grader's"
+    if MODULE_TYPE_CHECK.search(source):
+        client.module_inexact = "the tests compare a type() with types.ModuleType: a candidate module stands in this process as a module subclass"
     if client.watch is None:
         # Without CPython's watchers (before 3.12) only mock.patch reaches the candidate's process.
         mirror_patches(client)
