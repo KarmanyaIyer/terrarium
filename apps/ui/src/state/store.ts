@@ -315,6 +315,11 @@ function emptyTrace(): Trace {
 }
 
 function onTrace(ev: TraceEvent) {
+  // The backend re-sends the session summary only on status changes; the trace carries usage after every call.
+  if (ev.type === "context") {
+    const s = get().sessions[ev.sessionId];
+    if (s) set((st) => ({ sessions: { ...st.sessions, [s.id]: { ...s, context: ev.usage } } }));
+  }
   const t = get().traces[ev.sessionId];
   if (!t) return; // not loaded; ignore stray events
 
