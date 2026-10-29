@@ -1,0 +1,82 @@
+{
+  "1: inspect.getsource of a candidate function": {
+    "getsource_ok": [true, "pass"]
+  },
+  "2: awaiting a candidate coroutine": {
+    "async_fn": [true, "pass"]
+  },
+  "3: a generator the candidate already started": {
+    "gen_primed_ok": [true, "pass"],
+    "gen_primed_throw": [true, "pass"],
+    "gen_primed_lenient": [false, "fail"]
+  },
+  "4: function stand-ins: per-message cost and low regressions": {
+    "function_many": [true, "pass"],
+    "function_many_2000": [true, "pass"],
+    "bound_method_identity_ok": [true, "pass"],
+    "bound_method_identity": [false, "fail"],
+    "function_dict_replace_ok": [true, "pass"],
+    "function_dict_replace": [false, "fail"],
+    "fn_self_attribute": [true, "pass"],
+    "sizeof_named": [true, "pass"],
+    "id_assertisnot_two_floats": [true, "pass"]
+  },
+  "5: identity outside assertIs": {
+    "id_fs_impure": [false, "fail"],
+    "ident_is_lenient": [false, "known-lenient"],
+    "id_list_big_false": [false, "known-lenient"],
+    "id_dict_same_false": [false, "known-lenient"],
+    "id_nan_sticky_false": [false, "known-lenient"],
+    "identity_assert_keyword": [false, "known-lenient"],
+    "id_nan_sticky_in": [true, "fail"]
+  },
+  "6: a process the tests start reads their sealed copy": {
+    "fs_subprocess_tests": [false, "inexact"]
+  },
+  "7: logging's last-resort handler": {
+    "log_lastresort_ok": [true, "pass"],
+    "log_lastresort": [false, "fail"]
+  },
+  "8: workspace looks and changes the fs check misses": {
+    "preopened_read": [false, "known-lenient"],
+    "fstat_size": [false, "known-lenient"],
+    "mmap_read": [false, "known-lenient"],
+    "fs_direntry": [false, "known-lenient"],
+    "sqlite_uri": [false, "known-lenient"],
+    "dir_fd_open": [false, "known-lenient"],
+    "fs_thread_after": [false, "known-lenient"]
+  },
+  "9: process state outside the mirrors": {
+    "std_instance_state": [false, "known-lenient"],
+    "logging_level_name": [false, "known-lenient"],
+    "log_direct_handler": [false, "known-lenient"],
+    "log_filter_lenient": [false, "known-lenient"],
+    "stdlib_clear": [false, "known-lenient"],
+    "stdlib_module_attr": [false, "known-lenient"],
+    "tz_lenient": [false, "known-lenient"],
+    "decimal_setctx_lenient": [false, "known-lenient"],
+    "putenv_hidden_lenient": [false, "known-lenient"],
+    "unsetenv_hidden_lenient": [false, "known-lenient"],
+    "stdin_seek_lenient": [false, "known-lenient"],
+    "stdin_write_lenient": [false, "known-lenient"],
+    "stack_bypass_lenient": [false, "known-lenient"],
+    "path_import_lenient": [false, "known-lenient"],
+    "thread_env_lenient": [false, "known-lenient"]
+  },
+  "10: stand-ins expose grader state": {
+    "tb_chain": [false, "inexact"],
+    "traceback_line": [false, "inexact"],
+    "gi_yieldfrom": [false, "inexact"],
+    "generator_external_close": [false, "inexact"],
+    "fn_referents": [false, "inexact"],
+    "fn_weakrefcount": [false, "inexact"]
+  },
+  "11: misc": {
+    "warn_import_silent": [false, "fail"],
+    "warn_import_probe": [true, "pass"],
+    "ref_int_low": [false, "known-lenient"],
+    "module_type_multiline": [false, "known-lenient"],
+    "sizeof_dunder9": [true, "fail"],
+    "skip_only": [true, "fail"]
+  }
+}
