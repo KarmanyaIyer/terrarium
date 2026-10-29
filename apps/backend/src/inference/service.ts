@@ -22,6 +22,8 @@ export class InferenceService {
   private statusCache: { at: number; value: OmlxStatus } | null = null;
   /** max_context_window last pushed to oMLX per model. */
   private pushedWindow = new Map<string, { window: number; maxOutput: number }>();
+  /** Loaded model ids as of the last status poll; a change broadcasts the model list. */
+  private loadedKey = "";
 
   constructor(opts: { store: Store; hub: Hub; modelsDir: string; venvDir: string; omlxDataDir: string }) {
     this.store = opts.store;
@@ -171,6 +173,13 @@ export class InferenceService {
 
   async loadedModels(): Promise<{ modelId: string; bytes?: number }[]> {
     const status = await this.omlxStatus();
-    return (status?.models ?? []).filter((m) => m.loaded).map((m) => ({ modelId: m.id, bytes: m.actual_size ?? m.estimated_size ?? undefined }));
+    const loaded = (status?.models ?? []).filter((m) => m.loaded).map((m) => ({ modelId: m.id, bytes: m.actual_size ?? m.estimated_size ?? undefined }));
+    // oMLX loads on first request and evicts on its own, so explicit load/unload are not the only changes.
+    const key = loaded.map((m) => m.modelId).sort().join(",");
+    if (status && key !== this.loadedKey) {
+      this.loadedKey = key;
+      void this.broadcastModels();
+    }
+    return loaded;
   }
 }
