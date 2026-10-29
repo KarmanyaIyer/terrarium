@@ -309,7 +309,7 @@ export function RequestTab({ d }: { session: SessionSummary; d: Derived }) {
           <Fold title="Response" open>
             {!res ? (
               <div className="dim pad">
-                <Loader2 size={12} className="spin" /> Streaming; the transcript shows tokens as they arrive
+                <Loader2 size={12} className="spin" /> Streaming
               </div>
             ) : choice?.message ? (
               <MessageView m={choice.message} i={messages.length} />

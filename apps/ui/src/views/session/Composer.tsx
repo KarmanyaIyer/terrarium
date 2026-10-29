@@ -91,6 +91,7 @@ export function Composer({ session }: { session: SessionSummary }) {
   const samples = useStore((s) => s.samples);
   const budget = useStore((s) => s.budget);
   const model = models.find((m) => m.id === session.modelId);
+  const env = useStore((s) => (session.envId ? s.envs[session.envId] : undefined));
   const sample = samples[samples.length - 1];
   // the model loads on send; say so up front when it will not fit
   const fit = model && !model.loaded ? fitLabel(estimate(model, session.contextWindow, sample, budget, models), sample?.system.freeBytes) : null;
@@ -108,7 +109,8 @@ export function Composer({ session }: { session: SessionSummary }) {
       <div className="composer">
         <div className="composer-readonly">
           <span className="chip">eval case</span>
-          <span className="dim">{running ? "The eval run is driving this session; it takes no messages." : "Eval case, env discarded. The trace and file history stay viewable; it takes no messages."}</span>
+          <span className="dim">read-only</span>
+          {env?.released && <span className="dim">env released</span>}
           {running && (
             <button className="btn sm stop" onClick={() => void act("Stop", (b) => b.stopSession(session.id))} title="Stop this case (it is recorded as stopped)">
               <Square /> Stop

@@ -316,7 +316,6 @@ function RunView({ runId }: { runId: string }) {
                                     </span>
                                   </div>
                                 )}
-                                {r?.sessionId && <div className="tip-hint dim">Click to open the transcript</div>}
                               </>
                             ),
                           })
@@ -557,9 +556,8 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
   return (
     <div className="ev-suite">
       <div className="view-head">
-        <h1>{suite.title}</h1>
+        <h1 title={suite.description}>{suite.title}</h1>
         <SuiteEnv t={suite.envType} />
-        <span className="dim">{suite.description}</span>
       </div>
       {suite.source && (
         <div className="ev-config">

@@ -83,8 +83,7 @@ export function Palette() {
     const hits = items
       .map((it) => ({ it, s: score(ql, `${it.label} ${it.hint ?? ""}`) }))
       .filter((x) => x.s > 0)
-      .sort((a, b) => (ql ? b.s - a.s : 0))
-      .slice(0, 40);
+      .sort((a, b) => (ql ? b.s - a.s : 0));
     // keep each group together (ordered by its best hit) so a group header appears once
     const order = new Map<string, number>();
     hits.forEach((x, i) => {

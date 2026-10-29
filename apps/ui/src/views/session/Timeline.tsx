@@ -16,6 +16,9 @@ const LANES = ["Model", "Tools", "Files", "Network"] as const;
 const AXIS_H = 20;
 const TOP = 6;
 
+/** Tooltip text cut to n chars, with an ellipsis when cut. */
+const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
+
 interface Block {
   t0: number;
   t1: number;
@@ -227,7 +230,7 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
         <span className="key" style={{ background: `var(--c-${toolKind(t.name)})`, width: 10, height: 10 }} />
         {t.name}
       </div>
-      <div className="mono tip-cmd">{toolLabel(t.name, t.args).slice(0, 160)}</div>
+      <div className="mono tip-cmd">{clip(toolLabel(t.name, t.args), 160)}</div>
       <div className="tip-row">
         <span>Duration</span>
         <span>{t.end ? fmtMs(t.end.durationMs) : "running"}</span>
@@ -310,7 +313,7 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
             const kind = it.kind === "user" ? "user" : it.kind === "row" ? it.event.type : "";
             const label =
               it.kind === "user"
-                ? `You: ${it.text.slice(0, 80)}`
+                ? `You: ${clip(it.text, 80)}`
                 : it.kind === "row" && it.event.type === "compaction"
                   ? `Compaction ${fmtInt(it.event.beforeTokens)} → ${fmtInt(it.event.afterTokens)} tokens`
                   : it.kind === "row" && it.event.type === "warning"
@@ -488,6 +491,7 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
                           <span className={c.kind === "added" ? "ok-text" : c.kind === "deleted" ? "err-text" : "warn-text"}>{c.kind}</span>
                         </div>
                       ))}
+                      {f.changes.length > 8 && <div className="tip-row dim">{f.changes.length - 8} more</div>}
                     </>,
                   )
                 }
