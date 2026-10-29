@@ -16,6 +16,7 @@ import type {
   WsMessage,
 } from "@terrarium/shared";
 import type { Backend, ConnStatus } from "../api/backend";
+import { afterChunk, mergeNetPage } from "../lib/catchup";
 
 export type View =
   | { kind: "home" }
@@ -51,8 +52,9 @@ export interface Trace {
   error?: string;
   live: Record<string, LiveCall>; // by callId, until assistant_message arrives
   liveOut: Record<string, OutChunk[]>; // by toolCallId, until tool_end arrives
-  // calls and tool calls that started while this trace was subscribed: their live buffers hold every chunk
-  whole: Record<string, true>;
+  // calls and tool calls whose live buffers hold every chunk (afterChunk); `next` is the chunk index expected next
+  whole: Record<string, boolean>;
+  next: Record<string, number>;
 }
 
 export interface Toast {
@@ -326,13 +328,13 @@ export function onEnvFs(fn: (envId: Id) => void) {
 }
 
 function emptyTrace(): Trace {
-  return { events: [], contiguous: 0, loaded: false, live: {}, liveOut: {}, whole: {} };
+  return { events: [], contiguous: 0, loaded: false, live: {}, liveOut: {}, whole: {}, next: {} };
 }
 
 /** Live buffers that missed chunks (trace not subscribed, socket down) are dropped rather than shown with a hole. */
 function resetLive(id: Id) {
   const t = get().traces[id];
-  if (t && (Object.keys(t.live).length || Object.keys(t.liveOut).length || Object.keys(t.whole).length)) putTrace(id, { ...t, live: {}, liveOut: {}, whole: {} });
+  if (t && (Object.keys(t.live).length || Object.keys(t.liveOut).length || Object.keys(t.whole).length)) putTrace(id, { ...t, live: {}, liveOut: {}, whole: {}, next: {} });
 }
 
 function onTrace(ev: TraceEvent) {
@@ -348,7 +350,10 @@ function onTrace(ev: TraceEvent) {
     putTrace(ev.sessionId, t);
   }
 
-  if (STREAMED.has(ev.type)) {
+  if (ev.type === "model_delta" || ev.type === "tool_output") {
+    const id = ev.type === "model_delta" ? ev.callId : ev.toolCallId;
+    const seen = afterChunk({ whole: t.whole[id], next: t.next[id] }, ev.n);
+    t = { ...t, whole: { ...t.whole, [id]: seen.whole }, next: seen.next === undefined ? t.next : { ...t.next, [id]: seen.next } };
     if (ev.type === "model_delta") {
       const now = Date.now();
       const cur = t.live[ev.callId] ?? { text: "", thinking: "", toolcall: "", firstAt: now };
@@ -552,27 +557,18 @@ export function currentSession(): SessionSummary | undefined {
 export const NET_LIMIT = 1000;
 export const NET_LIMIT_MAX = 5000; // the backend's cap per request
 
-const latestAttempt = (e: NetEntry) => e.lastTs ?? e.ts;
-
-/** Newest `limit` rows by latest attempt (the backend's order), merged with live rows that arrived meanwhile. */
+/** Newest `limit` rows by latest attempt (the backend's order), plus live rows that arrived meanwhile (mergeNetPage). */
 export async function loadNet(envId: Id, limit = get().netLimit[envId] ?? NET_LIMIT) {
   const b = get().backend;
   if (!b) return;
   try {
     const entries = await b.getNet(envId, limit);
     set((s) => {
-      const fetched = new Map(entries.map((x) => [x.id, x]));
-      // a live row newer than the fetched copy (more repeats) wins
-      const live = (s.net[envId] ?? []).filter((x) => {
-        const f = fetched.get(x.id);
-        if (f && latestAttempt(x) > latestAttempt(f)) fetched.delete(x.id);
-        return !fetched.has(x.id);
-      });
-      const merged = [...fetched.values(), ...live].sort((a, b) => latestAttempt(a) - latestAttempt(b));
+      const { rows, capped } = mergeNetPage(s.net[envId] ?? [], entries, limit);
       return {
-        net: { ...s.net, [envId]: merged },
+        net: { ...s.net, [envId]: rows },
         netLimit: { ...s.netLimit, [envId]: limit },
-        netCapped: { ...s.netCapped, [envId]: entries.length >= limit },
+        netCapped: { ...s.netCapped, [envId]: capped },
       };
     });
   } catch (err) {

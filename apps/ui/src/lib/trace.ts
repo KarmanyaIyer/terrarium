@@ -225,8 +225,9 @@ export function derive(trace: Trace | undefined): Derived {
       if (t && !t.end) t.live = out;
     }
     if (running) {
-      for (const c of calls.values()) if (!c.msg && !c.end) c.livePartial = !trace.whole[c.callId];
-      for (const t of tools.values()) if (!t.end) t.livePartial = !trace.whole[t.toolCallId];
+      // only a buffer that actually missed chunks; a call opened during prefill gets its first chunk and is whole
+      for (const c of calls.values()) if (!c.msg && !c.end) c.livePartial = !!c.live && !trace.whole[c.callId];
+      for (const t of tools.values()) if (!t.end) t.livePartial = !!t.live && !trace.whole[t.toolCallId];
     }
   }
 

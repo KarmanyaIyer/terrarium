@@ -315,7 +315,7 @@ export type TraceEvent = EventBase &
         maxTokens: number;
         requestBlob?: string; // exact request bytes, named from the start so blob GC keeps them during a long call
       }
-    | { type: "model_delta"; callId: Id; kind: "text" | "thinking" | "toolcall"; delta: string } // streamed only
+    | { type: "model_delta"; callId: Id; kind: "text" | "thinking" | "toolcall"; delta: string; n?: number } // streamed only; n: 0-based index among the call's deltas
     | {
         type: "model_call_end";
         callId: Id;
@@ -326,7 +326,7 @@ export type TraceEvent = EventBase &
       }
     | { type: "assistant_message"; callId: Id; text: string; thinking?: string; toolCalls: ToolCallRef[] }
     | { type: "tool_start"; toolCallId: string; callId: Id; name: string; args: unknown }
-    | { type: "tool_output"; toolCallId: string; stream: "stdout" | "stderr"; chunk: string } // streamed only
+    | { type: "tool_output"; toolCallId: string; stream: "stdout" | "stderr"; chunk: string; n?: number } // streamed only; n: 0-based index among the tool call's chunks
     | {
         type: "tool_end";
         toolCallId: string;

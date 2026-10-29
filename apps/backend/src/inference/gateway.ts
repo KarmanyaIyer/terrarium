@@ -279,12 +279,13 @@ export class Gateway {
     }
 
     const decoder = new TextDecoder();
+    let n = 0; // delta index: lets a client tell it saw every delta of the call
     try {
       for await (const part of upstreamRes.body as AsyncIterable<Uint8Array>) {
         const text = decoder.decode(part, { stream: true });
         if (asm.raw.length + text.length > MAX_RAW_BYTES) rawOverflow = true;
         const deltas = rawOverflow ? [] : asm.push(text);
-        for (const d of deltas) ctx.tracer.stream({ type: "model_delta", callId, kind: d.kind, delta: d.delta });
+        for (const d of deltas) ctx.tracer.stream({ type: "model_delta", callId, kind: d.kind, delta: d.delta, n: n++ });
         // Emit model_call_end before the client sees [DONE], so trace order is call end -> assistant message.
         if (asm.done) finalize(mapFinishReason(asm.finishReason), undefined, asm.response(), asm.usage);
         res.write(part);

@@ -496,10 +496,15 @@ export class SessionManager {
       }
       if (live.stopRequested) throw new StopSignal();
 
+      const chunks = new Map<string, number>(); // per tool call: lets a client tell it saw every chunk
       const host = {
         runtime: runtime!,
         outputChars: TOOL_OUTPUT_CHARS,
-        onOutput: (toolCallId: string, stream: "stdout" | "stderr", chunk: string) => tracer.stream({ type: "tool_output", toolCallId, stream, chunk }),
+        onOutput: (toolCallId: string, stream: "stdout" | "stderr", chunk: string) => {
+          const n = chunks.get(toolCallId) ?? 0;
+          chunks.set(toolCallId, n + 1);
+          tracer.stream({ type: "tool_output", toolCallId, stream, chunk, n });
+        },
       };
       const tools: AgentTool<any, ToolDetails>[] = !runtime ? [] : r.harness === "pi-stock" ? piStockTools(host) : terrariumTools(host);
       const systemPrompt = r.harness === "chat" || !runtime ? CHAT_PROMPT : r.harness === "pi-stock" ? PI_STOCK_PROMPT : TERRARIUM_PROMPT + (envType === "sim" ? SIM_NOTE : "");
