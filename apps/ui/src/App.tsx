@@ -15,6 +15,7 @@ let booted = false;
 
 const EvalsView = lazy(() => import("./views/EvalsView"));
 const ModelsView = lazy(() => import("./views/ModelsView"));
+const SettingsView = lazy(() => import("./views/SettingsView"));
 
 function Toasts() {
   const toasts = useStore((s) => s.toasts);
@@ -139,9 +140,10 @@ export function App() {
           <Suspense fallback={<div className="empty">Loading…</div>}>
             {view.kind === "evals" && <EvalsView />}
             {view.kind === "models" && <ModelsView />}
+            {view.kind === "settings" && <SettingsView />}
           </Suspense>
         </main>
-        {inspectorOpen && view.kind !== "models" && view.kind !== "evals" && <Inspector />}
+        {inspectorOpen && view.kind !== "models" && view.kind !== "evals" && view.kind !== "settings" && <Inspector />}
       </div>
       <Palette />
       <NewEnvSheet />

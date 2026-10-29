@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy } from "lucide-react";
+import { Check, CircleHelp, Copy } from "lucide-react";
 import { exactTime, relTime } from "../lib/format";
 
 // ---------- popover ----------
@@ -226,7 +226,7 @@ export function CopyButton({ text, label, className }: { text: string | (() => s
 
 export function Segmented<T extends string>(props: {
   value: T;
-  options: { value: T; label: ReactNode; title?: string; disabled?: boolean }[];
+  options: { value: T; label: ReactNode; title?: string; disabled?: boolean; tip?: ReactNode }[];
   onChange: (v: T) => void;
   small?: boolean;
   disabled?: boolean;
@@ -234,25 +234,42 @@ export function Segmented<T extends string>(props: {
 }) {
   return (
     <div className={`seg${props.small ? " sm" : ""}`} role="radiogroup" aria-label={props.ariaLabel}>
-      {props.options.map((o) => (
-        <button
-          type="button"
-          key={o.value}
-          role="radio"
-          aria-checked={o.value === props.value}
-          className={o.value === props.value ? "on" : ""}
-          title={o.title}
-          disabled={props.disabled || o.disabled}
-          onClick={() => o.value !== props.value && props.onChange(o.value)}
-        >
-          {o.label}
-        </button>
-      ))}
+      {props.options.map((o) => {
+        const b = (
+          <button
+            type="button"
+            key={o.value}
+            role="radio"
+            aria-checked={o.value === props.value}
+            className={o.value === props.value ? "on" : ""}
+            title={o.tip ? undefined : o.title}
+            disabled={props.disabled || o.disabled}
+            onClick={() => o.value !== props.value && props.onChange(o.value)}
+          >
+            {o.label}
+          </button>
+        );
+        return o.tip ? (
+          <Hint key={o.value} tip={o.tip} className="seg-hint">
+            {b}
+          </Hint>
+        ) : (
+          b
+        );
+      })}
     </div>
   );
 }
 
-export function Switch(props: { on: boolean; onChange: (v: boolean) => void; label: ReactNode; disabled?: boolean; title?: string }) {
+export function Switch(props: { on: boolean; onChange: (v: boolean) => void; label: ReactNode; disabled?: boolean; title?: string; tip?: ReactNode }) {
+  if (props.tip) {
+    const { tip, title: _t, ...rest } = props;
+    return (
+      <Hint tip={tip}>
+        <Switch {...rest} />
+      </Hint>
+    );
+  }
   return (
     <button
       type="button"
@@ -326,4 +343,51 @@ export function Expander({
 
 export function Kbd({ k }: { k: string }) {
   return <kbd>{k}</kbd>;
+}
+
+// ---------- hint (hover card) ----------
+
+/**
+ * Hover card for a term or a control: what it is, when to use it. Shows after a short hover or on keyboard focus.
+ * Without children it renders a small help icon as the anchor.
+ */
+export function Hint({ tip, children, width = 300, className, label }: { tip: ReactNode; children?: ReactNode; width?: number; className?: string; label?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const timer = useRef(0);
+  const show = () => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => ref.current && setRect(ref.current.getBoundingClientRect()), 220);
+  };
+  const hide = () => {
+    window.clearTimeout(timer.current);
+    setRect(null);
+  };
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  return (
+    <span ref={ref} className={`hint-anchor ${className ?? ""}`} onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
+      {children ?? (
+        <span className="hint-icon" tabIndex={0} role="img" aria-label={label ?? "More information"}>
+          <CircleHelp size={12} />
+        </span>
+      )}
+      {rect && <HintCard rect={rect} width={width}>{tip}</HintCard>}
+    </span>
+  );
+}
+
+function HintCard({ rect, width, children }: { rect: DOMRect; width: number; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [h, setH] = useState(0);
+  useLayoutEffect(() => setH(ref.current?.offsetHeight ?? 0), [children]);
+  const w = Math.min(width, window.innerWidth - 16);
+  const left = Math.max(8, Math.min(rect.left, window.innerWidth - w - 8));
+  const below = rect.bottom + 6 + h < window.innerHeight - 8;
+  const top = below ? rect.bottom + 6 : Math.max(8, rect.top - 6 - h);
+  return createPortal(
+    <div ref={ref} className="hint-card" role="tooltip" style={{ left, top, width: w, visibility: h ? "visible" : "hidden" }}>
+      {children}
+    </div>,
+    document.body,
+  );
 }

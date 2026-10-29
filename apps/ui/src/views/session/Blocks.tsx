@@ -1,6 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, CircleX, FileDiff, Loader2, Minimize2, Play, RotateCcw, Wrench } from "lucide-react";
-import type { SessionSummary, ShortenedOutput, UpdateSessionRequest } from "@terrarium/shared";
+import type { SessionSummary, ShortenedOutput, TraceEvent, UpdateSessionRequest } from "@terrarium/shared";
+import { harnessLabel } from "../../lib/explain";
 import type { CallItem, Derived, Ev, RowItem, ToolItem, UserItem } from "../../lib/trace";
 import { argsObj, changeCounts, toolFailed, toolKind, toolLabel } from "../../lib/trace";
 import { act, select, showFilesFor, useStore } from "../../state/store";
@@ -677,6 +678,27 @@ function OverflowActions({ data, session, latest }: { data: Record<string, numbe
   );
 }
 
+const PROMPT_SOURCE = { "built-in": "built-in prompt", profile: "saved default prompt", session: "this session's prompt" } as const;
+
+/** Which system prompt and tools a run sent; the text as it was then, not as it is now. */
+function PromptRow({ ev, ts, t0 }: { ev: Extract<TraceEvent, { type: "system_prompt" }>; ts: number; t0: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="prompt-row">
+      <button className="row-ev dim prompt-row-head" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <ChevronRight size={12} className={`tw${open ? " open" : ""}`} />
+        <span>
+          System prompt: {PROMPT_SOURCE[ev.source]}, {harnessLabel(ev.harness)}
+        </span>
+        <span className="mono truncate">{ev.tools.length ? ev.tools.join(" ") : "no tools"}</span>
+        <span className="num">≈{fmtInt(Math.ceil(ev.text.length / 4))} tokens</span>
+        <Stamp ts={ts} t0={t0} />
+      </button>
+      {open && <pre className="well selectable prompt-row-text">{ev.text}</pre>}
+    </div>
+  );
+}
+
 export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: RowItem; t0: number; session: SessionSummary; d: Derived }) {
   const ev = it.event;
   const blocked = useStore((s) => (ev.type === "run_end" ? runBlocked(session.envId ? s.envs[session.envId] : undefined, session) : undefined));
@@ -703,6 +725,8 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
           {ev.code === "context_overflow" && <OverflowActions data={ev.data ?? {}} session={session} latest={!d.items.slice(d.items.indexOf(it) + 1).some((x) => x.kind === "user")} />}
         </div>
       );
+    case "system_prompt":
+      return <PromptRow ev={ev} ts={it.ts} t0={t0} />;
     case "env_lifecycle":
       return (
         <div className="row-ev dim">

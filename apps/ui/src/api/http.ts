@@ -1,5 +1,6 @@
 import type {
   ApiError,
+  AppSettings,
   AppState,
   CreateEnvRequest,
   CreateSessionRequest,
@@ -12,15 +13,23 @@ import type {
   FileContent,
   FileNode,
   ForkEnvRequest,
+  HarnessInfo,
   Id,
   InferenceState,
   LoadModelRequest,
   ModelCallDetail,
+  ModelCheck,
+  ModelDownload,
   ModelInfo,
+  ModelSuggestion,
   NetEntry,
+  PathKey,
+  RemoveModelResult,
   ResetEnvRequest,
   SendMessageRequest,
+  SessionPrompt,
   SessionSummary,
+  SettingsInfo,
   Snapshot,
   SnapshotEnvRequest,
   StartEvalRunRequest,
@@ -28,6 +37,7 @@ import type {
   UpdateEnvRequest,
   UpdateModelRequest,
   UpdateSessionRequest,
+  UpdateSettingsRequest,
   WsClientMessage,
   WsMessage,
 } from "@terrarium/shared";
@@ -183,6 +193,37 @@ export class HttpBackend implements Backend {
   }
   stopInference() {
     return this.req<InferenceState>("POST", "/api/inference/stop", {});
+  }
+  modelSuggestions() {
+    return this.req<ModelSuggestion[]>("GET", "/api/models/suggestions");
+  }
+  inspectModel(repo: string) {
+    return this.req<ModelCheck>("POST", "/api/models/inspect", { repo });
+  }
+  startDownload(repo: string) {
+    return this.req<ModelDownload>("POST", "/api/models/downloads", { repo });
+  }
+  cancelDownload(id: Id) {
+    return this.req<ModelDownload>("POST", `/api/models/downloads/${e(id)}/cancel`, {});
+  }
+  removeModel(id: Id) {
+    return this.req<RemoveModelResult>("DELETE", `/api/models/${e(id)}`);
+  }
+
+  getSettings() {
+    return this.req<SettingsInfo>("GET", "/api/settings");
+  }
+  updateSettings(req: UpdateSettingsRequest) {
+    return this.req<AppSettings>("PATCH", "/api/settings", req);
+  }
+  async reveal(path: PathKey) {
+    await this.req<unknown>("POST", "/api/reveal", { path });
+  }
+  getHarness() {
+    return this.req<HarnessInfo[]>("GET", "/api/harness");
+  }
+  getSessionPrompt(id: Id) {
+    return this.req<SessionPrompt>("GET", `/api/sessions/${e(id)}/prompt`);
   }
 
   listSuites() {

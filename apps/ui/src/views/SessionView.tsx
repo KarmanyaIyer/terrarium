@@ -1,24 +1,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, ChevronUp, PanelRight, Square, Trash2 } from "lucide-react";
-import type { HarnessProfile, NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
+import type { NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
 import { act, openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
 import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
-import { ConfirmButton, Popover, Segmented, Switch, usePop } from "../components/ui";
+import { ConfirmButton, Hint, Popover, Segmented, Switch, usePop } from "../components/ui";
+import { HARNESS, HarnessTip, NET_TIP, harnessLabel } from "../lib/explain";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { evalOwner } from "../lib/envuse";
 import { Timeline } from "./session/Timeline";
 import { CallBlock, RowBlock, ToolBlock, UserBlock } from "./session/Blocks";
 import { Composer } from "./session/Composer";
 import { Check } from "lucide-react";
-
-export const HARNESS: { id: HarnessProfile; label: string; title: string }[] = [
-  { id: "terrarium", label: "terrarium", title: "~125-token prompt; tools bash, read, write, edit" },
-  { id: "pi-stock", label: "pi-stock", title: "Pi coding agent 1.4.0 prompt and tools" },
-  { id: "chat", label: "chat", title: "No tools, no environment" },
-];
 
 function patchSession(id: string, p: UpdateSessionRequest) {
   void act("Update session", (b) => b.updateSession(id, p)).then((s) => {
@@ -29,19 +24,26 @@ function patchSession(id: string, p: UpdateSessionRequest) {
 function HarnessPicker({ s }: { s: SessionSummary }) {
   const pop = usePop();
   const running = s.status === "running";
-  const cur = HARNESS.find((h) => h.id === s.harness);
+  const label = (
+    <>
+      <span className="dim">harness</span> {harnessLabel(s.harness)}
+      {s.customPrompt && <span className="chip accent" title="This session sends its own system prompt">custom prompt</span>}
+    </>
+  );
   if (s.evalRunId)
     return (
-      <span className="hdr-btn static" title={`Harness: ${cur?.title ?? s.harness}`}>
-        <span className="dim">harness</span> {s.harness}
-      </span>
+      <Hint tip={<HarnessTip id={s.harness} />}>
+        <span className="hdr-btn static">{label}</span>
+      </Hint>
     );
   return (
     <>
-      <button ref={pop.ref} className="hdr-btn" onClick={pop.toggle} title={`Harness: ${cur?.title ?? s.harness}`}>
-        <span className="dim">harness</span> {s.harness}
-        <ChevronDown size={12} className="dim" />
-      </button>
+      <Hint tip={pop.open ? null : <HarnessTip id={s.harness} />}>
+        <button ref={pop.ref} className="hdr-btn" onClick={pop.toggle}>
+          {label}
+          <ChevronDown size={12} className="dim" />
+        </button>
+      </Hint>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={300}>
         <div className="menu">
           {HARNESS.map((h) => {
@@ -59,12 +61,23 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
               >
                 {h.id === s.harness ? <Check size={12} /> : <span style={{ width: 13 }} />}
                 <span>
-                  <span className="mono">{h.label}</span>
-                  <span className="dim menu-sub">{!running && !s.envId && h.id !== "chat" ? "Needs an environment" : h.title}</span>
+                  <span>{h.label}</span>
+                  <span className="dim menu-sub">{!running && !s.envId && h.id !== "chat" ? "Needs an environment" : h.short}</span>
                 </span>
               </button>
             );
           })}
+          <div className="menu-sep" />
+          <button
+            className="menu-item"
+            onClick={() => {
+              pop.close();
+              useStore.setState({ inspectorTab: "prompt", inspectorOpen: true });
+            }}
+          >
+            <span style={{ width: 13 }} />
+            System prompt and tools
+          </button>
         </div>
       </Popover>
     </>
@@ -189,9 +202,9 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
                 })
               }
               options={[
-                { value: "off", label: "Off", title: "Every connection denied" },
-                { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN only" },
-                { value: "web", label: "Web", title: "Public HTTP/HTTPS; private, loopback and link-local ranges still denied" },
+                { value: "off", label: "Off", tip: NET_TIP.off },
+                { value: "registries", label: "Registries", tip: NET_TIP.registries },
+                { value: "web", label: "Web", tip: NET_TIP.web },
               ]}
             />
           </div>

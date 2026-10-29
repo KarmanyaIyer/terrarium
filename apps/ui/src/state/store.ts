@@ -1,13 +1,16 @@
 import { create } from "zustand";
 import type {
+  AppSettings,
   AppState,
   EnvSummary,
   EvalRunDetail,
   EvalRunSummary,
   EvalSuite,
+  HarnessInfo,
   Id,
   InferenceState,
   MemoryBudget,
+  ModelDownload,
   ModelInfo,
   NetEntry,
   ResourceSample,
@@ -22,7 +25,8 @@ export type View =
   | { kind: "home" }
   | { kind: "session"; id: Id }
   | { kind: "evals"; suiteId?: string; runId?: Id }
-  | { kind: "models" };
+  | { kind: "models" }
+  | { kind: "settings" };
 
 export type Selection =
   | { kind: "call"; callId: Id; seq: number }
@@ -30,7 +34,7 @@ export type Selection =
   | { kind: "net"; entryId: Id; seq: number }
   | { kind: "event"; seq: number };
 
-export type InspectorTab = "files" | "request" | "network" | "env" | "shell";
+export type InspectorTab = "files" | "request" | "prompt" | "network" | "env" | "shell";
 
 export interface LiveCall {
   text: string;
@@ -95,6 +99,9 @@ export interface Store extends Prefs {
   budget: MemoryBudget;
   evalRuns: EvalRunSummary[];
   versions: AppState["versions"] | null;
+  settings: AppSettings;
+  downloads: Record<Id, ModelDownload>;
+  harness: HarnessInfo[] | null;
 
   traces: Record<Id, Trace>;
   samples: ResourceSample[];
@@ -128,6 +135,9 @@ export const useStore = create<Store>()(() => ({
   budget: { totalBytes: 0, budgetBytes: 0 },
   evalRuns: [],
   versions: null,
+  settings: { memoryBudgetBytes: 0, newSession: { modelId: null, contextWindow: null, thinking: "model", harness: "terrarium" }, newEnv: { type: "vm", network: "off" }, prompts: {} },
+  downloads: {},
+  harness: null,
   traces: {},
   samples: [],
   net: {},
@@ -205,6 +215,8 @@ function hydrate(state: AppState) {
     budget: state.budget,
     evalRuns: state.evalRuns,
     versions: state.versions,
+    settings: state.settings,
+    downloads: Object.fromEntries((state.downloads ?? []).map((d) => [d.id, d])),
     ready: true,
   });
 }
@@ -288,6 +300,13 @@ function handleMessage(msg: WsMessage) {
       break;
     case "inference":
       set({ inference: msg.inference });
+      break;
+    case "settings":
+      // saved prompts feed the harness cards
+      set({ settings: msg.settings, harness: null });
+      break;
+    case "model_download":
+      set((s) => ({ downloads: { ...s.downloads, [msg.download.id]: msg.download } }));
       break;
     case "resources":
       set((s) => {
@@ -524,8 +543,8 @@ export function openView(view: View) {
 export function openEnv(envId: Id, tab: InspectorTab = "env") {
   const s = get();
   set({
-    // Models and Evals have no inspector; an env opened from there shows on Home
-    view: s.view.kind === "models" || s.view.kind === "evals" ? { kind: "home" } : s.view,
+    // Models, Evals and Settings have no inspector; an env opened from there shows on Home
+    view: s.view.kind === "models" || s.view.kind === "evals" || s.view.kind === "settings" ? { kind: "home" } : s.view,
     inspectorEnvId: envId,
     inspectorTab: tab,
     inspectorOpen: true,
@@ -579,6 +598,15 @@ export async function loadNet(envId: Id, limit = get().netLimit[envId] ?? NET_LI
 export async function loadEvalRun(id: Id) {
   const d = await act("Eval run", (b) => b.getEvalRun(id));
   if (d) set((s) => ({ evalDetails: { ...s.evalDetails, [id]: d } }));
+}
+
+let harnessLoading = false;
+export async function loadHarness() {
+  if (harnessLoading) return;
+  harnessLoading = true;
+  const harness = await act("Harness profiles", (b) => b.getHarness());
+  harnessLoading = false;
+  if (harness) set({ harness });
 }
 
 export async function loadSuites() {

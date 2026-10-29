@@ -1,14 +1,24 @@
 import { Fragment, useMemo, useState } from "react";
-import { ChevronRight, Loader2 } from "lucide-react";
-import type { ModelInfo, UpdateModelRequest } from "@terrarium/shared";
-import { act, openSession, useStore } from "../state/store";
+import { ChevronRight, Loader2, Plus, Trash2, X } from "lucide-react";
+import type { ModelDownload, ModelInfo, UpdateModelRequest } from "@terrarium/shared";
+import { act, openSession, openView, toast, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { exactBytes, fmtBytes, fmtCtx } from "../lib/format";
-import { ConfirmButton, Segmented } from "../components/ui";
+import { ConfirmButton, Hint, Segmented } from "../components/ui";
 import { fitLabel, MemBar, memTitle } from "../components/ModelPicker";
 import { ServerButton } from "../components/TopBar";
+import { AddModelSheet } from "./AddModelSheet";
 
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
+
+const THINKING: Record<ModelInfo["thinking"], { label: string; tip: string }> = {
+  "default-on": { label: "on by default", tip: "Thinks before answering unless a session turns it off" },
+  optional: { label: "optional", tip: "Thinks only when a session turns thinking on" },
+  none: { label: "none", tip: "No thinking mode" },
+};
+
+/** "9.4B" -> 9.4, "E2B" -> 2; unknown sizes sort last. */
+const paramsNum = (p: string) => Number(/([\d.]+)/.exec(p)?.[1] ?? Infinity);
 
 export default function ModelsView() {
   const models = useStore((s) => s.models);
@@ -16,7 +26,9 @@ export default function ModelsView() {
   const budget = useStore((s) => s.budget);
   const samples = useStore((s) => s.samples);
   const sessions = useStore((s) => s.sessions);
+  const downloads = useStore((s) => s.downloads);
   const [open, setOpen] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [pending, setPending] = useState<Record<string, "load" | "unload">>({});
   const sample = samples[samples.length - 1];
   const free = sample?.system.freeBytes;
@@ -24,15 +36,20 @@ export default function ModelsView() {
 
   const rows = useMemo(
     () =>
-      models.map((m) => {
-        const e = estimate(m, m.defaultContext, sample, budget, models);
-        return { m, e, fit: fitLabel(e, free) };
-      }),
+      [...models]
+        .sort((a, b) => a.family.localeCompare(b.family) || paramsNum(a.params) - paramsNum(b.params) || a.id.localeCompare(b.id))
+        .map((m) => {
+          const e = estimate(m, m.defaultContext, sample, budget, models);
+          return { m, e, fit: fitLabel(e, free) };
+        }),
     [models, sample, budget, free],
   );
   const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.otherLoaded + r.e.bytes)) || 1;
   const loaded = models.filter((m) => m.loaded);
   const resident = loaded.reduce((a, m) => a + (m.residentBytes ?? 0), 0);
+  const active = Object.values(downloads)
+    .filter((d) => d.status === "running" || (d.finishedAt && Date.now() - d.finishedAt < 60_000 && d.status !== "done"))
+    .sort((a, b) => b.startedAt - a.startedAt);
 
   const usedBy = (id: string) => Object.values(sessions).filter((s) => s.modelId === id && !s.evalRunId);
 
@@ -60,29 +77,60 @@ export default function ModelsView() {
         <ServerButton small />
         <span className="blk-spacer" />
         <span className="dim num">
-          {loaded.length} loaded, {fmtBytes(resident)} resident
+          {loaded.length} loaded{loaded.length ? `, ${fmtBytes(resident)} resident` : ""}
         </span>
-        <span className="num" title="Memory budget for models, set in settings; total physical RAM in parentheses">
-          <span className="dim">Budget</span> {fmtBytes(budget.budgetBytes)} <span className="dim">of {fmtBytes(budget.totalBytes)}</span>
-        </span>
+        <Hint className="vh-ceiling" tip={`Most memory oMLX may use for models, out of ${fmtBytes(budget.totalBytes)} RAM. Change it in Settings.`}>
+          <button className="cell-link num nowrap" onClick={() => openView({ kind: "settings" })}>
+            <span className="dim">Ceiling</span> {fmtBytes(budget.budgetBytes)}
+          </button>
+        </Hint>
+        <button className="btn sm primary" onClick={() => setAdding(true)}>
+          <Plus /> Add model
+        </button>
       </div>
+      {active.length > 0 && (
+        <div className="dl-strip">
+          {active.map((d) => (
+            <DownloadRow key={d.id} d={d} />
+          ))}
+        </div>
+      )}
       <div className="table-wrap">
         <table className="table models-table">
           <thead>
+            <tr className="grp">
+              <th colSpan={5}>Model</th>
+              <th colSpan={3} className="g">
+                Capabilities
+              </th>
+              <th colSpan={3} className="g">
+                <Hint tip="What a new session with this model starts with. Click a row to change them.">Defaults</Hint>
+              </th>
+              <th className="g" />
+            </tr>
             <tr>
               <th className="tw-col" />
-              <th>Model</th>
+              <th>Name</th>
               <th className="r">Params</th>
               <th>Quant</th>
               <th className="r">Disk</th>
-              <th title="Tool-call format the chat template emits">Tool format</th>
+              <th className="r g">
+                <Hint tip="Longest context the model supports">Max context</Hint>
+              </th>
+              <th>
+                <Hint tip="Format the model's chat template uses for tool calls">Tool calls</Hint>
+              </th>
               <th>Thinking</th>
-              <th className="r" title="Native context length">Native</th>
-              <th className="r" title="Default context window for new sessions">Context</th>
-              <th className="r" title="Default output cap (max_tokens)">Output</th>
-              <th title="weights + context x KV bytes/token + fixed state + 1 GiB runtime, at the default context">Memory at default</th>
-              <th>State</th>
-              <th />
+              <th className="r g">Context</th>
+              <th className="r">
+                <Hint tip="max_tokens sent with each request">Output</Hint>
+              </th>
+              <th>
+                <Hint tip="Weights + context x KV bytes per token + fixed state + runtime, at the default context. Loaded models show what oMLX reports.">
+                  Memory
+                </Hint>
+              </th>
+              <th className="g" />
             </tr>
           </thead>
           <tbody>
@@ -91,15 +139,16 @@ export default function ModelsView() {
               const p = pending[m.id];
               const users = usedBy(m.id);
               const busyUsers = users.filter((s) => s.status === "running");
+              const toggle = () => setOpen(isOpen ? null : m.id);
               return (
                 <Fragment key={m.id}>
                   <tr
-                    className={`click${isOpen ? " open" : ""}`}
-                    onClick={() => setOpen(isOpen ? null : m.id)}
+                    className={`click${isOpen ? " open" : ""}${m.loaded ? " loaded" : ""}`}
+                    onClick={toggle}
                     onKeyDown={(ev) => {
                       if (ev.target === ev.currentTarget && (ev.key === "Enter" || ev.key === " ")) {
                         ev.preventDefault();
-                        setOpen(isOpen ? null : m.id);
+                        toggle();
                       }
                     }}
                     tabIndex={0}
@@ -108,10 +157,21 @@ export default function ModelsView() {
                     <td className="tw-col">
                       <ChevronRight size={12} className={`tw${isOpen ? " open" : ""}`} />
                     </td>
-                    <td>
-                      <div className="strong">{m.name}</div>
+                    <td className="mdl-name">
+                      <div className="mdl-title">
+                        <span className="strong">{m.name}</span>
+                        {p ? (
+                          <span className="chip">
+                            <Loader2 size={10} className="spin" /> {p === "load" ? "loading" : "unloading"}
+                          </span>
+                        ) : m.loaded ? (
+                          <span className="chip ok" title={`Loaded at ${fmtCtx(m.loadedContext)} context`}>
+                            loaded {fmtCtx(m.loadedContext)}
+                          </span>
+                        ) : null}
+                      </div>
                       <div className="mono dim2 model-id truncate" title={m.id}>
-                        {m.id}
+                        {m.family} · {m.id}
                       </div>
                     </td>
                     <td className="r num">{m.params}</td>
@@ -119,32 +179,27 @@ export default function ModelsView() {
                     <td className="r num" title={exactBytes(m.diskBytes)}>
                       {fmtBytes(m.diskBytes)}
                     </td>
+                    <td className="r num g">{fmtCtx(m.nativeContext)}</td>
                     <td className="mono dim">{m.toolFormat}</td>
-                    <td className="dim">{m.thinking}</td>
-                    <td className="r num dim">{fmtCtx(m.nativeContext)}</td>
-                    <td className="r num">{fmtCtx(m.defaultContext)}</td>
+                    <td className="dim" title={THINKING[m.thinking].tip}>
+                      {THINKING[m.thinking].label}
+                    </td>
+                    <td className="r num g">{fmtCtx(m.defaultContext)}</td>
                     <td className="r num">{fmtCtx(m.defaultMaxOutput)}</td>
                     <td>
-                      <div className="est-cell" title={memTitle(e, budget.budgetBytes)}>
-                        <MemBar e={e} cls={m.loaded ? "ok" : fit.cls} scaleMax={scaleMax} budget={budget.budgetBytes} />
-                        <span className="num">{fmtBytes(e.bytes)}</span>
-                        {!m.loaded && <span className={`fit ${fit.cls}`}>{fit.text}</span>}
-                      </div>
-                    </td>
-                    <td className="nowrap">
-                      {p ? (
-                        <span className="dim">
-                          <Loader2 size={12} className="spin" /> {p === "load" ? "Loading" : "Unloading"}
-                        </span>
-                      ) : m.loaded ? (
-                        <span>
-                          <span className="dot ready" /> {fmtCtx(m.loadedContext)} <span className="dim num">{fmtBytes(m.residentBytes)}</span>
+                      {m.loaded ? (
+                        <span className="num" title="Resident memory reported by oMLX">
+                          {fmtBytes(m.residentBytes)} <span className="dim">resident</span>
                         </span>
                       ) : (
-                        <span className="dim2">not loaded</span>
+                        <div className="est-cell" title={memTitle(e, budget.budgetBytes)}>
+                          <MemBar e={e} cls={fit.cls} scaleMax={scaleMax} budget={budget.budgetBytes} />
+                          <span className="num">{fmtBytes(e.bytes)}</span>
+                          <span className={`fit ${fit.cls}`}>{fit.text}</span>
+                        </div>
                       )}
                     </td>
-                    <td className="r nowrap" onClick={(ev) => ev.stopPropagation()}>
+                    <td className="r nowrap g mdl-actions" onClick={(ev) => ev.stopPropagation()}>
                       {m.loaded ? (
                         busyUsers.length ? (
                           <ConfirmButton
@@ -183,7 +238,7 @@ export default function ModelsView() {
                   {isOpen && (
                     <tr className="detail-row">
                       <td />
-                      <td colSpan={12}>
+                      <td colSpan={11}>
                         <ModelDefaults m={m} users={users.map((s) => ({ id: s.id, title: s.title, running: s.status === "running" }))} />
                       </td>
                     </tr>
@@ -193,8 +248,40 @@ export default function ModelsView() {
             })}
           </tbody>
         </table>
-        {!models.length && <div className="empty">No models found in the oMLX model directory</div>}
+        {!models.length && (
+          <div className="empty">
+            No models in the models folder{" "}
+            <button className="btn sm" onClick={() => setAdding(true)}>
+              <Plus /> Add model
+            </button>
+          </div>
+        )}
       </div>
+      {adding && <AddModelSheet onClose={() => setAdding(false)} />}
+    </div>
+  );
+}
+
+function DownloadRow({ d }: { d: ModelDownload }) {
+  const pct = d.bytesTotal ? Math.min(100, (d.bytesDone / d.bytesTotal) * 100) : 0;
+  return (
+    <div className={`dl-row ${d.status}`}>
+      <span className="strong truncate">{d.repo}</span>
+      <div className="dl-bar">
+        <span style={{ width: `${pct}%` }} />
+      </div>
+      <span className="num dim">
+        {fmtBytes(d.bytesDone)} / {fmtBytes(d.bytesTotal)}
+      </span>
+      {d.status === "running" ? (
+        <button className="btn sm ghost" onClick={() => void act("Cancel download", (b) => b.cancelDownload(d.id))}>
+          <X /> Cancel
+        </button>
+      ) : (
+        <span className={d.status === "error" ? "err-text truncate" : "dim"} title={d.error}>
+          {d.status === "error" ? d.error : d.status}
+        </span>
+      )}
     </div>
   );
 }
@@ -219,6 +306,7 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
     num(topP) !== m.sampling.topP ||
     num(topK) !== m.sampling.topK ||
     num(pres) !== m.sampling.presencePenalty;
+  const running = users.filter((u) => u.running).length;
 
   const save = async () => {
     const req: UpdateModelRequest = {
@@ -246,9 +334,13 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
           }}
           options={ctxOpts.map((c) => ({ value: String(c), label: fmtCtx(c) }))}
         />
-        <span title="max_tokens sent with each request">Output cap</span>
+        <Hint tip="max_tokens sent with each request; thinking tokens count against it">
+          <span>Output cap</span>
+        </Hint>
         <Segmented small value={String(out)} onChange={(v) => setOut(Number(v))} options={outOpts.map((c) => ({ value: String(c), label: fmtCtx(c) }))} />
-        <span>Sampling</span>
+        <Hint tip="Sent with every request (MLX ignores generation_config.json). Defaults follow each family's model card.">
+          <span>Sampling</span>
+        </Hint>
         <div className="md-sampling">
           <label>
             temperature <input className="input num" value={temp} onChange={(e) => setTemp(e.target.value)} />
@@ -263,33 +355,17 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
             presence <input className="input num" value={pres} placeholder="–" onChange={(e) => setPres(e.target.value)} />
           </label>
         </div>
-        <span>Model</span>
-        <div className="md-facts num">
-          <span>
-            <span className="dim">quant</span> {m.quant}
-          </span>
-          <span>
-            <span className="dim">disk</span> {fmtBytes(m.diskBytes)}
-          </span>
-          <span>
-            <span className="dim">tool calls</span> <span className="mono">{m.toolFormat}</span>
-          </span>
-          <span>
-            <span className="dim">thinking</span> {m.thinking}
-          </span>
-          <span>
-            <span className="dim">native context</span> {fmtCtx(m.nativeContext)}
-          </span>
-        </div>
         <span>Sessions</span>
         <div className="md-users">
-          {users.length
-            ? users.map((u) => (
-                <button key={u.id} className="cell-link" onClick={() => openSession(u.id)}>
-                  {u.running && <span className="dot live" />} {u.title}
-                </button>
-              ))
-            : <span className="dim2">none</span>}
+          {users.length ? (
+            users.map((u) => (
+              <button key={u.id} className="cell-link" onClick={() => openSession(u.id)}>
+                {u.running && <span className="dot live" />} {u.title}
+              </button>
+            ))
+          ) : (
+            <span className="dim2">none</span>
+          )}
         </div>
       </div>
       <div className="md-actions">
@@ -297,6 +373,20 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
           {saving && <Loader2 className="spin" />} Save defaults
         </button>
         {bad && <span className="err-text">Sampling values must be numbers</span>}
+        <span className="blk-spacer" />
+        <ConfirmButton
+          small
+          className="ghost"
+          icon={<Trash2 />}
+          label="Remove model"
+          disabled={running > 0 || m.loaded}
+          title={running ? "Stop its running sessions first" : m.loaded ? "Unload it first" : `Deletes models/${m.id}`}
+          confirmLabel={`Delete models/${m.id}, frees ${fmtBytes(m.diskBytes)}`}
+          onConfirm={async () => {
+            const r = await act(`Remove ${m.name}`, (b) => b.removeModel(m.id));
+            if (r) toast(`Removed ${m.name}, freed ${fmtBytes(r.freedBytes)}`, "info");
+          }}
+        />
       </div>
     </div>
   );

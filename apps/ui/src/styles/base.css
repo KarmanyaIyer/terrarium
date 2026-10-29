@@ -608,3 +608,67 @@ tr.click:focus-visible {
   outline-offset: -2px;
   box-shadow: none;
 }
+
+/* ---------- hint (hover card) ---------- */
+.hint-anchor {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+.hint-icon {
+  display: inline-flex;
+  color: var(--fg-4);
+  cursor: help;
+  border-radius: 50%;
+  margin-left: 3px;
+}
+.hint-icon:hover,
+.hint-icon:focus-visible {
+  color: var(--fg-2);
+  outline: none;
+}
+.hint-card {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  background: var(--bg-2);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  padding: 8px 10px;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--fg-2);
+  white-space: normal;
+  text-align: left;
+  font-weight: 400;
+}
+.hint-card b {
+  color: var(--fg-1);
+  font-weight: 600;
+}
+.hint-card .hint-title {
+  display: block;
+  color: var(--fg-1);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.hint-card .hint-line + .hint-line {
+  margin-top: 4px;
+}
+.hint-card .hint-k {
+  color: var(--fg-3);
+}
+.hint-card .hint-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin-top: 4px;
+}
+.hint-card .hint-rows > :nth-child(odd) {
+  color: var(--fg-3);
+}
+.hint-card code,
+.hint-card .mono {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}

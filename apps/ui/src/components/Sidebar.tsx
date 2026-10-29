@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Boxes, ChevronRight, FlaskConical, Globe, Package, Plus, Square, SquareCheck, Trash2, WifiOff } from "lucide-react";
+import { Boxes, ChevronRight, FlaskConical, Globe, Package, Plus, Square, SquareCheck, Trash2, WifiOff, Settings as SettingsIcon } from "lucide-react";
 import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { act, openEnv, openSession, openView, setPref, useStore } from "../state/store";
 import { ConfirmButton, Time } from "./ui";
@@ -200,6 +200,10 @@ export function Sidebar() {
           <span className="sb-badge num" title="Models loaded in oMLX">
             {loaded}/{models.length}
           </span>
+        </button>
+        <button className={`sb-nav${view.kind === "settings" ? " active" : ""}`} onClick={() => openView({ kind: "settings" })}>
+          <SettingsIcon size={13} />
+          <span>Settings</span>
         </button>
         {ephemeralCount > 0 && (
           <button

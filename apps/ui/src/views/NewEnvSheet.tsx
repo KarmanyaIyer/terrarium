@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Box, Loader2, Terminal, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import type { CreateEnvRequest, EnvFacts, EnvSummary, EnvType, NetworkMode, Snapshot } from "@terrarium/shared";
 import { act, openEnv, useStore } from "../state/store";
 import { fmtBytes, relTime } from "../lib/format";
-import { Kbd, Segmented, Switch } from "../components/ui";
-import { EnvChip, NetIcon } from "../components/Sidebar";
+import { Hint, Kbd, Segmented, Switch } from "../components/ui";
+import { NetIcon } from "../components/Sidebar";
+import { EnvCompare, FIELD_TIP, NET_ALWAYS, NET_TIP } from "../lib/explain";
 import { busyReason } from "../lib/envuse";
 
 const MiB = 1024 * 1024;
 type Source = "clean" | "fork" | "snapshot";
 
-const NET_OPTS: { value: NetworkMode; label: string; title: string }[] = [
-  { value: "off", label: "Off", title: "Every connection denied" },
-  { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN" },
-  { value: "web", label: "Web", title: "Public HTTP/HTTPS; private, loopback, link-local ranges still denied" },
+const NET_OPTS: { value: NetworkMode; label: string; tip: ReactNode }[] = [
+  { value: "off", label: "Off", tip: NET_TIP.off },
+  { value: "registries", label: "Registries", tip: NET_TIP.registries },
+  { value: "web", label: "Web", tip: NET_TIP.web },
 ];
 
 /** Rough RSS of a sim env (node child process + in-memory FS); VMs reserve their configured RAM. */
@@ -38,16 +39,17 @@ function Sheet({ onClose }: { onClose: () => void }) {
   const backend = useStore((s) => s.backend);
   const samples = useStore((s) => s.samples);
   const budget = useStore((s) => s.budget);
+  const defaults = useStore((s) => s.settings.newEnv);
   const envs = useMemo(() => Object.values(envMap).filter((e) => !e.ephemeral), [envMap]);
 
-  const [type, setType] = useState<EnvType>("vm");
-  const [name, setName] = useState(() => nextName(envs, "vm"));
+  const [type, setType] = useState<EnvType>(defaults.type);
+  const [name, setName] = useState(() => nextName(envs, defaults.type));
   const [nameTouched, setNameTouched] = useState(false);
   const [source, setSource] = useState<Source>("clean");
   const [srcEnv, setSrcEnv] = useState<string>("");
   const [snaps, setSnaps] = useState<Snapshot[] | null>(null);
   const [snapId, setSnapId] = useState<string>("");
-  const [network, setNetwork] = useState<NetworkMode>("off");
+  const [network, setNetwork] = useState<NetworkMode>(defaults.network);
   const [cpus, setCpus] = useState(2);
   const [memMiB, setMemMiB] = useState(1024);
   const [diskMiB, setDiskMiB] = useState(4096);
@@ -169,24 +171,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="sheet-body">
-          <div className="type-pick" role="radiogroup" aria-label="Environment type">
-            <TypeCard
-              on={type === "vm"}
-              onPick={() => setType("vm")}
-              icon={<Box size={16} />}
-              title="Linux VM"
-              tag="vm"
-              lines={["Real kernel, own disk, snapshots"]}
-            />
-            <TypeCard
-              on={type === "sim"}
-              onPick={() => setType("sim")}
-              icon={<Terminal size={16} />}
-              title="Simulated shell"
-              tag="sim"
-              lines={["just-bash, in-memory files, ~90 MiB"]}
-            />
-          </div>
+          <EnvCompare highlight={type} onPick={setType} />
 
           <div className="form-grid">
             <label htmlFor="ne-name">Name</label>
@@ -202,7 +187,9 @@ function Sheet({ onClose }: { onClose: () => void }) {
               }}
             />
 
-            <span>Start from</span>
+            <Hint tip={FIELD_TIP.start}>
+              <span>Start from</span>
+            </Hint>
             <div className="form-stack">
               <Segmented<Source>
                 value={source}
@@ -246,7 +233,9 @@ function Sheet({ onClose }: { onClose: () => void }) {
               )}
             </div>
 
-            <span>Network</span>
+            <Hint tip={NET_ALWAYS}>
+              <span>Network</span>
+            </Hint>
             <div className="form-row">
               <Segmented<NetworkMode> value={network} onChange={setNetwork} ariaLabel="Network mode" options={NET_OPTS} />
               <NetIcon mode={network} size={13} />
@@ -254,35 +243,43 @@ function Sheet({ onClose }: { onClose: () => void }) {
 
             {type === "vm" ? (
               <>
-                <span>CPUs</span>
+                <Hint tip={FIELD_TIP.cpus}>
+                  <span>CPUs</span>
+                </Hint>
                 <Segmented
                   value={String(cpus)}
                   onChange={(v) => setCpus(Number(v))}
                   ariaLabel="CPUs"
                   options={[1, 2, 4, 6].map((n) => ({ value: String(n), label: String(n) }))}
                 />
-                <span>Memory</span>
+                <Hint tip={FIELD_TIP.memory}>
+                  <span>Memory</span>
+                </Hint>
                 <Segmented
                   value={String(memMiB)}
                   onChange={(v) => setMemMiB(Number(v))}
                   ariaLabel="Memory"
                   options={[512, 1024, 2048, 4096].map((n) => ({ value: String(n), label: sizeLabel(n) }))}
                 />
-                <span>Disk</span>
+                <Hint tip={FIELD_TIP.disk}>
+                  <span>Disk</span>
+                </Hint>
                 <Segmented
                   value={String(diskMiB)}
                   onChange={(v) => setDiskMiB(Number(v))}
                   ariaLabel="Disk"
                   options={[2048, 4096, 8192, 16384].map((n) => ({ value: String(n), label: sizeLabel(n) }))}
                 />
-                <span title="Hypervisor backend for the micro-VM">Backend</span>
+                <Hint tip={FIELD_TIP.backend}>
+                  <span>Backend</span>
+                </Hint>
                 <Segmented
                   value={vmBackend}
                   onChange={setVmBackend}
                   ariaLabel="VM backend"
                   options={[
-                    { value: "krun", label: "krun", title: "libkrun on Hypervisor.framework; fast boot" },
-                    { value: "qemu", label: "QEMU", title: "Fallback backend; slower boot" },
+                    { value: "krun", label: "krun" },
+                    { value: "qemu", label: "QEMU" },
                   ]}
                 />
               </>
@@ -290,10 +287,12 @@ function Sheet({ onClose }: { onClose: () => void }) {
               <>
                 <span>Runtimes</span>
                 <div className="form-row">
-                  <Switch on={python} onChange={setPython} label="Python (WASM)" />
-                  <Switch on={js} onChange={setJs} label="JavaScript" />
+                  <Switch on={python} onChange={setPython} label="Python (WASM)" tip={FIELD_TIP.python} />
+                  <Switch on={js} onChange={setJs} label="JavaScript" tip={FIELD_TIP.javascript} />
                 </div>
-                <span title="Total bytes the in-memory filesystem may hold">FS limit</span>
+                <Hint tip={FIELD_TIP.fsLimit}>
+                  <span>FS limit</span>
+                </Hint>
                 <Segmented
                   value={String(simMax)}
                   onChange={(v) => setSimMax(Number(v))}
@@ -321,23 +320,6 @@ function Sheet({ onClose }: { onClose: () => void }) {
         </div>
       </form>
     </div>
-  );
-}
-
-function TypeCard(props: { on: boolean; onPick: () => void; icon: ReactNode; title: string; tag: EnvType; lines: string[] }) {
-  return (
-    <button type="button" role="radio" aria-checked={props.on} className={`type-card${props.on ? " on" : ""}`} onClick={props.onPick}>
-      <span className="type-card-head">
-        {props.icon}
-        <b>{props.title}</b>
-        <EnvChip type={props.tag} />
-      </span>
-      {props.lines.map((l) => (
-        <span key={l} className="type-card-line">
-          {l}
-        </span>
-      ))}
-    </button>
   );
 }
 

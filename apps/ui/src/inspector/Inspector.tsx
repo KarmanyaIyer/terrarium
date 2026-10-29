@@ -6,6 +6,7 @@ import { Popover, usePop } from "../components/ui";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { FilesTab } from "./FilesTab";
 import { RequestTab } from "./RequestTab";
+import { PromptTab } from "./PromptTab";
 import { NetworkTab } from "./NetworkTab";
 import { EnvTab } from "./EnvTab";
 import { ShellTab } from "./ShellTab";
@@ -13,6 +14,7 @@ import { ShellTab } from "./ShellTab";
 const TABS: { id: InspectorTab; label: string; needsEnv: boolean; needsSession: boolean }[] = [
   { id: "files", label: "Files", needsEnv: true, needsSession: false },
   { id: "request", label: "Request", needsEnv: false, needsSession: true },
+  { id: "prompt", label: "Prompt", needsEnv: false, needsSession: true },
   { id: "network", label: "Network", needsEnv: true, needsSession: false },
   { id: "env", label: "Environment", needsEnv: true, needsSession: false },
   { id: "shell", label: "Shell", needsEnv: true, needsSession: false },
@@ -129,6 +131,7 @@ export function Inspector() {
       <div className="insp-body">
         {active === "files" && env && <FilesTab env={env} session={sessionForEnv} d={sessionForEnv ? d : undefined} />}
         {active === "request" && session && <RequestTab session={session} d={d} />}
+        {active === "prompt" && session && <PromptTab key={session.id} session={session} />}
         {active === "network" && env && <NetworkTab env={env} session={sessionForEnv} />}
         {active === "env" && env && <EnvTab env={env} />}
         {active === "shell" && env && <ShellTab env={env} />}

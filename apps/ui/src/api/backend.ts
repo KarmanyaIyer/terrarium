@@ -1,4 +1,5 @@
 import type {
+  AppSettings,
   AppState,
   CreateEnvRequest,
   CreateSessionRequest,
@@ -11,14 +12,22 @@ import type {
   FileContent,
   FileNode,
   ForkEnvRequest,
+  HarnessInfo,
   Id,
   InferenceState,
   LoadModelRequest,
   ModelCallDetail,
+  ModelCheck,
+  ModelDownload,
   ModelInfo,
+  ModelSuggestion,
   NetEntry,
+  PathKey,
+  RemoveModelResult,
   ResetEnvRequest,
+  SessionPrompt,
   SessionSummary,
+  SettingsInfo,
   Snapshot,
   SnapshotEnvRequest,
   StartEvalRunRequest,
@@ -26,6 +35,7 @@ import type {
   UpdateEnvRequest,
   UpdateModelRequest,
   UpdateSessionRequest,
+  UpdateSettingsRequest,
   WsMessage,
 } from "@terrarium/shared";
 
@@ -82,6 +92,17 @@ export interface Backend {
   updateModel(id: Id, req: UpdateModelRequest): Promise<ModelInfo>;
   startInference(): Promise<InferenceState>;
   stopInference(): Promise<InferenceState>;
+  modelSuggestions(): Promise<ModelSuggestion[]>;
+  inspectModel(repo: string): Promise<ModelCheck>;
+  startDownload(repo: string): Promise<ModelDownload>;
+  cancelDownload(id: Id): Promise<ModelDownload>;
+  removeModel(id: Id): Promise<RemoveModelResult>;
+
+  getSettings(): Promise<SettingsInfo>;
+  updateSettings(req: UpdateSettingsRequest): Promise<AppSettings>;
+  reveal(path: PathKey): Promise<void>;
+  getHarness(): Promise<HarnessInfo[]>;
+  getSessionPrompt(id: Id): Promise<SessionPrompt>;
 
   listSuites(): Promise<EvalSuite[]>;
   startEvalRun(req: StartEvalRunRequest): Promise<EvalRunSummary>;

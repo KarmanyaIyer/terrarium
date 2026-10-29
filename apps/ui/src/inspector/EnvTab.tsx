@@ -3,7 +3,8 @@ import { Camera, GitFork, Play, RotateCcw, Square, Trash2 } from "lucide-react";
 import type { EnvSummary, NetworkMode, Snapshot } from "@terrarium/shared";
 import { act, openEnv, useStore } from "../state/store";
 import { exactBytes, fmtBytes, fmtMiB, fmtPct } from "../lib/format";
-import { ConfirmButton, Popover, Segmented, Time, usePop } from "../components/ui";
+import { ConfirmButton, Hint, Popover, Segmented, Time, usePop } from "../components/ui";
+import { ENV_TYPE_TIP, EnvCompare, FIELD_TIP, NET_ALWAYS, NET_TIP } from "../lib/explain";
 import { Sparkline } from "../components/Sparkline";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { busyReason, evalOwner } from "../lib/envuse";
@@ -158,7 +159,9 @@ export function EnvTab({ env }: { env: EnvSummary }) {
 
       <div className="env-net">
         <NetIcon mode={env.network} size={13} />
-        <span className="dim">Network</span>
+        <Hint tip={NET_ALWAYS}>
+          <span className="dim">Network</span>
+        </Hint>
         {env.released || evalUse ? (
           <>
             <span>{env.network}</span>
@@ -174,9 +177,9 @@ export function EnvTab({ env }: { env: EnvSummary }) {
             value={env.network}
             onChange={(v) => void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then(putEnv)}
             options={[
-              { value: "off", label: "Off", title: "Every connection denied" },
-              { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN" },
-              { value: "web", label: "Web", title: "Public HTTP/HTTPS; private, loopback, link-local ranges still denied" },
+              { value: "off", label: "Off", tip: NET_TIP.off },
+              { value: "registries", label: "Registries", tip: NET_TIP.registries },
+              { value: "web", label: "Web", tip: NET_TIP.web },
             ]}
           />
         )}
@@ -188,7 +191,9 @@ export function EnvTab({ env }: { env: EnvSummary }) {
           <div className="dim">{env.status === "starting" ? "Gathering from the environment" : "Not gathered"}</div>
         ) : (
           <dl className="kv facts">
-            <dt>Isolation</dt>
+            <dt>
+              <Hint tip={ENV_TYPE_TIP[env.type]}>Isolation</Hint>
+            </dt>
             <dd>{f.isolation}</dd>
             {f.os && (
               <>
@@ -268,7 +273,8 @@ export function EnvTab({ env }: { env: EnvSummary }) {
               <>
                 <dt>Runtimes</dt>
                 <dd>
-                  Python (WASM) {f.runtimes.python ? "on" : "off"}, JavaScript {f.runtimes.javascript ? "on" : "off"}
+                  <Hint tip={FIELD_TIP.python}>Python (WASM) {f.runtimes.python ? "on" : "off"}</Hint>,{" "}
+                  <Hint tip={FIELD_TIP.javascript}>JavaScript {f.runtimes.javascript ? "on" : "off"}</Hint>
                 </dd>
               </>
             )}
@@ -297,13 +303,17 @@ export function EnvTab({ env }: { env: EnvSummary }) {
             )}
             {env.vm && (
               <>
-                <dt>VM backend</dt>
+                <dt>
+                  <Hint tip={FIELD_TIP.backend}>VM backend</Hint>
+                </dt>
                 <dd className="mono">{env.vm.backend}</dd>
               </>
             )}
             {env.sim && (
               <>
-                <dt>FS limit</dt>
+                <dt>
+                  <Hint tip={FIELD_TIP.fsLimit}>FS limit</Hint>
+                </dt>
                 <dd className="num">{fmtBytes(env.sim.maxTotalBytes)}</dd>
               </>
             )}
@@ -333,6 +343,13 @@ export function EnvTab({ env }: { env: EnvSummary }) {
           </dl>
         )}
       </section>
+
+      <details className="env-sec env-compare-sec">
+        <summary>
+          <h3>VM vs simulated</h3>
+        </summary>
+        <EnvCompare highlight={env.type} />
+      </details>
 
       <section className="env-sec">
         <h3>Resources</h3>

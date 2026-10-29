@@ -8,7 +8,7 @@ import { ChartTip, ConfirmButton, Expander, Segmented, Switch, Time, type TipSta
 import { CodeView } from "../components/CodeView";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { fitLabel, modelName } from "../components/ModelPicker";
-import { HARNESS } from "./SessionView";
+import { HARNESS, HarnessTip } from "../lib/explain";
 
 export default function EvalsView() {
   const view = useStore((s) => s.view);
@@ -623,7 +623,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
               small
               value={harness}
               onChange={setHarness}
-              options={HARNESS.map((h) => ({ value: h.id, label: h.label, title: h.title }))}
+              options={HARNESS.map((h) => ({ value: h.id, label: h.label.split(":")[0], tip: <HarnessTip id={h.id} /> }))}
             />
             <span>Thinking</span>
             <Switch on={thinking} onChange={setThinking} label={thinking ? "on" : "off"} />

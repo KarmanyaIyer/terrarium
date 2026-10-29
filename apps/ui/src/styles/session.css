@@ -1340,3 +1340,32 @@
   row-gap: 20px;
   overflow: hidden;
 }
+
+/* system prompt row: which prompt a run sent */
+.prompt-row {
+  max-width: 980px;
+}
+.prompt-row-head {
+  width: 100%;
+  text-align: left;
+  border-radius: var(--r-sm);
+}
+.prompt-row-head:hover {
+  color: var(--fg-1);
+}
+.prompt-row-head .mono {
+  color: var(--fg-3);
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.prompt-row-head .stamp,
+.prompt-row-head > :last-child {
+  margin-left: auto;
+}
+.prompt-row-text {
+  margin: 2px 0 6px 20px;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: var(--fs-sm);
+}

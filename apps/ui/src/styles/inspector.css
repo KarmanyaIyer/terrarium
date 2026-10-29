@@ -964,3 +964,124 @@
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* ---------- prompt tab ---------- */
+.prompt-tab {
+  padding: 10px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.pt-head b {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pt-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pt-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-3);
+}
+.pt-text {
+  width: 100%;
+  resize: vertical;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  padding: 7px 8px;
+  white-space: pre-wrap;
+}
+.pt-text[readonly] {
+  background: var(--bg-well);
+}
+.pt-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pt-note {
+  font-size: var(--fs-sm);
+}
+.pt-tool {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+}
+.pt-tool-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 7px;
+  min-width: 0;
+  text-align: left;
+}
+.pt-tool-head:hover {
+  background: var(--bg-hover);
+}
+.pt-tool-head .tool-name {
+  color: var(--c-other);
+}
+.pt-tool-head .t-bash {
+  color: var(--c-bash);
+}
+.pt-tool-head .t-read {
+  color: var(--c-read);
+}
+.pt-tool-head .t-write {
+  color: var(--c-write);
+}
+.pt-tool-head .t-edit {
+  color: color-mix(in srgb, var(--c-edit) 75%, var(--fg-1));
+}
+.pt-tool-body {
+  border-top: 1px solid var(--line);
+  padding: 6px 8px;
+  font-size: var(--fs-sm);
+}
+
+.env-compare-sec summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.env-compare-sec summary::-webkit-details-marker {
+  display: none;
+}
+.env-compare-sec summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid var(--fg-3);
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  transition: transform 0.12s;
+}
+.env-compare-sec[open] summary::before {
+  transform: rotate(90deg);
+}
+.env-compare-sec summary h3 {
+  margin: 0;
+}
+.env-compare-sec .env-compare {
+  margin-top: 6px;
+}
+.facts dt .hint-anchor {
+  cursor: help;
+}

@@ -1,6 +1,7 @@
 // In-memory fake backend: same interface as HttpBackend, replays scripted sessions with real timing.
 
 import type {
+  AppSettings,
   AppState,
   CreateEnvRequest,
   CreateSessionRequest,
@@ -19,8 +20,10 @@ import type {
   InferenceState,
   LoadModelRequest,
   ModelCallDetail,
+  ModelDownload,
   ModelInfo,
   NetEntry,
+  PathKey,
   ResetEnvRequest,
   ResourceSample,
   SessionSummary,
@@ -31,11 +34,13 @@ import type {
   UpdateEnvRequest,
   UpdateModelRequest,
   UpdateSessionRequest,
+  UpdateSettingsRequest,
   WsMessage,
 } from "@terrarium/shared";
 import { ApiRequestError, type AtOpts, type Backend, type BackendHandlers } from "../api/backend";
 import { BUDGET, INVOICE_FILES, LOG_FILES, MODELS, SIM_FACTS, SUITES, TOTAL_RAM, VM_FACTS } from "./data";
 import { fakeSha, fid, type Built } from "./script";
+import { DEFAULT_SETTINGS, SIM_NOTE, SUGGESTIONS, harnessFixture, inspectFixture, settingsInfo } from "./extras";
 import {
   buildChat,
   buildEvalCell,
@@ -91,6 +96,9 @@ export class FixtureBackend implements Backend {
   private blobs = new Map<string, string>();
   private playing: Playback[] = [];
   private models: ModelInfo[] = clone(MODELS);
+  private settings: AppSettings = clone(DEFAULT_SETTINGS);
+  private downloads = new Map<Id, ModelDownload>();
+  private prompts = new Map<Id, string>(); // session prompt overrides
   private inference: InferenceState = {
     status: "ready",
     version: "0.7.2",
@@ -633,6 +641,8 @@ export class FixtureBackend implements Backend {
       inference: this.inference,
       budget: { totalBytes: TOTAL_RAM, budgetBytes: BUDGET },
       evalRuns: this.runs.map((r) => this.summary(r)),
+      settings: this.settings,
+      downloads: [...this.downloads.values()],
       versions: { app: "0.1.0", gondolin: "0.14.0", justBash: "3.6.0", piAgentCore: "1.4.0", omlx: "0.7.2" },
     });
   }
@@ -992,7 +1002,12 @@ export class FixtureBackend implements Backend {
     const s = this.sessions.get(id);
     if (!s) throw new ApiRequestError(404, "session not found");
     if (req.modelId && s.status === "running") throw new ApiRequestError(409, "Stop the run before switching models");
-    this.setSession(id, req);
+    const { systemPrompt, ...rest } = req;
+    if (systemPrompt !== undefined || (req.harness && req.harness !== s.harness)) {
+      if (systemPrompt) this.prompts.set(id, systemPrompt);
+      else this.prompts.delete(id);
+    }
+    this.setSession(id, { ...rest, customPrompt: this.prompts.has(id) || undefined });
     return clone(this.sessions.get(id)!);
   }
 
@@ -1187,6 +1202,109 @@ export class FixtureBackend implements Backend {
       this.putInference({ status: "stopped", pid: undefined, rssBytes: undefined });
     }, 800);
     return clone(this.inference);
+  }
+
+  async modelSuggestions() {
+    await sleep(30);
+    return clone(SUGGESTIONS);
+  }
+
+  async inspectModel(repo: string) {
+    await sleep(700);
+    const r = repo.trim();
+    if (!/^[\w.-]+\/[\w.-]+$/.test(r)) throw new ApiRequestError(400, "repo must be a Hugging Face model id like owner/name");
+    return inspectFixture(r, this.models.some((m) => m.id === r.split("/")[1]));
+  }
+
+  async startDownload(repo: string) {
+    const check = await this.inspectModel(repo);
+    if (!check.ok) throw new ApiRequestError(400, check.problems.join("; ") || "already installed");
+    const d: ModelDownload = { id: fid("dl"), repo: check.repo, dirName: check.dirName, status: "running", bytesDone: 0, bytesTotal: check.totalBytes, startedAt: Date.now() };
+    this.downloads.set(d.id, d);
+    const tick = () => {
+      if (d.status !== "running") return;
+      d.bytesDone = Math.min(d.bytesTotal, d.bytesDone + d.bytesTotal / 12);
+      if (d.bytesDone >= d.bytesTotal) {
+        d.status = "done";
+        d.finishedAt = Date.now();
+        const base = this.models[0]!;
+        this.models.push({ ...clone(base), id: d.dirName, name: d.dirName, loaded: false, loadedContext: undefined, residentBytes: undefined, diskBytes: d.bytesTotal });
+        this.putModels();
+      } else this.timers.push(window.setTimeout(tick, 400));
+      this.emit({ type: "model_download", download: clone(d) });
+    };
+    this.timers.push(window.setTimeout(tick, 300));
+    this.emit({ type: "model_download", download: clone(d) });
+    return clone(d);
+  }
+
+  async cancelDownload(id: Id) {
+    const d = this.downloads.get(id);
+    if (!d) throw new ApiRequestError(404, "download not found");
+    if (d.status === "running") Object.assign(d, { status: "canceled", finishedAt: Date.now() });
+    this.emit({ type: "model_download", download: clone(d) });
+    return clone(d);
+  }
+
+  async removeModel(id: Id) {
+    await sleep(300);
+    const m = this.models.find((x) => x.id === id);
+    if (!m) throw new ApiRequestError(404, "model not found");
+    if ([...this.sessions.values()].some((s) => s.modelId === id && s.status === "running")) throw new ApiRequestError(409, `${id} is in use; stop it first`);
+    this.models = this.models.filter((x) => x.id !== id);
+    this.putModels();
+    return { freedBytes: m.diskBytes };
+  }
+
+  async getSettings() {
+    await sleep(60);
+    return clone(settingsInfo(this.settings, this.inference.memoryCeilingBytes, this.inference));
+  }
+
+  async updateSettings(req: UpdateSettingsRequest) {
+    await sleep(40);
+    const prompts = { ...this.settings.prompts };
+    for (const [k, v] of Object.entries(req.prompts ?? {})) {
+      const id = k as keyof AppSettings["prompts"];
+      if (v == null) delete prompts[id];
+      else prompts[id] = id === "terrarium" && v.endsWith(SIM_NOTE) ? v.slice(0, -SIM_NOTE.length) : v;
+    }
+    this.settings = {
+      memoryBudgetBytes: req.memoryBudgetBytes ?? this.settings.memoryBudgetBytes,
+      newSession: { ...this.settings.newSession, ...req.newSession },
+      newEnv: { ...this.settings.newEnv, ...req.newEnv },
+      prompts,
+    };
+    this.emit({ type: "settings", settings: clone(this.settings) });
+    return clone(this.settings);
+  }
+
+  async reveal(_path: PathKey) {
+    await sleep(20);
+  }
+
+  async getHarness() {
+    await sleep(30);
+    return harnessFixture(this.settings.prompts);
+  }
+
+  async getSessionPrompt(id: Id) {
+    await sleep(60);
+    const s = this.sessions.get(id);
+    if (!s) throw new ApiRequestError(404, "session not found");
+    const envType = s.harness !== "chat" && s.envId ? (this.envs.get(s.envId)?.type ?? null) : null;
+    const h = harnessFixture(this.settings.prompts).find((x) => x.id === (envType ? s.harness : "chat"))!;
+    const defaultText = h.prompt + (h.id === "terrarium" && envType === "sim" ? SIM_NOTE : "");
+    const override = this.prompts.get(id);
+    return {
+      harness: s.harness,
+      envType,
+      text: override ?? defaultText,
+      source: override != null ? ("session" as const) : h.custom ? ("profile" as const) : ("built-in" as const),
+      defaultText,
+      tools: h.tools,
+      tokens: { prompt: Math.ceil((override ?? defaultText).length / 4), tools: h.tokensEst.tools, exact: false },
+    };
   }
 
   async listSuites() {
