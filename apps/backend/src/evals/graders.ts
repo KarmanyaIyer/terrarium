@@ -219,6 +219,8 @@ export function testsGrade(g: GradeSummary, exitCode: number | null): Grade & { 
  */
 export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { type: "tests" }>, hidden: EvalCase["hiddenFiles"]): Promise<Grade> {
   if (rt.type !== "vm") return { pass: false, detail: "tests checks need a VM environment" };
+  // Grading runs the agent's code again, and the plain run can read the hidden tests: no network from here on.
+  await rt.setNetwork("off");
   await rt.killAgentProcesses();
   await writeHiddenFiles(rt, hidden);
   const timeout = check.timeoutSec ?? 120;
@@ -249,6 +251,7 @@ const COMMAND_TIMEOUT_SEC = 170;
  * tests belong in a `tests` check. Sim envs have no users or hidden files: the command runs in the sim.
  */
 export async function gradeCommand(rt: EnvRuntime, check: Extract<EvalCheck, { type: "command" }>): Promise<Grade> {
+  await rt.setNetwork("off");
   await rt.killAgentProcesses();
   const tail = (s: string) => (s.length > 1500 ? `...${s.slice(-1500)}` : s);
   if (rt.type !== "vm") {

@@ -70,6 +70,7 @@ function gradingRuntime(summary: object, code: number) {
   const calls: string[] = [];
   const rt = {
     type: "vm",
+    setNetwork: async (mode: string) => void calls.push(`net ${mode}`),
     killAgentProcesses: async () => void calls.push("kill-agent"),
     writeFile: async (p: string) => void calls.push(`write ${p}`),
     exec: async (cmd: string) => {
@@ -89,7 +90,7 @@ test("tests checks pass only on full counts from both grader runs, after agent p
   assert.equal(g.pass, true, g.detail);
   assert.equal(g.error, undefined);
   assert.match(g.detail, /^3\/3 hidden tests passed/);
-  assert.equal(ok.calls[0], "kill-agent", "agent processes are killed before anything else");
+  assert.deepEqual(ok.calls.slice(0, 2), ["net off", "kill-agent"], "network goes off and agent processes are killed before anything else");
   assert.ok(ok.calls.some((c) => c.includes("chown root:1001")), "hidden files are root:grader");
   for (const [summary, code] of [
     [{ pass: true, verdict: "pass", passed: 2, expected: 3, plain: { passed: 2, expected: 3 } }, 0],
@@ -138,6 +139,7 @@ test("VM command checks go through grade.py --command (agent uid, clean env), ne
     const calls: { cmd: string; as?: string }[] = [];
     const rt = {
       type: "vm",
+      setNetwork: async (mode: string) => void calls.push({ cmd: `net ${mode}` }),
       killAgentProcesses: async () => void calls.push({ cmd: "kill-agent" }),
       writeFile: async (p: string) => void calls.push({ cmd: `write ${p}` }),
       exec: async (cmd: string, opts: { as?: string }) => {
@@ -149,8 +151,8 @@ test("VM command checks go through grade.py --command (agent uid, clean env), ne
   };
   const ok = await run({ pass: true, exitCode: 0, timedOut: false, output: "OK", error: null });
   assert.equal(ok.g.pass, true, ok.g.detail);
-  assert.deepEqual(ok.calls.map((c) => c.cmd.split(" ")[0]), ["kill-agent", "exec"]);
-  const exec = ok.calls[1]!;
+  assert.deepEqual(ok.calls.map((c) => c.cmd.split(" ").slice(0, c.cmd.startsWith("net") ? 2 : 1).join(" ")), ["net off", "kill-agent", "exec"]);
+  const exec = ok.calls[2]!;
   assert.match(exec.cmd, /grade\.py --command 'python3 -m unittest discover -s tests' --workspace \/workspace/);
   assert.equal(exec.as, "root", "only the guest helper runs as root; it drops to the agent for the command");
   for (const [summary, code] of [
@@ -161,7 +163,7 @@ test("VM command checks go through grade.py --command (agent uid, clean env), ne
   ] as const) {
     assert.equal((await run(summary, code)).g.pass, false, JSON.stringify(summary));
   }
-  const sim = { type: "sim", killAgentProcesses: async () => {}, exec: async () => ({ exitCode: 0, stdout: "", stderr: "", timedOut: false }) } as unknown as EnvRuntime;
+  const sim = { type: "sim", setNetwork: async () => {}, killAgentProcesses: async () => {}, exec: async () => ({ exitCode: 0, stdout: "", stderr: "", timedOut: false }) } as unknown as EnvRuntime;
   assert.equal((await gradeCommand(sim, check)).pass, true);
 });
 
