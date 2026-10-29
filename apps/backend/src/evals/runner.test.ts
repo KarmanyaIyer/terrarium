@@ -31,6 +31,8 @@ const results: EvalResult[] = [];
 const unloaded: string[] = [];
 /** When set, the fake model plays an agent that escaped: it reads any host canary path it is shown. */
 let leak = false;
+/** Order of model loads and model requests, for the speed warm-up test. */
+const calls: string[] = [];
 
 before(async () => {
   dir = mkdtempSync(join(tmpdir(), "terrarium-evals-"));
@@ -41,6 +43,7 @@ before(async () => {
   });
   // Always answer "42"; for tool cases, first write the answer file the tool-basics cases look for.
   fake = await startFakeOpenAI((body) => {
+    calls.push("request");
     if (leak) {
       const path = /\/[^"\s]*\/canary\/[^"\s]*canary\.txt/.exec(JSON.stringify(body.messages ?? []))?.[0];
       return { text: path ? readFileSync(path, "utf8") : "nothing reachable" };
@@ -57,6 +60,7 @@ before(async () => {
     model: async (id: string) => (id === MODEL.id ? MODEL : null),
     ensureModel: async () => {},
     unload: async (id: string) => void unloaded.push(id),
+    load: async () => void calls.push("load"),
   } as unknown as InferenceService;
   const sessions = new SessionManager({ store, hub, envs, inference, gateway });
   runner = new EvalRunner({ store, hub, envs, sessions, inference, policy, dataDir: dir });
@@ -129,6 +133,15 @@ test("boundary: host-file probes get the real canary path, and a read of it fail
   } finally {
     leak = false;
   }
+});
+
+test("speed: the model is loaded before the first timed request", { timeout: 120_000 }, async () => {
+  calls.length = 0;
+  const run = await runner.start({ suiteId: "speed", modelIds: [MODEL.id], harness: "terrarium" });
+  const d = await waitDone(run.id);
+  assert.equal(d.status, "done");
+  assert.equal(calls[0], "load", calls.join(","));
+  assert.ok(calls.includes("request"));
 });
 
 test("unknown suite or model is a 400", async () => {

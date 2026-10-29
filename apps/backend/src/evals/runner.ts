@@ -256,6 +256,8 @@ export class EvalRunner {
         const vm = suite.cases.filter((c) => c.check.type !== "speed" && c.envType === "vm");
         const light = suite.cases.filter((c) => c.check.type !== "speed" && c.envType !== "vm");
         const one = (c: EvalCase) => (active.stopped ? Promise.resolve() : this.runCase(runId, suite, c, modelId, config, active, canary));
+        // Load first: the first request after a model switch would otherwise time the load as prefill.
+        if (speed.length && !active.stopped) await this.inference.load(modelId, config.contextWindow).catch((err) => log.warn(`loading ${modelId} failed`, err));
         await pool(speed, 1, one); // alone, so timings aren't shared with other requests
         await Promise.all([pool(light, 2, one), pool(vm, 1, one)]);
         // One model resident at a time: unload what this run loaded before the next model starts.
