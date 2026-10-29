@@ -161,7 +161,12 @@ trusted to judge code it runs), or `tests` (VM only: hidden unittest file in `/g
 the guest grader: isolated, with candidate code as the agent uid and the tests as the grader uid in
 separate processes, then plain in-process unittest as the agent uid; the tests read the candidate's source
 from a root-owned copy without symlinks, taken before candidate code runs; pass only when both runs pass
-every counted test; runs that disagree are a grader error, shown with both runs' results). Every case runs as a
+every counted test; runs that disagree are a grader error, shown with both runs' results). Candidate code can
+forge the plain run, so the isolated run must be sound: it never reports a pass the same tests would not give
+the same code in one process. It answers where it reproduces Python exactly (containers linked both ways,
+stand-in classes with the candidate's MRO, mirrored process state) and raises a grader error where it can't;
+a forged plain run can then only turn a fail into a disagreement. Remaining limits are listed in
+guest/README.md. Every case runs as a
 normal session in a disposable fork, so clicking any result opens the full transcript, files and raw
 requests. One click runs a suite across selected models. Built-in suites: tool basics (sim), shell data
 tasks (sim), coding with tests (vm), chat reasoning/knowledge sample (none), isolation probes (vm+sim,

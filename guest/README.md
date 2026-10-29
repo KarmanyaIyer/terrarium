@@ -78,7 +78,8 @@ Results go to `data/vm-verify/latest.json`.
     `ws` (agent-owned; the isolated run) and `plain/ws` (agent-owned, in a root-only dir until the plain
     run). Then two runs of up to `--timeout` each:
     - Isolated: the candidate's code in a worker as `agent` in `ws`, the hidden tests in a runner as
-      `grader` (`python3 -I -S`), connected by a socketpair. Details below.
+      `grader` (`python3 -B -s -S -P`, cwd `src`), connected by a socketpair, both with one random
+      `PYTHONHASHSEED`. Details below.
     - Plain: once the isolated run's processes are dead and its counts read (its `ws` and results are
       deleted), `grade_runner.py --plain` as `agent` in `plain/ws` with a copy of the tests: ordinary
       in-process unittest, exact Python semantics. Candidate code can forge these counts, so this run
@@ -88,35 +89,80 @@ Results go to `data/vm-verify/latest.json`.
       both runs' counts and failures. The summary is the isolated run's fields plus `plain` and `verdict`.
 
     The isolated run:
-    - Plain values cross by value, everything else as references, and a comparison between a reference
-      and a test-side value is refused, so candidate code never sees the expected values. One NaN object
-      sent twice in a message arrives as one object; separately computed NaNs stay separate.
-    - Lists, dicts (with OrderedDict, defaultdict, Counter), sets and bytearrays passed either way are
-      linked: before each message a side sends the new contents of the linked containers it changed (a
-      shallow identity check of the ones it still holds or just handed over), so changes made during a
-      call or later, through an object that kept the container, reach the other side in place. Containers
-      nested in linked ones are linked too, and one container met twice in a message arrives as one object
-      (`[[0] * 3] * 2` keeps its shared rows). The test side drops links it no longer holds. Syncing may
-      use a quarter of the budget (5-30 s); past that the candidate counts as gone, a grader error rather
-      than a timeout. The cost per message grows with the linked containers both sides still hold
-      (about 0.25 us each): 6,000 records kept by the candidate grade in 0.5 s, 12,000 containers kept by
-      both through 6,000 calls hit the limit.
-    - namedtuples and defaultdicts keep their types both ways. A test callback's exception reaches
-      candidate code as the same class; the candidate's `SystemExit` is a real `SystemExit` with its code;
-      `issubclass` works between candidate classes.
-    - A candidate object whose class derives from a built-in data type (namedtuple, OrderedDict or list
-      subclass, IntEnum) arrives as a hybrid: its data is local, methods and attributes go to the
-      candidate's object. Dunders the class overrides (`__contains__`, `__getitem__`, `__len__`, `__iter__`,
-      `__hash__`, `__missing__` and others) run in the candidate, as in one process; an overridden `__eq__`
-      or `__ne__` counts only when it agrees with comparing the local data. Immutable hybrids re-read
-      their data after every candidate call.
-    - Grader failures (candidate process gone or hung, a value that can't cross) are not `Exception`
-      subclasses, so `assertRaises` never counts them. One candidate call may use the whole `--timeout`;
-      a call still running near the end fails, and the counts are still written.
+    - Rule: it never reports a pass that the same tests would not give the same code in one process.
+      Where it can reproduce Python exactly it answers; where it can't, it raises `Inexact`, a grader
+      error. Grader errors (`GraderError`: `Inexact`, a candidate process gone or hung, a value that can't
+      cross) are not `Exception` subclasses, so `assertRaises` never counts them. A forged plain run can
+      therefore turn a fail into a disagreement, never into a pass.
+    - Values: None, bools, ints of any size, floats, strings, bytes, complex, Decimal, Fraction, datetime
+      types, ranges and slices cross by value; tuples, frozensets and namedtuples by value with their
+      sharing (one object met twice in a message arrives as one, so `[[0] * 3] * 2` keeps its shared rows
+      and one NaN stays one NaN). Everything else crosses as a reference: a candidate object is a proxy on
+      the test side, a test object a handle on the candidate side (using it calls back into the tests).
+    - Containers: lists, dicts (OrderedDict, defaultdict with its factory, Counter), sets and bytearrays
+      are linked both ways, whichever side made them, returned ones too (`store.get().append(9)` changes
+      the candidate's own list). Before each message a side sends the new contents of every link its code
+      could have changed that the other side's code can reach (a shallow identity check per link; lists by
+      a memcmp of their element pointers). Holding is measured by reference count: a link is held when
+      something besides the bookkeeping refers to it, or a held link holds it. New links are re-measured
+      at every message, links both sides hold about 64 per message, the rest about 8 per message.
+    - Candidate classes: each gets a stand-in class with the candidate's MRO, standard-library bases real
+      where their layout allows, so `type(x) is m.Cls`, `isinstance`, `issubclass` and ABCs registered
+      with `register()` answer as in one process. Special methods the class defines run in the candidate
+      (`with m.Timer() as t` works). An object built on a data type (list, dict, str, int, tuple
+      subclasses, IntEnum members) is a hybrid: its data is local (linked when mutable), the class's own
+      methods run in the candidate. Module attributes set or deleted on a candidate module reach the
+      candidate's module (`mock.patch.object(m, ...)`); `mock.patch` of a standard-library module or class
+      is applied in the candidate process too.
+    - Comparisons: two candidate objects are compared by the candidate. Between a candidate object and a
+      test value, the candidate's `__eq__`, `__ne__` or ordering method counts only when its answer is the
+      one comparing the data gives (no data: the identity fallback, `==` False, `!=` True); otherwise
+      `Inexact`. Hashes are the candidate's, computed with the shared hash seed.
+    - Exceptions: built-in and standard-library exception classes arrive as real exceptions (args,
+      attributes, cause and context); candidate exception classes as stand-ins of the candidate's object
+      (`cm.exception.code` reads the candidate's attribute).
+    - Process state is mirrored where candidate code could see or change it: `sys.stdout`/`stderr` (the
+      original, a `StringIO` capture such as `redirect_stdout`, or `print`/`input` replaced), `sys.stdin`
+      text, `sys.argv`, the environment, the working directory, the `random` module's state, the `decimal`
+      context (precision, rounding, flags, traps), the recursion limit, and the `warnings` filters both
+      ways plus the tests' `showwarning` hooks (`assertWarns`, `catch_warnings(record=True)` and
+      `simplefilter("error")` see the candidate's warnings). A stream the grader can't mirror (some other
+      object) is a grader error when candidate code uses it. `assertLogs`/`assertNoLogs` are a grader
+      error: logging isn't mirrored.
+    - Stack depth: each side runs the other's requests padded to the depth one process would have them at
+      (the other side's code frames stand in for the grader's), so a recursion runs out of stack where it
+      would in one process. Through callback chains (candidate code calling a test callback that calls the
+      candidate again) it runs out about 5 frames per hop sooner: stricter, never later.
+    - Threads: test threads take turns calling candidate code, one call at a time (one of the schedules
+      one process allows). Candidate code that touches a test object, writes output or changes a linked
+      container after its call returned (a thread of its own) is a grader error, checked between tests.
+    - One candidate call may use the whole `--timeout`; a call still running near the end fails, and the
+      counts are still written. Syncing may use a quarter of the budget (5-30 s); past that the candidate
+      counts as gone.
+    - Visible grader errors that remain (never passes): pickling a candidate object; deep-copying a
+      structure that holds candidate objects (the object alone works); a test class deriving from a
+      candidate class; `isinstance` or `__class__` of an object whose class derives from a
+      standard-library class the grader can't mirror; a candidate comparison that disagrees with the
+      data; tests that keep more linked containers than the sync limit allows (12,000 containers held by
+      both sides through 6,000 calls); candidate threads as above; `assertLogs`/`assertNoLogs`; candidate
+      code replacing `warnings.showwarning`.
+    - Known gaps (wrong answers, not errors; each needs a test asserting something unusual):
+      `type(x)` of a candidate function, generator, module or other built-in non-data object is the
+      grader's stand-in class, so `type(m.f) is types.FunctionType` is False (`isinstance` is right);
+      logging configuration and handlers are per process (a handler the tests add to the candidate's
+      logger sees nothing); standard-library state changed without `mock.patch` (assigning
+      `json.dumps = ...`, `mock.patch.dict(sys.modules, ...)`, `locale.setlocale`, `time.tzset`) stays in
+      the process that changed it. A test asserting the opposite of what one process does there could
+      pass the isolated run where Python fails it.
+    - Cost: about 70 us per call on an M-series Mac (one round trip; the plain run's call is about 0.1
+      us). 5,000 calls returning a list each grade in 1 s; 6,000 records kept by the candidate in 1.5 s; a
+      binary search over a 1M-element list, 300 calls, in 0.8 s.
     - The runner writes its counts to a dir only `grader` can write; pass means the runner exited 0 and
       passed == expected > 0 there. Failures beyond the first 50 are counted in `moreFailures`.
-      Candidate exits, `sys.exit`, patched `unittest`, forged results files, rewriting the source after
-      the copy (directly or through a symlink) and leftover daemons all fail.
+      Candidate exits, `sys.exit`, forged results files, rewriting the source after the copy (directly or
+      through a symlink) and leftover daemons can't make the isolated run pass. Patching `unittest` or
+      forging counts reaches only the plain run, which then disagrees with a failing isolated run (a
+      grader error, not a pass).
   - `grade.py --command <cmd>`: eval check type `command` in a VM. As root it kills every agent and
     grader process, then runs `bash -c <cmd>` as `agent` in `/workspace` with
     `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin` and a fresh empty `HOME`, so

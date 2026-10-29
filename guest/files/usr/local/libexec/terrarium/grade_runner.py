@@ -1,8 +1,10 @@
 """Test side of a grading run. Loads the hidden unittest file, runs it, and writes the counts to --results.
 
-Isolated (default; uid 1001 in the guest, `python3 -I -S`): imports of the candidate's modules resolve to
-proxies into the candidate process (--fd); no candidate code ever runs in this process, and --results is in
-a grader-only dir.
+Isolated (default; uid 1001 in the guest, `python3 -B -s -S -P` with the candidate process's hash seed):
+imports of the candidate's modules resolve to proxies into the candidate process (--fd); no candidate code
+ever runs in this process, and --results is in a grader-only dir. Each test that passes is checked once more
+with the candidate process (nothing changed behind the tests' back) before it counts; mock.patch of a module
+or standard-library class the candidate process also has is applied there too (grade_rpc.py has the rules).
 
 Plain (--plain; uid 1000 in the guest, after the isolated run has finished): ordinary unittest in one
 process, candidate modules imported from the working directory. Exact Python semantics, no protection: the
@@ -28,19 +30,42 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from grade_rpc import CandidateGone, Client, Ref  # noqa: E402
+from grade_rpc import CandidateGone, Client, Inexact, proxy_rid, std_module, type_path  # noqa: E402
 
 sys.path.remove(HERE)
 
+CLIENT = None
+# Module attributes the import system owns on this side; everything else is the candidate module's.
+MODULE_LOCAL = frozenset(("__name__", "__spec__", "__loader__", "__path__", "__package__", "__cached__", "__dict__", "__class__", "_terrarium_ref"))
+
 
 class ProxyModule(types.ModuleType):
-    """A candidate module: attribute reads go to the candidate process."""
+    """A candidate module: attribute reads, writes and deletes (mock.patch) go to the candidate's module."""
 
-    def __getattr__(self, name):
-        ref = self.__dict__.get("_terrarium_ref")
-        if ref is None or (name.startswith("__") and name.endswith("__")):
-            raise AttributeError(name)
+    def __getattribute__(self, name):
+        ref = None if name in MODULE_LOCAL else types.ModuleType.__getattribute__(self, "__dict__").get("_terrarium_ref")
+        if ref is None:
+            return types.ModuleType.__getattribute__(self, name)
         return getattr(ref, name)
+
+    def __setattr__(self, name, value):
+        ref = None if name in MODULE_LOCAL else types.ModuleType.__getattribute__(self, "__dict__").get("_terrarium_ref")
+        if ref is None:
+            return types.ModuleType.__setattr__(self, name, value)
+        setattr(ref, name, value)
+
+    def __delattr__(self, name):
+        ref = None if name in MODULE_LOCAL else types.ModuleType.__getattribute__(self, "__dict__").get("_terrarium_ref")
+        if ref is None:
+            return types.ModuleType.__delattr__(self, name)
+        delattr(ref, name)
+
+    def __dir__(self):
+        ref = types.ModuleType.__getattribute__(self, "__dict__").get("_terrarium_ref")
+        return dir(ref) if ref is not None else types.ModuleType.__dir__(self)
+
+    def __repr__(self):
+        return "<module %r (candidate)>" % types.ModuleType.__getattribute__(self, "__name__")
 
 
 class CandidateLoader(importlib.abc.Loader):
@@ -51,8 +76,8 @@ class CandidateLoader(importlib.abc.Loader):
         return ProxyModule(spec.name)
 
     def exec_module(self, module):
-        ref = self.client.request("import", name=module.__name__)
-        if not isinstance(ref, Ref):
+        ref = self.client.module(module.__name__)
+        if proxy_rid(ref) is None:
             raise ImportError("candidate module %s did not load" % module.__name__)
         module.__dict__["_terrarium_ref"] = ref
 
@@ -79,6 +104,13 @@ class Recorder(unittest.TextTestResult):
         super().startTest(test)
 
     def addSuccess(self, test):
+        if CLIENT is not None:
+            # Candidate threads may have changed what the test saw, or failed the grading, after their call.
+            try:
+                CLIENT.status()
+            except BaseException:  # noqa: B036 - a grading failure is the test's error
+                self.addError(test, sys.exc_info())
+                return
         super().addSuccess(test)
         self.passed.append(test.id())
 
@@ -132,6 +164,70 @@ class Results:
         with os.fdopen(fd, "w") as f:
             json.dump(out, f)
         return True
+
+
+# The test process's own state that mock.patch can't reach in the candidate process through this hook: the
+# streams, argv and print/input are mirrored on every call instead (grade_rpc.Client._state).
+MIRRORED = {"sys": ("stdout", "stderr", "stdin", "argv"), "builtins": ("print", "input")}
+
+
+def refuse_log_asserts():
+    """assertLogs and assertNoLogs watch this process's loggers, and candidate code logs in its own process
+    (not mirrored here): what they'd answer isn't what one process would, so they are a grader error."""
+    try:
+        from unittest._log import _AssertLogsContext as ctx
+    except ImportError:
+        ctx = getattr(unittest.case, "_AssertLogsContext", None)
+    if ctx is None:
+        return
+
+    def refuse(self):
+        raise Inexact("assertLogs/assertNoLogs: logging in the candidate's process isn't mirrored to the tests")
+
+    ctx.__enter__ = refuse
+
+
+def mirror_patches(client):
+    """mock.patch of a standard-library module or class the candidate process also has: patch it there too, as
+    one process would see it, and undo it when the patch ends."""
+    from unittest import mock
+
+    patch = mock._patch
+    enter, exit_ = patch.__enter__, patch.__exit__
+
+    def where(p):
+        t = getattr(p, "target", None)
+        if isinstance(t, ProxyModule) or proxy_rid(t) is not None:
+            return None  # a candidate object: the patch already went to the candidate process
+        if isinstance(t, types.ModuleType) and std_module(t.__name__):
+            if p.attribute in MIRRORED.get(t.__name__, ()):
+                return None
+            return t.__name__ + ":"
+        if isinstance(t, type) and std_module(t.__module__):
+            return type_path(t)
+        return None
+
+    def patched_enter(self):
+        result = enter(self)
+        path = where(self)
+        if path is not None:
+            try:
+                client.call("patch", [getattr(self.target, self.attribute)], name=path, attr=self.attribute)
+            except BaseException:
+                exit_(self, None, None, None)
+                raise
+            self._terrarium_patched = path
+        return result
+
+    def patched_exit(self, *exc):
+        path = self.__dict__.pop("_terrarium_patched", None)
+        try:
+            return exit_(self, *exc)
+        finally:
+            if path is not None:
+                client.call("unpatch", [], name=path, attr=self.attribute)
+
+    patch.__enter__, patch.__exit__ = patched_enter, patched_exit
 
 
 def run_tests(tests, results):
@@ -197,8 +293,11 @@ def main():
 
     op_timeout = opt("--op-timeout")
     timeout = float(op_timeout) if op_timeout else None if budget else 30.0
-    client = Client(socket.socket(fileno=int(opt("--fd"))), timeout=timeout, deadline=deadline)
+    global CLIENT
+    client = CLIENT = Client(socket.socket(fileno=int(opt("--fd"))), timeout=timeout, deadline=deadline)
     sys.meta_path.insert(0, CandidateFinder(client, [m for m in (opt("--modules") or "").split(",") if m]))
+    mirror_patches(client)
+    refuse_log_asserts()
     run_tests(tests, results)
     results.write({"candidate": client.gone, "seconds": round(time.monotonic() - t0, 2)})
 

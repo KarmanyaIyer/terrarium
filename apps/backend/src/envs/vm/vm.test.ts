@@ -579,6 +579,69 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     record("gradingProbesMs", times);
   });
 
+  test("grading: review 4 probes: no leniency passes, even with a forged plain run; correct code passes (review 4, #1, #4-#7, #12)", async () => {
+    const dir = path.join(REPO_DIR, "qa/review4-probes");
+    // Replaces unittest's TestCase.run in the plain run (candidate code shares that process): the plain run
+    // then passes everything, and only the isolated run stands between the candidate and a pass.
+    const forge = ["import sys as _s, unittest as _u", "if 'test_hidden' in _s.modules:", "    def _run(self, result=None):", "        result.startTest(self); result.addSuccess(self); result.stopTest(self)", "        return result", "    _u.TestCase.run = _run", ""].join("\n");
+    const bad = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet", "ne_lie"];
+    const check = { type: "tests" as const, file: "/grader/test_hidden.py", timeoutSec: 60 };
+    const grade = async (name: string, forged: boolean) => {
+      await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+      for (const f of fs.readdirSync(path.join(dir, name))) {
+        if (f === "tests.py") continue;
+        const src = fs.readFileSync(path.join(dir, name, f), "utf8");
+        await a.writeFile(`/workspace/${f}`, forged && f === "m.py" ? forge + src : src, { as: "agent" });
+      }
+      return gradeTests(a, check, [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(dir, name, "tests.py"), "utf8") }]);
+    };
+    const times: Record<string, number> = {};
+    for (const name of fs.readdirSync(dir).filter((n) => fs.statSync(path.join(dir, n)).isDirectory()).sort()) {
+      const t0 = performance.now();
+      const g = await grade(name, false);
+      times[name] = Math.round(performance.now() - t0);
+      if (bad.includes(name)) {
+        assert.equal(g.pass, false, `${name}: ${g.detail}`);
+        const f = await grade(name, true);
+        assert.equal(f.pass, false, `${name} forged: ${f.detail}`);
+        assert.equal(f.error, true, `${name} forged: ${f.detail}`);
+        assert.match(f.detail, /runs disagree/, `${name} forged`);
+      } else {
+        assert.equal(g.pass, true, `${name}: ${g.detail}`);
+        if (name.startsWith("perf_")) assert.ok(times[name]! < 20_000, `${name} took ${times[name]}ms`);
+      }
+    }
+    assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
+    await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+    record("gradingReview4Ms", times);
+  });
+
+  test("grading: every coding suite reference passes (time per case)", async () => {
+    const files = (dir: string) =>
+      fs.existsSync(dir)
+        ? fs
+            .readdirSync(dir, { recursive: true, withFileTypes: true })
+            .filter((d) => d.isFile())
+            .map((d) => [path.relative(dir, path.join(d.parentPath, d.name)), fs.readFileSync(path.join(d.parentPath, d.name), "utf8")] as const)
+        : [];
+    const check = { type: "tests" as const, file: "/grader/test_hidden.py", timeoutSec: 60 };
+    const times: Record<string, number> = {};
+    for (const id of fs.readdirSync(path.join(REPO_DIR, "evals/cases/coding")).sort()) {
+      await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+      const ws = new Map([...files(path.join(REPO_DIR, "evals/cases/coding", id, "workspace")), ...files(path.join(REPO_DIR, "evals/reference/coding", id))]);
+      for (const [p, content] of ws) {
+        await sh(a, `mkdir -p "$(dirname '/workspace/${p}')"`);
+        await a.writeFile(`/workspace/${p}`, content, { as: "agent" });
+      }
+      const t0 = performance.now();
+      const g = await gradeTests(a, check, [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(REPO_DIR, "evals/cases/coding", id, "grader/test_hidden.py"), "utf8") }]);
+      times[id] = Math.round(performance.now() - t0);
+      assert.equal(g.pass, true, `${id}: ${g.detail}`);
+    }
+    await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+    record("gradingCodingMs", times);
+  });
+
   test("an env from an older image gets the current helpers and grader user at boot", async () => {
     await sh(a, "echo stale >> /usr/local/libexec/terrarium/run && rm -f /usr/local/libexec/terrarium/read.py && deluser grader", { as: "root" });
     assert.notEqual((await sh(a, "id -u grader")).code, 0);

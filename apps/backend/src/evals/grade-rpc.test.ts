@@ -348,3 +348,217 @@ test("more than 50 failures: the first 50 are listed and the rest counted (revie
   const j = JSON.parse(p.stdout.trim().split("\n").pop() || "{}") as { failures?: unknown[]; moreFailures?: number; plain?: { failures?: unknown[]; moreFailures?: number }; verdict?: string };
   assert.deepEqual([j.failures?.length, j.moreFailures, j.plain?.failures?.length, j.plain?.moreFailures, j.verdict], [50, 10, 50, 10, "fail"]);
 });
+
+// Replaces unittest's TestCase.run in the plain run (the hidden tests share the candidate's process there).
+const FORGE = "import sys as _s, unittest as _u\nif 'test_hidden' in _s.modules:\n    def _run(self, result=None):\n        result.startTest(self); result.addSuccess(self); result.stopTest(self)\n        return result\n    _u.TestCase.run = _run\n";
+
+test("a returned internal list is the candidate's own: the Store.get() repro fails, and a forged plain run only makes it a disagreement (review 4, #1)", { skip }, () => {
+  const mod = "class Store:\n    def __init__(self):\n        self.items = []\n    def get(self):\n        return self.items\n";
+  const tests = "    def test_get_is_a_copy(self):\n        s = m.Store()\n        s.get().append(9)\n        self.assertEqual(s.get(), [])\n";
+  const honest = grade({ "m.py": mod }, tests);
+  assert.deepEqual({ code: honest.code, passed: honest.passed, verdict: honest.verdict, plain: honest.plain }, { code: 1, passed: 0, verdict: "fail", plain: "0/1" });
+  assert.match(honest.failures[0]?.message ?? "", /\[9\] != \[\]/);
+  const forged = grade({ "m.py": FORGE + mod }, tests);
+  assert.deepEqual({ code: forged.code, passed: forged.passed, verdict: forged.verdict, plain: forged.plain }, { code: 1, passed: 0, verdict: "disagree", plain: "1/1" });
+});
+
+test("strict answers: a lying __ne__ and an __eq__ that disagrees with the data are grader errors, never passes (review 4, #4)", { skip }, () => {
+  const mod = "class Liar(list):\n    def __ne__(self, other):\n        return True\n\ndef answer():\n    return Liar([1, 2])\n";
+  const r = grade({ "m.py": mod }, "    def test_ne(self):\n        self.assertNotEqual(m.answer(), [1, 2])\n");
+  // Plain unittest passes (the candidate's __ne__ says so); the isolated run won't take the candidate's word
+  // against the data: a disagreement, which grades as an error.
+  assert.deepEqual({ code: r.code, passed: r.passed, verdict: r.verdict, plain: r.plain }, { code: 1, passed: 0, verdict: "disagree", plain: "1/1" });
+  assert.match(r.failures[0]?.message ?? "", /Inexact: __ne__ of a candidate Liar and a test list/);
+});
+
+test("a str subclass hashing as its text works as a dict key across the processes (review 4, #5)", { skip }, () => {
+  const mod = "class Key(str):\n    def __hash__(self):\n        return hash(str(self))\n    def __eq__(self, other):\n        return str(self) == str(other)\n\ndef key(s):\n    return Key(s)\n";
+  const r = grade({ "m.py": mod }, "    def test_key(self):\n        self.assertEqual({m.key('abc'): 7}['abc'], 7)\n        self.assertEqual({'abc': 7}[m.key('abc')], 7)\n        self.assertEqual(hash(m.key('x')), hash('x'))\n");
+  assert.deepEqual({ code: r.code, passed: r.passed, verdict: r.verdict, error: r.error }, { code: 0, passed: 1, verdict: "pass", error: null });
+});
+
+test("correct code passes: context managers, mock.patch.object on the module, huge ints, exception attributes, deep tuples, copies, type() identity, keyword arguments (review 4, #6)", { skip }, () => {
+  const mod = [
+    "import copy",
+    "",
+    "class Timer:",
+    "    def __enter__(self):",
+    "        self.entered = True",
+    "        return self",
+    "    def __exit__(self, *exc):",
+    "        self.done = True",
+    "        return False",
+    "",
+    "def now():",
+    "    return 1",
+    "",
+    "def later():",
+    "    return now() + 1",
+    "",
+    "def big(n):",
+    "    return 10 ** n",
+    "",
+    "class Oops(ValueError):",
+    "    def __init__(self, msg, code):",
+    "        super().__init__(msg)",
+    "        self.code = code",
+    "",
+    "def fail():",
+    "    raise Oops('bad', 42)",
+    "",
+    "def nest(n):",
+    "    t = ()",
+    "    for _ in range(n):",
+    "        t = (t, t)",
+    "    return t",
+    "",
+    "class Bag(list):",
+    "    def total(self):",
+    "        return sum(self)",
+    "",
+    "def bag():",
+    "    return Bag([1, 2])",
+    "",
+    "def kw(a, *, b=2, **rest):",
+    "    return (a, b, sorted(rest.items()))",
+  ].join("\n");
+  const r = grade({ "m.py": mod }, [
+    "    def test_ctx(self):",
+    "        with m.Timer() as t:",
+    "            self.assertTrue(t.entered)",
+    "        self.assertTrue(t.done)",
+    "    def test_patch_object(self):",
+    "        from unittest import mock",
+    "        with mock.patch.object(m, 'now', return_value=10):",
+    "            self.assertEqual(m.later(), 11)",
+    "        self.assertEqual(m.later(), 2)",
+    "    def test_big(self):",
+    "        self.assertEqual(m.big(5000), 10 ** 5000)",
+    "        self.assertEqual(m.big(5000) + 1, 10 ** 5000 + 1)",
+    "    def test_exc(self):",
+    "        with self.assertRaises(ValueError) as cm:",
+    "            m.fail()",
+    "        self.assertEqual((cm.exception.code, cm.exception.args, str(cm.exception)), (42, ('bad',), 'bad'))",
+    "        self.assertIsInstance(cm.exception, m.Oops)",
+    "    def test_nested(self):",
+    "        t = m.nest(30)",
+    "        self.assertIs(t[0], t[1])",
+    "    def test_copies(self):",
+    "        import copy",
+    "        b = m.bag()",
+    "        c = copy.copy(b)",
+    "        c.append(3)",
+    "        self.assertEqual((b.total(), c.total()), (3, 6))",
+    "        self.assertIs(type(c), m.Bag)",
+    "        self.assertEqual(copy.deepcopy(b), [1, 2])",
+    "    def test_type_is(self):",
+    "        self.assertIs(type(m.Timer()), m.Timer)",
+    "        self.assertIs(type(m.bag()), m.Bag)",
+    "    def test_keywords(self):",
+    "        self.assertEqual(m.kw(1, b=3, z=4), (1, 3, [('z', 4)]))",
+    "        f = m.kw",
+    "        self.assertEqual(f(a=0), (0, 2, []))",
+    "        with self.assertRaises(TypeError):",
+    "            f(1, 2)",
+  ].join("\n"));
+  assert.deepEqual({ code: r.code, passed: r.passed, expected: r.expected, failed: failed(r), verdict: r.verdict, plain: r.plain }, { code: 0, passed: 8, expected: 8, failed: [], verdict: "pass", plain: "8/8" });
+});
+
+test("tests calling candidate code from several threads get one call at a time, as in one process (review 4, #12)", { skip }, () => {
+  const mod = "import threading\n\nclass Counter:\n    def __init__(self):\n        self.n = 0\n        self.lock = threading.Lock()\n    def bump(self):\n        with self.lock:\n            self.n += 1\n";
+  const r = grade({ "m.py": mod }, [
+    "    def test_threads(self):",
+    "        import threading",
+    "        c = m.Counter()",
+    "        def work():",
+    "            for _ in range(100):",
+    "                c.bump()",
+    "        ts = [threading.Thread(target=work) for _ in range(8)]",
+    "        for t in ts:",
+    "            t.start()",
+    "        for t in ts:",
+    "            t.join()",
+    "        self.assertEqual(c.n, 800)",
+  ].join("\n"));
+  assert.deepEqual({ code: r.code, passed: r.passed, verdict: r.verdict, error: r.error }, { code: 0, passed: 1, verdict: "pass", error: null });
+});
+
+test("a link reached again through a returned parent stays in sync; a stale answer would be a pass (nested links)", { skip }, () => {
+  const mod = "class Inv:\n    def __init__(self):\n        self.items = []\n    def add(self, item):\n        self.items.append(item)\n    def tags(self):\n        return sum(len(i['tags']) for i in self.items)\n    def get(self):\n        return self.items\n";
+  const body = (want: number) => `    def test_inner(self):\n        inv = m.Inv()\n        for i in range(200):\n            inv.add({'qty': 1, 'tags': ['a']})\n        items = inv.get()\n        items[3]['tags'].append('b')\n        self.assertEqual(inv.tags(), ${want})\n`;
+  const ok = grade({ "m.py": mod }, body(201));
+  assert.deepEqual({ code: ok.code, passed: ok.passed, verdict: ok.verdict }, { code: 0, passed: 1, verdict: "pass" });
+  const stale = grade({ "m.py": FORGE + mod }, body(200));
+  assert.deepEqual({ code: stale.code, passed: stale.passed, verdict: stale.verdict, plain: stale.plain }, { code: 1, passed: 0, verdict: "disagree", plain: "1/1" });
+});
+
+test("process state as in one process: stack depth and recursion limit, the decimal context, warnings; log assertions refused", { skip }, () => {
+  const mod = [
+    "import decimal, logging, sys, warnings",
+    "",
+    "def room():",
+    "    def r(k):",
+    "        try:",
+    "            return r(k + 1)",
+    "        except RecursionError:",
+    "            return k",
+    "    return r(0)",
+    "",
+    "def setlim(n):",
+    "    sys.setrecursionlimit(n)",
+    "",
+    "def third():",
+    "    return decimal.Decimal(1) / 3",
+    "",
+    "def setprec(p):",
+    "    decimal.getcontext().prec = p",
+    "",
+    "def old():",
+    "    warnings.warn('old is deprecated', DeprecationWarning)",
+    "    return 1",
+    "",
+    "def ignore_all():",
+    "    warnings.simplefilter('ignore')",
+    "",
+    "def log():",
+    "    logging.getLogger('m').warning('hi')",
+  ].join("\n");
+  const r = grade({ "m.py": mod }, [
+    "    def test_depth(self):",
+    "        import sys",
+    "        def f(k):",
+    "            return f(k - 1) if k else m.room()",
+    "        r0 = m.room()",
+    "        self.assertEqual(f(40), r0 - 41)",
+    "        sys.setrecursionlimit(1500)",
+    "        self.assertEqual(m.room(), r0 + 500)",
+    "        m.setlim(1000)",
+    "        self.assertEqual(sys.getrecursionlimit(), 1000)",
+    "    def test_decimal(self):",
+    "        import decimal",
+    "        decimal.getcontext().prec = 5",
+    "        self.assertEqual(str(m.third()), '0.33333')",
+    "        self.assertTrue(decimal.getcontext().flags[decimal.Inexact])",
+    "        m.setprec(7)",
+    "        self.assertEqual(str(decimal.Decimal(2) / 3), '0.6666667')",
+    "        decimal.getcontext().prec = 28",
+    "    def test_warnings(self):",
+    "        import warnings",
+    "        with self.assertWarns(DeprecationWarning):",
+    "            m.old()",
+    "        with warnings.catch_warnings():",
+    "            warnings.simplefilter('error')",
+    "            with self.assertRaises(DeprecationWarning):",
+    "                m.old()",
+    "        with warnings.catch_warnings(record=True) as w:",
+    "            m.ignore_all()",
+    "            m.old()",
+    "        self.assertEqual(w, [])",
+    "    def test_logs(self):",
+    "        with self.assertLogs('m'):",
+    "            m.log()",
+  ].join("\n"));
+  // Everything but the log assertion passes as in one process; assertLogs is a grader error there.
+  assert.deepEqual({ passed: r.passed, expected: r.expected, failed: failed(r), verdict: r.verdict, plain: r.plain }, { passed: 3, expected: 4, failed: ["test_logs"], verdict: "disagree", plain: "4/4" });
+  assert.match(r.failures[0]?.message ?? "", /Inexact: assertLogs/);
+});

@@ -14,8 +14,10 @@ Tests: every check is graded twice, and passes only if both runs pass.
    source; `ws`, agent-owned, is where the isolated run's candidate code runs; `plain/ws` is the plain run's,
    in a root-only dir until that run starts.
 3. Isolated run: the candidate side (grade_worker.py) as agent in `ws` and the test side (grade_runner.py) as
-   grader, connected by a socketpair, so the hidden tests never share a process with candidate code. Its
-   counts go to a grader-only dir; they are read, and everything it started is killed, before step 4.
+   grader in `src`, connected by a socketpair and sharing one random hash seed, so the hidden tests never
+   share a process with candidate code. It must be sound: where it can't answer as one process would, it
+   raises a grader error rather than answer. Its counts go to a grader-only dir; they are read, and
+   everything it started is killed, before step 4.
 4. Plain run: grade_runner.py --plain as agent in `plain/ws`, the hidden tests (copied from /grader) and
    candidate code in one process, as `python3 -m unittest` would run them. Exact Python semantics, no
    protection: candidate code can change these counts, but not the isolated run's, which are already read.
@@ -326,18 +328,22 @@ def run_isolated(source, ws, out, tests, mods, timeout, gid, local, py):
     # The runner stops waiting for candidate code a little before our own limit, so it can still write
     # which tests passed.
     budget = max(1.0, timeout - min(5.0, timeout / 10))
-    runner_cmd = [py, "-B", "-I", "-S", RUNNER, "--fd", str(t_sock.fileno()), "--tests", tests, "--source", source, "--results", results, "--modules", ",".join(mods), "--budget", "%g" % budget]
+    # Both sides hash strings alike, as one process would (a candidate's __hash__ answers for test-side dicts).
+    # Not -I: it implies -E, which ignores PYTHONHASHSEED; the environment is ours, and -s -S -P do the rest.
+    seed = {"PYTHONHASHSEED": str(int.from_bytes(os.urandom(4), "big"))}
+    runner_cmd = [py, "-B", "-s", "-S", "-P", RUNNER, "--fd", str(t_sock.fileno()), "--tests", tests, "--source", source, "--results", results, "--modules", ",".join(mods), "--budget", "%g" % budget]
     common = dict(stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     procs = []
     t0 = time.monotonic()
     try:
+        # The tests run in the sealed source copy, as the plain run's do in theirs: relative paths read the same.
         if local:
-            env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+            env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", **seed)
             procs.append((subprocess.Popen(worker_cmd, cwd=ws, env=env, pass_fds=[c_sock.fileno()], start_new_session=True, **common), wid))
-            procs.append((subprocess.Popen(runner_cmd, cwd=out, env=env, pass_fds=[t_sock.fileno()], start_new_session=True, **common), rid))
+            procs.append((subprocess.Popen(runner_cmd, cwd=source, env=env, pass_fds=[t_sock.fileno()], start_new_session=True, **common), rid))
         else:
-            procs.append((subprocess.Popen([RUN, wid, "agent", ws] + worker_cmd, env=AGENT_ENV, pass_fds=[c_sock.fileno()], **common), wid))
-            procs.append((subprocess.Popen([RUN, rid, "grader", out] + runner_cmd, env=GRADER_ENV, pass_fds=[t_sock.fileno()], **common), rid))
+            procs.append((subprocess.Popen([RUN, wid, "agent", ws] + worker_cmd, env=dict(AGENT_ENV, **seed), pass_fds=[c_sock.fileno()], **common), wid))
+            procs.append((subprocess.Popen([RUN, rid, "grader", source] + runner_cmd, env=dict(GRADER_ENV, **seed), pass_fds=[t_sock.fileno()], **common), rid))
         c_sock.close()
         t_sock.close()
         (worker, _), (runner, _) = procs

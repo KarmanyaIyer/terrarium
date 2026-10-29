@@ -1,10 +1,11 @@
-// Review 3's probes (qa/review3-probes: m.py + tests.py each) through grade.py --local and through plain
-// `python3 -m unittest`: the grade must be what plain unittest says, or a visible disagreement; never a pass
-// where plain unittest fails. The perf probes must also grade in seconds (review 3, #3).
+// Review 3's and review 4's probes (qa/review3-probes, qa/review4-probes: m.py + tests.py each) through
+// grade.py --local and through plain `python3 -m unittest`: the grade must be what plain unittest says, or a
+// visible disagreement; never a pass where plain unittest fails, even when the plain run is forged to pass. The
+// perf probes must also grade in seconds (review 3, #3; review 4, #7).
 
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
@@ -14,6 +15,18 @@ import { testsGrade, type GradeSummary } from "./graders.ts";
 
 const GRADE = join(HOST_HELPERS_DIR, "grade.py");
 const PROBES = join(REPO_DIR, "qa/review3-probes");
+const PROBES4 = join(REPO_DIR, "qa/review4-probes");
+// Replaces unittest's TestCase.run in the plain run, where the hidden tests share the candidate's process: the
+// plain run passes everything, so only the isolated run stands between such a candidate and a pass.
+const FORGE = [
+  "import sys as _s, unittest as _u",
+  "if 'test_hidden' in _s.modules:",
+  "    def _run(self, result=None):",
+  "        result.startTest(self); result.addSuccess(self); result.stopTest(self)",
+  "        return result",
+  "    _u.TestCase.run = _run",
+  "",
+].join("\n");
 const has = (p: string) => spawnSync(p, ["-c", "import sys; assert sys.version_info >= (3, 10)"], { stdio: "ignore" }).status === 0;
 const PY = process.env.TERRARIUM_PY || ["python3.12", "python3.13", "python3"].find(has);
 const tmp = mkdtempSync(join(tmpdir(), "terr-probes-"));
@@ -42,13 +55,14 @@ interface Probe {
   plainOk: boolean;
 }
 
-async function probe(name: string, timeout = 60): Promise<Probe> {
-  const base = join(tmp, name);
+async function probe(name: string, timeout = 60, dir = PROBES, forged = false): Promise<Probe> {
+  const base = join(tmp, `${dir === PROBES ? "r3" : "r4"}-${name}${forged ? "-forged" : ""}`);
   const ws = join(base, "ws");
   mkdirSync(ws, { recursive: true });
-  for (const f of readdirSync(join(PROBES, name))) if (f !== "tests.py") copyFileSync(join(PROBES, name, f), join(ws, f));
+  for (const f of readdirSync(join(dir, name))) if (f !== "tests.py") copyFileSync(join(dir, name, f), join(ws, f));
+  if (forged) writeFileSync(join(ws, "m.py"), FORGE + readFileSync(join(ws, "m.py"), "utf8"));
   const hidden = join(base, "test_hidden.py");
-  copyFileSync(join(PROBES, name, "tests.py"), hidden);
+  copyFileSync(join(dir, name, "tests.py"), hidden);
   // Plain unittest in one process, on its own copy.
   const plain = join(base, "plain");
   cpSync(ws, plain, { recursive: true });
@@ -98,4 +112,49 @@ test("thousands of containers both sides keep hold of: a visible grader error at
   assert.equal(g.pass, false);
   assert.equal(g.error, true);
   assert.ok(((s as { wallSeconds?: number }).wallSeconds ?? 99) < 15, `isolated run took ${(s as { wallSeconds?: number }).wallSeconds}s`);
+});
+
+// Review 4: one probe per way the isolated run could answer differently from one process (findings 1, 4, 5, 6,
+// 7, 12). LENIENT: plain unittest fails the honest code; CHEAT: it passes, but only because the candidate's
+// method lies; either way neither the honest grade nor one with a forged plain run may pass. CORRECT and PERF:
+// correct code that must pass (PERF: in seconds).
+const LENIENT = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet"];
+const CHEAT = ["ne_lie"];
+const CORRECT = ["hash_seed", "ctx", "mock_patch", "bigint", "exc_attrs", "nested_tuples", "copy_hy", "type_is", "threads", "stdout_capture", "nest_reheld", "warn_ok"];
+const PERF4 = ["perf_bsearch", "perf_returns"];
+
+async function batches<T>(items: T[], f: (x: T) => Promise<Probe>): Promise<Probe[]> {
+  const out: Probe[] = [];
+  for (let i = 0; i < items.length; i += 4) out.push(...(await Promise.all(items.slice(i, i + 4).map(f))));
+  return out;
+}
+
+test("review 4 probes: no leniency passes, even with a forged plain run; correct code passes (review 4, #1, #4-#7, #12)", { skip: !PY && "no python3 >= 3.10" }, async () => {
+  const all = readdirSync(PROBES4, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+  const known = [...LENIENT, ...CHEAT, ...CORRECT, ...PERF4];
+  assert.deepEqual(all.filter((n) => !known.includes(n)), [], "every probe is covered");
+  const bad = [...LENIENT, ...CHEAT];
+  const honest = await batches(known, (n) => probe(n, 30, PROBES4));
+  const forged = await batches(bad, (n) => probe(n, 30, PROBES4, true));
+  for (const r of honest) {
+    const s = r.summary;
+    const g = testsGrade(s, r.code);
+    const why = `${r.name}: ${s.verdict} ${g.detail}`;
+    if (bad.includes(r.name)) {
+      assert.equal(r.plainOk, CHEAT.includes(r.name), `${r.name}: plain unittest`);
+      assert.notEqual(s.verdict, "pass", why);
+      assert.equal(g.pass, false, why);
+    } else {
+      assert.equal(r.plainOk, true, `${r.name}: plain unittest`);
+      assert.equal(s.verdict, "pass", why);
+      assert.equal(g.pass, true, why);
+      if (PERF4.includes(r.name)) assert.ok(((s as { wallSeconds?: number }).wallSeconds ?? 99) < 10, `${r.name} isolated run took ${(s as { wallSeconds?: number }).wallSeconds}s`);
+    }
+  }
+  for (const r of forged) {
+    const s = r.summary;
+    const g = testsGrade(s, r.code);
+    // The forged plain run passes; the isolated run doesn't: a visible disagreement.
+    assert.deepEqual([s.verdict, g.pass, g.error], ["disagree", false, true], `${r.name} forged: ${g.detail}`);
+  }
 });
