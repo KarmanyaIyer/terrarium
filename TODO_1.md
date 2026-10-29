@@ -53,7 +53,15 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
       visible grader error (TODO_10); backend/UI items (TODO_11); exact prompt token counts via oMLX tokenizer, oversized
       tool outputs shortened with a marker, over-window prompts refused with numbers (TODO_12); network off while grading
 - [x] Backend 178/180 (2 gated), real-VM 19/19, e2e with Qwen3.5 4B (21 calls, 0 one-token replies); repackaged
-- [ ] Review 4 on the Legion (delta 2545a56..6141a5e)
+- [x] Review 4 on the Legion (delta 2545a56..6141a5e): 12 findings + nits (qa/REVIEW_4_delta.md), all fixed. Isolated
+      run made sound: anything it can't reproduce is a grader error, so a forged plain run can only cause a
+      disagreement (TODO_13); window remedy raises the cap, remedy sized by compaction's rule, Retry route, tokenizer
+      fallback errs high, Stop cancels counts, VM slot race (TODO_14)
+- [x] Review 5 on the Legion, bounded to false passes / breakage / display / hangs (9f28698): backend and UI clean;
+      6 grader fidelity items (qa/REVIEW_5_bounded.md), all fixed (TODO_15), plus a bare-`except:` false pass found
+      in verification. Backend 204/206 (2 gated), VM 22/22, HumanEval 164/164, MBPP 427/427, UI 13/13
+- [ ] Final bounded review of the review 5 grader diff (9f28698..HEAD) on the Legion
+- [ ] Repackage, e2e, launch + quit check
 - [ ] Switchboard: "Local models" card (commit 5e87b58 there) points at retired local_llms; s-switchboard still
       has someone else's uncommitted continuity work, so left untouched. Terrarium is a Mac app and needs no card.
 
@@ -86,3 +94,7 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
   requests; counting via oMLX /v1/tokenize is exact.
 - cua-driver can't type into the Tauri WKWebView composer (background or foreground); live checks go through the
   gated e2e test or the dev UI in a browser instead.
+- Review 5's fix agent was stopped by the model safety filter while designing an audit hook for the plain run.
+  Dropped that part (not reworded around the filter); relaunched with a fidelity-only brief.
+- Another session's Xcode builds kept load at ~60 during review 5 verification; VM timings recorded as measured,
+  no timeouts tuned around them.
