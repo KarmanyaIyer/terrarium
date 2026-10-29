@@ -60,6 +60,14 @@ export interface EnvSummary {
   createdAt: Millis;
   ephemeral: boolean; // eval forks; hidden from sidebar by default
   released?: boolean; // eval fork whose storage was freed after its run: trace and file history only
+  inUse?: EnvUse[]; // what is using it now; stop, reset, restore, snapshot, fork of the live env and delete answer 409 meanwhile
+}
+
+export interface EnvUse {
+  kind: "eval" | "session" | "shell"; // eval: a case runs or is graded here, so shell and network are read-only too
+  reason: string; // `eval "Tool basics" case read-file running`, `session "Fix tests" running`, `shell command running`
+  sessionId?: Id;
+  evalRunId?: Id;
 }
 
 export interface Snapshot {
@@ -364,7 +372,7 @@ export interface ResourceSample {
 
 export type EvalCheck =
   | { type: "answer"; mode: "exact" | "regex" | "number" | "choice"; expected: string; tolerance?: number }
-  | { type: "command"; command: string } // run in env as grader after agent finishes; pass on exit 0
+  | { type: "command"; command: string } // run in the env as the agent (clean env, no /grader access) after its processes are killed; pass on exit 0
   // Hidden unittest file run by the VM's test grader: candidate code and tests in separate processes and
   // uids; passes only when every counted test passed.
   | { type: "tests"; file: string; timeoutSec?: number }
