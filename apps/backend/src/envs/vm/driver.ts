@@ -263,6 +263,8 @@ export class VmRuntime implements EnvRuntime {
   readonly outbox: MemoryProvider | null = null;
 
   private vm: VM | null = null;
+  /** Set while shutdown() syncs the guest and closes the VMM; the VM is no longer usable but its VMM still runs. */
+  private closing: Promise<void> | null = null;
   /** Stops the VMM if this backend dies without stopping it (reaper.ts). */
   private guard: Promise<VmmGuard | null> | null = null;
   private readonly net: VmNetwork;
@@ -315,6 +317,14 @@ export class VmRuntime implements EnvRuntime {
 
   isRunning(): boolean {
     return this.vm !== null && this.vm.getHostPid() !== null;
+  }
+
+  holdsVmm(): boolean {
+    return this.isRunning() || this.closing !== null;
+  }
+
+  async vmmClosed(): Promise<void> {
+    await this.closing;
   }
 
   start(): Promise<void> {
@@ -451,20 +461,27 @@ export class VmRuntime implements EnvRuntime {
 
   private async shutdown(): Promise<void> {
     const vm = this.vm;
-    this.vm = null;
+    this.vm = null; // no new work from here on; holdsVmm() stays true until the VMM is closed
     if (!vm) return;
-    if (vm.getHostPid() !== null) {
-      // Flush and freeze the root fs so the overlay on disk is consistent before the VMM is stopped.
-      try {
-        await vm.exec(["/bin/sh", "-c", "sync; mount -o remount,ro / 2>/dev/null; sync"], { env: ROOT_ENV, signal: AbortSignal.timeout(10_000) });
-      } catch {
-        // best effort
-      }
-    }
+    let closed!: () => void;
+    this.closing = new Promise((r) => (closed = r));
     try {
-      await vm.close();
+      if (vm.getHostPid() !== null) {
+        // Flush and freeze the root fs so the overlay on disk is consistent before the VMM is stopped.
+        try {
+          await vm.exec(["/bin/sh", "-c", "sync; mount -o remount,ro / 2>/dev/null; sync"], { env: ROOT_ENV, signal: AbortSignal.timeout(10_000) });
+        } catch {
+          // best effort
+        }
+      }
+      try {
+        await vm.close();
+      } finally {
+        await this.disarmGuard();
+      }
     } finally {
-      await this.disarmGuard();
+      this.closing = null;
+      closed();
     }
   }
 

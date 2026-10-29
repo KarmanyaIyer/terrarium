@@ -94,6 +94,8 @@ export class EnvManager {
   private dataDir: string;
   private drivers: Record<EnvType, EnvDriver | null>;
   private runtimes = new Map<string, EnvRuntime>();
+  /** Opens in flight, so overlapping first uses of an env (e.g. right after a restart) share one runtime. */
+  private opening = new Map<string, Promise<EnvRuntime>>();
   private unsubNet = new Map<string, () => void>();
   private mutex = new KeyedMutex();
   private netRepeats = new Map<string, { entry: NetEntry; timer: NodeJS.Timeout | null }>();
@@ -263,15 +265,27 @@ export class EnvManager {
     return JSON.parse(row.config_json);
   }
 
-  /** Runtime object for an env (opened lazily; not necessarily running). */
+  /**
+   * Runtime object for an env (opened lazily; not necessarily running). Opened once even when calls overlap: a second
+   * runtime for the same env would replace the first in the map, and a VM the first one booted would go untracked.
+   */
   private async runtimeFor(row: EnvRow): Promise<EnvRuntime> {
-    let rt = this.runtimes.get(row.id);
+    const rt = this.runtimes.get(row.id);
     if (rt) return rt;
     if (row.released) throw new HttpError(409, "environment storage was released after its eval run");
-    const cfg = this.config(row);
-    rt = await this.driver(row.type).open({ id: row.id, dir: this.envDir(row.id), network: row.network, vm: cfg.vm, sim: cfg.sim });
-    this.attach(row.id, rt);
-    return rt;
+    let open = this.opening.get(row.id);
+    if (!open) {
+      const cfg = this.config(row);
+      open = this.driver(row.type)
+        .open({ id: row.id, dir: this.envDir(row.id), network: row.network, vm: cfg.vm, sim: cfg.sim })
+        .then((opened) => {
+          this.attach(row.id, opened);
+          return opened;
+        })
+        .finally(() => this.opening.delete(row.id));
+      this.opening.set(row.id, open);
+    }
+    return open;
   }
 
   private attach(id: string, rt: EnvRuntime): void {
@@ -461,7 +475,7 @@ export class EnvManager {
     if (row.type !== "vm") return rt.start();
     for (let attempt = 0; ; attempt++) {
       const victim = await this.vmBoot.run("vm", async () => {
-        const others = this.runningVms(row.id);
+        const others = await this.vmSlots(row.id);
         if (others.length < MAX_RUNNING_VMS) {
           await rt.start();
           return null;
@@ -486,11 +500,28 @@ export class EnvManager {
     }
   }
 
-  /** Other VMs that are up, least recently used first. */
+  /** Other VMs whose VMM is up (running, or still shutting down), least recently used first. */
   private runningVms(exceptId: string): EnvRow[] {
     return this.store
       .all<EnvRow>("SELECT * FROM envs WHERE type = 'vm' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", exceptId)
-      .filter((r) => this.runtimes.get(r.id)?.isRunning());
+      .filter((r) => {
+        const rt = this.runtimes.get(r.id);
+        return !!rt && (rt.holdsVmm?.() ?? rt.isRunning());
+      });
+  }
+
+  /**
+   * Under the boot lock: the other VMs that take a slot. A VM being stopped keeps its slot until its VMM has closed
+   * (the guest sync alone can take 10 s); with every slot taken and one of them closing, wait for it to free its
+   * slot. Closing a VM never needs the boot lock, so this wait can't deadlock.
+   */
+  private async vmSlots(exceptId: string): Promise<EnvRow[]> {
+    for (;;) {
+      const up = this.runningVms(exceptId);
+      const closing = up.map((r) => this.runtimes.get(r.id)!).filter((rt) => !rt.isRunning());
+      if (up.length < MAX_RUNNING_VMS || !closing.length) return up;
+      await Promise.all(closing.map((rt) => rt.vmmClosed?.()));
+    }
   }
 
   /** Up and used by nothing (no session run, shell command or eval case), so it may be stopped to make room. */
@@ -509,7 +540,7 @@ export class EnvManager {
     const restart = async () => {
       if (!rt.isRunning()) {
         try {
-          if (row.type === "vm" && this.runningVms(row.id).length >= MAX_RUNNING_VMS) throw new Error(`${MAX_RUNNING_VMS} other VMs are running`);
+          if (row.type === "vm" && (await this.vmSlots(row.id)).length >= MAX_RUNNING_VMS) throw new Error(`${MAX_RUNNING_VMS} other VMs are running`);
           await rt.start();
         } catch (err) {
           log.warn(`restart of ${row.id} failed`, err);

@@ -22,6 +22,7 @@ let peak = 0;
 let factsCalls = 0;
 const writes: string[] = [];
 const vms = new Map<string, FakeVm>();
+const opened: FakeVm[] = []; // every runtime the driver opened, tracked by the manager or not
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 class FakeVm implements Partial<EnvRuntime> {
@@ -40,16 +41,34 @@ class FakeVm implements Partial<EnvRuntime> {
     await new Promise((r) => setTimeout(r, 30)); // boots overlap unless something serializes them
     this.running = true;
   }
+  /** Like the VM driver: a stopped VM is unusable at once, but its VMM runs on through the guest sync and close. */
+  static closeMs = 0;
+  private closing: Promise<void> | null = null;
   async stop() {
     if (!this.running) return;
     this.running = false;
-    live--;
+    if (!FakeVm.closeMs) {
+      live--;
+      return;
+    }
+    this.closing = sleep(FakeVm.closeMs).then(() => {
+      live--;
+      this.closing = null;
+    });
+    await this.closing;
   }
   isRunning() {
     return this.running;
   }
+  holdsVmm() {
+    return this.running || this.closing !== null;
+  }
+  async vmmClosed() {
+    await this.closing;
+  }
   /** Old driver behaviour: snapshot and restore boot a VM they stopped again by themselves. */
   static rebootsItself = false;
+  static openMs = 0;
   static writeMs = 0;
   async writeFile(path: string) {
     assert.ok(this.running, `${this.id}: seeded while not running`);
@@ -112,7 +131,9 @@ const fakeDriver = {
     return vm as unknown as EnvRuntime;
   },
   async open(spec) {
+    if (FakeVm.openMs) await sleep(FakeVm.openMs);
     const vm = new FakeVm(spec.id, spec.dir);
+    opened.push(vm);
     vms.set(spec.id, vm);
     return vm as unknown as EnvRuntime;
   },
@@ -257,6 +278,56 @@ test("a seeded create isn't stopped halfway through to make room for another VM 
   } finally {
     FakeVm.writeMs = 0;
     await settleAll();
+  }
+});
+
+test("a VM being stopped keeps its slot until its VMM has closed; a start meanwhile waits for it (review 3, #6)", async () => {
+  const [a, b, c] = await Promise.all(["A", "B", "C"].map((n) => envs.create({ name: `close-${n}`, type: "vm" })));
+  await envs.acquire(a.id, `sess-${a.id}`);
+  await envs.start(b.id);
+  FakeVm.closeMs = 300;
+  try {
+    peak = live;
+    const stopB = envs.stop(b.id);
+    await until(() => !vms.get(b.id)!.isRunning(), "B is going down");
+    assert.ok(vms.get(b.id)!.holdsVmm(), "B's VMM is still closing");
+    const startC = envs.start(c.id);
+    const [rb, rc] = await Promise.allSettled([stopB, startC]);
+    assert.equal(rb.status, "fulfilled");
+    assert.equal(rc.status, "fulfilled", String((rc as PromiseRejectedResult).reason ?? ""));
+    assert.ok(peak <= MAX_RUNNING_VMS, `peak ${peak} VMMs while B was closing`);
+    assert.equal(envs.get(c.id).status, "running");
+    assertStatusesTrue();
+  } finally {
+    FakeVm.closeMs = 0;
+    await settleAll();
+  }
+});
+
+test("overlapping first uses of an env after a restart open one runtime, and the one that boots is tracked (review 3, #6)", async () => {
+  const sub = mkdtempSync(join(tmpdir(), "terrarium-envs-restart-"));
+  const st = new Store(join(sub, "db.sqlite"), join(sub, "blobs"));
+  try {
+    const first = new EnvManager({ store: st, hub: new Hub(), dataDir: sub, drivers: { vm: fakeDriver, sim: null } });
+    const e = await first.create({ name: "restart", type: "vm" });
+    // A new backend on the same data: no runtimes open yet.
+    const mgr = new EnvManager({ store: st, hub: new Hub(), dataDir: sub, drivers: { vm: fakeDriver, sim: null } });
+    FakeVm.openMs = 30;
+    const before = opened.length;
+    const start = mgr.start(e.id);
+    await sleep(5); // the start's open is in flight
+    const [rs, rn, ri] = await Promise.allSettled([start, mgr.update(e.id, { network: "registries" }), mgr.inspect(e.id)]);
+    for (const r of [rs, rn, ri]) assert.equal(r.status, "fulfilled", String((r as PromiseRejectedResult).reason ?? ""));
+    const mine = opened.slice(before).filter((v) => v.id === e.id);
+    assert.equal(mine.length, 1, `${mine.length} runtimes opened for one env`);
+    assert.deepEqual(mgr.running().map((r) => r.id), [e.id], "the booted VM is the tracked one");
+    await mgr.stopAll();
+    assert.deepEqual(opened.filter((v) => v.isRunning()).map((v) => v.id), [], "no untracked VM left running");
+  } finally {
+    FakeVm.openMs = 0;
+    st.close();
+    rmSync(sub, { recursive: true, force: true });
+    live = [...vms.values()].filter((v) => v.isRunning()).length;
   }
 });
 

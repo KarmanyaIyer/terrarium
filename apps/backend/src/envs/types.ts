@@ -62,6 +62,10 @@ export interface EnvRuntime {
   /** Persist state and release resources. Idempotent. */
   stop(): Promise<void>;
   isRunning(): boolean;
+  /** VM: its VMM process still exists (running, or shutting down until it closed), so it still takes a VM slot. */
+  holdsVmm?(): boolean;
+  /** VM: resolves once a shutdown in progress has closed the VMM. */
+  vmmClosed?(): Promise<void>;
   /** Kill every process the agent left running (VM: all uid 1000 processes). No-op where nothing outlives an exec. */
   killAgentProcesses(): Promise<void>;
 
