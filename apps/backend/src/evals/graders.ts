@@ -98,7 +98,9 @@ export async function gradeFile(rt: EnvRuntime, check: Extract<EvalCheck, { type
   }
   const shown = JSON.stringify(data.length > 200 ? `${data.slice(0, 200)}...` : data);
   if (check.equals !== undefined) {
-    const pass = data === check.equals;
+    // "Write only X to the file" is met with or without a final newline; everything else must match exactly.
+    const eol = (s: string) => (s.endsWith("\n") ? s : `${s}\n`);
+    const pass = data === check.equals || eol(data) === eol(check.equals);
     return { pass, detail: pass ? `${check.path} matches` : `${check.path} is ${shown}, expected ${JSON.stringify(check.equals)}` };
   }
   const pass = data.includes(check.contains ?? "");

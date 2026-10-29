@@ -6,7 +6,7 @@ import { after, before, test } from "node:test";
 import { policy } from "../envs/policy.ts";
 import type { EnvRuntime } from "../envs/types.ts";
 import { Store } from "../store/db.ts";
-import { gradeAnswer, gradeIsolation, gradeSpeed, gradeTests } from "./graders.ts";
+import { gradeAnswer, gradeFile, gradeIsolation, gradeSpeed, gradeTests } from "./graders.ts";
 
 let dir: string;
 let store: Store;
@@ -39,6 +39,16 @@ function runtimeWith(files: Record<string, string>): EnvRuntime {
     readFiles: async (ps: string[]) => ps.map((p) => ({ data: new TextEncoder().encode(files[p]), size: files[p].length, truncated: false })),
   } as unknown as EnvRuntime;
 }
+
+test("file equals: one final newline is optional, everything else exact", async () => {
+  const rt = runtimeWith({ "/workspace/a.txt": "10.0.4.23", "/workspace/b.txt": "10.0.4.23\n", "/workspace/c.txt": "10.0.4.23\n\n", "/workspace/d.txt": " 10.0.4.23\n" });
+  const check = (path: string, equals: string) => gradeFile(rt, { type: "file", path, equals });
+  assert.equal((await check("/workspace/a.txt", "10.0.4.23\n")).pass, true);
+  assert.equal((await check("/workspace/b.txt", "10.0.4.23")).pass, true);
+  assert.equal((await check("/workspace/b.txt", "10.0.4.23\n")).pass, true);
+  assert.equal((await check("/workspace/c.txt", "10.0.4.23\n")).pass, false);
+  assert.equal((await check("/workspace/d.txt", "10.0.4.23\n")).pass, false);
+});
 
 test("answer parsing prefers an explicit answer over stray letters and numbers (review 1, #10)", () => {
   const choice = (reply: string) => gradeAnswer({ type: "answer", mode: "choice", expected: "C" }, reply);

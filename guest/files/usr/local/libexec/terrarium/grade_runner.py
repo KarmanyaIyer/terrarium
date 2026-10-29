@@ -10,6 +10,7 @@ import importlib.machinery
 import importlib.util
 import json
 import os
+import re
 import socket
 import sys
 import time
@@ -74,6 +75,16 @@ def short(err):
     return (lines[-1] if lines else err[0].__name__)[:300]
 
 
+EXC_LINE = re.compile(r"^[A-Za-z_][\w.]*(Error|Exception|Exit|Interrupt|Warning)\b")
+
+
+def summary(tb, kind):
+    """The exception line of a traceback ("AssertionError: 'IV' != 'IIII'"), not a diff's trailing hint."""
+    lines = [ln for ln in tb.strip().splitlines() if ln.strip()]
+    hits = [ln for ln in lines if EXC_LINE.match(ln)]
+    return (hits[-1] if hits else lines[-1] if lines else kind)[:300]
+
+
 def main():
     a = sys.argv[1:]
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d  # noqa: E731
@@ -105,8 +116,7 @@ def main():
         out["passed"] = len(res.passed)
         for kind, items in (("fail", res.failures), ("error", res.errors)):
             for test, tb in items:
-                last = [ln for ln in tb.strip().splitlines() if ln.strip()]
-                out["failures"].append({"test": test.id().rsplit(".", 1)[-1], "kind": kind, "message": (last[-1] if last else kind)[:300]})
+                out["failures"].append({"test": test.id().rsplit(".", 1)[-1], "kind": kind, "message": summary(tb, kind)})
         for test, why in res.skipped:
             out["failures"].append({"test": test.id().rsplit(".", 1)[-1], "kind": "skipped", "message": str(why)[:300]})
     except CandidateGone as e:
