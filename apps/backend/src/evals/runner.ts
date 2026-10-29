@@ -55,6 +55,12 @@ interface ActiveRun {
   done: Promise<void>;
 }
 
+/** Per-run host secret; case prompts may name its path as {{canaryPath}}. */
+interface Canary {
+  token: string;
+  path: string;
+}
+
 function toResult(r: ResultRow): EvalResult {
   return {
     caseId: r.case_id,
@@ -236,11 +242,11 @@ export class EvalRunner {
 
   private async execute(runId: string, suite: EvalSuite, config: StartEvalRunRequest, active: ActiveRun): Promise<void> {
     const canaryDir = join(this.dataDir, "canary", runId);
-    const canary = `TERRARIUM-CANARY-${randomBytes(12).toString("hex")}`;
+    const canary: Canary = { token: `TERRARIUM-CANARY-${randomBytes(12).toString("hex")}`, path: join(canaryDir, "canary.txt") };
     if (suite.cases.some((c) => c.check.type === "isolation")) {
       // Host-only: data/ is 0700 and never mounted into envs. The probe must not be able to reach it.
       mkdirSync(canaryDir, { recursive: true, mode: 0o700 });
-      writeFileSync(join(canaryDir, "canary.txt"), `${canary}\n`, { mode: 0o600 });
+      writeFileSync(canary.path, `${canary.token}\n`, { mode: 0o600 });
     }
     try {
       for (const modelId of config.modelIds) {
@@ -280,7 +286,7 @@ export class EvalRunner {
     return { id, snapshotId: snap.id };
   }
 
-  private async runCase(runId: string, suite: EvalSuite, c: EvalCase, modelId: string, config: StartEvalRunRequest, active: ActiveRun, canary: string): Promise<void> {
+  private async runCase(runId: string, suite: EvalSuite, c: EvalCase, modelId: string, config: StartEvalRunRequest, active: ActiveRun, canary: Canary): Promise<void> {
     const started = Date.now();
     let envId: string | null = null;
     let sessionId: string | undefined;
@@ -309,7 +315,9 @@ export class EvalRunner {
       sessionId = session.id;
       active.sessions.add(session.id);
       this.setResult(runId, c.id, modelId, { status: "running", sessionId, ...(envId ? { envId } : {}) });
-      const outcome = await this.sessions.run(session.id, c.prompt, { maxTurns: c.maxTurns, timeoutMs: c.timeoutSec * 1000 });
+      // Host-file probes name the canary's real host path, so a successful read shows up as a canary leak.
+      const prompt = c.prompt.replaceAll("{{canaryPath}}", canary.path);
+      const outcome = await this.sessions.run(session.id, prompt, { maxTurns: c.maxTurns, timeoutMs: c.timeoutSec * 1000 });
       active.sessions.delete(session.id);
       const tokens = this.tokens(session.id);
       if (active.stopped && !outcome.timedOut) {
@@ -350,7 +358,7 @@ export class EvalRunner {
     return { prompt, completion };
   }
 
-  private async grade(c: EvalCase, sessionId: string, envId: string | null, reply: string, canary: string): Promise<Grade> {
+  private async grade(c: EvalCase, sessionId: string, envId: string | null, reply: string, canary: Canary): Promise<Grade> {
     const check = c.check;
     if (check.type === "answer") return gradeAnswer(check, reply);
     if (check.type === "speed") return gradeSpeed(this.store, sessionId, c.id);
@@ -359,7 +367,7 @@ export class EvalRunner {
       await this.envs.start(envId);
       rt = await this.envs.inspect(envId);
     }
-    if (check.type === "isolation") return gradeIsolation({ store: this.store, policy: this.policy, sessionId, canary, runtime: rt, probe: check.probe });
+    if (check.type === "isolation") return gradeIsolation({ store: this.store, policy: this.policy, sessionId, canary: canary.token, runtime: rt, probe: check.probe });
     if (!rt) return { pass: false, detail: `${check.type} check needs an environment` };
     if (check.type === "file") return gradeFile(rt, check);
     return gradeCommand(rt, check, c.hiddenFiles);

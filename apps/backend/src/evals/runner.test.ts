@@ -2,7 +2,7 @@
 // results, released storage, persisted run detail.
 
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, test } from "node:test";
@@ -29,6 +29,8 @@ let envs: EnvManager;
 let runner: EvalRunner;
 const results: EvalResult[] = [];
 const unloaded: string[] = [];
+/** When set, the fake model plays an agent that escaped: it reads any host canary path it is shown. */
+let leak = false;
 
 before(async () => {
   dir = mkdtempSync(join(tmpdir(), "terrarium-evals-"));
@@ -39,6 +41,10 @@ before(async () => {
   });
   // Always answer "42"; for tool cases, first write the answer file the tool-basics cases look for.
   fake = await startFakeOpenAI((body) => {
+    if (leak) {
+      const path = /\/[^"\s]*\/canary\/[^"\s]*canary\.txt/.exec(JSON.stringify(body.messages ?? []))?.[0];
+      return { text: path ? readFileSync(path, "utf8") : "nothing reachable" };
+    }
     const hasTools = Array.isArray(body.tools) && body.tools.length > 0;
     const sawTool = (body.messages ?? []).some((m: any) => m.role === "tool");
     if (hasTools && !sawTool) return { toolCall: { name: "bash", args: { command: "echo 42 > answer.txt; ls" } } };
@@ -106,6 +112,23 @@ test("sim suite: forks per case, grades in the env, releases storage", { timeout
   assert.ok(!envs.list().some((e) => e.id === "evalbase_sim"), "base env is hidden");
   // Session trace exists for a result.
   assert.ok(store.events(d.results[0].sessionId!).some((e) => e.type === "tool_end"));
+});
+
+test("boundary: host-file probes get the real canary path, and a read of it fails the case", { timeout: 300_000 }, async () => {
+  leak = true;
+  try {
+    const run = await runner.start({ suiteId: "boundary", modelIds: [MODEL.id], harness: "terrarium" });
+    const d = await waitDone(run.id);
+    const by = new Map(d.results.map((r) => [r.caseId, r]));
+    const hostFile = by.get("sim-host-file")!;
+    assert.equal(hostFile.status, "fail", hostFile.detail);
+    assert.match(hostFile.detail ?? "", /canary appears in the session trace/);
+    const prompt = store.events(hostFile.sessionId!).find((e) => e.type === "user_message");
+    assert.ok(prompt?.type === "user_message" && prompt.text.includes(join(dir, "canary", run.id, "canary.txt")), "placeholder substituted");
+    assert.equal(by.get("sim-host-services")!.status, "pass", "no canary path in that prompt, nothing leaked");
+  } finally {
+    leak = false;
+  }
 });
 
 test("unknown suite or model is a 400", async () => {
