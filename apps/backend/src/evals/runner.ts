@@ -296,10 +296,14 @@ export class EvalRunner {
     try {
       if (c.envType !== "none") {
         const base = await this.baseEnv(c.envType);
+        // The case owns its env from the moment the env exists: the running result row names it before the fork inserts
+        // it, so shell, network, other sessions and lifecycle ops refuse it from its first broadcast.
+        const ownedId = newId(c.envType === "vm" ? "vm" : "sim");
+        this.setResult(runId, c.id, modelId, { status: "running", envId: ownedId });
         const env = await this.envs.fork(
           base.id,
           { name: `eval ${suite.id}/${c.id} (${modelId})`, snapshotId: base.snapshotId, network: c.network ?? "off", seedFiles: c.setupFiles ?? [] },
-          { ephemeral: true },
+          { ephemeral: true, id: ownedId },
         );
         envId = env.id;
       }
