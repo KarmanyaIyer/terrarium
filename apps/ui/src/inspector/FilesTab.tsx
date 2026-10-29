@@ -251,7 +251,7 @@ export function FilesTab({ env, session, d }: { env: EnvSummary; session?: Sessi
         ? live
           ? "Live"
           : "Latest"
-        : `Step ${stepIdx + 1}: ${stepNow ? shortToolLabel(d?.tools.find((t) => t.toolCallId === stepNow.toolCallId)?.name ?? "", d?.tools.find((t) => t.toolCallId === stepNow.toolCallId)?.args) || stepNow.label : ""}`;
+        : `Step ${stepIdx + 1}/${steps.length}: ${stepShort}`;
 
   return (
     <div className="files">

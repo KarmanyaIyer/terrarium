@@ -698,8 +698,12 @@ export class FixtureBackend implements Backend {
       this.putEnv({
         ...cur,
         status: "running",
-        facts: req.type === "vm" ? VM_FACTS(vm!.cpus, vm!.memoryMiB, vm!.diskMiB, 590) : SIM_FACTS(sim!.python, sim!.javascript),
-        diskBytes: req.type === "vm" ? 618_659_840 : 2048,
+        // facts are gathered when the env comes up, so they are fresh
+        facts: {
+          ...(req.type === "vm" ? VM_FACTS(vm!.cpus, vm!.memoryMiB, vm!.diskMiB, 590) : SIM_FACTS(sim!.python, sim!.javascript)),
+          gatheredAt: Date.now(),
+        },
+        diskBytes: req.type === "vm" ? 618_659_840 : Math.max(2048, Object.values(files).reduce((a, t) => a + t.length, 0)),
       });
     }, req.type === "vm" ? 1900 : 450);
     return clone(e);

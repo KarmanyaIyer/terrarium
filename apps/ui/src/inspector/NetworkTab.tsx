@@ -121,13 +121,15 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
                       {clockTime(e.ts)}
                     </td>
                     <td className="net-url">
-                      <div className="mono truncate" title={e.url}>
-                        <span className="dim">{e.method}</span> {e.host}
-                        <span className="dim">{e.url.replace(/^https?:\/\/[^/]+/, "")}</span>
+                      {/* the selected row shows the whole request instead of a cut-off line */}
+                      <div className={`mono${sel ? " net-full" : " truncate"}`} title={sel ? undefined : e.url}>
+                        <span className="dim">{e.method}</span> {sel ? e.url : e.host}
+                        {!sel && <span className="dim">{e.url.replace(/^https?:\/\/[^/]+/, "")}</span>}
                       </div>
-                      <div className="dim net-reason truncate" title={e.reason}>
+                      <div className={`dim net-reason${sel ? "" : " truncate"}`} title={sel ? undefined : e.reason}>
                         {e.reason}
-                        {e.ip ? `  ${e.ip}` : ""}
+                        {e.ip ? ` · ${e.ip}` : ""}
+                        {sel && e.bytesOut != null ? ` · ${fmtBytes(e.bytesOut)} out` : ""}
                       </div>
                     </td>
                     <td>

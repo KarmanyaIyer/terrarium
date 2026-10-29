@@ -207,7 +207,7 @@
   top: 0;
   bottom: 0;
   border-radius: 2px 0 0 2px;
-  background: var(--c-other-mem);
+  background: var(--fg-4);
 }
 .mp-base + .mp-fill {
   border-radius: 0 2px 2px 0;
@@ -618,6 +618,40 @@
   margin: 6px 0 0 16px;
   font-size: var(--fs-sm);
   word-break: break-all;
+}
+.stream-args {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  row-gap: 2px;
+  word-break: normal;
+}
+.stream-args-head {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+}
+.stream-arg {
+  display: contents;
+}
+.stream-key {
+  font-size: var(--fs-sm);
+}
+.stream-val {
+  font-size: var(--fs-sm);
+  color: var(--fg-1);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.stream-arg.multi .stream-key {
+  grid-column: 1 / -1;
+}
+.stream-arg.multi .stream-val {
+  grid-column: 1 / -1;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--bg-well);
+  box-shadow: inset 0 0 0 0.5px var(--line);
+  line-height: 1.5;
 }
 .call-error {
   margin: 6px 0 0 16px;

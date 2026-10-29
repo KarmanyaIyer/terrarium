@@ -6,6 +6,7 @@ import { argsObj, changeCounts, toolFailed, toolKind, toolLabel } from "../../li
 import { act, select, showFilesFor, useStore } from "../../state/store";
 import { exactTime, fmtBytes, fmtInt, fmtMs, fmtTok, fmtTps, offsetTime } from "../../lib/format";
 import { Markdown } from "../../components/Markdown";
+import { partialFields } from "../../lib/partialJson";
 import { ansiSpans, stripAnsi } from "../../components/Ansi";
 import { DiffView } from "../../components/DiffView";
 import { CopyButton, Expander, useNow } from "../../components/ui";
@@ -66,6 +67,36 @@ function Thinking({ text, live, tokens }: { text: string; live: boolean; tokens?
         {preview && <span className="thinking-preview truncate">{preview}</span>}
       </button>
       {open && <div className="thinking-body selectable">{text}</div>}
+    </div>
+  );
+}
+
+/** Tool-call arguments as they stream: one row per field, strings unescaped so code reads as code. */
+function StreamingArgs({ raw }: { raw: string }) {
+  const fields = partialFields(raw);
+  if (!fields?.length)
+    return (
+      <div className="call-toolcall mono dim selectable">
+        <span className="dim2">calling tool</span> {raw}
+        <span className="caret" />
+      </div>
+    );
+  return (
+    <div className="call-toolcall stream-args selectable" title="Arguments as the model writes them">
+      <span className="dim2 stream-args-head">calling tool</span>
+      {fields.map((f, i) => {
+        const last = i === fields.length - 1;
+        const multi = f.string && f.value.includes("\n");
+        return (
+          <div key={f.key} className={`stream-arg${multi ? " multi" : ""}`}>
+            <span className="mono dim stream-key">{f.key}</span>
+            <span className={`mono stream-val${f.string ? "" : " raw"}`}>
+              {f.value}
+              {last && !f.done && <span className="caret" />}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -158,12 +189,7 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
           {showOrig && <pre className="well selectable">{repaired.original}</pre>}
         </div>
       )}
-      {live && it.live?.toolcall && (
-        <div className="call-toolcall mono dim selectable">
-          <span className="dim2">calling tool</span> {it.live.toolcall}
-          <span className="caret" />
-        </div>
-      )}
+      {live && it.live?.toolcall && <StreamingArgs raw={it.live.toolcall} />}
       {it.end?.finishReason === "error" && it.end.error && <div className="call-error selectable">{it.end.error}</div>}
     </div>
   );
