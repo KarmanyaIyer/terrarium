@@ -782,6 +782,20 @@ def log_apply(st):
     return log_levels() == st
 
 
+def log_quiet(quiet):
+    """{logger name ("" for root): [kind of each handler]} for the loggers with handlers: 0 a NullHandler, 1 or 2 a
+    StreamHandler on quiet[0] or quiet[1] (the process's own stdout or stderr), None anything else."""
+    lg = sys.modules.get("logging")
+    if lg is None:
+        return {}
+    out = {}
+    for name, x in [("", lg.root)] + list(lg.Logger.manager.loggerDict.items()):
+        hs = x.handlers if isinstance(x, lg.Logger) else None
+        if isinstance(hs, list) and list.__len__(hs):
+            out[name] = [0 if type(h) is lg.NullHandler else None if type(h) is not lg.StreamHandler else 1 if h.stream is quiet[0] else 2 if h.stream is quiet[1] else None for h in list(list.__iter__(hs))]
+    return out
+
+
 class _CandidateHandlers(list):
     """A logger's handler list in the tests' process after the candidate's code added handlers or filters to that
     logger in its own: what using it would answer isn't what one process would (the candidate's are elsewhere)."""
@@ -2863,6 +2877,7 @@ class Client(Side):
         self.tz0 = tz_now()
         self.watch = None  # the tests' raw changes to standard-library modules and classes (install_guards)
         self.state["loglevels"] = LOG_DEFAULT
+        self.logquiet = False  # the tests added or removed a logger's handler since the last message
         self.fwd = weakref.WeakValueDictionary()  # rid -> the real function standing for candidate function rid
         self.fwd_rids = weakref.WeakKeyDictionary()  # that function -> rid
         self.fwd_desc = {}  # rid -> its decoded description, while its proxy lives
@@ -3535,6 +3550,11 @@ class Client(Side):
             if any(type(v[0]) is not int or type(v[1]) is not bool or type(v[2]) is not bool for v in ll[1].values()) or type(ll[0]) is not int:
                 raise Inexact("logging: the tests set a logger's level, propagate or disabled to something other than an int or bool")
             s["loglevels"] = st["loglevels"] = ll
+        if self.logquiet:
+            self.logquiet = False
+            lq = log_quiet((self.orig["stdout"], self.orig["stderr"]))
+            if lq != s.get("logquiet", {}):
+                s["logquiet"] = st["logquiet"] = lq
         r = sys.modules.get("random")
         if r is not None:
             rs = self.rstate.maybe(r)
@@ -4132,8 +4152,14 @@ class Client(Side):
         def adds(args):
             h = args[1] if len(args) > 1 else None
             if type(h) is lg.NullHandler or (type(h) is lg.StreamHandler and h.stream in quiet and not h.filters):
+                # One that shows the tests nothing; the candidate's logger of that name gets a like one (log_quiet),
+                # so logging's last-resort handler stays out of it there too.
+                self.logquiet = True
                 return
             self._end("logging: the tests added a handler or filter, which the candidate's records (logged in its own process) wouldn't reach")
+
+        def removes(args):
+            self.logquiet = True
 
         def setter(what):
             def check(args):
@@ -4142,6 +4168,7 @@ class Client(Side):
             return check
 
         _guard(lg.Logger, "addHandler", adds)
+        _guard(lg.Logger, "removeHandler", removes)
         _guard(lg.Logger, "addFilter", lambda args: adds(()))
         for name in ("setLoggerClass", "setLogRecordFactory"):
             _guard(lg, name, setter("logging." + name))
@@ -4545,6 +4572,7 @@ class Server(Side):
         self.loglevels = LOG_DEFAULT  # loggers as last exchanged
         self.loghandlers = set()  # loggers the candidate's code added handlers or filters to ("" for root)
         self.loghandlers_sent = set()
+        self.logquiet = {}  # logger name -> the handlers standing here for the tests' quiet ones on it (log_quiet)
         self.fn_sent = {}  # rid -> [function or generator the tests have a stand-in for, the names kept, their values, generator state]
         # Of those, the ones this side's code may reach (compared each message), and how that changed since last told.
         self.fn_track = True
@@ -4644,7 +4672,12 @@ class Server(Side):
 
             return check
 
+        def removes(args):
+            if len(args) > 1 and any(args[1] is h for hs in self.logquiet.values() for h in hs):
+                adds(args)
+
         _guard(lg.Logger, "addHandler", adds)
+        _guard(lg.Logger, "removeHandler", removes)
         _guard(lg.Logger, "addFilter", adds)
         for name in ("setLoggerClass", "setLogRecordFactory"):
             _guard(lg, name, setter("logging." + name))
@@ -5202,6 +5235,9 @@ class Server(Side):
                 if not log_apply(st["loglevels"]):
                     self._poison("logging: the tests set a logger's level in a way the candidate's process can't")
             self.loglevels = log_levels()
+        if "logquiet" in st:
+            with _Quiet(self.watch):
+                self._log_quiet(st["logquiet"])
         rs = st.get("random")
         if rs is not None:
             import random
@@ -5235,6 +5271,26 @@ class Server(Side):
             if not isinstance(name, str) or std_module(name):
                 raise ProtocolError("bad module")
             sys.modules.pop(name, None)
+
+    def _log_quiet(self, want):
+        """The tests' loggers' quiet handlers (log_quiet()) as like ones on the same loggers here, added and removed
+        without the candidate's own handlers or the guards seeing (a kind log_quiet() didn't know is left out)."""
+        if not isinstance(want, dict):
+            raise ProtocolError("bad logging handlers")
+        lg = _std("logging")
+        streams = (None, self.orig["stdout"], self.orig["stderr"])
+        with lg._lock:
+            for name in set(self.logquiet).union(want):
+                kinds = want.get(name, [])
+                if not isinstance(name, str) or not isinstance(kinds, list) or any(k not in (0, 1, 2, None) or type(k) is bool for k in kinds):
+                    raise ProtocolError("bad logging handlers")
+                x = lg.root if name == "" else lg.getLogger(name)
+                old = set(map(id, self.logquiet.pop(name, ())))
+                hs = [lg.NullHandler() if k == 0 else lg.StreamHandler(streams[k]) for k in kinds if k is not None]
+                if (old or hs) and isinstance(x.handlers, list):
+                    list.__setitem__(x.handlers, slice(None), [h for h in list.__iter__(x.handlers) if id(h) not in old] + hs)
+                    if hs:
+                        self.logquiet[name] = hs
 
     def _apply_fn(self, changes):
         for rid, name, value in changes:
