@@ -3,5 +3,16 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.11.2",
-  "engines": { "node": ">=24.18" }
+  "engines": {
+    "node": ">=24.18"
+  },
+  "scripts": {
+    "tauri": "tauri",
+    "dev:app": "tauri dev",
+    "package": "scripts/package.sh",
+    "package:build": "scripts/package.sh --no-install"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
 }
