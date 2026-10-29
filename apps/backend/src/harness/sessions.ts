@@ -158,6 +158,17 @@ function isLlmMessage(m: AgentMessage): m is Message {
   return m.role === "system" || m.role === "user" || m.role === "assistant" || m.role === "toolResult";
 }
 
+const DEFAULT_TITLE = "New session";
+
+/** First line of a message, whitespace collapsed, cut at a word near 60 chars. */
+export function titleFrom(text: string): string {
+  const line = text.trim().split("\n")[0].replace(/\s+/g, " ");
+  if (line.length <= 60) return line || DEFAULT_TITLE;
+  const cut = line.slice(0, 60);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > 30 ? cut.slice(0, space) : cut).replace(/[\s,.;:]+$/, "")}…`;
+}
+
 export class SessionManager {
   private store: Store;
   private hub: Hub;
@@ -287,7 +298,7 @@ export class SessionManager {
     const { window, maxOutput } = this.sizing(model, thinking, req.contextWindow, req.maxOutputTokens);
     const id = opts.id ?? newId("ses");
     const now = Date.now();
-    const title = (req.title ?? "").trim().slice(0, 200) || "New session";
+    const title = (req.title ?? "").trim().slice(0, 200) || DEFAULT_TITLE;
     this.store.run(
       `INSERT INTO sessions (id, env_id, title, model_id, harness, thinking, context_window, max_output_tokens, status, last_seq,
         eval_run_id, eval_case_id, ephemeral, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'idle', 0, ?, ?, ?, ?, ?)`,
@@ -391,6 +402,8 @@ export class SessionManager {
     }
     live.stopRequested = false;
     live.timedOut = false;
+    // An untitled session is named after its first message, so the sidebar isn't a column of "New session".
+    if (r.last_seq === 0 && r.title === DEFAULT_TITLE) this.store.run("UPDATE sessions SET title = ? WHERE id = ?", titleFrom(text), id);
     this.setStatus(id, "running");
     const p = this.runInner(live, text, opts)
       .catch((err): RunOutcome => {

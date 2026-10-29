@@ -16,7 +16,7 @@ import type { InferenceService } from "../inference/service.ts";
 import { Store } from "../store/db.ts";
 import { startFakeOpenAI, type FakeOpenAI, type ScriptedReply } from "../test-support/fake-openai.ts";
 import { SIM_NOTE, TERRARIUM_PROMPT } from "./prompts.ts";
-import { SessionManager } from "./sessions.ts";
+import { SessionManager, titleFrom } from "./sessions.ts";
 
 const MODEL: ModelInfo = {
   id: "fake-model",
@@ -162,4 +162,15 @@ test("busy env and running session are rejected; stop works", async () => {
   const chat = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat", contextWindow: 4096 });
   assert.equal(chat.contextWindow, 4096);
   assert.equal(chat.maxOutputTokens, 1024);
+  // A session the user never titled takes its first message; a busy rejection leaves it alone.
+  assert.equal(sessions.get(a.id).title, "New session");
+  assert.equal(sessions.get(b.id).title, "hi");
+  await sessions.run(b.id, "a second message");
+  assert.equal(sessions.get(b.id).title, "hi");
+});
+
+test("titleFrom: first line, collapsed, cut at a word", () => {
+  assert.equal(titleFrom("  Fix   the tests\nthen run them"), "Fix the tests");
+  assert.equal(titleFrom("In /workspace do these steps one at a time: 1) create notes/todo.txt with three lines"), "In /workspace do these steps one at a time: 1) create…");
+  assert.equal(titleFrom("   "), "New session");
 });
