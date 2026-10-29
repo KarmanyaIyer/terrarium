@@ -78,3 +78,31 @@ pass. Cases: qa/review6-cases/<name>/ (58); cases.json lists plain and isolated 
 - verify.ts 41/41; HumanEval 164/164; MBPP 427/427 (3.12).
 - Speed vs 9f28698 (isolated test seconds, best of 3): references and perf probes 1.0-1.6x (fix-roman 0.60 -> 0.86,
   perf_records 0.74 -> 1.16, perf_returns 0.97 -> 1.42). Only regression 4 exceeds 2x.
+
+## Fixes (TODO_16, 2026-10-29)
+- 1 `inspect.getsource(m.f)`: **Fixed** (4cbac17). getsource_ok passes.
+- 2 awaiting a candidate coroutine: **Fixed** (4cbac17). Stepped in the candidate for the tests' event loop; the
+  candidate's coroutine using the loop itself (futures, timers, tasks) is Inexact.
+- 3 primed generators: **Fixed** (c30d646). gen_primed_ok and gen_primed_throw pass; gen_primed_lenient fails.
+- 4 per-message cost of function stand-ins: **Fixed** (c30d646). Only functions candidate code may reach (by
+  refcount) are compared; function dicts aren't links. Mac, load 12-13: function_many 0.35 s (9f28698 0.24 s),
+  function_many_2000 0.75 s (0.46 s). Functions candidate code holds still cost about 1.3 us per message per side.
+- Low: bound_method_identity_ok: **Fixed** (a02ccbd). function_dict_replace_ok: **Fixed** (c30d646).
+  fn_self_attribute: **Fixed** (c30d646). sizeof_named: **Fixed** (a02ccbd). id_assertisnot_two_floats: **Fixed**
+  (a02ccbd).
+- 5 identity: impure tuple met twice in one message is one object (id_fs_impure; bound_method_identity now
+  fails): **Fixed** (e3bf3cc, a02ccbd). Keyword `assertIs(expr1=, expr2=)`: **Fixed** (e3bf3cc). Raw `is`, `id()`,
+  `operator.is_` on values that arrive anew each message (ident_is_lenient's other three tests, id_list_big_false,
+  id_dict_same_false, id_nan_sticky_false): **Documented**.
+- 6 a process the tests start after candidate file changes (fs_subprocess_tests): **Fixed** (e3bf3cc). Inexact
+  after a known candidate change only, so fs_process_ok (candidate's own `echo`) still passes.
+- 7 tests' quiet log handlers (log_lastresort_ok passes, log_lastresort fails): **Fixed** (052af63).
+- 8 workspace looks and changes the fs check misses: **Documented**.
+- 9 process state outside the mirrors: stack_bypass_lenient **Fixed** (ae00233); the rest **Documented**
+  (tz_lenient fails both runs on macOS; in the Alpine guest without tzdata plain unittest passes it).
+- 10 stand-ins expose grader state: tb_chain, traceback_line, generator_external_close **Fixed** (c30d646, now exact
+  fails); gi_yieldfrom, fn_referents, fn_weakrefcount **Fixed** (c30d646, Inexact).
+- 11 misc: ref_int_low **Fixed** (e3bf3cc, Inexact); module_type_multiline **Fixed** (e3bf3cc, Inexact);
+  warn_import_silent **Fixed** (ef49929, both runs); skip_only **Documented** (intentional).
+- 12 cwd_ok asset: **Fixed** (58c1c75, before this round).
+- Tests: review 6 cases in grade-probes.test.ts and vm.test.ts (a5285b6, c13f748); docs (c5f5b99).
