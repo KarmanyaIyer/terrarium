@@ -1,0 +1,22 @@
+#!/bin/sh
+# Terrarium exec killer (root). usage: kill <exec-id>
+# SIGKILLs the process group and session started by `run <exec-id>`, if that process is still the same one.
+set -u
+id="$1"
+case "$id" in
+  "" | *[!A-Za-z0-9_-]*) exit 2 ;;
+esac
+f="/run/terrarium/exec/$id"
+[ -f "$f" ] || exit 0
+read -r p st < "$f" || exit 0
+s=$(cat "/proc/$p/stat" 2>/dev/null) || { rm -f "$f"; exit 0; }
+s=${s##*) }
+# shellcheck disable=SC2086
+set -- $s
+shift 19
+if [ "$1" = "$st" ]; then
+  kill -KILL -- "-$p" 2>/dev/null
+  pkill -KILL -s "$p" 2>/dev/null
+fi
+rm -f "$f"
+exit 0

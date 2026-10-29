@@ -1,0 +1,41 @@
+#!/bin/sh
+# Terrarium exec launcher (root). usage: run <exec-id> <agent|root> <cwd> <argv...>
+# Records "pid starttime" for the exec so `kill <exec-id>` can end its whole session, then becomes a new
+# session leader (same pid) and, for agent, drops to uid 1000 with no_new_privs and an empty capability
+# bounding set, so setuid binaries can't regain root.
+set -u
+id="$1"
+who="$2"
+dir="$3"
+shift 3
+case "$id" in
+  "" | *[!A-Za-z0-9_-]*) echo "terrarium-run: bad exec id" >&2; exit 126 ;;
+esac
+case "$who" in
+  agent | root) ;;
+  *) echo "terrarium-run: bad user $who" >&2; exit 126 ;;
+esac
+cd -- "$dir" 2>/dev/null || { echo "cd: $dir: No such directory" >&2; exit 127; }
+d=/run/terrarium/exec
+umask 077
+[ -d "$d" ] || mkdir -p "$d"
+starttime() {
+  s=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+  s=${s##*) }
+  # shellcheck disable=SC2086
+  set -- $s
+  shift 19
+  printf '%s' "$1"
+}
+for f in "$d"/*; do
+  [ -e "$f" ] || break
+  read -r p st < "$f" 2>/dev/null || p=""
+  if [ -z "$p" ] || [ "$(starttime "$p")" != "$st" ]; then rm -f "$f"; fi
+done
+printf '%s %s\n' "$$" "$(starttime $$)" > "$d/$id"
+umask 022
+if [ "$who" = agent ]; then
+  exec /usr/bin/setsid /bin/setpriv --reuid=1000 --regid=1000 --init-groups --no-new-privs \
+    --inh-caps=-all --bounding-set=-all -- "$@"
+fi
+exec /usr/bin/setsid "$@"

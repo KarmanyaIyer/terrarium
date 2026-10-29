@@ -1,0 +1,52 @@
+{
+  "arch": "aarch64",
+  "distro": "alpine",
+  "alpine": {
+    "version": "3.23.7",
+    "kernelPackage": "linux-virt",
+    "kernelImage": "vmlinuz-virt",
+    "rootfsPackages": [
+      "linux-virt",
+      "rng-tools",
+      "ca-certificates",
+      "ca-certificates-bundle",
+      "e2fsprogs",
+      "e2fsprogs-extra",
+      "bash",
+      "coreutils",
+      "findutils",
+      "diffutils",
+      "patch",
+      "procps-ng",
+      "setpriv",
+      "file",
+      "less",
+      "curl",
+      "jq",
+      "ripgrep",
+      "inotify-tools",
+      "git",
+      "build-base",
+      "python3",
+      "py3-pip",
+      "nodejs",
+      "npm"
+    ],
+    "initramfsPackages": [],
+    "krunfwVersion": "v5.2.1"
+  },
+  "rootfs": {
+    "label": "gondolin-root"
+  },
+  "init": {
+    "rootfsInitExtra": "./rootfs-init-extra.sh"
+  },
+  "postBuild": {
+    "copy": [
+      { "src": "./files/usr/local/libexec/terrarium", "dest": "/usr/local/libexec/terrarium" }
+    ]
+  },
+  "runtimeDefaults": {
+    "rootfsMode": "cow"
+  }
+}

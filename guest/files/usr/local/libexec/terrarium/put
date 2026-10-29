@@ -1,0 +1,24 @@
+#!/bin/sh
+# Terrarium agent write (root). usage: put <exec-id> <staged-file> <dest> [octal-mode]
+# The host stages bytes in the root-only /run/terrarium/xfer; this copies them to <dest> from a uid-1000
+# process, so agent permissions and agent-made symlinks apply exactly as if the agent wrote the file.
+set -u
+id="$1"
+src="$2"
+dest="$3"
+mode="${4:-}"
+case "$src" in
+  *..*) echo "put: bad stage path" >&2; exit 2 ;;
+  /run/terrarium/xfer/*) ;;
+  *) echo "put: bad stage path" >&2; exit 2 ;;
+esac
+case "$mode" in
+  "" | [0-7] | [0-7][0-7] | [0-7][0-7][0-7] | [0-7][0-7][0-7][0-7]) ;;
+  *) echo "put: bad mode" >&2; rm -f -- "$src"; exit 2 ;;
+esac
+/usr/local/libexec/terrarium/run "$id" agent / /bin/sh -c \
+  'mkdir -p -- "$(dirname -- "$1")" && cat > "$1" && { [ -z "$2" ] || chmod -- "$2" "$1"; }' \
+  sh "$dest" "$mode" < "$src"
+rc=$?
+rm -f -- "$src"
+exit "$rc"
