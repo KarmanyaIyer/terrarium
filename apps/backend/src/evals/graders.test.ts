@@ -6,7 +6,7 @@ import { after, before, test } from "node:test";
 import { policy } from "../envs/policy.ts";
 import type { EnvRuntime } from "../envs/types.ts";
 import { Store } from "../store/db.ts";
-import { gradeAnswer, gradeFile, gradeIsolation, gradeSpeed, gradeTests } from "./graders.ts";
+import { gradeAnswer, gradeCommand, gradeFile, gradeIsolation, gradeSpeed, gradeTests } from "./graders.ts";
 
 let dir: string;
 let store: Store;
@@ -100,6 +100,39 @@ test("tests checks pass only on full counts from the grader, after agent process
   }
   const garbled = await gradeTests({ ...gradingRuntime({}, 0).rt, exec: async () => ({ exitCode: 0, stdout: "PASS\n", stderr: "", timedOut: false }) } as unknown as EnvRuntime, check, hidden);
   assert.equal(garbled.pass, false);
+});
+
+test("VM command checks go through grade.py --command (agent uid, clean env), never as root in /workspace (review 2, #10)", async () => {
+  const check = { type: "command" as const, command: "python3 -m unittest discover -s tests" };
+  const run = async (summary: object, code = 0) => {
+    const calls: { cmd: string; as?: string }[] = [];
+    const rt = {
+      type: "vm",
+      killAgentProcesses: async () => void calls.push({ cmd: "kill-agent" }),
+      writeFile: async (p: string) => void calls.push({ cmd: `write ${p}` }),
+      exec: async (cmd: string, opts: { as?: string }) => {
+        calls.push({ cmd, as: opts.as });
+        return { exitCode: code, stdout: `${JSON.stringify(summary)}\n`, stderr: "", timedOut: false };
+      },
+    } as unknown as EnvRuntime;
+    return { g: await gradeCommand(rt, check), calls };
+  };
+  const ok = await run({ pass: true, exitCode: 0, timedOut: false, output: "OK", error: null });
+  assert.equal(ok.g.pass, true, ok.g.detail);
+  assert.deepEqual(ok.calls.map((c) => c.cmd.split(" ")[0]), ["kill-agent", "exec"]);
+  const exec = ok.calls[1]!;
+  assert.match(exec.cmd, /grade\.py --command 'python3 -m unittest discover -s tests' --workspace \/workspace/);
+  assert.equal(exec.as, "root", "only the guest helper runs as root; it drops to the agent for the command");
+  for (const [summary, code] of [
+    [{ pass: false, exitCode: 1, timedOut: false, output: "FAILED" }, 1],
+    [{ pass: true, exitCode: 0, timedOut: true }, 0],
+    [{ pass: true, exitCode: 0, error: "copy failed" }, 0],
+    [{ pass: true, exitCode: 0 }, 1],
+  ] as const) {
+    assert.equal((await run(summary, code)).g.pass, false, JSON.stringify(summary));
+  }
+  const sim = { type: "sim", killAgentProcesses: async () => {}, exec: async () => ({ exitCode: 0, stdout: "", stderr: "", timedOut: false }) } as unknown as EnvRuntime;
+  assert.equal((await gradeCommand(sim, check)).pass, true);
 });
 
 function net(session: string, url: string, host: string, ip: string | null, decision: "allow" | "deny") {

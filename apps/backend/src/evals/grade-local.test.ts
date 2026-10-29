@@ -48,18 +48,64 @@ test("exit-code and process cheats fail", { skip: !PY && "no python3 >= 3.10" },
     "sys-exit": "import sys\nsys.exit(0)\n",
     // unittest is patched in the candidate's own process only; the tests run elsewhere.
     "patch-unittest": "import unittest\nunittest.TestCase.run = lambda self, result=None: None\nunittest.TestResult.wasSuccessful = lambda self: True\n",
-    // Results live in the test runner's dir; anything the candidate writes is ignored.
-    "fake-results": "import glob, json, os\nfor d in glob.glob('/tmp/terrarium-grade-*/out') + glob.glob('/var/lib/terrarium-grade/*/out'):\n    try:\n        open(os.path.join(d, 'results.json'), 'w').write(json.dumps({'expected': 3, 'passed': 3}))\n    except OSError:\n        pass\nprint('PASS')\n",
+    // Results live in the test runner's dir. In --local mode the candidate runs as the same user and can
+    // write it (it is ../out from the candidate's cwd, on any platform); the runner then can't create its
+    // file, exits 1, and grade.py ignores a results file next to a failed runner. Only its own job dir:
+    // other gradings may be running in parallel. In the guest the dir is grader-only (vm.test.ts).
+    "fake-results": "import json, os\ntry:\n    open(os.path.join(os.getcwd(), '..', 'out', 'results.json'), 'w').write(json.dumps({'expected': 3, 'passed': 3}))\nexcept OSError:\n    pass\nprint('PASS')\n",
   };
   for (const [name, prefix] of Object.entries(cheats)) {
     const starter = readFileSync(join(CASE, "workspace/pagination.py"), "utf8");
     const r = grade(workspace(name, prefix + starter), tests);
     assert.equal(r.code, 1, `${name} passed: ${JSON.stringify(r)}`);
-    assert.ok(r.expected === 0 || r.passed < r.expected, name);
+    assert.ok(r.expected === 0 || r.passed < r.expected, `${name}: ${JSON.stringify(r)}`);
+    if (name === "fake-results") assert.match(r.error ?? "", /results file ignored/);
   }
   const exitBeforeReference = grade(workspace("ref-exit", `import os\nos._exit(0)\n${reference}`), tests);
   assert.equal(exitBeforeReference.code, 1);
   assert.match(exitBeforeReference.error ?? "", /candidate process ended|loading the tests failed/);
+});
+
+/** A coding case's workspace with its reference solution copied over, then `edit` applied to one file. */
+function caseWorkspace(name: string, caseId: string, edit?: { file: string; change: (s: string) => string }): { ws: string; tests: string } {
+  const ws = join(tmp, name);
+  cpSync(join(REPO_DIR, "evals/cases/coding", caseId, "workspace"), ws, { recursive: true });
+  cpSync(join(REPO_DIR, "evals/reference/coding", caseId), ws, { recursive: true });
+  if (edit) {
+    const before = readFileSync(join(ws, edit.file), "utf8");
+    const after = edit.change(before);
+    assert.notEqual(after, before, `edit of ${edit.file} changed nothing`);
+    writeFileSync(join(ws, edit.file), after);
+  }
+  return { ws, tests: join(REPO_DIR, "evals/cases/coding", caseId, "grader/test_hidden.py") };
+}
+
+test("fix-inventory: a Warehouse that keeps and changes the caller's dict fails, as in one process (review 2, #1)", { skip: !PY && "no python3 >= 3.10" }, () => {
+  const ref = caseWorkspace("inv-ref", "fix-inventory");
+  assert.deepEqual(grade(ref.ws, ref.tests), { code: 0, passed: 6, expected: 6, error: null });
+  const alias = caseWorkspace("inv-alias", "fix-inventory", {
+    file: "inventory/service.py",
+    change: (s) => s.replace("self.stock = dict(stock or {})", "self.stock = stock if stock is not None else {}"),
+  });
+  const r = grade(alias.ws, alias.tests);
+  assert.deepEqual(r, { code: 1, passed: 5, expected: 6, error: null });
+  // Plain unittest on the same files agrees.
+  const plain = spawnSync(PY!, ["-m", "unittest", "test_hidden"], { cwd: alias.ws, encoding: "utf8", env: { ...process.env, PYTHONPATH: dirname(alias.tests), PYTHONDONTWRITEBYTECODE: "1" } });
+  assert.match(plain.stderr, /FAILED \(failures=1\)/);
+  assert.match(plain.stderr, /test_caller_dict_not_mutated/);
+});
+
+test("refactor-report: rewriting report.py from candidate code doesn't change the source the tests read (review 2, #2)", { skip: !PY && "no python3 >= 3.10" }, () => {
+  const ref = caseWorkspace("refactor-ref", "refactor-report");
+  assert.deepEqual(grade(ref.ws, ref.tests), { code: 0, passed: 3, expected: 3, error: null });
+  const refactored = readFileSync(join(ref.ws, "report.py"), "utf8");
+  // The original loops plus the helper, and on import the module overwrites its own file with the refactor.
+  const starter = readFileSync(join(REPO_DIR, "evals/cases/coding/refactor-report/workspace/report.py"), "utf8");
+  const helper = refactored.slice(refactored.indexOf("def _summarize"), refactored.indexOf("def revenue_by_region"));
+  const cheat = `${starter}\n\n${helper}\nwith open(__file__, "w", encoding="utf-8") as _f:\n    _f.write(${JSON.stringify(refactored)})\n`;
+  const swap = caseWorkspace("refactor-swap", "refactor-report", { file: "report.py", change: () => cheat });
+  const r = grade(swap.ws, swap.tests);
+  assert.deepEqual(r, { code: 1, passed: 2, expected: 3, error: null });
 });
 
 test("a candidate object that claims to equal anything does not pass", { skip: !PY && "no python3 >= 3.10" }, () => {

@@ -72,13 +72,32 @@ Results go to `data/vm-verify/latest.json`.
     and reads only regular files (`fstat` S_ISREG), so a FIFO, `/dev/zero` or a symlink into a root-only
     dir can't block, flood or leak. The driver adds a 30 s exec timeout.
   - `grade.py` with `grade_rpc.py`, `grade_worker.py`, `grade_runner.py`: hidden-test grading (eval check
-    type `tests`). As root it kills every agent process, copies the workspace to a job dir, starts the
-    candidate's code in a worker as `agent` and the hidden tests in a runner as `grader` (`python3 -I -S`),
-    connected by a socketpair. Plain values cross by value, everything else as references, and a
-    comparison between a reference and a test-side value is refused, so candidate code never sees the
-    expected values. The runner writes its counts to a dir only `grader` can write; pass means passed ==
-    expected > 0 there. Candidate exits, `sys.exit`, patched `unittest`, forged results files and
-    leftover daemons all fail.
+    type `tests`). As root it kills every agent process and copies the workspace twice into a job dir:
+    `src` (root-owned, read-only; what the hidden tests read as the candidate's source, via
+    `terrarium_grading.workspace`) and `ws` (agent-owned; where the candidate's code runs). Both copies
+    are taken before any candidate code runs. It starts the candidate's code in a worker as `agent` in
+    `ws` and the hidden tests in a runner as `grader` (`python3 -I -S`), connected by a socketpair.
+    - Plain values cross by value, everything else as references, and a comparison between a reference
+      and a test-side value is refused, so candidate code never sees the expected values.
+    - Lists, dicts, sets and bytearrays the tests pass in are linked: when candidate code changes its copy
+      (during the call or later, through an object that kept it), the change is written back into the
+      test's object in place, as in one process.
+    - A candidate object whose class derives from a built-in data type (namedtuple, OrderedDict or list
+      subclass, IntEnum) arrives as a hybrid: `==` and `in` are answered locally from its data, methods
+      and attributes go to the candidate's object.
+    - Grader failures (candidate process gone or hung, a value that can't cross) are not `Exception`
+      subclasses, so `assertRaises` never counts them. One candidate call may use the whole `--timeout`;
+      a call still running near the end fails, and the counts are still written.
+    - The runner writes its counts to a dir only `grader` can write; pass means the runner exited 0 and
+      passed == expected > 0 there. Candidate exits, `sys.exit`, patched `unittest`, forged results
+      files, rewriting the source after the copy and leftover daemons all fail.
+  - `grade.py --command <cmd>`: eval check type `command` in a VM. As root it kills every agent and
+    grader process, then runs `bash -c <cmd>` as `agent` in `/workspace` with
+    `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin` and a fresh empty `HOME`, so
+    nothing the agent planted in `~/.local/bin` or its dotfiles runs. It never runs as root or as
+    `grader`, so it can't read `/grader` (the validator rejects command checks that mention `/grader`
+    or have hidden files). Pass on exit 0 within 170 s; a command that runs the agent's code can be
+    cheated by that code, so hidden tests belong in a `tests` check.
   - `observer.py`: the manifest walker. It runs as root with `python3 -I -S` and prints JSON
     entries for path, type, size, mode, mtimeNs, ctimeNs, ino, nlink, linkTarget and sha256.
     - Walks fd-relative with `O_NOFOLLOW`, so symlinks are never followed.

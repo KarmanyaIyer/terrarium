@@ -377,6 +377,6 @@ export class EvalRunner {
     if (!rt) return { pass: false, detail: `${check.type} check needs an environment` };
     if (check.type === "file") return gradeFile(rt, check);
     if (check.type === "tests") return gradeTests(rt, check, c.hiddenFiles);
-    return gradeCommand(rt, check, c.hiddenFiles);
+    return gradeCommand(rt, check);
   }
 }

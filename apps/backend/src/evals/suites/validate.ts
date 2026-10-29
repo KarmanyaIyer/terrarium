@@ -49,11 +49,11 @@ function checkProblems(c: EvalCase): string[] {
       if (check.tolerance !== undefined && !(check.tolerance >= 0)) out.push("tolerance must be >= 0");
       break;
     case "command": {
+      // Command checks run as the agent: they can't read /grader, and the agent's code they run can fake
+      // an exit code. Hidden tests go in a tests check.
       if (typeof check.command !== "string" || !check.command.trim()) out.push("command must be non-empty");
-      const hidden = new Set((c.hiddenFiles ?? []).map((f) => f.path));
-      for (const m of check.command.matchAll(/\/grader\/[\w./-]+/g)) {
-        if (!hidden.has(m[0])) out.push(`command uses ${m[0]} but no hiddenFile provides it`);
-      }
+      else if (check.command.includes("/grader")) out.push("command checks run as the agent and can't read /grader; put hidden tests in a tests check");
+      if (c.hiddenFiles?.length) out.push("hiddenFiles are only for tests checks; a command check runs as the agent and can't read them");
       break;
     }
     case "tests": {

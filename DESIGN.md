@@ -62,8 +62,8 @@ Key decisions:
   (public HTTP/HTTPS). Internal, loopback, link-local and private ranges are denied in every mode. Every
   decision is logged (allowed too), switchable while running.
 - **No oMLX admin UI exposed.** Keep oMLX on loopback with a key; never use its code-executing
-  benchmarks. Any eval that executes model output runs inside an environment; graders run as a different
-  uid from the agent.
+  benchmarks. Any eval that executes model output runs inside an environment; model-written code never
+  runs as root or as the uid that can read hidden tests.
 - **Nothing starts at login.** Quitting the app stops VMs, the backend and oMLX. Closing the window hides it.
 
 ## Repo layout (pnpm workspace)
@@ -153,8 +153,13 @@ session's context, and whether it fits the current free memory.
 ## Evals
 
 Suites are JSON in `evals/suites/`. A case: id, title, prompt, setup files, env type (`sim`|`vm`|`none`),
-max turns, timeout, and a check: `answer` (exact/regex/number), `command` (run in the env as the grader
-uid after the agent finishes; pass on exit 0), or `file` (path + contains/equals). Every case runs as a
+max turns, timeout, and a check: `answer` (exact/regex/number/choice), `file` (path + contains/equals),
+`command` (after every agent process is killed, runs in /workspace as the agent uid with a clean PATH and
+an empty HOME, never as root and never as a uid that can read `/grader`; pass on exit 0, so it can't be
+trusted to judge code it runs), or `tests` (VM only: hidden unittest file in `/grader`, run by the guest
+grader with candidate code as the agent uid and the tests as the grader uid in separate processes; the
+tests read the candidate's source from a root-owned copy taken before candidate code runs; pass only when
+every counted test passed). Every case runs as a
 normal session in a disposable fork, so clicking any result opens the full transcript, files and raw
 requests. One click runs a suite across selected models. Built-in suites: tool basics (sim), shell data
 tasks (sim), coding with tests (vm), chat reasoning/knowledge sample (none), isolation probes (vm+sim,

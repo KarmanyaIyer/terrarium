@@ -181,13 +181,37 @@ export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { typ
   return { pass, detail: lines.join("\n") };
 }
 
-export async function gradeCommand(rt: EnvRuntime, check: Extract<EvalCheck, { type: "command" }>, hidden: EvalCase["hiddenFiles"]): Promise<Grade> {
+const COMMAND_TIMEOUT_SEC = 170;
+
+/**
+ * Shell command check, pass on exit 0. In a VM the guest's grade.py (root) kills every agent process, then
+ * runs the command as the agent (uid 1000, never root, can't read /grader) in /workspace with a clean PATH
+ * and an empty HOME. A command that runs the agent's code can be cheated by that code (os._exit(0)); hidden
+ * tests belong in a `tests` check. Sim envs have no users or hidden files: the command runs in the sim.
+ */
+export async function gradeCommand(rt: EnvRuntime, check: Extract<EvalCheck, { type: "command" }>): Promise<Grade> {
   await rt.killAgentProcesses();
-  await writeHiddenFiles(rt, hidden);
-  const r = await rt.exec(check.command, { as: "root", cwd: "/workspace", timeoutMs: 180_000 });
-  const out = `${r.stdout}${r.stderr ? `\n${r.stderr}` : ""}`.trim();
-  const tail = out.length > 1500 ? `...${out.slice(-1500)}` : out;
-  return { pass: r.exitCode === 0, detail: `exit ${r.exitCode}${r.timedOut ? " (timed out)" : ""}${tail ? `\n${tail}` : ""}` };
+  const tail = (s: string) => (s.length > 1500 ? `...${s.slice(-1500)}` : s);
+  if (rt.type !== "vm") {
+    const r = await rt.exec(check.command, { as: "root", cwd: "/workspace", timeoutMs: 180_000 });
+    const out = `${r.stdout}${r.stderr ? `\n${r.stderr}` : ""}`.trim();
+    return { pass: r.exitCode === 0, detail: `exit ${r.exitCode}${r.timedOut ? " (timed out)" : ""}${out ? `\n${tail(out)}` : ""}` };
+  }
+  const r = await rt.exec(`exec /usr/bin/python3 -I -S ${GRADE_PY} --command ${shq(check.command)} --workspace /workspace --timeout ${COMMAND_TIMEOUT_SEC} --id c${Date.now().toString(36)}`, {
+    as: "root",
+    cwd: "/",
+    timeoutMs: (COMMAND_TIMEOUT_SEC + 60) * 1000,
+  });
+  let g: { exitCode?: number | null; timedOut?: boolean; output?: string; error?: string | null; pass?: boolean };
+  try {
+    g = JSON.parse(r.stdout.trim().split("\n").pop() ?? "") as typeof g;
+  } catch {
+    return { pass: false, detail: `grader output unreadable (exit ${r.exitCode}${r.timedOut ? ", timed out" : ""})\n${tail(`${r.stdout}\n${r.stderr}`.trim())}` };
+  }
+  const pass = r.exitCode === 0 && g.pass === true && g.exitCode === 0 && !g.timedOut && !g.error;
+  const out = (g.output ?? "").trim();
+  const head = g.error ? `grader error: ${g.error}` : `exit ${g.exitCode ?? "?"}${g.timedOut ? ` (timed out after ${COMMAND_TIMEOUT_SEC}s)` : ""}`;
+  return { pass, detail: `${head}${out ? `\n${tail(out)}` : ""}` };
 }
 
 /** Text of every file under /workspace (capped), read from the host side. The canary never enters the env. */

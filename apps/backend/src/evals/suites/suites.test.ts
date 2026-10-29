@@ -80,10 +80,15 @@ describe("validator", () => {
     );
   });
 
-  test("rejects command checks that reference missing hidden files", () => {
+  test("rejects command checks that use /grader or hidden files: they run as the agent (review 2, #10)", () => {
     const c = { ...base, envType: "vm", check: { type: "command", command: "python3 /grader/t.py" } };
+    const problems = validateSuite(suite([{ ...c, hiddenFiles: [{ path: "/grader/t.py", content: "" }] }]));
+    assert.ok(problems.some((p) => /can't read \/grader; put hidden tests in a tests check/.test(p)), problems.join("\n"));
     assert.notDeepEqual(validateSuite(suite([c])), []);
-    assert.deepEqual(validateSuite(suite([{ ...c, hiddenFiles: [{ path: "/grader/t.py", content: "" }] }])), []);
+    assert.notDeepEqual(validateSuite(suite([{ ...c, check: { type: "command", command: "true" }, hiddenFiles: [{ path: "/grader/t.py", content: "" }] }])), []);
+    assert.deepEqual(validateSuite(suite([{ ...c, check: { type: "command", command: "python3 -c 'import json; json.load(open(\"out.json\"))'" } }])), []);
+    const tests = { ...base, envType: "vm", hiddenFiles: [{ path: "/grader/t.py", content: "" }], check: { type: "tests", file: "/grader/t.py" } };
+    assert.deepEqual(validateSuite(suite([tests])), []);
   });
 
   test("rejects bad answers, paths and duplicate ids", () => {

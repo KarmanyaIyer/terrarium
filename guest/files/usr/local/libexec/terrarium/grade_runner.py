@@ -2,8 +2,9 @@
 whose imports of the candidate's modules resolve to proxies into the candidate process, runs it, and
 writes the counts to --results (a grader-only dir). No candidate code ever runs in this process.
 
-Hidden tests can `import terrarium_grading` for `workspace` (path of the workspace copy, for reading
-the candidate's source) and `stdlib(name)` (import a standard-library module locally)."""
+Hidden tests can `import terrarium_grading` for `workspace` (a copy of the workspace taken before any
+candidate code ran, root-owned and read-only in the guest, for reading the candidate's source) and
+`stdlib(name)` (import a standard-library module locally)."""
 
 import importlib.abc
 import importlib.machinery
@@ -75,7 +76,7 @@ def short(err):
     return (lines[-1] if lines else err[0].__name__)[:300]
 
 
-EXC_LINE = re.compile(r"^[A-Za-z_][\w.]*(Error|Exception|Exit|Interrupt|Warning)\b")
+EXC_LINE = re.compile(r"^[A-Za-z_][\w.]*(Error|Exception|Exit|Interrupt|Warning|CandidateGone|Unsendable)\b")
 
 
 def summary(tb, kind):
@@ -91,13 +92,18 @@ def main():
     fd = int(opt("--fd"))
     tests = opt("--tests")
     results = opt("--results")
-    workspace = opt("--workspace")
+    source = opt("--source") or opt("--workspace")
     modules = [m for m in (opt("--modules") or "").split(",") if m]
-    timeout = float(opt("--op-timeout", "30"))
+    # --budget: seconds this runner may spend; a candidate call still running at the end of it fails
+    # (and every later one), so the counts are still written before grade.py's own limit kills us.
+    budget = opt("--budget")
+    op_timeout = opt("--op-timeout")
+    deadline = time.monotonic() + float(budget) if budget else None
+    timeout = float(op_timeout) if op_timeout else None if budget else 30.0
 
-    client = Client(socket.socket(fileno=fd), timeout=timeout)
+    client = Client(socket.socket(fileno=fd), timeout=timeout, deadline=deadline)
     support = types.ModuleType("terrarium_grading")
-    support.workspace = workspace
+    support.workspace = source
     support.stdlib = importlib.import_module
     sys.modules["terrarium_grading"] = support
     sys.meta_path.insert(0, CandidateFinder(client, modules))

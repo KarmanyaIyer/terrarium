@@ -15,7 +15,7 @@ import type { EnvRuntime, NetAttempt } from "../types.ts";
 import { dataDir } from "./gondolin.ts";
 import { type VmRuntime, createVmDriver } from "./driver.ts";
 import { REPO_DIR } from "../../config.ts";
-import { gradeTests } from "../../evals/graders.ts";
+import { gradeCommand, gradeTests, writeHiddenFiles } from "../../evals/graders.ts";
 
 const enabled = process.env.TERRARIUM_VM_TESTS === "1";
 const driver = createVmDriver();
@@ -438,6 +438,89 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
     await sh(a, "rm -rf /workspace/* /workspace/.ref /grader", { as: "root" });
     record("grading", { gradeMs });
+  });
+
+  test("grading: argument mutation is seen, tests read a sealed source copy, command checks run as the agent (review 2, #1, #2, #10)", async () => {
+    const tree = (dir: string) =>
+      Object.fromEntries(
+        fs
+          .readdirSync(dir, { recursive: true, withFileTypes: true })
+          .filter((d) => d.isFile())
+          .map((d) => [path.relative(dir, path.join(d.parentPath, d.name)), fs.readFileSync(path.join(d.parentPath, d.name), "utf8")]),
+      ) as Record<string, string>;
+    const solved = (id: string) => ({ ...tree(path.join(REPO_DIR, "evals/cases/coding", id, "workspace")), ...tree(path.join(REPO_DIR, "evals/reference/coding", id)) });
+    const put = async (files: Record<string, string>) => {
+      await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+      for (const [p, content] of Object.entries(files)) {
+        await sh(a, `mkdir -p "$(dirname /workspace/${p})"`);
+        await a.writeFile(`/workspace/${p}`, content, { as: "agent" });
+      }
+    };
+    const check = { type: "tests" as const, file: "/grader/test_hidden.py", timeoutSec: 60 };
+    const gradeCase = async (id: string, files: Record<string, string>) => {
+      await put(files);
+      return gradeTests(a, check, [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(REPO_DIR, "evals/cases/coding", id, "grader/test_hidden.py"), "utf8") }]);
+    };
+
+    // #1: a Warehouse that keeps the caller's dict and changes it in reserve() fails, as in one process.
+    const inv = solved("fix-inventory");
+    const invOk = await gradeCase("fix-inventory", inv);
+    assert.equal(invOk.pass, true, invOk.detail);
+    assert.match(invOk.detail, /^6\/6 hidden tests passed/);
+    const alias = { ...inv, "inventory/service.py": inv["inventory/service.py"]!.replace("self.stock = dict(stock or {})", "self.stock = stock if stock is not None else {}") };
+    const invBad = await gradeCase("fix-inventory", alias);
+    assert.equal(invBad.pass, false);
+    assert.match(invBad.detail, /^5\/6 hidden tests passed/);
+    assert.match(invBad.detail, /FAIL test_caller_dict_not_mutated/);
+
+    // #2: candidate code rewriting report.py (its own copy, or the tests' copy next to it) changes nothing
+    // the hidden tests read.
+    const rep = solved("refactor-report");
+    const repOk = await gradeCase("refactor-report", rep);
+    assert.equal(repOk.pass, true, repOk.detail);
+    const starter = fs.readFileSync(path.join(REPO_DIR, "evals/cases/coding/refactor-report/workspace/report.py"), "utf8");
+    const refactored = rep["report.py"]!;
+    const helper = refactored.slice(refactored.indexOf("def _summarize"), refactored.indexOf("def revenue_by_region"));
+    const swap = [
+      starter,
+      helper,
+      "import os as _os",
+      `_new = ${JSON.stringify(refactored)}`,
+      "for _p in (__file__, _os.path.join(_os.getcwd(), '..', 'src', 'report.py')):",
+      "    try:",
+      "        open(_p, 'w').write(_new)",
+      "        print('WROTE', _os.path.basename(_os.path.dirname(_os.path.abspath(_p))))",
+      "    except OSError as _e:",
+      "        print('denied', _os.path.basename(_os.path.dirname(_os.path.abspath(_p))), _e.errno)",
+      "",
+    ].join("\n");
+    const repBad = await gradeCase("refactor-report", { ...rep, "report.py": swap });
+    assert.equal(repBad.pass, false, repBad.detail);
+    assert.match(repBad.detail, /^2\/3 hidden tests passed/);
+    assert.match(repBad.detail, /FAIL test_wrappers_use_helper/);
+    assert.match(repBad.detail, /WROTE ws/, "the candidate's own copy is writable");
+    assert.match(repBad.detail, /denied src 13/, "the tests' copy is not");
+
+    // #10: command checks run as uid 1000 with a clean PATH and HOME, after every agent process is killed,
+    // and can't read /grader.
+    await put({ "out.txt": "42\n" });
+    await writeHiddenFiles(a, [{ path: "/grader/secret.txt", content: "SECRET" }]);
+    const cmd = (command: string) => gradeCommand(a, { type: "command", command });
+    const who = await cmd('echo "uid=$(id -u) home=$HOME path=$PATH"; test "$(id -u)" = 1000 && grep -qx 42 out.txt');
+    assert.equal(who.pass, true, who.detail);
+    assert.match(who.detail, /uid=1000 home=\/var\/lib\/terrarium-grade\/c\w+\/home path=\/usr\/local\/sbin:/);
+    const secret = await cmd("cat /grader/secret.txt");
+    assert.equal(secret.pass, false);
+    assert.doesNotMatch(secret.detail, /SECRET/);
+    await sh(a, "mkdir -p ~/.local/bin && printf '#!/bin/sh\\nexit 0\\n' > ~/.local/bin/grep && chmod +x ~/.local/bin/grep");
+    assert.equal((await sh(a, "grep -q 41 /workspace/out.txt")).code, 0, "the shim is on the agent's own PATH");
+    assert.equal((await cmd("grep -q 41 out.txt")).pass, false, "a shim in the agent's ~/.local/bin is not on the check's PATH");
+    await a.exec("setsid sh -c 'while :; do date +%s%N > /workspace/beat; sleep 0.05; done' > /dev/null 2>&1 < /dev/null &");
+    await new Promise((r) => setTimeout(r, 300));
+    const still = await cmd('test -s beat && a=$(cat beat) && sleep 0.5 && test "$a" = "$(cat beat)"');
+    assert.equal(still.pass, true, `the agent's daemon was still running: ${still.detail}`);
+    assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
+    await sh(a, "rm -rf /workspace/* /grader /home/agent/.local/bin/grep", { as: "root" });
   });
 
   test("an env from an older image gets the current helpers and grader user at boot", async () => {
