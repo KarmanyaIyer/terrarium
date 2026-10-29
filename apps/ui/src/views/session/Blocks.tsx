@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type ReactNode } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, CircleX, FileDiff, Loader2, Minimize2, Play, Wrench } from "lucide-react";
 import type { SessionSummary } from "@terrarium/shared";
 import type { CallItem, Derived, RowItem, ToolItem, UserItem } from "../../lib/trace";
@@ -241,6 +241,22 @@ function Output({ chunks }: { chunks: { stream: "stdout" | "stderr"; text: strin
   );
 }
 
+/** True when the element's single line is cut off (its full text is wider than its box). */
+function useCutOff(text: string) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setCut(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text]);
+  return { ref, cut: cut || text.includes("\n") };
+}
+
 export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: ToolItem; t0: number; selected: boolean }) {
   const [sent, setSent] = useState(false);
   const live = !it.end;
@@ -258,6 +274,7 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
         ]
       : []);
   const cc = changeCounts(it.fs);
+  const cmdCut = useCutOff(label);
   const showDiffs = (kind === "edit" || kind === "write") && it.fs.length > 0;
 
   let cmd: ReactNode;
@@ -274,7 +291,7 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
     <div className={`blk tool k-${kind}${selected ? " selected" : ""}${failed ? " failed" : ""}`}>
       <div className="blk-head" onClick={() => select({ kind: "tool", toolCallId: it.toolCallId, callId: it.callId, seq: it.seq }, { follow: false })}>
         <span className="tool-name">{it.name}</span>
-        <span className="tool-cmd mono truncate selectable" title={label}>
+        <span ref={cmdCut.ref} className="tool-cmd mono truncate selectable" title={label}>
           {cmd}
         </span>
         <span className="blk-spacer" />
@@ -328,6 +345,16 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
         )}
         <Stamp ts={it.ts} t0={t0} />
       </div>
+      {cmdCut.cut && (
+        <Expander lines={label.split("\n").length} limit={8}>
+          {() => (
+            <pre className="well cmd selectable">
+              {kind === "bash" && <span className="tool-prompt">$ </span>}
+              {label}
+            </pre>
+          )}
+        </Expander>
+      )}
       {sent && it.end && (
         <div className="tool-sent">
           <div className="tool-sent-head dim">
@@ -505,13 +532,20 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
         }
       }
       const reasonCls = ev.reason === "done" ? "" : ev.reason === "stopped" ? "warn" : "err";
+      // a run you stopped, or one that hit the turn limit, picks up where it left off
+      const resumable = (ev.reason === "stopped" || ev.reason === "max_turns") && idx === d.items.length - 1 && session.status === "idle";
       return (
         <div className="row-ev run-end">
           <span className="run-end-line" />
-          <span className={`chip ${reasonCls}`}>{ev.reason}</span>
+          <span className={`chip ${reasonCls}`}>{ev.reason === "max_turns" ? "max turns" : ev.reason}</span>
           <span className="dim num">
             {turns} turn{turns === 1 ? "" : "s"}  {fmtMs(it.ts - startTs)}  {fmtInt(tokens)} tokens out
           </span>
+          {resumable && (
+            <button className="btn sm" onClick={() => void act("Continue", (b) => b.continueSession(session.id))}>
+              <Play /> Continue
+            </button>
+          )}
           <span className="run-end-line" />
         </div>
       );

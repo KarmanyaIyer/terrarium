@@ -45,11 +45,18 @@
   width: 360px;
 }
 .sh-stats {
-  font-size: var(--fs-sm);
-  white-space: pre;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 9px;
+  height: 16px;
+  line-height: 16px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: var(--fs-sm);
   min-width: 0;
+}
+.sh-stats > span {
+  white-space: nowrap;
 }
 
 .hdr-btn {
@@ -194,6 +201,17 @@
   border-radius: 2px;
   background: var(--c-model);
 }
+.mp-base {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px 0 0 2px;
+  background: var(--c-other-mem);
+}
+.mp-base + .mp-fill {
+  border-radius: 0 2px 2px 0;
+}
 .mp-fill.warn {
   background: var(--warn);
 }
@@ -287,7 +305,7 @@
 }
 .tl-labels {
   position: relative;
-  width: 64px;
+  width: 78px;
   flex: none;
 }
 .tl-label {
@@ -368,8 +386,32 @@
   pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
-.tl-text.dark {
+/* label ink per fill, checked at >= 4.4:1 in both themes */
+.tl-text.on-gen {
+  fill: var(--ink-on-model);
+}
+.tl-text.on-pre {
+  fill: var(--ink-on-pre);
+}
+.tl-text.on-think {
+  fill: #fff;
+  stroke: var(--c-model);
+  stroke-width: 2.5px;
+  paint-order: stroke;
+}
+.tl-text.on-bash {
+  fill: var(--ink-on-bash);
+}
+.tl-text.on-read,
+.tl-text.on-write,
+.tl-text.on-edit {
   fill: #1b1b1b;
+}
+.tl-text.on-other {
+  fill: var(--ink-on-other);
+}
+.tl-text.on-err {
+  fill: var(--ink-on-err);
 }
 .tl-text.ink {
   fill: var(--fg-2);
@@ -417,18 +459,18 @@
 .tl-now circle {
   fill: var(--accent-hi);
 }
+/* zoom controls sit in the label column's axis row, so they never cover the live edge */
 .tl-tools {
   position: absolute;
-  right: 6px;
-  top: 4px;
+  left: 24px;
+  bottom: 2px;
   display: flex;
-  gap: 1px;
+  gap: 0;
   opacity: 0;
   transition: opacity 0.15s;
-  background: var(--bg-1);
-  border-radius: var(--r-sm);
 }
-.timeline:hover .tl-tools {
+.tl-wrap:hover .tl-tools,
+.tl-tools:focus-within {
   opacity: 1;
 }
 .tip-cmd {
@@ -462,8 +504,9 @@
 .jump-bottom {
   position: sticky;
   bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
+  display: flex;
+  width: max-content;
+  margin: 0 4px 0 auto;
   z-index: 3;
   box-shadow: var(--shadow-pop);
 }
@@ -1176,9 +1219,11 @@
 }
 .tl-tools {
   z-index: 3;
-  padding: 1px;
-  background: var(--bg-2);
-  box-shadow: 0 0 0 0.5px var(--line-3), 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+/* the full command, shown when the header line cuts it off */
+.well.cmd {
+  color: var(--fg-1);
+  word-break: break-all;
 }
 /* terminal output keeps its columns; scroll sideways instead of wrapping */
 .well.out {

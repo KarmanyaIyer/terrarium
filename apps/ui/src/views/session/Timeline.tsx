@@ -93,7 +93,7 @@ const isSel = (sel: Selection | null, kind: Selection["kind"], id: string) =>
   sel.kind === kind &&
   ((sel.kind === "call" && sel.callId === id) || (sel.kind === "tool" && sel.toolCallId === id) || (sel.kind === "net" && sel.entryId === id));
 
-export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: string }) {
+export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStatus: string; hasEnv: boolean }) {
   const selection = useStore((s) => s.selection);
   const live = d.running || sessionStatus === "running";
   const now = useNow(live ? "frame" : "5s");
@@ -173,8 +173,10 @@ export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: stri
     return () => el.removeEventListener("wheel", onWheel);
   });
 
+  // a chat has no tools, files or network: draw only the model lane
+  const lanes = hasEnv || d.tools.length || d.nets.length || d.fsSteps.length ? LANES : LANES.slice(0, 1);
   const laneY = (i: number) => TOP + i * (LANE_H + LANE_GAP);
-  const h = TOP + LANES.length * (LANE_H + LANE_GAP) + AXIS_H;
+  const h = TOP + lanes.length * (LANE_H + LANE_GAP) + AXIS_H;
 
   const tipAt = (e: React.MouseEvent, content: ReactNode) => setTip({ x: e.clientX, y: e.clientY, content });
 
@@ -258,7 +260,7 @@ export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: stri
   return (
     <div className="timeline">
       <div className="tl-labels" style={{ height: h }}>
-        {LANES.map((l, i) => (
+        {lanes.map((l, i) => (
           <div key={l} className="tl-label" style={{ top: laneY(i), height: LANE_H }}>
             {l}
           </div>
@@ -281,13 +283,13 @@ export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: stri
             </pattern>
           </defs>
           {/* lane tracks */}
-          {LANES.map((l, i) => (
+          {lanes.map((l, i) => (
             <rect key={l} x={0} y={laneY(i) + LANE_H / 2 - 0.5} width={Math.max(M.width, viewW)} height={1} className="tl-track" />
           ))}
           {/* folded idle gaps */}
           {M.gaps.map((g, i) => (
             <g key={i} className="tl-gap">
-              <rect x={g.x - GAP_PX / 2 + 3} y={TOP - 2} width={GAP_PX - 6} height={LANES.length * (LANE_H + LANE_GAP)} rx={2} />
+              <rect x={g.x - GAP_PX / 2 + 3} y={TOP - 2} width={GAP_PX - 6} height={lanes.length * (LANE_H + LANE_GAP)} rx={2} />
               <title>{`${fmtMs(g.ms)} idle, folded`}</title>
               <path d={`M${g.x - 3} ${h - AXIS_H + 4} l3 -3 l3 3`} />
             </g>
@@ -341,7 +343,19 @@ export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: stri
             const sel = isSel(selection, "call", c.callId);
             const y = laneY(0);
             const w = x1 - x0;
-            const label = c.end?.usage ? `${fmtTok(c.end.usage.promptTokens)}→${fmtTok(c.end.usage.completionTokens)}` : running ? "" : "";
+            const label = c.end?.usage ? `${fmtTok(c.end.usage.promptTokens)}→${fmtTok(c.end.usage.completionTokens)}` : "";
+            // the label goes on one segment and takes that segment's ink, so it stays legible in both themes
+            const tw = label.length * 5.6 + 8;
+            const genX = xt ?? xp;
+            const lbl = !label
+              ? null
+              : x1 - genX >= tw
+                ? { x: genX + 4, cls: "on-gen" }
+                : xp - x0 >= tw
+                  ? { x: x0 + 4, cls: "on-pre" }
+                  : xt != null && xt - xp >= tw
+                    ? { x: xp + 4, cls: "on-think" }
+                    : null;
             return (
               <g
                 key={c.callId}
@@ -411,8 +425,8 @@ export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: stri
                 {x1 > (xt ?? xp) + 0.5 && <rect x={xt ?? xp} y={y} width={x1 - (xt ?? xp)} height={LANE_H} className="tl-gen" />}
                 {err && <rect x={x1 - 2} y={y} width={2} height={LANE_H} className="tl-err-end" />}
                 {sel && <rect x={x0 - 1.5} y={y - 1.5} width={Math.max(w, 2) + 3} height={LANE_H + 3} rx={3} className="tl-sel" />}
-                {w > 54 && label && (
-                  <text x={x0 + 5} y={y + LANE_H / 2 + 3.5} className="tl-text">
+                {lbl && (
+                  <text x={lbl.x} y={y + LANE_H / 2 + 3.5} className={`tl-text ${lbl.cls}`}>
                     {label}
                   </text>
                 )}
@@ -442,7 +456,7 @@ export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: stri
                 <rect x={x0} y={y} width={w} height={LANE_H} rx={2} style={{ fill: failed ? "var(--err)" : `var(--c-${toolKind(t.name)})` }} />
                 {sel && <rect x={x0 - 1.5} y={y - 1.5} width={w + 3} height={LANE_H + 3} rx={3} className="tl-sel" />}
                 {fits && (
-                  <text x={x0 + 5} y={y + LANE_H / 2 + 3.5} className={`tl-text${toolKind(t.name) === "edit" || toolKind(t.name) === "read" ? " dark" : ""}`}>
+                  <text x={x0 + 5} y={y + LANE_H / 2 + 3.5} className={`tl-text on-${failed ? "err" : toolKind(t.name)}`}>
                     {label}
                   </text>
                 )}

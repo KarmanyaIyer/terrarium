@@ -2,13 +2,14 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, Square } from "lucide-react";
 import type { ContextUsage, SessionSummary } from "@terrarium/shared";
 import { act, useStore } from "../../state/store";
-import { fmtInt, fmtTok } from "../../lib/format";
+import { fmtCtx, fmtInt, fmtTok } from "../../lib/format";
 import { tokensOf } from "../../lib/tokens";
 import { fitLabel, modelName } from "../../components/ModelPicker";
 import { estimate } from "../../lib/memory";
 
-function baseUsage(s: SessionSummary): ContextUsage {
+function baseUsage(s: SessionSummary, last?: ContextUsage): ContextUsage {
   if (s.context) return s.context;
+  if (last) return last;
   const sys = s.harness === "chat" ? 12 : 612;
   return {
     window: s.contextWindow,
@@ -20,8 +21,20 @@ function baseUsage(s: SessionSummary): ContextUsage {
   };
 }
 
+/** Latest `context` event in the loaded trace, for summaries that don't carry one. */
+function useTraceContext(sessionId: string): ContextUsage | undefined {
+  const events = useStore((s) => s.traces[sessionId]?.events);
+  if (!events) return undefined;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+    if (e.type === "context") return e.usage;
+  }
+  return undefined;
+}
+
 export function ContextMeter({ session, draft }: { session: SessionSummary; draft: string }) {
-  const u = baseUsage(session);
+  const traceCtx = useTraceContext(session.id);
+  const u = baseUsage(session, traceCtx);
   // the window/reserve can change after the last call (picker); use the session's current values
   const window = session.contextWindow;
   const reserve = session.maxOutputTokens;
@@ -63,7 +76,7 @@ export function ContextMeter({ session, draft }: { session: SessionSummary; draf
         </span>
         <span className="ctx-total" title={est ? "Estimated at ~3.8 characters per token until the server reports usage" : "From the last server usage report"}>
           {est ? "~" : ""}
-          {fmtTok(used + reserve)} / {fmtTok(window)}
+          {fmtTok(used + reserve)} / {fmtCtx(window)}
         </span>
       </div>
     </div>
@@ -116,7 +129,7 @@ export function Composer({ session }: { session: SessionSummary }) {
         <div className="composer-actions">
           {fit && fit.cls !== "ok" && !running && (
             <span className={`composer-fit ${fit.cls}-text`} title={`${model?.name} is not loaded; sending loads it at ${fmtTok(session.contextWindow)} context`}>
-              {fit.cls === "err" ? `Won't fit: ${fit.text}` : `Loading goes ${fit.text}`}
+              {fit.cls === "err" ? `Won't fit: ${fit.text}` : "Over budget once loaded"}
             </span>
           )}
           {running ? (
