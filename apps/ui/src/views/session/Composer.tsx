@@ -33,16 +33,28 @@ function useTraceContext(sessionId: string): ContextUsage | undefined {
   return undefined;
 }
 
+/** The backend refuses a counted prompt that leaves less than this for the reply (64 margin + 128 minimum). */
+const MIN_ROOM = 192;
+
 export function ContextMeter({ session, draft }: { session: SessionSummary; draft: string }) {
   const traceCtx = useTraceContext(session.id);
   const u = baseUsage(session, traceCtx);
-  // the window/reserve can change after the last call (picker); use the session's current values
+  const running = session.status === "running" || session.status === "stopping";
+  // the window/reserve can change after the last call (picker); use the session's current values. During a run the
+  // last count is the call in flight, with the output budget it was actually given.
   const window = session.contextWindow;
-  const reserve = session.maxOutputTokens;
+  const reserve = running && u.source === "tokenizer" ? u.outputReserve : session.maxOutputTokens;
   const draftTok = draft ? tokensOf(draft) : 0;
   const used = u.systemAndTools + u.history + draftTok;
   const free = Math.max(0, window - used - reserve);
   const over = used + reserve > window;
+  // Over the window, the harness compacts history before the call; what compaction can't remove (system prompt and
+  // tools plus the new message) still has to leave room for a reply, or the request is refused with the numbers.
+  const tooLong = u.systemAndTools + draftTok + MIN_ROOM > window;
+  const verdict = !over ? null : tooLong ? (draftTok ? "message too long" : "over the window") : draftTok ? "compacts on send" : "compacts next call";
+  const verdictTitle = tooLong
+    ? `System prompt and tools (${fmtInt(u.systemAndTools)}) plus ${draftTok ? `this message (~${fmtInt(draftTok)})` : "the history"} leave less than ${MIN_ROOM} tokens of the ${fmtInt(window)}-token window for a reply: the request would be refused. Raise the context window or shorten the message.`
+    : `${fmtInt(used + reserve)} tokens with the ${fmtInt(reserve)}-token output reserve: older steps are dropped (and oversized tool outputs shortened) before the next call so it fits ${fmtInt(window)}.`;
   const segs = [
     { k: "sys", label: "System + tools", v: u.systemAndTools, cls: "sys" },
     { k: "hist", label: "History", v: u.history, cls: "hist" },
@@ -51,6 +63,13 @@ export function ContextMeter({ session, draft }: { session: SessionSummary; draf
   ];
   const pctUsed = ((used + reserve) / window) * 100;
   const est = u.source === "estimate" || draftTok > 0;
+  const totalTitle = draftTok
+    ? `This message estimated at ~3.8 characters per token; the rest ${u.source === "estimate" ? "estimated" : u.source === "tokenizer" ? "counted by the model's tokenizer" : "from the last server usage report"}`
+    : u.source === "estimate"
+      ? "Estimated (the model's tokenizer was not reachable)"
+      : u.source === "tokenizer"
+        ? "Counted by the model's tokenizer before the call"
+        : "From the last server usage report (prompt + reply)";
   let x = 0;
   return (
     <div className={`ctx-meter${over ? " over" : pctUsed > 85 ? " near" : ""}`}>
@@ -75,7 +94,12 @@ export function ContextMeter({ session, draft }: { session: SessionSummary; draf
           <span className="ctx-key free" />
           <span className="dim">Free</span> <span className={over ? "err-text" : pctUsed > 85 ? "warn-text" : undefined}>{fmtTok(free)}</span>
         </span>
-        <span className="ctx-total" title={est ? "Estimated at ~3.8 characters per token until the server reports usage" : "From the last server usage report"}>
+        {verdict && (
+          <span className={`ctx-verdict ${tooLong ? "err-text" : "warn-text"}`} title={verdictTitle}>
+            {verdict}
+          </span>
+        )}
+        <span className="ctx-total" title={totalTitle}>
           {est ? "~" : ""}
           {fmtTok(used + reserve)} / {fmtCtx(window)}
         </span>

@@ -1,7 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, CircleX, FileDiff, Loader2, Minimize2, Play, Wrench } from "lucide-react";
-import type { SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
-import type { CallItem, Derived, RowItem, ToolItem, UserItem } from "../../lib/trace";
+import type { SessionSummary, ShortenedOutput, UpdateSessionRequest } from "@terrarium/shared";
+import type { CallItem, Derived, Ev, RowItem, ToolItem, UserItem } from "../../lib/trace";
 import { argsObj, changeCounts, toolFailed, toolKind, toolLabel } from "../../lib/trace";
 import { act, select, showFilesFor, useStore } from "../../state/store";
 import { exactTime, fmtBytes, fmtCtx, fmtInt, fmtMs, fmtTok, fmtTps, offsetTime } from "../../lib/format";
@@ -144,8 +144,17 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
             </>
           ) : live ? (
             <>
-              <span>{fmtInt(it.start.promptTokensEst)} →</span>
-              <span className="live-count">{pending ? "prefill" : `${fmtInt(liveTok)} tok`}</span>
+              <span title={it.start.promptCount === "tokenizer" ? "prompt tokens, counted by the model's tokenizer before sending" : "prompt tokens, estimated"}>
+                {it.start.promptCount === "tokenizer" ? "" : "~"}
+                {fmtInt(it.start.promptTokensEst)} →
+              </span>
+              {it.livePartial && !pending ? (
+                <span className="live-count warn-text" title="Counted from the chunks received since this view opened; the full count shows when the reply ends">
+                  {fmtInt(liveTok)}+ tok
+                </span>
+              ) : (
+                <span className="live-count">{pending ? "prefill" : `${fmtInt(liveTok)} tok`}</span>
+              )}
               {it.livePartial && (
                 <span className="chip warn" title="Missed part of the reply (opened mid-reply, or dropped while the connection was slow); the whole reply shows when it ends">
                   partial
@@ -548,24 +557,89 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
   );
 }
 
-export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: RowItem; t0: number; session: SessionSummary; d: Derived }) {
-  const ev = it.event;
-  const blocked = useStore((s) => (ev.type === "run_end" ? runBlocked(session.envId ? s.envs[session.envId] : undefined, session) : undefined));
-  switch (ev.type) {
-    case "compaction":
-      return (
-        <div className="row-ev compaction" onClick={() => select({ kind: "event", seq: it.seq })}>
-          <Minimize2 size={12} />
+/** Compaction: what was removed or shortened, with the numbers; a shortened tool output's original is one click away. */
+function CompactionRow({ ev, seq, ts, t0, d }: { ev: Ev<"compaction">; seq: number; ts: number; t0: number; d: Derived }) {
+  const about = ev.exact === false ? "~" : "";
+  return (
+    <div className="row-ev compaction" onClick={() => select({ kind: "event", seq })}>
+      <Minimize2 size={12} />
+      <div className="compaction-body">
+        <div className="compaction-line">
           <span>
-            Context compacted <span className="num">{fmtInt(ev.beforeTokens)} → {fmtInt(ev.afterTokens)}</span> tokens
+            Context compacted{" "}
+            <span className="num" title={ev.exact === false ? "estimated (the model's tokenizer was not reachable)" : "counted by the model's tokenizer"}>
+              {about}
+              {fmtInt(ev.beforeTokens)} → {about}
+              {fmtInt(ev.afterTokens)}
+            </span>{" "}
+            tokens
+            {ev.limit != null && <span className="dim num"> (limit {fmtInt(ev.limit)})</span>}
             {ev.removedTurns ? `, ${ev.removedTurns} turns dropped` : ""}
           </span>
           <span className="dim truncate row-note" title={ev.note}>
             {ev.note}
           </span>
-          <Stamp ts={it.ts} t0={t0} />
+          <Stamp ts={ts} t0={t0} />
         </div>
-      );
+        {ev.shortened?.map((s) => <ShortenedLine key={s.toolCallId} s={s} d={d} />)}
+      </div>
+    </div>
+  );
+}
+
+function ShortenedLine({ s, d }: { s: ShortenedOutput; d: Derived }) {
+  const backend = useStore((st) => st.backend);
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState<string | null>(null);
+  const tool = d.tools.find((t) => t.toolCallId === s.toolCallId);
+  const show = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(!open);
+    if (!open && text === null && s.originalBlob && backend) backend.getBlob(s.originalBlob).then(setText, (err) => setText(`Could not load the original: ${String(err)}`));
+  };
+  return (
+    <div className="compaction-short">
+      <span className="warn-text num">
+        {tool ? toolLabel(tool.name, tool.args) : s.toolName} output shortened for the model: kept the first {fmtInt(s.keptHead)} and last {fmtInt(s.keptTail)} of{" "}
+        {fmtInt(s.total)} tokens
+      </span>
+      {s.originalBlob && (
+        <button className="btn sm ghost" onClick={show}>
+          {open ? "Hide" : "Show"} original
+        </button>
+      )}
+      {open && <pre className="well selectable compaction-orig" onClick={(e) => e.stopPropagation()}>{text ?? "Loading…"}</pre>}
+    </div>
+  );
+}
+
+/** A request over the window: the remedy the error names, as a control (not on eval sessions). */
+function OverflowActions({ data, session }: { data: Record<string, number | string>; session: SessionSummary }) {
+  const models = useStore((s) => s.models);
+  const running = session.status === "running";
+  const want = typeof data.suggestedWindow === "number" ? data.suggestedWindow : undefined;
+  const model = models.find((m) => m.id === session.modelId);
+  if (session.evalRunId || !want || session.contextWindow >= want || (model && want > model.nativeContext)) return null;
+  return (
+    <div className="warn-actions">
+      <button
+        className="btn"
+        disabled={running}
+        title={`${model?.name ?? session.modelId} ${model?.loaded ? "reloads" : "loads"} at ${fmtCtx(want)} on the next call`}
+        onClick={() => patchSession("Raise context window", session.id, { contextWindow: want, maxOutputTokens: session.maxOutputTokens })}
+      >
+        Raise context window to {fmtCtx(want)}
+      </button>
+    </div>
+  );
+}
+
+export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: RowItem; t0: number; session: SessionSummary; d: Derived }) {
+  const ev = it.event;
+  const blocked = useStore((s) => (ev.type === "run_end" ? runBlocked(session.envId ? s.envs[session.envId] : undefined, session) : undefined));
+  switch (ev.type) {
+    case "compaction":
+      return <CompactionRow ev={ev} seq={it.seq} ts={it.ts} t0={t0} d={d} />;
     case "warning":
       if (ev.code === "output_truncated") return <TruncationWarning it={it} session={session} d={d} />;
       return (
@@ -583,6 +657,7 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
             <CircleX size={14} /> {ev.message}
           </div>
           {ev.detail && <pre className="well selectable">{ev.detail}</pre>}
+          {ev.code === "context_overflow" && <OverflowActions data={ev.data ?? {}} session={session} />}
         </div>
       );
     case "env_lifecycle":

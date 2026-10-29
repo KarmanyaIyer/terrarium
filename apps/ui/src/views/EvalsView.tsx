@@ -355,6 +355,8 @@ function RunView({ runId }: { runId: string }) {
 
 function CaseDetail({ c, results, onClose }: { c: EvalCase; results?: EvalResult[]; onClose: () => void }) {
   const models = useStore((s) => s.models);
+  // A result can name an env that never came to be (a failed fork, before that cleared it): no Files for those.
+  const envs = useStore((s) => s.envs);
   return (
     <div className="ev-casepanel">
       <div className="ev-casepanel-head">
@@ -397,7 +399,7 @@ function CaseDetail({ c, results, onClose }: { c: EvalCase; results?: EvalResult
                     <span className="dim mono truncate ev-case-result-detail" title={r.detail}>
                       {r.detail ?? ""}
                     </span>
-                    {r.envId && (
+                    {r.envId && envs[r.envId] && envs[r.envId].status !== "error" && (
                       <button
                         className="btn sm ghost"
                         title="Workspace after this run"

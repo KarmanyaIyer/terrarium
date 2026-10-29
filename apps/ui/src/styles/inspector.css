@@ -690,6 +690,17 @@
   border-bottom: 0.5px solid var(--line);
   flex-wrap: wrap;
 }
+.net-mode {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.net-summary {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
 .net-q {
   flex: 1;
   min-width: 100px;

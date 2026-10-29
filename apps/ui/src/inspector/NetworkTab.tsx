@@ -79,19 +79,21 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
             ]}
           />
         )}
-        <span className="blk-spacer" />
-        {capped && (
-          <span className="chip warn num" title={`The log has more rows; only the ${fmtInt(all.length)} with the latest attempts are loaded`}>
-            latest {fmtInt(all.length)}
+        {/* one group that wraps whole onto a second line in a narrow inspector, never word by word */}
+        <span className="net-summary">
+          {capped && (
+            <span className="chip warn num" title={`The log has more rows; only the ${fmtInt(all.length)} with the latest attempts are loaded`}>
+              latest {fmtInt(all.length)}
+            </span>
+          )}
+          {capped && limit != null && limit < NET_LIMIT_MAX && (
+            <button className="btn sm ghost" onClick={() => void loadNet(env.id, NET_LIMIT_MAX)}>
+              Load {fmtInt(NET_LIMIT_MAX)}
+            </button>
+          )}
+          <span className="dim num" title={attempts !== all.length ? `${fmtInt(all.length)} rows; identical attempts share a row` : undefined}>
+            {fmtInt(attempts)} attempt{attempts === 1 ? "" : "s"}, <span className={denied ? "err-text" : undefined}>{fmtInt(denied)} denied</span>
           </span>
-        )}
-        {capped && limit != null && limit < NET_LIMIT_MAX && (
-          <button className="btn sm ghost" onClick={() => void loadNet(env.id, NET_LIMIT_MAX)}>
-            Load {fmtInt(NET_LIMIT_MAX)}
-          </button>
-        )}
-        <span className="dim num" title={attempts !== all.length ? `${fmtInt(all.length)} rows; identical attempts share a row` : undefined}>
-          {fmtInt(attempts)} attempt{attempts === 1 ? "" : "s"}, <span className={denied ? "err-text" : undefined}>{fmtInt(denied)} denied</span>
         </span>
       </div>
       <div className="net-filters">
