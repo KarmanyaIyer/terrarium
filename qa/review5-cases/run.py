@@ -47,6 +47,9 @@ EXPECT = {
     "stdlib_assign_tests": (True, "inexact"),
     # 4: refcounts and referrers of candidate objects
     "refcount_leak": (False, "inexact"),
+    "gc_cycle_ok": (True, "pass"),
+    "cpu_time": (False, "inexact"),
+    "thread_leak": (False, "inexact"),
     # 5: identity of values that cross by value
     "tuple_identity": (False, "fail"),
     "tuple_identity_ok": (True, "pass"),

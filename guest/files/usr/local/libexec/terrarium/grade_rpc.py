@@ -61,6 +61,23 @@ import types
 import weakref
 from operator import is_not
 
+# The grader's own references: what tests or candidate code assign to these modules' attributes (mirrored to the
+# other process, or refused) never reaches the grader's protocol or its type checks. `_time` is the module itself
+# (time.tzset() changes its attributes).
+_time = time
+
+
+def _frozen(m):
+    return types.SimpleNamespace(**vars(m))
+
+
+time, json, struct, base64, datetime, decimal, fractions, io, weakref, threading, socket, collections, keyword, types = map(_frozen, (time, json, struct, base64, datetime, decimal, fractions, io, weakref, threading, socket, collections, keyword, types))
+id = builtins.id  # the tests' side may give candidate objects their candidate id (see Client.install_guards)
+_getrefcount = sys.getrefcount
+_getframe = sys._getframe
+_intern = sys.intern
+_path_join, _normpath, _isabs = os.path.join, os.path.normpath, os.path.isabs
+
 MAX_MSG = 64 << 20
 MAX_DEPTH = 100
 MAX_TEXT = 4000
@@ -252,8 +269,7 @@ _READ, _SAME = _pointer_reader()
 
 
 def _threaded():
-    t = sys.modules.get("threading")
-    return t is not None and t.active_count() > 1
+    return threading.active_count() > 1
 
 
 def shallow(v, base):
@@ -382,7 +398,7 @@ GRADER_CODE = frozenset((id(globals()),))
 def grader_frames(code):
     """How many frames on this thread's stack run code (module globals ids) of the grader's, the caller's included."""
     n = 0
-    f = sys._getframe(1)
+    f = _getframe(1)
     while f is not None:
         if id(f.f_globals) in code:
             n += 1
@@ -393,7 +409,7 @@ def grader_frames(code):
 def code_frames(code):
     """How many frames on this thread's stack run code not the grader's (the tests', the candidate's, the library's)."""
     n = 0
-    f = sys._getframe(1)
+    f = _getframe(1)
     while f is not None:
         if id(f.f_globals) not in code:
             n += 1
@@ -414,7 +430,7 @@ def guard_frames(readers, foreign, hit, unittest_reads):
     other side, inspect.stack() in a callback) isn't what one process would show it. Can't be removed once added."""
     busy = set()
     ident = threading.get_ident
-    getframe = sys._getframe
+    getframe = _getframe
     frame_type = types.FrameType
 
     def hook(event, args):
@@ -447,10 +463,39 @@ def guard_frames(readers, foreign, hit, unittest_reads):
     sys.addaudithook(hook)
 
 
+# id() on the tests' side of a candidate object: this bit set on its id in the candidate process.
+CANDIDATE_ID = 1 << 62
+
+
+def _guard(mod, name, check):
+    """Replace mod.name with a function that calls check(args) first (it raises when the answer can't be this
+    process's), then the original."""
+    real = getattr(mod, name, None)
+    if real is None:
+        return
+
+    def guarded(*args, **kwargs):
+        check(args)
+        return real(*args, **kwargs)
+
+    guarded.__name__ = guarded.__qualname__ = getattr(real, "__name__", name)
+    guarded.__doc__ = getattr(real, "__doc__", None)
+    setattr(mod, name, guarded)
+
+
+def _std(name):
+    """The real (imported) standard-library module, not the grader's frozen copy; None where it doesn't exist."""
+    try:
+        __import__(name)
+    except ImportError:
+        return None
+    return sys.modules[name]
+
+
 def synthetic_traceback():
     """A real traceback object for a test's traceback crossing to the candidate (`__exit__`'s third argument): it is
     one, and not None, as there; its frame is the grader's, which the frame guard keeps candidate code from reading."""
-    f = sys._getframe()
+    f = _getframe()
     return types.TracebackType(None, f, f.f_lasti, f.f_lineno)
 
 
@@ -613,7 +658,7 @@ def locale_set(name):
 
 def tz_now():
     """What time.tzset() last set: tzname, timezone, altzone, daylight."""
-    return [time.tzname[0], time.tzname[1], time.timezone, time.altzone, time.daylight]
+    return [_time.tzname[0], _time.tzname[1], _time.timezone, _time.altzone, _time.daylight]
 
 
 def env_raw():
@@ -659,7 +704,7 @@ def cwd_out(cur, root):
 def cwd_in(v, root):
     if not (isinstance(v, list) and len(v) == 2 and v[0] in ("rel", "abs") and type(v[1]) is str):
         raise ProtocolError("bad working directory")
-    return os.path.normpath(os.path.join(root, v[1])) if v[0] == "rel" else v[1]
+    return _normpath(_path_join(root, v[1])) if v[0] == "rel" else v[1]
 
 
 def path_changed(obj, snap):
@@ -674,7 +719,7 @@ def path_entry_in(v, root):
         raise ProtocolError("bad path entry")
     if v[0] == "abs":
         return v[1]
-    return root if v[1] == "." else os.path.join(root, v[1])
+    return root if v[1] == "." else _path_join(root, v[1])
 
 
 def path_compose(own, base, entries, j, e):
@@ -1081,11 +1126,11 @@ class Side:
 
     def _refs(self, n):
         obj = self.links[n]
-        return sys.getrefcount(obj)
+        return _getrefcount(obj)
 
     def _vrefs(self, k):
         obj = self.vobj.get(k)
-        return 0 if obj is None else sys.getrefcount(obj)
+        return 0 if obj is None else _getrefcount(obj)
 
     def _vin(self, x):
         """A keyed value from the other side: [key] (one that crossed before) or [key, value] / [key, str, 1]
@@ -1106,7 +1151,7 @@ class Side:
         if n == 3:
             if x[2] != 1 or t is not str:
                 raise ProtocolError("bad keyed value")
-            obj = sys.intern(obj)
+            obj = _intern(obj)
         self._vput(k, obj)
         return obj
 
@@ -1711,7 +1756,7 @@ def _p_copy(self):
 def _p_deepcopy(self, memo):
     import copy as _copy
 
-    f = sys._getframe(1)
+    f = _getframe(1)
     if (memo and any(k != id(memo) for k in memo)) or (f.f_back is not None and f.f_back.f_globals is vars(_copy) and f.f_back.f_code.co_name != "deepcopy"):
         raise Inexact("deepcopy of a structure holding a candidate object (only the object itself can be deep-copied)")
     c, rid = _target(self)
@@ -1845,6 +1890,7 @@ class Client(Side):
         self.sync_limit = SYNC_LIMIT if left is None else max(SYNC_MIN, SYNC_SHARE * left)
         self.state = {}  # process state as both sides last had it
         self.ended = None  # process state the candidate changed that this process can't take: every later call fails
+        self.ran = False  # candidate code has run (a call was made)
         self.orig = {"stdout": sys.stdout, "stderr": sys.stderr, "stdin": sys.stdin, "print": builtins.print, "input": builtins.input}
         self.stdin_obj = None  # the tests' io.StringIO stdin the candidate last got the text of
         self.env0 = dict(os.environ)
@@ -1880,7 +1926,7 @@ class Client(Side):
         if not self.lock.acquire(timeout=10):
             return
         try:
-            n = sys.getrefcount(p)
+            n = _getrefcount(p)
             if probe is not None:
                 probe.append(n)
                 return
@@ -1908,7 +1954,7 @@ class Client(Side):
 
     @staticmethod
     def _ref_users(ref):
-        return sys.getrefcount(ref)
+        return _getrefcount(ref)
 
     def _register(self, rid, obj):
         try:
@@ -2412,7 +2458,7 @@ class Client(Side):
         hit = self.path_lists.get(id(cur))
         if hit is None or hit[0] is not cur:
             hit = self.path_lists[id(cur)] = (cur, len(self.path_lists))
-        return [hit[1], [cwd_out(p, self.cwd0) if os.path.isabs(p) else ["abs", p] for p in cur], first, last + 1, [["abs", p] for p in base]]
+        return [hit[1], [cwd_out(p, self.cwd0) if _isabs(p) else ["abs", p] for p in cur], first, last + 1, [["abs", p] for p in base]]
 
     def _end(self, why):
         """Process state the two processes can no longer share: this call and every later one is a grader error."""
@@ -2619,6 +2665,7 @@ class Client(Side):
                 raise CandidateGone(self.gone)
             if self.ended:
                 raise Inexact(self.ended)
+            self.ran = True
             self.depth += 1
             try:
                 self._send({"req": dict(plain, op=op, ng=code_frames(GRADER_CODE))}, vals)
@@ -2698,6 +2745,92 @@ class Client(Side):
 
     def module(self, name):
         return self.call("import", name=name)
+
+    def _crossed(self, x):
+        """Whether x is, or stands for, an object the candidate's process has too (a candidate object, a linked
+        container, a by-value object that crossed, a test object the candidate holds): one process would count the
+        candidate's references to it, and its referrers and weak references there."""
+        if proxy_rid(x) is not None:
+            return True
+        i = id(x)
+        n = self.link_of.get(i)
+        if n is not None and self.links.get(n) is x:
+            return True
+        k = self.vkey.get(i)
+        if k is not None and self.vobj.get(k) is x:
+            return True
+        k = self.callback_ids.get(i)
+        return k is not None and self.callbacks.get(k) is x
+
+    def install_guards(self):
+        """Process introspection that can't see the candidate's half is a grader error rather than this process's
+        answer: refcounts, referrers, weak references and sizes of shared objects; once candidate code has run, the
+        process's objects, memory, CPU time and threads. gc.collect() collects in both processes (candidate objects
+        the tests let go of in a cycle die as in one process) and counts both. id() of a candidate object (or a value
+        it sent) is its id there with CANDIDATE_ID set: the same while the object lives, as in one process."""
+        gc, wr, tm = _std("gc"), _std("weakref"), _std("time")
+
+        def shared(what):
+            def check(args):
+                if any(map(self._crossed, args)):
+                    raise Inexact("%s of an object the candidate's process shares: one process would count what the candidate's code holds too" % what)
+
+            return check
+
+        def ran(what):
+            def check(args):
+                if self.ran:
+                    raise Inexact("%s: candidate code ran in another process, which this one doesn't count" % what)
+
+            return check
+
+        def proxied(what):
+            def check(args):
+                if any(proxy_rid(x) is not None or self._linked(x) for x in args):
+                    raise Inexact("%s of a candidate object or a container shared with the candidate's process: its stand-in here isn't the object" % what)
+
+            return check
+
+        _guard(sys, "getrefcount", shared("sys.getrefcount"))
+        _guard(gc, "get_referrers", shared("gc.get_referrers"))
+        _guard(wr, "getweakrefcount", shared("weakref.getweakrefcount"))
+        _guard(wr, "getweakrefs", shared("weakref.getweakrefs"))
+        _guard(gc, "get_referents", proxied("gc.get_referents"))
+        _guard(sys, "getsizeof", proxied("sys.getsizeof"))
+        for mod, names in ((gc, ("get_objects", "get_stats", "get_count", "freeze", "get_freeze_count")), (sys, ("getallocatedblocks",)), (tm, ("process_time", "process_time_ns", "thread_time", "thread_time_ns")), (os, ("times",)), (_std("resource"), ("getrusage",)), (_std("tracemalloc"), ("get_traced_memory", "take_snapshot", "get_tracemalloc_memory", "reset_peak")), (_std("threading"), ("active_count", "enumerate"))):
+            for name in names:
+                if mod is not None:
+                    _guard(mod, name, ran("%s.%s()" % (mod.__name__, name)))
+        collect = gc.collect
+
+        def both(*args, **kwargs):
+            n = collect(*args, **kwargs)
+            if self.ran and not self.gone and not self.ended:
+                gen = args[0] if args else kwargs.get("generation", 2)
+                got = self.call("gc", [gen if type(gen) is int else 2])
+                n += got if type(got) is int else 0
+            return n
+
+        both.__name__ = both.__qualname__ = "collect"
+        both.__doc__ = collect.__doc__
+        gc.collect = both
+        builtins.id = self.candidate_id
+
+    def _linked(self, x):
+        n = self.link_of.get(id(x))
+        return n is not None and self.links.get(n) is x
+
+    def candidate_id(self, obj):
+        """id() for the tests: a candidate object's (or a value it sent) is its id in the candidate process."""
+        p = proxy_rid(obj)
+        if p is None or p[0] is not self:
+            k = self.vkey.get(id(obj))
+            if k is None or k * self.sign > 0 or self.vobj.get(k) is not obj:
+                return id(obj)
+        cid = self.call("id", [obj])
+        if type(cid) is not int or cid < 0:
+            raise self._fail("candidate broke the grading protocol (bad id)")
+        return CANDIDATE_ID | cid
 
 
 _HANDLE_OPS = {
@@ -2953,13 +3086,56 @@ class Server(Side):
         self.warn = None  # warnings state last exchanged
         self.dec = None  # decimal context last exchanged
         # The grader's code: this module's, and the worker script's below it (by module globals).
-        f, files = sys._getframe(), set(GRADER_CODE)
+        f, files = _getframe(), set(GRADER_CODE)
         while f is not None:
             files.add(id(f.f_globals))
             f = f.f_back
         self.files = frozenset(files)
         guard_frames(self.files, self.files, self._poison, False)
         self.raises = _watch_raises(self)
+        self._install_guards()
+
+    def _crossed(self, x):
+        """Whether x is shared with the tests' process: an object they hold, a linked container, a by-value object
+        that crossed, or a test object."""
+        t = type(x)
+        if t is TestObject or t is TestData:
+            return True
+        i = id(x)
+        rid = self.ids.get(i)
+        if rid is not None and self.objs.get(rid) is x:
+            return True
+        n = self.link_of.get(i)
+        if n is not None and self.links.get(n) is x:
+            return True
+        k = self.vkey.get(i)
+        if k is not None and self.vobj.get(k) is x:
+            return True
+        k = self.tobj_ids.get(i)
+        return k is not None and self.tobjs.get(k) is x
+
+    def _install_guards(self):
+        """The candidate's code asking about references or sizes of an object the tests' process shares, or listing
+        every object, gets an answer one process wouldn't give (the grader's tables hold them; the tests' half is
+        elsewhere): the run ends with a grader error."""
+        gc, wr = _std("gc"), _std("weakref")
+
+        def shared(what):
+            def check(args):
+                if any(map(self._crossed, args)):
+                    raise self._poison("the candidate's code called %s on an object the tests' process shares (one process would count the tests' references too)" % what)
+
+            return check
+
+        def never(what):
+            def check(args):
+                raise self._poison("the candidate's code called %s, which would list the grader's objects and not the tests'" % what)
+
+            return check
+
+        for mod, name in ((sys, "getrefcount"), (sys, "getsizeof"), (gc, "get_referrers"), (gc, "get_referents"), (wr, "getweakrefcount"), (wr, "getweakrefs")):
+            _guard(mod, name, shared("%s.%s()" % (mod.__name__, name)))
+        _guard(gc, "get_objects", never("gc.get_objects()"))
 
     # failures the candidate's code can't hide
 
@@ -3593,6 +3769,9 @@ class Server(Side):
             import importlib
 
             return importlib.import_module(str(name))
+        if op == "gc":
+            gen = got[0] if got else 2
+            return _std("gc").collect(gen if type(gen) is int and 0 <= gen <= 2 else 2)
         if op == "status":
             return self._status()
         if op == "unpatch":
@@ -3600,6 +3779,8 @@ class Server(Side):
         if not got:
             raise ProtocolError("no target")
         obj = got[0]
+        if op == "id":
+            return id(obj)
         if op == "getattr":
             return getattr(obj, str(name))
         if op == "setattr":
