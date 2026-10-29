@@ -9,6 +9,7 @@ import type {
   EnvStatus,
   EnvSummary,
   EnvType,
+  EnvUse,
   ExecRequest,
   ExecResult,
   FileChange,
@@ -81,7 +82,7 @@ function dirSize(dir: string, depth = 0): number {
 export interface EnvHooks {
   /** A net attempt happened while `sessionId` was using the env. */
   onSessionNet?: (sessionId: string, entry: NetEntry) => void;
-  /** The env is being stopped/reset/deleted while a session uses it: abort that session's run. */
+  /** The env's storage is being released while a session still uses it: abort that session's run. */
   onEnvInterrupted?: (envId: string, sessionId: string) => Promise<void>;
   /** An env was deleted: blobs only it referenced may be garbage now. */
   onDeleted?: (envId: string) => void;
@@ -99,6 +100,7 @@ export class EnvManager {
   /** One lock across the running-VM count and the boot, so concurrent starts can't exceed MAX_RUNNING_VMS. */
   private vmBoot = new KeyedMutex();
   private active = new Map<string, string>(); // envId -> sessionId using it
+  private shells = new Map<string, number>(); // envId -> user shell commands in flight
   private manifests = new Map<string, Manifest>(); // last known /workspace manifest per env
   private versions = new Map<string, number>(); // bumps when something other than the harness changes the env
   private sizes = new Map<string, number>();
@@ -121,9 +123,10 @@ export class EnvManager {
     return row;
   }
 
-  private toSummary(row: EnvRow): EnvSummary {
+  private toSummary(row: EnvRow, evals?: Map<string, EnvUse>): EnvSummary {
     const config = JSON.parse(row.config_json) as { vm?: VmConfig; sim?: SimConfig };
     if (!this.sizes.has(row.id)) this.sizes.set(row.id, dirSize(this.envDir(row.id)));
+    const inUse = this.uses(row.id, evals);
     return {
       id: row.id,
       name: row.name,
@@ -140,11 +143,55 @@ export class EnvManager {
       createdAt: row.created_at,
       ephemeral: !!row.ephemeral,
       ...(row.released ? { released: true } : {}),
+      ...(inUse.length ? { inUse } : {}),
     };
   }
 
   list(): EnvSummary[] {
-    return this.store.all<EnvRow>("SELECT * FROM envs WHERE id NOT LIKE 'evalbase_%' ORDER BY created_at").map((r) => this.toSummary(r));
+    const evals = this.evalUses();
+    return this.store.all<EnvRow>("SELECT * FROM envs WHERE id NOT LIKE 'evalbase_%' ORDER BY created_at").map((r) => this.toSummary(r, evals));
+  }
+
+  /** Eval cases running (agent or grader) in their envs, by env id. */
+  private evalUses(envId?: string): Map<string, EnvUse> {
+    const rows = this.store.all<{ env_id: string; run_id: string; case_id: string; session_id: string | null; suite_title: string }>(
+      `SELECT r.env_id, r.run_id, r.case_id, r.session_id, u.suite_title FROM eval_results r JOIN eval_runs u ON u.id = r.run_id
+       WHERE r.status = 'running' AND r.env_id IS NOT NULL${envId ? " AND r.env_id = ?" : ""}`,
+      ...(envId ? [envId] : []),
+    );
+    return new Map(
+      rows.map((r) => [r.env_id, { kind: "eval", reason: `eval "${r.suite_title}" case ${r.case_id} running`, evalRunId: r.run_id, ...(r.session_id ? { sessionId: r.session_id } : {}) }]),
+    );
+  }
+
+  /** What is using an env right now, most binding first. */
+  private uses(id: string, evals?: Map<string, EnvUse>): EnvUse[] {
+    const out: EnvUse[] = [];
+    const ev = (evals ?? this.evalUses(id)).get(id);
+    if (ev) out.push(ev);
+    const sessionId = this.active.get(id);
+    if (sessionId && sessionId !== ev?.sessionId) {
+      const title = this.store.get<{ title: string }>("SELECT title FROM sessions WHERE id = ?", sessionId)?.title ?? sessionId;
+      out.push({ kind: "session", reason: `session "${title}" running`, sessionId });
+    }
+    const shells = this.shells.get(id) ?? 0;
+    if (shells) out.push({ kind: "shell", reason: shells === 1 ? "shell command running" : `${shells} shell commands running` });
+    return out;
+  }
+
+  /**
+   * Stop, reset, restore, snapshot (so fork of the live env) and delete take the env down or away, so they are
+   * refused while anything uses it instead of shutting it down under the running command.
+   */
+  private assertIdle(id: string): void {
+    const uses = this.uses(id);
+    if (uses.length) throw new HttpError(409, `env busy: ${uses.map((u) => u.reason).join("; ")}`);
+  }
+
+  /** An env a running eval case owns is read-only to everyone else (shell, network, other sessions). */
+  private assertNotEvalOwned(id: string, sessionId?: string): void {
+    const ev = this.evalUses(id).get(id);
+    if (ev && (!sessionId || sessionId !== ev.sessionId)) throw new HttpError(409, `env read-only: ${ev.reason}`);
   }
 
   get(id: string): EnvSummary {
@@ -420,7 +467,10 @@ export class EnvManager {
           return null;
         }
         const idle = others.find((r) => this.idleVm(r));
-        if (!idle || attempt > MAX_RUNNING_VMS + 2) throw new HttpError(409, `${MAX_RUNNING_VMS} VMs are already running sessions; stop one first`);
+        if (!idle || attempt > MAX_RUNNING_VMS + 2) {
+          const why = others.map((r) => `${r.name}: ${this.uses(r.id).map((u) => u.reason).join(", ") || r.status}`).join("; ");
+          throw new HttpError(409, `${MAX_RUNNING_VMS} VMs are in use (${why}); stop one first`);
+        }
         return idle.id;
       });
       if (!victim) return;
@@ -443,8 +493,9 @@ export class EnvManager {
       .filter((r) => this.runtimes.get(r.id)?.isRunning());
   }
 
+  /** Up and used by nothing (no session run, shell command or eval case), so it may be stopped to make room. */
   private idleVm(r: EnvRow): boolean {
-    return r.status === "running" && !this.active.has(r.id);
+    return r.status === "running" && this.uses(r.id).length === 0;
   }
 
   /**
@@ -504,14 +555,16 @@ export class EnvManager {
   }
 
   async stop(id: string): Promise<EnvSummary> {
-    await this.mutex.run(id, () => this.stopUnlocked(id));
+    await this.mutex.run(id, () => {
+      this.assertIdle(id);
+      return this.stopUnlocked(id);
+    });
     return this.get(id);
   }
 
+  /** Callers that may meet a session still using the env wind it down first (releaseStorage). */
   private async stopUnlocked(id: string, detail?: string): Promise<void> {
     const row = this.row(id);
-    const sessionId = this.active.get(id);
-    if (sessionId) await this.hooks.onEnvInterrupted?.(id, sessionId);
     const rt = this.runtimes.get(id);
     if (!rt || !rt.isRunning()) {
       if (row.status !== "stopped") this.setStatus(id, "stopped", detail ?? null);
@@ -534,11 +587,9 @@ export class EnvManager {
       const target = snapshotId ?? row.factory_snapshot_id ?? row.base_snapshot_id;
       if (!target) throw new HttpError(409, "environment has no base snapshot to reset to");
       const snap = this.snapshotRow(target);
+      this.assertIdle(id);
       const rt = await this.runtimeFor(row);
       const wasRunning = rt.isRunning();
-      // A session using the env winds down first, outside the VM boot lock (that can take a while).
-      const sessionId = this.active.get(id);
-      if (sessionId) await this.hooks.onEnvInterrupted?.(id, sessionId);
       await this.keepRunning(row, rt, async () => {
         await this.stopUnlocked(id);
         await rt.restore(snap.path);
@@ -560,6 +611,7 @@ export class EnvManager {
   async snapshot(id: string, label?: string, kind: Snapshot["kind"] = "manual"): Promise<Snapshot> {
     return this.mutex.run(id, async () => {
       const row = this.row(id);
+      this.assertIdle(id);
       const rt = await this.runtimeFor(row);
       // A running VM is stopped for the copy; keepRunning boots it again under the VM cap.
       const snap = await this.keepRunning(row, rt, () => this.takeSnapshot(id, rt, kind, label?.trim() || new Date().toISOString().replace("T", " ").slice(0, 19)));
@@ -616,6 +668,7 @@ export class EnvManager {
     }
     if (patch.network !== undefined) {
       if (!NETWORK_MODES.has(patch.network)) throw new HttpError(400, "invalid network mode");
+      this.assertNotEvalOwned(id);
       this.store.run("UPDATE envs SET network = ? WHERE id = ?", patch.network, id);
       if (!row.released) await (await this.runtimeFor(row)).setNetwork(patch.network);
     }
@@ -626,6 +679,7 @@ export class EnvManager {
   async delete(id: string): Promise<void> {
     await this.mutex.run(id, async () => {
       const row = this.row(id);
+      this.assertIdle(id);
       await this.stopUnlocked(id).catch((err) => log.warn(`stop before delete failed for ${id}`, err));
       if (!row.released) {
         const rt = await this.runtimeFor(row).catch(() => null);
@@ -654,6 +708,8 @@ export class EnvManager {
     await this.mutex.run(id, async () => {
       const row = this.row(id);
       if (row.released) return;
+      const sessionId = this.active.get(id);
+      if (sessionId) await this.hooks.onEnvInterrupted?.(id, sessionId);
       await this.stopUnlocked(id).catch(() => {});
       const rt = this.runtimes.get(id) ?? (await this.runtimeFor(row).catch(() => null));
       await rt?.destroy().catch((err) => log.warn(`destroy ${id} failed`, err));
@@ -688,6 +744,7 @@ export class EnvManager {
   async acquire(id: string, sessionId: string): Promise<EnvRuntime> {
     const holder = this.active.get(id);
     if (holder && holder !== sessionId) throw new HttpError(409, `environment is busy with session ${holder}`);
+    this.assertNotEvalOwned(id, sessionId);
     this.active.set(id, sessionId);
     try {
       await this.start(id);
@@ -745,8 +802,28 @@ export class EnvManager {
     return rt.isRunning() ? rt : null;
   }
 
+  /**
+   * User shell command. The env counts as in use from before its start until the command is done, so making room for
+   * another VM skips it and lifecycle ops are refused; no lock is held meanwhile, so short operations aren't queued
+   * behind a long command.
+   */
   async exec(id: string, req: ExecRequest): Promise<ExecResult> {
     if (typeof req.command !== "string" || !req.command.trim()) throw new HttpError(400, "command is required");
+    this.row(id);
+    this.assertNotEvalOwned(id);
+    this.shells.set(id, (this.shells.get(id) ?? 0) + 1);
+    this.broadcast(id);
+    try {
+      return await this.execUnmarked(id, req);
+    } finally {
+      const n = (this.shells.get(id) ?? 1) - 1;
+      if (n > 0) this.shells.set(id, n);
+      else this.shells.delete(id);
+      this.broadcast(id);
+    }
+  }
+
+  private async execUnmarked(id: string, req: ExecRequest): Promise<ExecResult> {
     const as = req.as === "root" ? "root" : "agent";
     await this.start(id);
     const rt = this.runtimes.get(id)!;

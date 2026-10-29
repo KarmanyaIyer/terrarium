@@ -1,6 +1,7 @@
 // EnvManager lifecycle with a fake VM driver: the 2-VM cap holds under concurrent starts, forks and seeded
 // creates (review 1, #7) and when a snapshot, fork or reset takes a running VM down (review 2, #6); facts are
-// gathered on every start and after a reset.
+// gathered on every start and after a reset; an env in use (session run, shell command, eval case) refuses the
+// operations that would take it down, and an env a running eval case owns is read-only.
 
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -15,6 +16,7 @@ import type { EnvDriver, EnvRuntime } from "./types.ts";
 let dir: string;
 let store: Store;
 let envs: EnvManager;
+let hub: Hub;
 let live = 0;
 let peak = 0;
 let factsCalls = 0;
@@ -88,6 +90,16 @@ class FakeVm implements Partial<EnvRuntime> {
     return null;
   }
   async killAgentProcesses() {}
+  static execMs = 0;
+  async exec(command: string) {
+    assert.ok(this.running, `${this.id}: exec while not running`);
+    if (FakeVm.execMs) await sleep(FakeVm.execMs);
+    if (!this.running) throw new Error(`${this.id}: stopped under the command`);
+    return { exitCode: 0, stdout: command, stderr: "", durationMs: FakeVm.execMs, truncated: false, timedOut: false };
+  }
+  async manifest() {
+    return { root: "/workspace", takenAt: Date.now(), entries: [], truncated: false };
+  }
 }
 
 const fakeDriver = {
@@ -112,7 +124,8 @@ const fakeDriver = {
 before(() => {
   dir = mkdtempSync(join(tmpdir(), "terrarium-envs-"));
   store = new Store(join(dir, "db.sqlite"), join(dir, "blobs"));
-  envs = new EnvManager({ store, hub: new Hub(), dataDir: dir, drivers: { vm: fakeDriver, sim: null } });
+  hub = new Hub();
+  envs = new EnvManager({ store, hub, dataDir: dir, drivers: { vm: fakeDriver, sim: null } });
 });
 
 after(() => {
@@ -245,4 +258,149 @@ test("a seeded create isn't stopped halfway through to make room for another VM 
     FakeVm.writeMs = 0;
     await settleAll();
   }
+});
+
+function addSession(id: string, envId: string, title: string) {
+  store.run(
+    "INSERT INTO sessions (id, env_id, title, model_id, harness, context_window, max_output_tokens, status, created_at, updated_at) VALUES (?, ?, ?, 'm', 'terrarium', 4096, 1024, 'running', 0, 0)",
+    id,
+    envId,
+    title,
+  );
+}
+
+/** A running eval case owning `envId`, as the eval runner records it (result row running, env and session set). */
+function evalOwns(envId: string, sessionId: string): () => void {
+  const runId = `run-${envId}`;
+  store.run("INSERT INTO eval_runs (id, suite_id, suite_title, config_json, cases_json, status, started_at) VALUES (?, 'basics', 'Tool basics', '{}', '[]', 'running', ?)", runId, Date.now());
+  store.run("INSERT INTO eval_results (run_id, case_id, model_id, status, session_id, env_id) VALUES (?, 'read-file', 'm', 'running', ?, ?)", runId, sessionId, envId);
+  return () => store.run("UPDATE eval_results SET status = 'pass' WHERE run_id = ?", runId);
+}
+
+const status409 = (re: RegExp) => (err: any) => err.status === 409 && re.test(err.message);
+
+test("an env in use refuses stop, reset, restore, snapshot, live fork and delete with the reason, and the VM stays up", async () => {
+  const seen: string[] = [];
+  const e = await envs.create({ name: "busy", type: "vm" });
+  const off = hub.listen((m) => {
+    if (m.type === "env" && m.env.id === e.id) seen.push(m.env.inUse?.map((u) => u.kind).join(",") ?? "");
+  });
+  try {
+    const factory = envs.snapshots(e.id)[0];
+    addSession("sess-busy", e.id, "busy run");
+    const uses: [string, RegExp, () => Promise<() => Promise<void>>][] = [
+      [
+        "session",
+        /^env busy: session "busy run" running$/,
+        async () => {
+          await envs.acquire(e.id, "sess-busy");
+          return async () => envs.release(e.id, "sess-busy");
+        },
+      ],
+      [
+        "shell",
+        /^env busy: shell command running$/,
+        async () => {
+          FakeVm.execMs = 400;
+          const cmd = envs.exec(e.id, { command: "sleep 1", as: "agent" });
+          await until(() => (envs.get(e.id).inUse ?? []).some((u) => u.kind === "shell"), "shell use shows");
+          return async () => {
+            const r = await cmd;
+            assert.equal(r.exitCode, 0, "the command finished on a VM nobody stopped");
+            FakeVm.execMs = 0;
+          };
+        },
+      ],
+      [
+        "eval",
+        /^env busy: eval "Tool basics" case read-file running$/,
+        async () => {
+          const done = evalOwns(e.id, "sess-eval");
+          return async () => done();
+        },
+      ],
+    ];
+    for (const [kind, reason, use] of uses) {
+      await envs.start(e.id);
+      const end = await use();
+      const ops: [string, () => Promise<unknown>][] = [
+        ["stop", () => envs.stop(e.id)],
+        ["reset", () => envs.reset(e.id)],
+        ["restore", () => envs.reset(e.id, factory.id)],
+        ["snapshot", () => envs.snapshot(e.id, "x")],
+        ["fork", () => envs.fork(e.id, {})],
+        ["create from env", () => envs.create({ name: "from busy", type: "vm", from: { envId: e.id } })],
+        ["delete", () => envs.delete(e.id)],
+      ];
+      for (const [name, op] of ops) {
+        await assert.rejects(op(), status409(reason), `${kind}: ${name} answers 409 with the reason`);
+        assert.ok(vms.get(e.id)!.isRunning(), `${kind}: ${name} left the VM up`);
+      }
+      assert.equal(envs.get(e.id).inUse?.[0]?.kind, kind, `${kind}: summary names the use`);
+      // A fork of a stored snapshot doesn't touch the live env.
+      const forked = await envs.fork(e.id, { snapshotId: factory.id });
+      assert.equal(forked.parentEnvId, e.id);
+      await end();
+      assert.equal(envs.get(e.id).inUse, undefined, `${kind}: use cleared`);
+      if (kind !== "eval") assert.equal(seen.at(-1), "", `${kind}: the cleared use was broadcast`);
+      await envs.snapshot(e.id, "after");
+      await envs.stop(e.id);
+    }
+    assert.ok(seen.includes("shell") && seen.includes("session"), `uses broadcast live: ${seen.join("|")}`);
+  } finally {
+    off();
+    FakeVm.execMs = 0;
+    await settleAll();
+  }
+});
+
+test("a VM running a shell command isn't stopped to make room; the other start fails naming what uses both", async () => {
+  const [a, b, c] = await Promise.all(["A", "B", "C"].map((n) => envs.create({ name: `sh-${n}`, type: "vm" })));
+  addSession("sess-sh-a", a.id, "agent work");
+  await envs.acquire(a.id, "sess-sh-a");
+  FakeVm.execMs = 300;
+  try {
+    peak = live;
+    // B is older than C, so it would be the idle VM picked; it boots inside the exec.
+    const cmd = envs.exec(b.id, { command: "make", as: "agent" });
+    await until(() => vms.get(b.id)?.isRunning() ?? false, "B boots for the command");
+    await assert.rejects(envs.start(c.id), status409(/^2 VMs are in use \(sh-A: session "agent work" running; sh-B: shell command running\); stop one first$/));
+    const r = await cmd;
+    assert.equal(r.exitCode, 0);
+    assert.equal(envs.get(c.id).status, "stopped");
+    assert.ok(peak <= MAX_RUNNING_VMS, `peak ${peak}`);
+    // Once the command is done, B is idle again and gives up its slot.
+    await envs.start(c.id);
+    assert.equal(envs.get(b.id).status, "stopped");
+    assert.equal(envs.get(c.id).status, "running");
+    assertStatusesTrue();
+  } finally {
+    FakeVm.execMs = 0;
+    envs.release(a.id, "sess-sh-a");
+    await settleAll();
+  }
+});
+
+test("an env owned by a running eval case is read-only: shell, network and other sessions are refused", async () => {
+  const e = await envs.create({ name: "eval-owned", type: "vm" });
+  const done = evalOwns(e.id, "sess-case");
+  try {
+    await assert.rejects(envs.exec(e.id, { command: "touch /workspace/x", as: "root" }), status409(/^env read-only: eval "Tool basics" case read-file running$/));
+    assert.equal(vms.get(e.id)?.isRunning() ?? false, false, "the refused command didn't start the VM");
+    await assert.rejects(envs.update(e.id, { network: "web" }), status409(/^env read-only/));
+    assert.equal(envs.get(e.id).network, "off");
+    await assert.rejects(envs.acquire(e.id, "sess-other"), status409(/^env read-only/));
+    // The case's own session and a rename still work.
+    await envs.acquire(e.id, "sess-case");
+    envs.release(e.id, "sess-case");
+    assert.equal(envs.get(e.id).status, "running");
+    await envs.update(e.id, { name: "eval-owned 2" });
+    assert.equal(envs.get(e.id).inUse?.[0].kind, "eval");
+  } finally {
+    done();
+  }
+  assert.equal(envs.get(e.id).inUse, undefined);
+  assert.equal((await envs.exec(e.id, { command: "ls", as: "agent" })).exitCode, 0, "writable again once the case is graded");
+  await envs.update(e.id, { network: "registries" });
+  await settleAll();
 });
