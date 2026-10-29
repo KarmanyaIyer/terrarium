@@ -34,11 +34,17 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
   - VM: krun boot 1.1-1.5 s, ~110-135 MiB idle, all isolation probes denied + logged, image 614 MB (no Chromium)
   - UI: built against fixtures, internal QA found/fixed 10 bugs
   - evals: tool-basics 10, shell-data 8, coding 8, reasoning 12, speed 3, boundary 7 (mine), + GSM8K/MMLU/HumanEval/MBPP
-- [ ] Integration (Mac agent): UI against real backend, VM sessions, evals from UI, persistence
-- [ ] Tauri app shell + packaging (Mac agent)
-- [ ] QA on the Legion: UI design review + fixes (branch ui-review), code + security review (read-only)
-- [ ] Merge ui-review, apply review findings, final QA pass
-- [ ] Switchboard entry, UTILITIES.md entry, retire local_llms
+- [x] Integration (Mac agent, TODO_3.md): all flows pass through the UI; 8 bugs fixed; boundary 7/7
+- [x] Tauri app shell + packaging (Mac agent): ~/Applications/Terrarium.app, 354 MB, clean quit
+- [x] QA on the Legion: UI design review fixed 30 issues (branch ui-review, merged e99e07b); code + security
+      review found 11 issues (qa/REVIEW_1_code_security.md)
+- [x] All 11 review findings + integration leftovers fixed (TODO_4/5.md); backend 121 tests pass, guest verify
+      33/33, boundary 7/7, tool-basics 10/10, coding 1/8 (model failures, grader verified)
+- [x] Dev port 8787 -> 8797 (collided with Job Scraper)
+- [x] README.md, UTILITIES.md entry (replaces Local LLMs)
+- [ ] Final independent review on the Legion (regressions since f107753)
+- [ ] Switchboard: "Local models" card points at retired local_llms; s-switchboard had someone else's
+      uncommitted edits, so left untouched. Terrarium is a Mac app and needs no card.
 
 ## Decisions and why
 - Harness: pi-agent-core 1.4.0 loop on the host, our ~125-token prompt + bash/read/write/edit routed into envs.
