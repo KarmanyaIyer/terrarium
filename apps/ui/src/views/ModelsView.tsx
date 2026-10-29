@@ -1,11 +1,12 @@
 import { Fragment, useMemo, useState } from "react";
-import { ChevronRight, Loader2, Play, Square } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import type { ModelInfo, UpdateModelRequest } from "@terrarium/shared";
 import { act, openSession, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { exactBytes, fmtBytes, fmtCtx } from "../lib/format";
 import { ConfirmButton, Segmented } from "../components/ui";
 import { fitLabel } from "../components/ModelPicker";
+import { ServerButton } from "../components/TopBar";
 
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
 
@@ -20,7 +21,6 @@ export default function ModelsView() {
   const sample = samples[samples.length - 1];
   const free = sample?.system.freeBytes;
   const ready = inf.status === "ready";
-  const infBusy = inf.status === "starting" || inf.status === "stopping";
 
   const rows = useMemo(
     () =>
@@ -57,15 +57,7 @@ export default function ModelsView() {
           oMLX <span className="dim">{inf.status}</span>
           {inf.version ? <span className="dim2"> {inf.version}</span> : null}
         </span>
-        {ready || inf.status === "starting" ? (
-          <button className="btn sm" disabled={infBusy} onClick={() => void act("Stop inference", (b) => b.stopInference())}>
-            {infBusy ? <Loader2 className="spin" /> : <Square />} Stop server
-          </button>
-        ) : (
-          <button className="btn sm primary" disabled={infBusy} onClick={() => void act("Start inference", (b) => b.startInference())}>
-            {infBusy ? <Loader2 className="spin" /> : <Play />} Start server
-          </button>
-        )}
+        <ServerButton small />
         <span className="blk-spacer" />
         <span className="dim num">
           {loaded.length} loaded, {fmtBytes(resident)} resident
@@ -162,6 +154,15 @@ export default function ModelsView() {
                             Unload
                           </button>
                         )
+                      ) : ready && fit.cls !== "ok" ? (
+                        <ConfirmButton
+                          small
+                          label="Load"
+                          title={`Load at ${fmtCtx(m.defaultContext)} context`}
+                          confirmLabel={fit.cls === "err" ? `Load, ${fit.text}` : "Load, over budget"}
+                          disabled={!!p}
+                          onConfirm={() => run(m, "load")}
+                        />
                       ) : (
                         <button
                           className="btn sm"

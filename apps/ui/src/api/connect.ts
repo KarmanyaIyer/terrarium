@@ -57,6 +57,12 @@ export async function resolveBackend(): Promise<Resolved> {
   return { backend: null, reason: "No backend URL" };
 }
 
+/** Forget a hash or manually entered connection and leave fixture mode; the next load resolves again. */
+export function forgetConnection() {
+  sessionStorage.removeItem(STORE_KEY);
+  location.href = location.pathname;
+}
+
 export function saveManualConnection(url: string, token: string): Backend {
   sessionStorage.setItem(STORE_KEY, JSON.stringify({ url, token }));
   return new HttpBackend(url, token);

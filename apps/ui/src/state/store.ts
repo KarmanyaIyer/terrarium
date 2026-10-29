@@ -464,6 +464,8 @@ export function openView(view: View) {
 export function openEnv(envId: Id, tab: InspectorTab = "env") {
   const s = get();
   set({
+    // Models and Evals have no inspector; an env opened from there shows on Home
+    view: s.view.kind === "models" || s.view.kind === "evals" ? { kind: "home" } : s.view,
     inspectorEnvId: envId,
     inspectorTab: tab,
     inspectorOpen: true,

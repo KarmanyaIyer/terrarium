@@ -127,7 +127,7 @@ function CellGlyph({ s }: { s: EvalCellStatus }) {
 function checkSummary(c: EvalCheck): string {
   switch (c.type) {
     case "answer":
-      return `answer ${c.mode} ${c.expected}${c.tolerance != null ? ` ±${c.tolerance}` : ""}`;
+      return `${c.mode} ${c.expected}${c.tolerance != null ? ` ±${c.tolerance}` : ""}`;
     case "command":
       return c.command;
     case "file":
@@ -241,11 +241,12 @@ function RunView({ runId }: { runId: string }) {
                     <button className="cell-link strong" title="Open in Models" onClick={() => openView({ kind: "models" })}>
                       {modelName(models, id)}
                     </button>
-                    <div className="ev-score">
+                    <div className="ev-score" title={`${tt.pass} passed of ${done} finished; ${tt.total} cases`}>
                       <span className="num">
-                        {tt.pass}/{tt.total}
+                        {tt.pass}/{done} passed
                       </span>
                       <span className="dim num">{done ? fmtPct((tt.pass / done) * 100) : ""}</span>
+                      {done < tt.total && <span className="dim2 num">{tt.total - done} left</span>}
                     </div>
                     <div className="ev-bar" title={`${tt.pass} pass, ${tt.fail} fail, ${tt.error} error, ${tt.total - done} not finished`}>
                       <span className="pass" style={{ flexGrow: tt.pass }} />
@@ -364,11 +365,20 @@ function CaseDetail({ c, results, onClose }: { c: EvalCase; results?: EvalResult
                     <span className={`ev-cell sm ${r.status}`}>
                       <CellGlyph s={r.status} />
                     </span>
-                    <span className="truncate">{modelName(models, r.modelId)}</span>
+                    <button className="cell-link" title="Open in Models" onClick={() => openView({ kind: "models" })}>
+                      {modelName(models, r.modelId)}
+                    </button>
                     <span className="dim mono truncate ev-case-result-detail">{r.detail ?? ""}</span>
                     {r.envId && (
-                      <button className="btn sm ghost" onClick={() => openEnv(r.envId!)}>
-                        Env
+                      <button
+                        className="btn sm ghost"
+                        title="Workspace after this run"
+                        onClick={() => {
+                          if (r.sessionId) openSession(r.sessionId);
+                          openEnv(r.envId!, "files");
+                        }}
+                      >
+                        Files
                       </button>
                     )}
                     {r.sessionId && (
@@ -474,7 +484,8 @@ function FileBox({ path, content }: { path: string; content: string }) {
 
 function SuiteView({ suite }: { suite: EvalSuite }) {
   const models = useStore((s) => s.models);
-  const runs = useStore((s) => s.evalRuns.filter((r) => r.suiteId === suite.id));
+  const allRuns = useStore((s) => s.evalRuns);
+  const runs = useMemo(() => allRuns.filter((r) => r.suiteId === suite.id), [allRuns, suite.id]);
   const samples = useStore((s) => s.samples);
   const budget = useStore((s) => s.budget);
   const sample = samples[samples.length - 1];

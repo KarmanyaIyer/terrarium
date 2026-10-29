@@ -899,3 +899,24 @@
 .shell-sim {
   font-size: var(--fs-xs);
 }
+.net-table .net-url {
+  max-width: 0;
+  width: 100%;
+  white-space: normal;
+}
+.shell-cmd > * {
+  flex: none;
+  white-space: nowrap;
+}
+.shell-cmd > .shell-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.snap-meta {
+  white-space: nowrap;
+}
+.snap-main .truncate {
+  display: block;
+}

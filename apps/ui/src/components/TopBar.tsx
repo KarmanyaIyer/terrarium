@@ -2,8 +2,9 @@ import { useMemo, useState, type MouseEvent as RME } from "react";
 import { Command, Loader2, Play, Square } from "lucide-react";
 import type { ResourceSample } from "@terrarium/shared";
 import { openEnv, openView, act, useStore } from "../state/store";
-import { exactBytes, fmtBytes, fmtPct } from "../lib/format";
-import { ChartTip, Popover, usePop, type TipState } from "./ui";
+import { exactBytes, fmtBytes, fmtPct, plural } from "../lib/format";
+import { ChartTip, ConfirmButton, Popover, usePop, type TipState } from "./ui";
+import { forgetConnection } from "../api/connect";
 
 interface Seg {
   key: string;
@@ -157,6 +158,43 @@ function MemoryBar() {
   );
 }
 
+/** Start/stop oMLX. Stopping confirms inline when it would unload models or interrupt runs. */
+export function ServerButton({ small }: { small?: boolean }) {
+  const inf = useStore((s) => s.inference);
+  const models = useStore((s) => s.models);
+  const sessions = useStore((s) => s.sessions);
+  const evalRuns = useStore((s) => s.evalRuns);
+  const busy = inf.status === "starting" || inf.status === "stopping";
+  const sm = small ? " sm" : "";
+  if (inf.status !== "ready" && inf.status !== "starting")
+    return (
+      <button type="button" className={`btn${sm} primary`} disabled={busy} onClick={() => void act("Start inference", (b) => b.startInference())}>
+        {busy ? <Loader2 className="spin" /> : <Play />} Start server
+      </button>
+    );
+  const loaded = models.filter((m) => m.loaded).length;
+  const running = Object.values(sessions).filter((s) => s.status === "running").length;
+  const evals = evalRuns.filter((r) => r.status === "running").length;
+  const stop = () => act("Stop inference", (b) => b.stopInference());
+  if (!loaded && !running && !evals)
+    return (
+      <button type="button" className={`btn${sm}`} disabled={busy} onClick={() => void stop()}>
+        {busy ? <Loader2 className="spin" /> : <Square />} Stop server
+      </button>
+    );
+  const hits = [running ? plural(running, "running session") : "", evals ? plural(evals, "eval run") : ""].filter(Boolean).join(" and ");
+  return (
+    <ConfirmButton
+      small={small}
+      icon={<Square />}
+      label="Stop server"
+      confirmLabel={hits ? `Stop, interrupts ${hits}` : `Stop, unloads ${plural(loaded, "model")}`}
+      disabled={busy}
+      onConfirm={stop}
+    />
+  );
+}
+
 function InferenceControl() {
   const inf = useStore((s) => s.inference);
   const models = useStore((s) => s.models);
@@ -192,22 +230,24 @@ function InferenceControl() {
               {loaded.length
                 ? loaded.map((m) => (
                     <div key={m.id}>
-                      {m.name} <span className="dim num">{fmtBytes(m.residentBytes)}</span>
+                      <button
+                        type="button"
+                        className="cell-link"
+                        onClick={() => {
+                          pop.close();
+                          openView({ kind: "models" });
+                        }}
+                      >
+                        {m.name}
+                      </button>{" "}
+                      <span className="dim num">{fmtBytes(m.residentBytes)}</span>
                     </div>
                   ))
                 : "–"}
             </dd>
           </dl>
           <div className="pop-actions">
-            {inf.status === "ready" || inf.status === "starting" ? (
-              <button className="btn" disabled={busy} onClick={() => void act("Stop inference", (b) => b.stopInference())}>
-                <Square /> Stop server
-              </button>
-            ) : (
-              <button className="btn primary" disabled={busy} onClick={() => void act("Start inference", (b) => b.startInference())}>
-                <Play /> Start server
-              </button>
-            )}
+            <ServerButton />
             <button
               className="btn ghost"
               onClick={() => {
@@ -224,10 +264,48 @@ function InferenceControl() {
   );
 }
 
-export function TopBar() {
+function ConnControl() {
   const conn = useStore((s) => s.conn);
   const connDetail = useStore((s) => s.connDetail);
   const backend = useStore((s) => s.backend);
+  const pop = usePop();
+  const fixtures = backend?.kind === "fixtures";
+  return (
+    <>
+      <button ref={pop.ref} className="topbar-btn" onClick={pop.toggle} title="Backend connection">
+        <span className={`dot ${conn === "open" ? (fixtures ? "busy" : "ready") : conn === "connecting" ? "starting" : "error"}`} />
+        <span className="dim2">{fixtures ? "fixtures" : conn === "open" ? backend?.label : conn}</span>
+      </button>
+      <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} align="end" width={300}>
+        <div className="pop-pad">
+          <dl className="kv">
+            <dt>Backend</dt>
+            <dd className={fixtures ? undefined : "mono"}>{fixtures ? "In-memory fixtures" : (backend?.label ?? "none")}</dd>
+            <dt>Status</dt>
+            <dd>
+              {conn}
+              {connDetail ? <span className="dim"> {connDetail}</span> : null}
+            </dd>
+          </dl>
+          <div className="pop-actions">
+            {fixtures && (
+              <button type="button" className="btn" title="Restart the scripted sessions from the beginning" onClick={() => location.reload()}>
+                Restart fixtures
+              </button>
+            )}
+            {!(fixtures && import.meta.env.VITE_FIXTURES === "1") && (
+              <button type="button" className="btn ghost" onClick={forgetConnection}>
+                {fixtures ? "Connect to a backend" : "Change backend"}
+              </button>
+            )}
+          </div>
+        </div>
+      </Popover>
+    </>
+  );
+}
+
+export function TopBar() {
   const samples = useStore((s) => s.samples);
   const last = samples[samples.length - 1];
   const cpu = last ? last.envs.reduce((a, e) => a + e.cpuPct, 0) : null;
@@ -248,14 +326,7 @@ export function TopBar() {
       )}
       <div className="topbar-spacer" data-tauri-drag-region />
       <InferenceControl />
-      <button
-        className="topbar-btn"
-        title={conn === "open" ? `Connected: ${backend?.label}` : connDetail ?? conn}
-        onClick={() => useStore.setState({ paletteOpen: true })}
-      >
-        <span className={`dot ${conn === "open" ? (backend?.kind === "fixtures" ? "busy" : "ready") : conn === "connecting" ? "starting" : "error"}`} />
-        <span className="dim2">{backend?.kind === "fixtures" ? "fixtures" : conn === "open" ? backend?.label : conn}</span>
-      </button>
+      <ConnControl />
       <button className="topbar-btn" onClick={() => useStore.setState({ paletteOpen: true })} title="Jump to session or env">
         <Command size={12} />
         <span>K</span>

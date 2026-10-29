@@ -87,12 +87,12 @@ export function Inspector() {
   const active = TABS.find((t) => t.id === tab && avail(t)) ? tab : (TABS.find(avail)?.id ?? "env");
 
   return (
-    <aside className="inspector" style={{ width }}>
+    <aside className="inspector" style={{ width: `min(${width}px, max(320px, calc(100vw - var(--sidebar-w, 232px) - 480px)))` }}>
       <div
         className="resize-x left"
         onMouseDown={(ev) => {
           const x0 = ev.clientX;
-          const w0 = width;
+          const w0 = ev.currentTarget.parentElement?.getBoundingClientRect().width ?? width;
           const move = (m: MouseEvent) =>
             useStore.setState({ inspectorWidth: Math.max(320, Math.min(window.innerWidth - 560, w0 - (m.clientX - x0))) });
           const up = () => {

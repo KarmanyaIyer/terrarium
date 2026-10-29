@@ -173,7 +173,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
               icon={<Box size={16} />}
               title="Linux VM"
               tag="vm"
-              lines={["Real kernel and package manager", "Own disk, snapshots, root shell"]}
+              lines={["Real kernel, own disk, snapshots"]}
             />
             <TypeCard
               on={type === "sim"}
@@ -181,7 +181,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
               icon={<Terminal size={16} />}
               title="Simulated shell"
               tag="sim"
-              lines={["just-bash, in-memory filesystem", "No VM boot, ~90 MiB resident"]}
+              lines={["just-bash, in-memory files, ~90 MiB"]}
             />
           </div>
 

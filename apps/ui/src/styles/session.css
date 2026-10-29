@@ -118,7 +118,7 @@
 .mp-head,
 .mp-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) 110px 128px 92px;
+  grid-template-columns: minmax(0, 1fr) 84px 120px 104px;
   align-items: center;
   gap: 8px;
 }
@@ -1161,4 +1161,36 @@
 .thinking-head > .thinking-preview {
   flex: 0 1 auto;
   min-width: 0;
+}
+.composer-fit {
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+/* open timeline: the toggle shrinks to a chevron under the lane labels, clear of the axis ticks */
+.tl-wrap:not(.closed) .tl-toggle span {
+  display: none;
+}
+.tl-wrap:not(.closed) .tl-toggle {
+  left: 4px;
+}
+.tl-tools {
+  z-index: 3;
+  padding: 1px;
+  background: var(--bg-2);
+  box-shadow: 0 0 0 0.5px var(--line-3), 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+/* terminal output keeps its columns; scroll sideways instead of wrapping */
+.well.out {
+  white-space: pre;
+  word-break: normal;
+}
+/* stats that don't fit wrap onto a hidden second line, so a value is never cut mid-number */
+.blk-head > .call-stats {
+  flex-wrap: wrap;
+  height: 18px;
+  align-items: center;
+  align-content: flex-start;
+  row-gap: 20px;
+  overflow: hidden;
 }

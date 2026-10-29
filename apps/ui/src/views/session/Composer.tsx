@@ -4,7 +4,8 @@ import type { ContextUsage, SessionSummary } from "@terrarium/shared";
 import { act, useStore } from "../../state/store";
 import { fmtInt, fmtTok } from "../../lib/format";
 import { tokensOf } from "../../lib/tokens";
-import { modelName } from "../../components/ModelPicker";
+import { fitLabel, modelName } from "../../components/ModelPicker";
+import { estimate } from "../../lib/memory";
 
 function baseUsage(s: SessionSummary): ContextUsage {
   if (s.context) return s.context;
@@ -74,6 +75,12 @@ export function Composer({ session }: { session: SessionSummary }) {
   const models = useStore((s) => s.models);
   const ref = useRef<HTMLTextAreaElement>(null);
   const running = session.status === "running" || session.status === "stopping";
+  const samples = useStore((s) => s.samples);
+  const budget = useStore((s) => s.budget);
+  const model = models.find((m) => m.id === session.modelId);
+  const sample = samples[samples.length - 1];
+  // the model loads on send; say so up front when it will not fit
+  const fit = model && !model.loaded ? fitLabel(estimate(model, session.contextWindow, sample, budget, models), sample?.system.freeBytes) : null;
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -107,6 +114,11 @@ export function Composer({ session }: { session: SessionSummary }) {
           }}
         />
         <div className="composer-actions">
+          {fit && fit.cls !== "ok" && !running && (
+            <span className={`composer-fit ${fit.cls}-text`} title={`${model?.name} is not loaded; sending loads it at ${fmtTok(session.contextWindow)} context`}>
+              {fit.cls === "err" ? `Won't fit: ${fit.text}` : `Loading goes ${fit.text}`}
+            </span>
+          )}
           {running ? (
             <button className="btn stop" onClick={() => void act("Stop", (b) => b.stopSession(session.id))} title="Stop the run (Esc)">
               <Square /> Stop <kbd>esc</kbd>

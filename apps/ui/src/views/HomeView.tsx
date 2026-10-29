@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Plus } from "lucide-react";
-import { openEnv, openSession, useStore } from "../state/store";
+import { openEnv, openSession, openView, useStore } from "../state/store";
 import { newSession } from "../lib/actions";
 import { fmtCtx, fmtInt } from "../lib/format";
 import { Time } from "../components/ui";
@@ -83,7 +83,18 @@ export function HomeView() {
                       <span className="dim">chat</span>
                     )}
                   </td>
-                  <td>{modelName(models, s.modelId)}</td>
+                  <td>
+                    <button
+                      className="cell-link"
+                      title="Open in Models"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openView({ kind: "models" });
+                      }}
+                    >
+                      {modelName(models, s.modelId)}
+                    </button>
+                  </td>
                   <td className="mono dim">{s.harness}</td>
                   <td className="r num">{fmtCtx(s.contextWindow)}</td>
                   <td className="r num">{used != null ? fmtInt(used) : "–"}</td>

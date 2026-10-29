@@ -24,6 +24,9 @@ export function parseUnified(text: string): ParsedDiff {
   let hunk: DiffHunk | null = null;
   let o = 0;
   let n = 0;
+  // lines still owed to the current hunk per its header; stray lines after it (a final newline) are ignored
+  let leftOld = 0;
+  let leftNew = 0;
   for (const raw of text.split("\n")) {
     if (raw.startsWith("--- ")) {
       out.oldPath ??= raw.slice(4).replace(/^a\//, "").split("\t")[0];
@@ -34,31 +37,35 @@ export function parseUnified(text: string): ParsedDiff {
       out.newPath ??= raw.slice(4).replace(/^b\//, "").split("\t")[0];
       continue;
     }
-    const m = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/.exec(raw);
+    const m = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$/.exec(raw);
     if (m) {
-      o = Number(m[1]);
-      n = Number(m[2]);
+      o = Number(m[1]) || 1;
+      n = Number(m[3]) || 1;
+      leftOld = m[2] == null ? 1 : Number(m[2]);
+      leftNew = m[4] == null ? 1 : Number(m[4]);
       hunk = { header: raw, lines: [] };
       out.hunks.push(hunk);
       continue;
     }
     if (!hunk) continue;
+    if (raw.startsWith("\\")) {
+      hunk.lines.push({ kind: "meta", text: raw });
+      continue;
+    }
+    if (leftOld <= 0 && leftNew <= 0) continue;
     if (raw.startsWith("+")) {
+      leftNew--;
       hunk.lines.push({ kind: "add", text: raw.slice(1), newNo: n++ });
       out.added++;
     } else if (raw.startsWith("-")) {
+      leftOld--;
       hunk.lines.push({ kind: "del", text: raw.slice(1), oldNo: o++ });
       out.removed++;
-    } else if (raw.startsWith("\\")) {
-      hunk.lines.push({ kind: "meta", text: raw });
-    } else if (raw.length || hunk.lines.length) {
+    } else {
+      leftOld--;
+      leftNew--;
       hunk.lines.push({ kind: "ctx", text: raw.slice(1), oldNo: o++, newNo: n++ });
     }
-  }
-  // trailing empty context line from a final newline
-  for (const h of out.hunks) {
-    const last = h.lines[h.lines.length - 1];
-    if (last && last.kind === "ctx" && last.text === "" && last.oldNo === undefined) h.lines.pop();
   }
   return out;
 }

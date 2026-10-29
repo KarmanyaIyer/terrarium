@@ -116,6 +116,7 @@ export function ConfirmButton(props: {
   if (!armed)
     return (
       <button
+        type="button"
         className={`btn${sm} ${props.className ?? ""}`}
         disabled={props.disabled || busy}
         title={props.title}
@@ -128,6 +129,7 @@ export function ConfirmButton(props: {
   return (
     <span ref={ref} className="confirm-inline" onKeyDown={(e) => e.key === "Escape" && setArmed(false)}>
       <button
+        type="button"
         className={`btn${sm} danger solid`}
         autoFocus
         disabled={busy}
@@ -143,7 +145,7 @@ export function ConfirmButton(props: {
       >
         {props.confirmLabel}
       </button>
-      <button className={`btn${sm} ghost`} onClick={() => setArmed(false)}>
+      <button type="button" className={`btn${sm} ghost`} onClick={() => setArmed(false)}>
         Cancel
       </button>
     </span>
@@ -195,6 +197,7 @@ export function CopyButton({ text, label, className }: { text: string | (() => s
   const [done, setDone] = useState(false);
   return (
     <button
+      type="button"
       className={label ? `btn sm ghost ${className ?? ""}` : `icon-btn sm ${className ?? ""}`}
       title={done ? "Copied" : "Copy"}
       onClick={(e) => {
@@ -225,6 +228,7 @@ export function Segmented<T extends string>(props: {
     <div className={`seg${props.small ? " sm" : ""}`} role="radiogroup" aria-label={props.ariaLabel}>
       {props.options.map((o) => (
         <button
+          type="button"
           key={o.value}
           role="radio"
           aria-checked={o.value === props.value}
@@ -243,6 +247,7 @@ export function Segmented<T extends string>(props: {
 export function Switch(props: { on: boolean; onChange: (v: boolean) => void; label: ReactNode; disabled?: boolean; title?: string }) {
   return (
     <button
+      type="button"
       className={`switch${props.on ? " on" : ""}`}
       role="switch"
       aria-checked={props.on}
@@ -303,7 +308,7 @@ export function Expander({
     <div className={`expander${collapsed ? " collapsed" : ""}`} style={collapsed ? { maxHeight: `${limit * 1.5 + 0.6}em` } : undefined}>
       {children(collapsed)}
       {long && (
-        <button className="expander-btn" onClick={() => setOpen(!open)}>
+        <button type="button" className="expander-btn" onClick={() => setOpen(!open)}>
           {open ? "Collapse" : `Show all ${lines.toLocaleString("en-US")} ${label}`}
         </button>
       )}

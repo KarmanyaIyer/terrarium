@@ -273,7 +273,16 @@ Notes:
 
 /** Generic reply to a user message typed in fixture mode. */
 export function buildReply(
-  o: { sessionId: string; envId: string | null; modelId: string; window: number; maxOut: number; thinking: boolean },
+  o: {
+    sessionId: string;
+    envId: string | null;
+    modelId: string;
+    window: number;
+    maxOut: number;
+    thinking: boolean;
+    turnBase?: number;
+    history?: Record<string, unknown>[];
+  },
   text: string,
   startSeq: number,
   prompt: number,
@@ -518,7 +527,7 @@ export function buildEvalCell(
       genTps: 30,
     });
   } else if (outcome === "error") {
-    s.call({ prompt: 1310, error: "oMLX returned 503: model is loading (Ternary-Bonsai-2-27B-mlx-2bit)", ttftMs: 30_000 });
+    s.call({ prompt: 1310, error: `oMLX returned 503: model is loading (${modelId})`, ttftMs: 30_000 });
     s.event({ type: "error", message: "Model call failed after 3 retries", detail: "503 Service Unavailable" });
     s.runEnd("error");
     return s.finalize();

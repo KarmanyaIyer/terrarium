@@ -152,7 +152,7 @@ export function FilesTab({ env, session, d }: { env: EnvSummary; session?: Sessi
     const i = steps.findIndex((s) => s.toolCallId === focus.toolCallId);
     if (i >= 0) {
       setStepIdx(i);
-      setPinned(i !== steps.length - 1 || live);
+      setPinned(true);
       setMode("step");
       const first = steps[i].changes[0];
       if (first) setPath(first.path);

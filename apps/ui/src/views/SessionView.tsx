@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, PanelRight, Square, Trash2 } from "lucide-react
 import type { HarnessProfile, NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
 import { act, openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
-import { fmtInt, fmtMs } from "../lib/format";
+import { fmtInt, fmtMs, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
 import { ConfirmButton, Popover, Segmented, Switch, usePop } from "../components/ui";
 import { EnvChip, NetIcon } from "../components/Sidebar";
@@ -53,7 +53,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
                 {h.id === s.harness ? <Check size={12} /> : <span style={{ width: 13 }} />}
                 <span>
                   <span className="mono">{h.label}</span>
-                  <span className="dim menu-sub">{h.title}</span>
+                  <span className="dim menu-sub">{!running && !s.envId && h.id !== "chat" ? "Needs an environment; chats have none" : h.title}</span>
                 </span>
               </button>
             );
@@ -107,7 +107,7 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
           </button>
         )}
         <span className="sh-stats num dim">
-          {stats.calls} calls  {stats.tools} tools  {fmtInt(stats.prompt + stats.completion)} tok  {fmtMs(stats.ms)}
+          {plural(stats.calls, "call")}  {plural(stats.tools, "tool")}  {fmtInt(stats.prompt + stats.completion)} tok  {fmtMs(stats.ms)}
           {stats.errors ? <span className="err-text">  {stats.errors} failed</span> : null}
         </span>
         <span className="blk-spacer" />

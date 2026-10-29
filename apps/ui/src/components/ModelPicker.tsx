@@ -9,7 +9,7 @@ import { Popover, usePop } from "./ui";
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
 
 export function fitLabel(e: ReturnType<typeof estimate>, free: number | undefined) {
-  if (!e.fitsFree) return { cls: "err", text: free != null ? `needs ${fmtBytes(e.added - free)} more free` : "won't fit" };
+  if (!e.fitsFree) return { cls: "err", text: free != null ? `${fmtBytes(e.added - free)} short` : "won't fit" };
   if (!e.fitsBudget) return { cls: "warn", text: "over budget" };
   return { cls: "ok", text: "fits" };
 }
@@ -45,7 +45,7 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
         <span className="dim num">{fmtCtx(ctx)}</span>
         <ChevronDown size={12} className="dim" />
       </button>
-      <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={500} className="model-pop">
+      <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={580} className="model-pop">
         <div className="mp-controls">
           <label title="Context window for this session (prompt + output). Memory estimates below use it.">
             <span>Context</span>

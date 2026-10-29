@@ -105,6 +105,9 @@ interface ScriptOpts {
   tools?: boolean;
   files?: Record<string, string>;
   systemAndTools?: number;
+  /** Follow-ups: turns already taken and the conversation so far (without the system message). */
+  turnBase?: number;
+  history?: Record<string, unknown>[];
 }
 
 export class Script {
@@ -124,6 +127,8 @@ export class Script {
     this.o = o;
     this.files = new Map(Object.entries(o.files ?? {}));
     this.messages.push({ role: "system", content: o.system });
+    this.turn = o.turnBase ?? 0;
+    if (o.history) this.messages.push(...o.history);
   }
 
   private push(at: number, body: AnyBody, extra: Partial<Step> = {}) {

@@ -198,7 +198,7 @@ export class FixtureBackend implements Backend {
     this.liveIds = { fix: fixId, invoiceEnv: invoice.id };
     const built = buildInvoiceRun(fixId, invoice.id);
     const tParam = Number(new URLSearchParams(location.search).get("t"));
-    const pre = Number.isFinite(tParam) && tParam > 0 ? tParam * 1000 : (built.marks.now ?? 0);
+    const pre = new URLSearchParams(location.search).has("t") && Number.isFinite(tParam) && tParam >= 0 ? tParam * 1000 : (built.marks.now ?? 0);
     this.addSession({
       id: fixId,
       envId: invoice.id,
@@ -389,7 +389,7 @@ export class FixtureBackend implements Backend {
     const r = run.results[idx];
     const x = Math.sin((idx + 3) * 78.233) * 43758.5453;
     const roll = x - Math.floor(x);
-    const st: EvalResult["status"] = roll < (skill[r.modelId] ?? 0.5) ? "pass" : roll > 0.97 ? "error" : "fail";
+    const st: EvalResult["status"] = this.inference.status !== "ready" ? "error" : roll < (skill[r.modelId] ?? 0.5) ? "pass" : roll > 0.97 ? "error" : "fail";
     const suite = SUITES.find((s) => s.id === run.suiteId)!;
     const c = suite.cases.find((cc) => cc.id === r.caseId)!;
     this.attachCellSession(run.id, suite, c, r.modelId, st, Date.now() - 40_000);
@@ -399,10 +399,20 @@ export class FixtureBackend implements Backend {
       status: st,
       durationMs: Math.round(28_000 + roll * 50_000),
       tokens: { prompt: Math.round(2100 + roll * 8000), completion: Math.round(150 + roll * 700) },
-      detail: st === "pass" ? "grader exit 0" : st === "fail" ? "grader exit 1: 1 failed, 6 passed" : "oMLX returned 503: model is loading",
+      detail:
+        st === "pass"
+          ? "grader exit 0"
+          : st === "fail"
+            ? "grader exit 1: 1 failed, 6 passed"
+            : this.inference.status !== "ready"
+              ? "oMLX is not running"
+              : `oMLX returned 503: model is loading (${r.modelId})`,
       sessionId: sid,
       envId: this.sessions.get(sid)?.envId ?? undefined,
     };
+    const cellEnv = this.sessions.get(sid)?.envId;
+    const ce = cellEnv ? this.envs.get(cellEnv) : undefined;
+    if (ce) this.emit({ type: "env", env: clone(ce) });
     this.emit({ type: "session", session: this.sessions.get(sid)! });
     this.emit({ type: "eval_result", runId: run.id, result: run.results[idx] });
     const next = run.results[idx + 1];
@@ -944,6 +954,23 @@ export class FixtureBackend implements Backend {
     return clone(after != null ? evs.filter((e) => e.seq > after) : evs);
   }
 
+  /** Turns so far and the OpenAI-style message history rebuilt from the trace, for follow-up requests. */
+  private conversation(id: Id): { turnBase: number; history: Record<string, unknown>[] } {
+    const history: Record<string, unknown>[] = [];
+    let turnBase = 0;
+    for (const e of this.events.get(id) ?? []) {
+      if (e.type === "turn_start") turnBase = Math.max(turnBase, e.turn);
+      else if (e.type === "user_message") history.push({ role: "user", content: e.text });
+      else if (e.type === "assistant_message") {
+        const m: Record<string, unknown> = { role: "assistant", content: e.text };
+        if (e.toolCalls.length)
+          m.tool_calls = e.toolCalls.map((t) => ({ id: t.id, type: "function", function: { name: t.name, arguments: JSON.stringify(t.args) } }));
+        history.push(m);
+      } else if (e.type === "tool_end") history.push({ role: "tool", tool_call_id: e.toolCallId, content: e.resultForModel });
+    }
+    return { turnBase, history };
+  }
+
   private lastPrompt(id: Id): number {
     const evs = this.events.get(id) ?? [];
     for (let i = evs.length - 1; i >= 0; i--) {
@@ -959,7 +986,7 @@ export class FixtureBackend implements Backend {
     if (!s) throw new ApiRequestError(404, "session not found");
     if (s.status === "running") throw new ApiRequestError(409, "A run is in progress");
     const built = buildReply(
-      { sessionId: id, envId: s.envId, modelId: s.modelId, window: s.contextWindow, maxOut: s.maxOutputTokens, thinking: s.thinking },
+      { sessionId: id, envId: s.envId, modelId: s.modelId, window: s.contextWindow, maxOut: s.maxOutputTokens, thinking: s.thinking, ...this.conversation(id) },
       text,
       s.lastSeq,
       this.lastPrompt(id),
@@ -976,7 +1003,7 @@ export class FixtureBackend implements Backend {
       id === this.liveIds.fix
         ? buildInvoiceContinue(id, s.envId!, s.lastSeq)
         : buildReply(
-            { sessionId: id, envId: s.envId, modelId: s.modelId, window: s.contextWindow, maxOut: s.maxOutputTokens, thinking: false },
+            { sessionId: id, envId: s.envId, modelId: s.modelId, window: s.contextWindow, maxOut: s.maxOutputTokens, thinking: false, ...this.conversation(id) },
             "continue",
             s.lastSeq,
             this.lastPrompt(id),
