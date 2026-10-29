@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Boxes, ChevronRight, FlaskConical, Globe, MessageSquare, Package, Plus, Trash2, WifiOff } from "lucide-react";
+import { Boxes, ChevronRight, FlaskConical, Globe, Package, Plus, Square, SquareCheck, Trash2, WifiOff } from "lucide-react";
 import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { act, openEnv, openSession, openView, setPref, useStore } from "../state/store";
 import { ConfirmButton, Time } from "./ui";
@@ -30,7 +30,12 @@ export function EnvChip({ type }: { type: EnvSummary["type"] }) {
 
 function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
   return (
-    <div className={`sb-session${active ? " active" : ""}`} onClick={() => openSession(s.id)} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && openSession(s.id)}>
+    <div className={`sb-session${active ? " active" : ""}`} onClick={() => openSession(s.id)} role="button" tabIndex={0} onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          openSession(s.id);
+        }
+      }}>
       <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
       <span className="truncate sb-title">{s.title}</span>
       <Time ts={s.updatedAt} className="sb-time" />
@@ -103,17 +108,37 @@ export function Sidebar() {
           const running = list.some((s) => s.status === "running");
           return (
             <div key={e.id} className="sb-env-group">
+              {/* the row opens the env in the inspector (and expands it); only the chevron collapses */}
               <div
                 className={`sb-env${inspectorEnvId === e.id ? " inspecting" : ""}`}
-                onClick={() => {
-                  useStore.setState({ expandedEnvs: { ...expanded, [e.id]: !open } });
-                  openEnv(e.id);
+                onClick={() => openEnv(e.id)}
+                onKeyDown={(ev) => {
+                  if (ev.target !== ev.currentTarget) return;
+                  if (ev.key === "Enter" || ev.key === " ") {
+                    ev.preventDefault();
+                    openEnv(e.id);
+                  } else if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+                    ev.preventDefault();
+                    useStore.setState({ expandedEnvs: { ...expanded, [e.id]: ev.key === "ArrowRight" } });
+                  }
                 }}
                 role="button"
                 tabIndex={0}
+                aria-expanded={open}
                 title={e.statusDetail ?? `${e.name}: ${e.status}`}
               >
-                <ChevronRight className={`sb-tw${open ? " open" : ""}`} size={12} />
+                {/* mouse target only; the row handles Left/Right for keyboard users */}
+                <span
+                  className="sb-tw-btn"
+                  aria-hidden
+                  title={open ? "Collapse" : "Expand"}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    useStore.setState({ expandedEnvs: { ...expanded, [e.id]: !open } });
+                  }}
+                >
+                  <ChevronRight className={`sb-tw${open ? " open" : ""}`} size={12} />
+                </span>
                 <span className={`dot ${e.status}`} />
                 <span className="truncate sb-title">{e.name}</span>
                 {running && <span className="dot live" title="A session is running" />}
@@ -171,9 +196,15 @@ export function Sidebar() {
           </span>
         </button>
         {ephemeralCount > 0 && (
-          <button className="sb-nav small" onClick={() => useStore.setState({ showEphemeral: !showEphemeral })} title="Eval forks are disposable envs, one per eval cell">
-            <MessageSquare size={12} />
-            <span>{showEphemeral ? "Hide" : "Show"} eval forks</span>
+          <button
+            className={`sb-nav small${showEphemeral ? " checked" : ""}`}
+            role="checkbox"
+            aria-checked={showEphemeral}
+            onClick={() => useStore.setState({ showEphemeral: !showEphemeral })}
+            title="Disposable envs and sessions, one per eval cell"
+          >
+            {showEphemeral ? <SquareCheck size={12} /> : <Square size={12} />}
+            <span>Show eval forks</span>
             <span className="sb-badge num">{ephemeralCount}</span>
           </button>
         )}

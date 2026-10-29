@@ -211,6 +211,10 @@
 .tree-row.sel .tree-tw {
   color: color-mix(in srgb, var(--accent-fg) 75%, transparent);
 }
+.tree-row.sel .fc-badge {
+  color: var(--accent);
+  background: var(--accent-fg);
+}
 .tree-row.step:not(.sel) {
   background: var(--accent-wash);
 }

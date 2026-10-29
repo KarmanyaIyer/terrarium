@@ -233,6 +233,27 @@
   transition: transform 0.12s;
   flex: none;
 }
+.sb-tw-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 20px;
+  margin-right: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: transparent;
+  flex: none;
+}
+.sb-tw-btn:hover {
+  background: var(--bg-active);
+}
+.sb-tw-btn:hover .sb-tw {
+  color: var(--fg-1);
+}
+.sb-nav.small.checked {
+  color: var(--fg-2);
+}
 .sb-tw.open {
   transform: rotate(90deg);
 }

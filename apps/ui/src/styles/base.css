@@ -601,3 +601,10 @@ kbd {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* table rows that act as buttons: box-shadow is unreliable on <tr>, so use an inset outline */
+tr.click:focus-visible {
+  outline: 2px solid var(--accent-hi);
+  outline-offset: -2px;
+  box-shadow: none;
+}
