@@ -1,6 +1,6 @@
 """Run a case under grade.py --local and plain unittest. usage: run.py <casedir> (m.py + tests.py body)"""
 import json, os, shutil, subprocess, sys, tempfile
-GRADE = "/home/karvi/Projects/g-terrarium-review/guest/files/usr/local/libexec/terrarium/grade.py"
+GRADE = os.environ.get("GRADE") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../guest/files/usr/local/libexec/terrarium/grade.py")
 def run(case, timeout=120):
     files = {}
     for n in os.listdir(case):
@@ -15,9 +15,11 @@ def run(case, timeout=120):
     open(hidden, "w").write(body)
     r = subprocess.run([sys.executable, "-I", "-S", GRADE, "--local", "--tests", hidden, "--workspace", ws, "--timeout", str(timeout)], capture_output=True, text=True, timeout=timeout + 30)
     j = json.loads(r.stdout.strip().splitlines()[-1])
-    print("RPC:   pass=%s %s/%s error=%s" % (j.get("pass"), j.get("passed"), j.get("expected"), j.get("error")))
+    print("RPC:   %s %s/%s error=%s" % (j.get("verdict"), j.get("passed"), j.get("expected"), j.get("error")))
     for f in j.get("failures", []):
         print("   ", f)
+    pl = j.get("plain") or {}
+    print("  plain run: %s/%s error=%s (isolated %ss, plain %ss)" % (pl.get("passed"), pl.get("expected"), pl.get("error"), j.get("wallSeconds"), pl.get("wallSeconds")))
     if os.environ.get("SHOWOUT"):
         print(j.get("testOutput")); print(j.get("candidateOutput"))
     # plain unittest, one process

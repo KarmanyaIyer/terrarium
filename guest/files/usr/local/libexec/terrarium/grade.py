@@ -4,16 +4,24 @@
   grade.py --command <shell command> [--workspace /workspace] [--timeout 170] [--id <id>]
   grade.py --local --tests <file> --workspace <dir>     (host-side reference checks, no uid switching)
 
-Tests:
+--timeout applies to each of the two runs of a tests check.
+
+Tests: every check is graded twice, and passes only if both runs pass.
 1. Kills every agent (uid 1000) and grader (uid 1001) process, so nothing the agent left running can touch
    the workspace or the grading.
-2. Copies the workspace twice under /var/lib/terrarium-grade/<id>/: `src`, root-owned and read-only, is what
-   the hidden tests read as the candidate's source; `ws`, agent-owned, is where the candidate's code runs.
-   Both copies are taken before any candidate code runs. A grader-only results dir goes next to them.
-3. Starts the candidate side (grade_worker.py) as agent in `ws` and the test side (grade_runner.py) as
-   grader, connected by a socketpair. The hidden tests never share a process with candidate code.
-4. Reads the runner's results file and prints one JSON line. Exit 0 only if the runner finished cleanly,
-   counted at least one test, and every test passed.
+2. Copies the workspace three times under /var/lib/terrarium-grade/<id>/, all before any candidate code
+   runs: `src`, root-owned, read-only and without symlinks, is what the hidden tests read as the candidate's
+   source; `ws`, agent-owned, is where the isolated run's candidate code runs; `plain/ws` is the plain run's,
+   in a root-only dir until that run starts.
+3. Isolated run: the candidate side (grade_worker.py) as agent in `ws` and the test side (grade_runner.py) as
+   grader, connected by a socketpair, so the hidden tests never share a process with candidate code. Its
+   counts go to a grader-only dir; they are read, and everything it started is killed, before step 4.
+4. Plain run: grade_runner.py --plain as agent in `plain/ws`, the hidden tests (copied from /grader) and
+   candidate code in one process, as `python3 -m unittest` would run them. Exact Python semantics, no
+   protection: candidate code can change these counts, but not the isolated run's, which are already read.
+5. Prints one JSON line: the isolated run's counts at the top level, the plain run's under "plain", and a
+   verdict: "pass" (both counted at least one test and every test passed), "fail" (neither did) or
+   "disagree" (one did): a grader error, never a pass. Exit 0 only on "pass".
 
 Command: kills agent and grader processes, then runs the command with bash as agent (never root, never a
 uid that can read /grader) in the workspace, with a clean environment: PATH has only root-owned dirs and
@@ -132,26 +140,55 @@ def read_results(path):
     return r, None
 
 
-def seal(root):
-    """The hidden tests' copy of the sources: nothing in it stays writable by the agent. The agent's files
-    become root-owned and world-readable; anything else (a hard link the agent made to another user's
-    file) keeps its owner and mode, so nothing becomes readable that wasn't. Set-id bits are dropped."""
+def seal(root, local=False):
+    """The hidden tests' copy of the sources: nothing in it stays writable by the agent, and nothing in it
+    leads elsewhere. Symlinks are removed, never followed: as root a link could read any file, and a link into
+    the live workspace would let candidate code change what the tests read. The agent's files become
+    root-owned and world-readable; anything else (a hard link the agent made to another user's file) keeps
+    its owner and mode, so nothing becomes readable that wasn't. Set-id bits are dropped. local: only the
+    symlinks go."""
     for d, dirs, files in os.walk(root):
-        for n in dirs + files:
+        for n in list(dirs) + files:
             p = os.path.join(d, n)
             st = os.lstat(p)
-            mine = st.st_uid == AGENT_UID
             if stat.S_ISLNK(st.st_mode):
-                if mine:
-                    os.lchown(p, 0, 0)
+                os.remove(p)
+                if n in dirs:
+                    dirs.remove(n)
                 continue
+            if local:
+                continue
+            mine = st.st_uid == AGENT_UID
             mode = stat.S_IMODE(st.st_mode) & 0o755
             if mine:
                 os.lchown(p, 0, 0)
                 mode |= 0o555 if stat.S_ISDIR(st.st_mode) else 0o444
             os.chmod(p, mode)
-    os.chown(root, 0, 0)
-    os.chmod(root, 0o755)
+    if not local:
+        os.chown(root, 0, 0)
+        os.chmod(root, 0o755)
+
+
+def copy_tests(tests, dst):
+    """The hidden tests for the plain run (agent): all of /grader (or the tests file's dir) copied root-owned
+    and world-readable, so files next to the tests resolve as in the isolated run. Returns the tests file's
+    path in the copy."""
+    root = "/grader" if tests.startswith("/grader/") else os.path.dirname(tests)
+    os.mkdir(dst, 0o700)
+    copy_workspace(root, dst)
+    for d, dirs, files in os.walk(dst):
+        for n in list(dirs) + files:
+            p = os.path.join(d, n)
+            st = os.lstat(p)
+            if stat.S_ISLNK(st.st_mode):
+                os.remove(p)
+                if n in dirs:
+                    dirs.remove(n)
+                continue
+            os.lchown(p, 0, 0)
+            os.chmod(p, 0o755 if stat.S_ISDIR(st.st_mode) else 0o644)
+    os.chmod(dst, 0o755)
+    return os.path.join(dst, os.path.relpath(tests, root))
 
 
 def copy_workspace(src, dst):
@@ -214,6 +251,187 @@ def run_command(command, workspace, timeout, gid):
     return 0 if out["pass"] else 1
 
 
+MAX_FAILURES = 50
+
+
+def blank(error=None):
+    return {"passed": 0, "expected": 0, "failures": [], "timedOut": False, "error": error}
+
+
+def ok(r):
+    return not r["error"] and r["expected"] > 0 and r["passed"] == r["expected"]
+
+
+def wait(p, timeout):
+    """Whether p was still running after timeout seconds."""
+    try:
+        p.wait(timeout=max(1.0, timeout))
+        return False
+    except subprocess.TimeoutExpired:
+        return True
+
+
+def stop(procs, local):
+    """Kill each (process, exec id) with everything it started."""
+    for p, xid in procs:
+        if local:
+            try:
+                os.killpg(p.pid, 9)
+            except OSError:
+                pass
+        else:
+            subprocess.run([KILL, xid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+        try:
+            p.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+    kill_users(local)
+
+
+def outcome(runner, results, timed_out, timeout):
+    """A run's counts, from its runner's results file."""
+    r = blank()
+    r["timedOut"] = timed_out
+    if timed_out:
+        r["error"] = "timed out after %gs" % timeout
+        return r
+    data, err = read_results(results)
+    if err:
+        r["error"] = "%s; test runner exited %s" % (err, runner.returncode)
+    elif runner.returncode != 0:
+        # The runner exits 0 right after writing its results, so a results file next to a failed runner is
+        # not its own (in --local mode the candidate runs as the same user).
+        r["error"] = "test runner exited %s; results file ignored" % runner.returncode
+    else:
+        r["passed"] = data["passed"]
+        r["expected"] = data["expected"]
+        fails = [f for f in (data.get("failures") or []) if isinstance(f, dict)]
+        r["failures"] = [{k: str(f.get(k, ""))[:300] for k in ("test", "kind", "message")} for f in fails[:MAX_FAILURES]]
+        if len(fails) > MAX_FAILURES:
+            r["moreFailures"] = len(fails) - MAX_FAILURES
+        r["error"] = data["error"][:1000] if isinstance(data.get("error"), str) else None
+        if isinstance(data.get("candidate"), str):
+            r["candidate"] = data["candidate"][:1000]
+        if type(data.get("seconds")) in (int, float):
+            r["seconds"] = data["seconds"]
+    return r
+
+
+def run_isolated(source, ws, out, tests, mods, timeout, gid, local, py):
+    """Candidate code as agent in ws, the hidden tests as grader, over a socketpair."""
+    results = os.path.join(out, "results.json")
+    c_sock, t_sock = socket.socketpair()
+    wid, rid = gid + "-w", gid + "-t"
+    worker_cmd = [py, "-B", WORKER, "--fd", str(c_sock.fileno()), "--workspace", ws]
+    # The runner stops waiting for candidate code a little before our own limit, so it can still write
+    # which tests passed.
+    budget = max(1.0, timeout - min(5.0, timeout / 10))
+    runner_cmd = [py, "-B", "-I", "-S", RUNNER, "--fd", str(t_sock.fileno()), "--tests", tests, "--source", source, "--results", results, "--modules", ",".join(mods), "--budget", "%g" % budget]
+    common = dict(stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    procs = []
+    t0 = time.monotonic()
+    try:
+        if local:
+            env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+            procs.append((subprocess.Popen(worker_cmd, cwd=ws, env=env, pass_fds=[c_sock.fileno()], start_new_session=True, **common), wid))
+            procs.append((subprocess.Popen(runner_cmd, cwd=out, env=env, pass_fds=[t_sock.fileno()], start_new_session=True, **common), rid))
+        else:
+            procs.append((subprocess.Popen([RUN, wid, "agent", ws] + worker_cmd, env=AGENT_ENV, pass_fds=[c_sock.fileno()], **common), wid))
+            procs.append((subprocess.Popen([RUN, rid, "grader", out] + runner_cmd, env=GRADER_ENV, pass_fds=[t_sock.fileno()], **common), rid))
+        c_sock.close()
+        t_sock.close()
+        (worker, _), (runner, _) = procs
+        w_out, t_out = Tail(worker.stdout), Tail(runner.stdout)
+        timed_out = wait(runner, timeout)
+    finally:
+        c_sock.close()
+        t_sock.close()
+        stop(procs[::-1], local)
+    r = outcome(runner, results, timed_out, timeout)
+    r["wallSeconds"] = round(time.monotonic() - t0, 2)
+    r["testOutput"] = t_out.text()
+    r["candidateOutput"] = w_out.text()
+    return r
+
+
+def run_plain(source, hold, pws, tests, timeout, gid, local, py):
+    """grade_runner.py --plain as agent in pws: the hidden tests and candidate code in one process."""
+    out = os.path.join(hold, "out")
+    results = os.path.join(out, "results.json")
+    pid = gid + "-p"
+    budget = max(1.0, timeout - min(5.0, timeout / 10))
+    common = dict(stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    os.mkdir(out, 0o700)
+    t0 = time.monotonic()
+    if local:
+        cmd = [py, "-B", RUNNER, "--plain", "--tests", tests, "--source", source, "--results", results, "--budget", "%g" % budget]
+        p = subprocess.Popen(cmd, cwd=pws, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"), start_new_session=True, **common)
+    else:
+        ptests = copy_tests(tests, os.path.join(hold, "tests"))
+        os.chown(out, AGENT_UID, AGENT_UID)
+        os.chmod(hold, 0o711)
+        cmd = [py, "-B", RUNNER, "--plain", "--tests", ptests, "--source", source, "--results", results, "--budget", "%g" % budget]
+        p = subprocess.Popen([RUN, pid, "agent", pws] + cmd, env=AGENT_ENV, **common)
+    try:
+        tail = Tail(p.stdout)
+        timed_out = wait(p, timeout)
+    finally:
+        stop([(p, pid)], local)
+    r = outcome(p, results, timed_out, timeout)
+    r["wallSeconds"] = round(time.monotonic() - t0, 2)
+    r["output"] = tail.text()
+    return r
+
+
+def grade_tests(tests, src, timeout, gid, local):
+    kill_users(local)
+    job = tempfile.mkdtemp(prefix="terrarium-grade-") if local else job_dir(gid)
+    source, ws, out, hold = (os.path.join(job, n) for n in ("src", "ws", "out", "plain"))
+    pws = os.path.join(hold, "ws")
+    iso, plain = blank("not run"), blank("not run")
+    stage = iso
+    try:
+        # Every copy is taken before any candidate code runs.
+        if local:
+            for d in (source, ws, pws):
+                shutil.copytree(src, d, symlinks=True)
+            seal(source, local=True)
+            os.mkdir(out, 0o700)
+        else:
+            os.mkdir(source, 0o700)
+            copy_workspace(src, source)
+            seal(source)
+            os.mkdir(ws, 0o755)
+            os.chown(ws, AGENT_UID, AGENT_UID)
+            copy_workspace(src, ws)
+            os.mkdir(out, 0o700)
+            os.chown(out, GRADER_UID, GRADER_UID)
+            # Root-only until the plain run starts: the isolated run's code can't reach it.
+            os.mkdir(hold, 0o700)
+            os.mkdir(pws, 0o755)
+            os.chown(pws, AGENT_UID, AGENT_UID)
+            copy_workspace(src, pws)
+        py = sys.executable if local else "/usr/bin/python3"
+        iso = run_isolated(source, ws, out, tests, candidate_modules(ws), timeout, gid, local, py)
+        # Its counts are read and its processes dead: nothing the plain run's code does can change them.
+        shutil.rmtree(ws, ignore_errors=True)
+        shutil.rmtree(out, ignore_errors=True)
+        stage = plain
+        plain = run_plain(source, hold, pws, tests, timeout, gid, local, py)
+    except Exception as e:
+        stage["error"] = "%s: %s" % (type(e).__name__, e)
+    finally:
+        kill_users(local)
+        shutil.rmtree(job, ignore_errors=True)
+    a, b = ok(iso), ok(plain)
+    summary = dict(iso)
+    summary["plain"] = plain
+    summary["verdict"] = "pass" if a and b else "disagree" if a != b else "fail"
+    summary["pass"] = a and b
+    print(json.dumps(summary))
+    return 0 if summary["pass"] else 1
+
+
 def main():
     a = sys.argv[1:]
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d  # noqa: E731
@@ -229,93 +447,7 @@ def main():
     if command:
         return run_command(command, src, timeout, gid)
 
-    kill_users(local)
-    job = tempfile.mkdtemp(prefix="terrarium-grade-") if local else job_dir(gid)
-    source = os.path.join(job, "src")
-    ws = os.path.join(job, "ws")
-    out = os.path.join(job, "out")
-    results = os.path.join(out, "results.json")
-    summary = {"passed": 0, "expected": 0, "failures": [], "timedOut": False, "error": None}
-    try:
-        if local:
-            shutil.copytree(src, source, symlinks=True)
-            shutil.copytree(src, ws, symlinks=True)
-            os.mkdir(out, 0o700)
-        else:
-            os.mkdir(source, 0o700)
-            copy_workspace(src, source)
-            seal(source)
-            os.mkdir(ws, 0o755)
-            os.chown(ws, AGENT_UID, AGENT_UID)
-            copy_workspace(src, ws)
-            os.mkdir(out, 0o700)
-            os.chown(out, GRADER_UID, GRADER_UID)
-        mods = candidate_modules(source)
-        c_sock, t_sock = socket.socketpair()
-        wid, rid = gid + "-w", gid + "-t"
-        py = sys.executable if local else "/usr/bin/python3"
-        worker_cmd = [py, "-B", WORKER, "--fd", str(c_sock.fileno()), "--workspace", ws]
-        # The runner stops waiting for candidate code a little before our own limit, so it can still
-        # write which tests passed.
-        budget = max(1.0, timeout - min(5.0, timeout / 10))
-        runner_cmd = [py, "-B", "-I", "-S", RUNNER, "--fd", str(t_sock.fileno()), "--tests", tests, "--source", source, "--results", results, "--modules", ",".join(mods), "--budget", "%g" % budget]
-        common = dict(stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        if local:
-            env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
-            worker = subprocess.Popen(worker_cmd, cwd=ws, env=env, pass_fds=[c_sock.fileno()], start_new_session=True, **common)
-            runner = subprocess.Popen(runner_cmd, cwd=out, env=env, pass_fds=[t_sock.fileno()], start_new_session=True, **common)
-        else:
-            worker = subprocess.Popen([RUN, wid, "agent", ws] + worker_cmd, env=AGENT_ENV, pass_fds=[c_sock.fileno()], **common)
-            runner = subprocess.Popen([RUN, rid, "grader", out] + runner_cmd, env=GRADER_ENV, pass_fds=[t_sock.fileno()], **common)
-        c_sock.close()
-        t_sock.close()
-        w_out, t_out = Tail(worker.stdout), Tail(runner.stdout)
-        deadline = time.monotonic() + timeout
-        try:
-            runner.wait(timeout=max(1.0, deadline - time.monotonic()))
-        except subprocess.TimeoutExpired:
-            summary["timedOut"] = True
-        for p, xid in ((runner, rid), (worker, wid)):
-            if local:
-                try:
-                    os.killpg(p.pid, 9)
-                except OSError:
-                    pass
-            else:
-                subprocess.run([KILL, xid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
-            try:
-                p.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                p.kill()
-        kill_users(local)
-        summary["testOutput"] = t_out.text()
-        summary["candidateOutput"] = w_out.text()
-        if summary["timedOut"]:
-            summary["error"] = "grading timed out after %gs" % timeout
-        else:
-            r, err = read_results(results)
-            if err:
-                summary["error"] = "%s; test runner exited %s" % (err, runner.returncode)
-            elif runner.returncode != 0:
-                # The runner exits 0 right after writing its results, so a results file next to a failed
-                # runner is not its own (in --local mode the candidate runs as the same user).
-                summary["error"] = "test runner exited %s; results file ignored" % runner.returncode
-            else:
-                summary["passed"] = r["passed"]
-                summary["expected"] = r["expected"]
-                summary["failures"] = [f for f in (r.get("failures") or []) if isinstance(f, dict)][:50]
-                summary["error"] = r.get("error") if isinstance(r.get("error"), str) else None
-                if isinstance(r.get("candidate"), str):
-                    summary["candidate"] = r["candidate"]
-    except Exception as e:
-        summary["error"] = "%s: %s" % (type(e).__name__, e)
-    finally:
-        kill_users(local)
-        shutil.rmtree(job, ignore_errors=True)
-    ok = not summary["error"] and summary["expected"] > 0 and summary["passed"] == summary["expected"]
-    summary["pass"] = ok
-    print(json.dumps(summary))
-    return 0 if ok else 1
+    return grade_tests(tests, src, timeout, gid, local)
 
 
 if __name__ == "__main__":
