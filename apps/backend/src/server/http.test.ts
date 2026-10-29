@@ -101,6 +101,29 @@ test("bodies: JSON only, size capped, errors are ApiError JSON", async () => {
   assert.match(JSON.parse(missing.body).error, /session not found/);
 });
 
+test("events: no limit returns the whole history past 5000; limit still pages (review 2, #5)", async () => {
+  const id = "s-long";
+  const now = Date.now();
+  app.store.run(
+    "INSERT INTO sessions (id, title, model_id, harness, context_window, max_output_tokens, status, created_at, updated_at) VALUES (?, 't', 'm', 'chat', 4096, 512, 'idle', ?, ?)",
+    id,
+    now,
+    now,
+  );
+  app.store.tx(() => {
+    for (let seq = 1; seq <= 12_345; seq++) app.store.appendEvent({ type: "turn_start", turn: seq, sessionId: id, seq, ts: now });
+  });
+  const all = await req(`/api/sessions/${id}/events`, { headers: auth });
+  assert.equal(all.status, 200);
+  const events = JSON.parse(all.body) as { seq: number }[];
+  assert.equal(events.length, 12_345);
+  assert.deepEqual([events[0].seq, events.at(-1)!.seq], [1, 12_345]);
+  const tail = JSON.parse((await req(`/api/sessions/${id}/events?after=10000`, { headers: auth })).body) as { seq: number }[];
+  assert.deepEqual([tail.length, tail[0].seq], [2345, 10_001]);
+  const page = JSON.parse((await req(`/api/sessions/${id}/events?after=5&limit=100`, { headers: auth })).body) as { seq: number }[];
+  assert.deepEqual([page.length, page[0].seq, page.at(-1)!.seq], [100, 6, 105]);
+});
+
 function ws(protocols: string[], origin?: string): Promise<{ ok: boolean; first?: any; status?: number; socket?: WebSocket }> {
   return new Promise((resolve) => {
     const s = new WebSocket(`ws://127.0.0.1:${port}/api/ws`, protocols, origin ? { origin } : {});

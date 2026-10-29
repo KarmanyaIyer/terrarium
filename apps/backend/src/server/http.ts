@@ -14,6 +14,7 @@ import type {
   SendMessageRequest,
   SnapshotEnvRequest,
   StartEvalRunRequest,
+  TraceEvent,
   UpdateEnvRequest,
   UpdateModelRequest,
   UpdateSessionRequest,
@@ -30,6 +31,7 @@ const log = logger("http");
 const BODY_CAP = 1024 * 1024;
 const BODY_CAP_LARGE = 16 * 1024 * 1024; // env creation with seed files
 const WS_MAX_PAYLOAD = 64 * 1024;
+const EVENTS_PAGE = 5000;
 
 interface Ctx {
   params: string[];
@@ -110,9 +112,19 @@ function routes(app: App): Route[] {
     r("DELETE", "/api/sessions/:id", async ({ params }) => {
       await sessions.delete(params[0]);
     }),
-    r("GET", "/api/sessions/:id/events", ({ params, query }) =>
-      sessions.events(params[0], intParam(query, "after") ?? 0, Math.min(Math.max(intParam(query, "limit") ?? 5000, 1), 20000)),
-    ),
+    r("GET", "/api/sessions/:id/events", ({ params, query }) => {
+      const after = intParam(query, "after") ?? 0;
+      const limit = intParam(query, "limit");
+      if (limit !== undefined) return sessions.events(params[0], after, Math.min(Math.max(limit, 1), 20000));
+      // No limit: the whole history after `after`, read in pages until a short one, so long sessions keep their end.
+      const out: TraceEvent[] = [];
+      for (let from = after; ; ) {
+        const page = sessions.events(params[0], from, EVENTS_PAGE);
+        out.push(...page);
+        if (page.length < EVENTS_PAGE) return out;
+        from = page[page.length - 1].seq;
+      }
+    }),
     r("POST", "/api/sessions/:id/messages", ({ params, body }) => sessions.sendMessage(params[0], ((body ?? {}) as SendMessageRequest).text), { status: 202 }),
     r("POST", "/api/sessions/:id/continue", ({ params }) => sessions.continue(params[0]), { status: 202 }),
     r("POST", "/api/sessions/:id/stop", ({ params }) => sessions.stop(params[0])),
