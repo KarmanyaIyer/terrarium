@@ -311,7 +311,11 @@ function RunView({ runId }: { runId: string }) {
                         onMouseLeave={() => setTip(null)}
                       >
                         <CellGlyph s={st} />
-                        {r?.durationMs != null && <span className="num">{fmtMs(r.durationMs)}</span>}
+                        {c.check.type === "speed" && r?.score != null ? (
+                          <span className="num">{r.score} tok/s</span>
+                        ) : (
+                          r?.durationMs != null && <span className="num">{fmtMs(r.durationMs)}</span>
+                        )}
                       </button>
                     </td>
                   );
