@@ -94,8 +94,8 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
 - First evals agent was stopped by a model safety filter (isolation prompts phrased as escape/backdoor
   requests). Relaunched without that suite; wrote evals/suites/boundary.json myself in neutral wording.
 - Mac heavily loaded by unrelated work (load avg 200-900). Linux-capable work moved to the Legion: repo remote
-  `legion` = legion:/home/karvi/Projects/g-terrarium (receive.denyCurrentBranch updateInstead); review worktree
-  at /home/karvi/Projects/g-terrarium-review.
+  `legion` = legion:/home/karvi/Projects/terrarium (receive.denyCurrentBranch updateInstead); review worktree
+  at /home/karvi/Projects/terrarium-review.
 - oMLX fails the whole response on unparseable tool calls (incomplete_tool_call); harness retries up to 2x.
 - The RPC grader kept producing semantic mismatches with plain unittest (5 in review 2, ~10 in review 3), each a
   silent false pass or fail. Dual grading turns any remaining mismatch into a visible disagreement instead.
