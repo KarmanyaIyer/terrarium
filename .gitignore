@@ -1,6 +1,6 @@
 node_modules/
-models/
-data/
+/models/
+/data/
 .venv/
 dist/
 target/
