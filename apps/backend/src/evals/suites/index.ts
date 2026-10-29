@@ -8,6 +8,7 @@ import type { EvalCase, EvalSuite } from "@terrarium/shared";
 import { convertGsm8k, convertHumanEval, convertMbpp, convertMmlu, type DatasetItem } from "./convert.ts";
 import { type DatasetMeta, ensureDataset, readCachedDataset, readDatasetMetas } from "./datasets.ts";
 import { sample, stratifiedSample } from "./sample.ts";
+import { validateSuite } from "./validate.ts";
 
 export type { DatasetItem } from "./convert.ts";
 export type { DatasetMeta } from "./datasets.ts";
@@ -40,6 +41,8 @@ export async function loadJsonSuites(opts: SuiteOptions = {}): Promise<EvalSuite
   for (const n of names) {
     const suite = JSON.parse(await readFile(join(dir, n), "utf8")) as EvalSuite;
     if (!suite.id || !Array.isArray(suite.cases)) throw new Error(`evals/suites/${n}: not a suite`);
+    const problems = validateSuite(suite);
+    if (problems.length) throw new Error(`evals/suites/${n}: ${problems.join("; ")}`);
     suites.push(suite);
   }
   return suites;

@@ -212,6 +212,21 @@ describe("loading and download (offline, mocked fetch)", () => {
     assert.equal(ds.source?.sampleable, true);
   });
 
+  test("a hand-written suite that fails validation is rejected on load, naming the file", async () => {
+    const bad = mkdtempSync(join(tmpdir(), "terr-badsuite-"));
+    try {
+      mkdirSync(join(bad, "evals", "suites"), { recursive: true });
+      const suite = {
+        id: "bad", title: "Bad", description: "d", envType: "vm",
+        cases: [{ id: "x", title: "X", prompt: "p", maxTurns: 5, timeoutSec: 60, envType: "vm", check: { type: "command", command: "python3 /grader/t.py" } }],
+      };
+      writeFileSync(join(bad, "evals", "suites", "bad.json"), JSON.stringify(suite));
+      await assert.rejects(loadJsonSuites({ rootDir: bad }), /evals\/suites\/bad\.json: .*\/grader/);
+    } finally {
+      rmSync(bad, { recursive: true, force: true });
+    }
+  });
+
   test("materializeSuite downloads once, verifies, caches and samples", async () => {
     const a = await materializeSuite("gsm8k", { ...opts, sampleSize: 7, seed: 2 });
     const b = await materializeSuite("gsm8k", { ...opts, sampleSize: 7, seed: 2 });
