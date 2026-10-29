@@ -242,6 +242,8 @@ export function FilesTab({ env, session, d }: { env: EnvSummary; session?: Sessi
     }
   };
 
+  const stepTool = stepNow ? d?.tools.find((t) => t.toolCallId === stepNow.toolCallId) : undefined;
+  const stepShort = stepTool ? `${stepTool.name} ${shortToolLabel(stepTool.name, stepTool.args)}` : (stepNow?.label ?? "");
   const stepLabel =
     stepIdx < 0
       ? "Session start"
@@ -339,7 +341,7 @@ export function FilesTab({ env, session, d }: { env: EnvSummary; session?: Sessi
           <>
             <div className="viewer-head">
               <span className="truncate">
-                {stepNow.changes.length} file{stepNow.changes.length > 1 ? "s" : ""} changed by <span className="mono">{stepNow.label.slice(0, 80)}</span>
+                {stepNow.changes.length} file{stepNow.changes.length > 1 ? "s" : ""} changed by <span className="mono" title={stepNow.label}>{stepShort}</span>
               </span>
               <span className="blk-spacer" />
               <Segmented<Mode>

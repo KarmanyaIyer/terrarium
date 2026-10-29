@@ -13,8 +13,21 @@
 - [x] Inspector: Files (tree at step, scrubber, file / vs start / this step), Request (readable, raw, SSE), Network, Environment, Shell
 - [x] Evals view, Models view, New environment sheet
 - [x] tsc + production build clean
-- [ ] Independent QA pass, fix findings
-- [ ] Final screenshots in apps/ui/screenshots (light + dark)
+- [x] Independent QA pass (Opus, fixture mode, both themes, 1440 and 1100), fix findings
+- [x] Final screenshots in apps/ui/screenshots (light + dark)
+
+## QA round 1 findings and fixes
+
+- Suite view white-screened: zustand selector returned a new filtered array each render (infinite loop). Selector now returns the raw list; filtering is memoized.
+- New-env sheet created envs on segmented clicks: shared buttons (Segmented, Switch, ConfirmButton, CopyButton, Expander) had no `type="button"` inside a form.
+- Diff parser added a bogus trailing row after the last hunk: parser now honors hunk line counts.
+- Files scrubber snapped back to Latest after Previous: focusing a step now always pins.
+- Env links from Evals/Models went nowhere (no inspector there): openEnv switches to Home there; eval results open the cell's session with Files.
+- Stopping oMLX and loading a model that does not fit now confirm inline; composer warns when the session's model will not fit.
+- Fixture follow-ups restarted at turn 1 with no history: Script takes turnBase and history rebuilt from the trace.
+- Connection badge opened the palette: now a popover (backend, status, restart fixtures, change backend).
+- Layout: sessions table drops Harness/Context/Used columns by container width; inspector width keeps the main column at least 480 px; block headers hide whole stats instead of cutting numbers; terminal output no longer wraps; timeline toggle no longer covers the 0s tick.
+- Not changed: header Stop stays one click (Esc also stops instantly, per the brief, and a stopped run can Continue).
 
 ## Decisions
 
