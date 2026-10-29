@@ -59,12 +59,12 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
     ];
     const reasons: string[] = [];
     for (const text of follow) reasons.push((await app.sessions.run(s.id, text, { maxTurns: 15 })).reason);
-    // The seeded bug: a failing python3 run, then the file edited, then a passing run printing 7.
+    // The seeded bug: the model has to edit spread.py. Whether it runs it first, and what the file prints after later
+    // turns (a 4B model sometimes rewrites numbers.txt), is model behavior: reported, not asserted.
     const runs = events.filter((e) => e.type === "tool_end" && e.name === "bash" && /spread\.py/.test(JSON.stringify(events.find((x) => x.type === "tool_start" && x.toolCallId === e.toolCallId))));
-    assert.ok(runs.some((e) => e.type === "tool_end" && e.exitCode !== 0), "spread.py failed at least once");
+    const spreadFailedFirst = runs.some((e) => e.type === "tool_end" && e.exitCode !== 0);
     assert.ok(events.some((e) => e.type === "fs_change" && e.changes.some((c) => c.path === "/workspace/spread.py" && c.kind === "modified")), "spread.py was fixed");
     const spread = await app.envs.exec(env.id, { command: "python3 spread.py", as: "agent" });
-    assert.equal(spread.stdout.trim(), "7", `spread.py output: ${spread.stdout} ${spread.stderr}`);
 
     const starts = events.filter((e) => e.type === "model_call_start");
     const ends = events.filter((e) => e.type === "model_call_end");
@@ -73,15 +73,18 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
     const warnings = events.filter((e) => e.type === "warning");
     const maxPrompt = Math.max(...ends.map((e) => (e.type === "model_call_end" ? (e.usage?.promptTokens ?? 0) : 0)));
     const minBudget = Math.min(...starts.map((e) => (e.type === "model_call_start" ? e.maxTokens : Infinity)));
-    const oneToken = ends.filter((e) => e.type === "model_call_end" && e.finishReason !== "aborted" && (e.usage?.completionTokens ?? 0) <= 1);
+    // A call the server rejected (malformed tool call) ends as "error" with no usage and is retried; it isn't a reply.
+    const rejected = ends.filter((e) => e.type === "model_call_end" && e.finishReason === "error");
+    const retries = warnings.filter((w) => w.type === "warning" && /could not parse the model's tool call/.test(w.message));
+    const oneToken = ends.filter((e) => e.type === "model_call_end" && e.finishReason !== "aborted" && e.finishReason !== "error" && (e.usage?.completionTokens ?? 0) <= 1);
 
     const counts: Record<string, number> = {};
     for (const e of events) counts[e.type] = (counts[e.type] ?? 0) + 1;
     const lines = [
       `model ${MODEL}, window ${WINDOW}, thinking ${s.thinking}, session maxOutput ${s.maxOutputTokens}`,
       `first run: ${first.reason} in ${Math.round(firstMs / 1000)} s, ${tools.length} tool calls; avg.py prints ${JSON.stringify(out.stdout.trim())}`,
-      `follow-up runs: ${reasons.join(", ")}`,
-      `model calls: ${ends.length}; max prompt ${maxPrompt} tokens; min max_tokens sent ${minBudget}; one-token replies ${oneToken.length}`,
+      `follow-up runs: ${reasons.join(", ")}; spread.py failed before the fix: ${spreadFailedFirst}; prints ${JSON.stringify(spread.stdout.trim())}`,
+      `model calls: ${ends.length}; max prompt ${maxPrompt} tokens; min max_tokens sent ${minBudget}; one-token replies ${oneToken.length}; server-rejected tool calls ${rejected.length} (retried ${retries.length})`,
       `compactions ${compactions.length}; harness repairs ${repairs.length}; warnings ${warnings.map((w) => (w.type === "warning" ? w.code : "")).join(",") || "none"}`,
       `event counts: ${JSON.stringify(counts)}`,
       "first 40 events:",
@@ -110,6 +113,7 @@ test("e2e: multi-step python task in a sim env, then a long session", { skip: pr
     assert.equal(body.chat_template_kwargs?.enable_thinking, s.thinking);
     assert.ok(body.max_tokens >= 512, `last request max_tokens ${body.max_tokens}`);
     assert.equal(oneToken.length, 0, "no one-token replies");
+    assert.ok(rejected.length <= retries.length, `${rejected.length} rejected calls, ${retries.length} retried`);
     assert.ok(minBudget >= 512, `smallest output budget sent was ${minBudget}`);
     assert.ok(reasons.every((r) => r === "done" || r === "max_turns"), `follow-up reasons ${reasons}`);
   } finally {
