@@ -42,9 +42,15 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
       33/33, boundary 7/7, tool-basics 10/10, coding 1/8 (model failures, grader verified)
 - [x] Dev port 8787 -> 8797 (collided with Job Scraper)
 - [x] README.md, UTILITIES.md entry (replaces Local LLMs)
-- [ ] Final independent review on the Legion (regressions since f107753)
-- [ ] Switchboard: "Local models" card points at retired local_llms; s-switchboard had someone else's
-      uncommitted edits, so left untouched. Terrarium is a Mac app and needs no card.
+- [x] Review 2 on the Legion (regressions since f107753): 13 findings (qa/REVIEW_2_final.md), all fixed by 3 Mac
+      agents (TODO_6 grading, TODO_7 backend/lifecycle, TODO_8 UI); suites validated on load (d58bf36)
+- [x] Follow-up from the fix agents (TODO_9): busy envs refuse lifecycle ops with the reason shown, shell commands
+      protected from making room, eval-owned envs read-only mid-grade, VMs can't outlive the backend (guard + reaper)
+- [x] Backend 150/152 (2 gated), real-VM 22/22, verify.ts 41/41, all 599 references pass; repackaged, launch + quit
+      checked (no leftover processes)
+- [ ] Review 3 on the Legion (delta f47fc4a..2545a56)
+- [ ] Switchboard: "Local models" card (commit 5e87b58 there) points at retired local_llms; s-switchboard still
+      has someone else's uncommitted continuity work, so left untouched. Terrarium is a Mac app and needs no card.
 
 ## Decisions and why
 - Harness: pi-agent-core 1.4.0 loop on the host, our ~125-token prompt + bash/read/write/edit routed into envs.
