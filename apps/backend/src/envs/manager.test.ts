@@ -43,15 +43,18 @@ class FakeVm implements Partial<EnvRuntime> {
   }
   /** Like the VM driver: a stopped VM is unusable at once, but its VMM runs on through the guest sync and close. */
   static closeMs = 0;
+  /** Per env id, overrides closeMs. */
+  static closeMsFor = new Map<string, number>();
   private closing: Promise<void> | null = null;
   async stop() {
     if (!this.running) return;
     this.running = false;
-    if (!FakeVm.closeMs) {
+    const closeMs = FakeVm.closeMsFor.get(this.id) ?? FakeVm.closeMs;
+    if (!closeMs) {
       live--;
       return;
     }
-    this.closing = sleep(FakeVm.closeMs).then(() => {
+    this.closing = sleep(closeMs).then(() => {
       live--;
       this.closing = null;
     });
@@ -304,6 +307,32 @@ test("a VM being stopped keeps its slot until its VMM has closed; a start meanwh
   }
 });
 
+test("a start waits for the first closing VMM to free a slot, not for every closing one (review 4, #10)", async () => {
+  const [a, b, c] = await Promise.all(["A", "B", "C"].map((n) => envs.create({ name: `race-${n}`, type: "vm" })));
+  await envs.start(a.id);
+  await envs.start(b.id);
+  FakeVm.closeMsFor.set(a.id, 50);
+  FakeVm.closeMsFor.set(b.id, 3000);
+  try {
+    peak = live;
+    const stops = [envs.stop(a.id), envs.stop(b.id)];
+    await until(() => !vms.get(a.id)!.isRunning() && !vms.get(b.id)!.isRunning(), "A and B are going down");
+    assert.ok(vms.get(a.id)!.holdsVmm() && vms.get(b.id)!.holdsVmm(), "both VMMs still closing: no slot free yet");
+    const t0 = Date.now();
+    await envs.start(c.id);
+    const took = Date.now() - t0;
+    assert.ok(took < 1500, `C started ${took} ms after the stops; A's slot was free after 50 ms`);
+    assert.ok(vms.get(b.id)!.holdsVmm(), "B's VMM was still closing when C started");
+    assert.ok(peak <= MAX_RUNNING_VMS, `peak ${peak} VMMs`);
+    assert.equal(envs.get(c.id).status, "running");
+    await Promise.all(stops);
+    assertStatusesTrue();
+  } finally {
+    FakeVm.closeMsFor.clear();
+    await settleAll();
+  }
+});
+
 test("overlapping first uses of an env after a restart open one runtime, and the one that boots is tracked (review 3, #6)", async () => {
   const sub = mkdtempSync(join(tmpdir(), "terrarium-envs-restart-"));
   const st = new Store(join(sub, "db.sqlite"), join(sub, "blobs"));
@@ -474,4 +503,22 @@ test("an env owned by a running eval case is read-only: shell, network and other
   assert.equal((await envs.exec(e.id, { command: "ls", as: "agent" })).exitCode, 0, "writable again once the case is graded");
   await envs.update(e.id, { network: "registries" });
   await settleAll();
+});
+
+test("the net log answers 5,001 rows, so the UI can tell 5,000 rows from more than 5,000 (review 4 nit)", async () => {
+  const e = await envs.create({ name: "netcap", type: "vm" });
+  store.tx(() => {
+    for (let i = 0; i < 5002; i++) {
+      store.run(
+        "INSERT INTO net_log (id, env_id, session_id, ts, method, url, host, ip, decision, reason, status, bytes_in, bytes_out) VALUES (?, ?, NULL, ?, 'GET', ?, 'h', NULL, 'deny', 'off', NULL, 0, 0)",
+        `net-${i}`,
+        e.id,
+        i,
+        `http://h/${i}`,
+      );
+    }
+  });
+  assert.equal(envs.netLog(e.id, 5001).length, 5001);
+  assert.equal(envs.netLog(e.id, 99_999).length, 5001);
+  assert.equal(envs.netLog(e.id, 5001)[0].id, "net-5001", "newest first");
 });

@@ -31,6 +31,8 @@ import type { EnvDriver, EnvRuntime, Manifest, NetAttempt } from "./types.ts";
 
 const log = logger("envs");
 export const MAX_RUNNING_VMS = 2;
+/** Most net rows one request returns: the UI shows up to 5,000 and asks for one more to know whether older rows exist. */
+export const NET_LOG_MAX = 5001;
 /** Identical net attempts (same session, request, decision, reason and status) this close together share a row. */
 export const NET_REPEAT_WINDOW_MS = 60_000;
 /** A collapsed row is written and broadcast at most this often while repeats keep coming. */
@@ -214,7 +216,7 @@ export class EnvManager {
   /** Newest `limit` rows by their latest attempt, so a collapsed loop that started long ago stays in the window. */
   netLog(id: string, limit = 500): NetEntry[] {
     return this.store
-      .all<any>("SELECT * FROM net_log WHERE env_id = ? ORDER BY COALESCE(last_ts, ts) DESC, ts DESC LIMIT ?", id, Math.min(Math.max(limit, 1), 5000))
+      .all<any>("SELECT * FROM net_log WHERE env_id = ? ORDER BY COALESCE(last_ts, ts) DESC, ts DESC LIMIT ?", id, Math.min(Math.max(limit, 1), NET_LOG_MAX))
       .map((r) => ({
         id: r.id,
         envId: r.env_id,
@@ -512,15 +514,15 @@ export class EnvManager {
 
   /**
    * Under the boot lock: the other VMs that take a slot. A VM being stopped keeps its slot until its VMM has closed
-   * (the guest sync alone can take 10 s); with every slot taken and one of them closing, wait for it to free its
-   * slot. Closing a VM never needs the boot lock, so this wait can't deadlock.
+   * (the guest sync alone can take 10 s); with every slot taken and some closing, wait for the first of them to free
+   * its slot, then count again. Closing a VM never needs the boot lock, so this wait can't deadlock.
    */
   private async vmSlots(exceptId: string): Promise<EnvRow[]> {
     for (;;) {
       const up = this.runningVms(exceptId);
       const closing = up.map((r) => this.runtimes.get(r.id)!).filter((rt) => !rt.isRunning());
       if (up.length < MAX_RUNNING_VMS || !closing.length) return up;
-      await Promise.all(closing.map((rt) => rt.vmmClosed?.()));
+      await Promise.race(closing.map((rt) => rt.vmmClosed?.() ?? Promise.resolve()));
     }
   }
 

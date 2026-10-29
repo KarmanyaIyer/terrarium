@@ -179,8 +179,8 @@ export function parseIdentity(identity: string): { startedAt: number; command: s
 /**
  * A pid-only record (its backend died while arming the guard) proves nothing about the process now on that pid, so
  * that process counts as ours only when both hold:
- * - its command line is a VMM of the recorded kind: the krun runner with a Gondolin runner config in the temp dir, or
- *   QEMU naming this env's disk;
+ * - its command line is a VMM of the recorded kind: the krun runner with a Gondolin runner config in the temp dir that
+ *   names this env's disk (another env's runner never does), or QEMU naming this env's disk;
  * - it started no earlier than `since` (taken before the VM's start was called) and no later than `seenAt` (the pid
  *   was seen, so the VMM had started), compared in whole seconds as `ps` prints them.
  * Two live processes never share a pid. A process on that pid that started by `seenAt` is either the VMM we spawned or
@@ -193,7 +193,10 @@ function pidOnlyIsOurs(rec: VmmRecord, identity: string): boolean {
   if (!p) return false;
   const sec = (ms: number) => Math.floor(ms / 1000) * 1000;
   if (p.startedAt < sec(rec.since) || p.startedAt > sec(rec.seenAt)) return false;
-  if (rec.vmm === "krun") return /^(?:.*\/)?gondolin-krun-runner --config \S+$/.test(p.command) && leftoverRunnerConfig(identity) !== null;
+  if (rec.vmm === "krun") {
+    const cfg = /^(?:.*\/)?gondolin-krun-runner --config \S+$/.test(p.command) ? leftoverRunnerConfig(identity) : null;
+    return cfg !== null && typeof rec.disk === "string" && path.isAbsolute(rec.disk) && runnerConfigDisk(cfg) === path.resolve(rec.disk);
+  }
   if (rec.vmm === "qemu") return typeof rec.disk === "string" && path.isAbsolute(rec.disk) && /^(?:\S*\/)?qemu-system-[\w-]+ /.test(p.command) && p.command.includes(` -drive file=${rec.disk},`);
   return false;
 }
@@ -223,6 +226,16 @@ function leftoverRunnerConfig(identity: string): string | null {
   if (!m) return null;
   const file = path.resolve(m[1]);
   return path.dirname(file) === path.resolve(os.tmpdir()) && /^gondolin-krun-runner-[0-9a-f]{8}\.json$/.test(path.basename(file)) ? file : null;
+}
+
+/** The disk a Gondolin krun runner config boots (`rootDiskPath`, written by Gondolin's krun controller). */
+function runnerConfigDisk(file: string): string | null {
+  try {
+    const disk = (JSON.parse(fs.readFileSync(file, "utf8")) as { rootDiskPath?: unknown }).rootDiskPath;
+    return typeof disk === "string" ? path.resolve(disk) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Stop VMMs left running by a backend that is gone. Returns how many were stopped. */

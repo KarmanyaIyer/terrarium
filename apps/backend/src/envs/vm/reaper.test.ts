@@ -53,11 +53,11 @@ async function goneOwner(): Promise<{ pid: number; identity: string | null }> {
   return owner;
 }
 
-/** A Gondolin-style runner config name in the temp dir. */
+/** A Gondolin-style runner config in the temp dir, booting `disk` (as Gondolin's krun controller writes it). */
 const madeConfigs: string[] = [];
-function runnerConfig(): string {
+function runnerConfig(disk = "/nonexistent/other.qcow2"): string {
   const file = path.join(os.tmpdir(), `gondolin-krun-runner-${Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0")}.json`);
-  fs.writeFileSync(file, "{}");
+  fs.writeFileSync(file, JSON.stringify({ rootDiskPath: disk, rootDiskFormat: "qcow2" }));
   madeConfigs.push(file);
   return file;
 }
@@ -197,7 +197,7 @@ test("the guard compares in UTC whatever timezone it runs under (review 3, #7)",
 test("a backend killed while arming its guard leaves a pid-only record, and startup reaping stops that VMM (review 3, #7)", async (t) => {
   if (!fakeKrun) return t.skip("no C compiler for a VMM-shaped process");
   const runDir = path.join(tmp, "run-arming");
-  const cfg = runnerConfig();
+  const cfg = runnerConfig("/nonexistent/disk.qcow2");
   const pidFile = path.join(tmp, "arming-vmm.pid");
   const script = path.join(tmp, "arming-backend.ts");
   // SIGKILLs itself right after the pid is first seen: before identity, guard or full record exist.
@@ -265,10 +265,16 @@ test("a pid-only record stops only a VMM of its kind that started between the bo
   write(wrongKind.pid, { ...wrongKind.window, vmm: "qemu" });
   const outsideTmp = await run(fakeKrun, ["--config", path.join(tmp, "gondolin-krun-runner-0123abcd.json")], "gondolin-krun-runner");
   write(outsideTmp.pid, outsideTmp.window);
+  // Review 4 nit: a krun runner in the window whose config boots another env's disk is not this env's VMM.
+  const krun = await run(fakeKrun, ["--config", runnerConfig(disk)], "gondolin-krun-runner");
+  write(krun.pid, krun.window); // krun booting this env's disk: stopped
+  const otherEnvKrun = await run(fakeKrun, ["--config", runnerConfig(`${disk}.other`)], "gondolin-krun-runner");
+  write(otherEnvKrun.pid, otherEnvKrun.window);
 
-  assert.equal(await reapOrphanVmms(runDir), 1);
+  assert.equal(await reapOrphanVmms(runDir), 2);
   assert.ok(await gone(qemu.pid, 5000), "the QEMU VMM was stopped");
-  for (const [what, p] of Object.entries({ otherDisk, early, late, notVmm, wrongKind, outsideTmp })) assert.ok(await alive(p.pid), `${what} was signalled`);
+  assert.ok(await gone(krun.pid, 5000), "the krun VMM booting this env's disk was stopped");
+  for (const [what, p] of Object.entries({ otherDisk, early, late, notVmm, wrongKind, outsideTmp, otherEnvKrun })) assert.ok(await alive(p.pid), `${what} was signalled`);
   assert.deepEqual(fs.readdirSync(runDir), [], "records dropped either way");
 });
 
