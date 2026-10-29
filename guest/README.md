@@ -50,16 +50,35 @@ Results go to `data/vm-verify/latest.json`.
 - `agent` (uid/gid 1000, home `/home/agent`, shell bash) owns `/workspace`. Model commands run as
   agent through `setpriv --no-new-privs --bounding-set=-all`, so setuid binaries (`su`) can't regain
   root. The root password is locked.
-- `rootfs-init-extra.sh` runs as root on every boot from the Gondolin init. It creates the user if
-  missing, sets permissions, makes `/var/lib/terrarium` and `/run/terrarium/{exec,xfer}` root-only
-  (0700), shortens the dirty writeback interval and removes pip's `EXTERNALLY-MANAGED` marker.
-  `postBuild.commands` would force a container build on macOS, so all setup happens here instead.
+- `grader` (uid/gid 1001, no home, no shell) runs hidden eval tests. It can read `/grader` (root:grader
+  0750, files 0640); the agent can't, and the grader can't write the workspace.
+- `rootfs-init-extra.sh` runs `/usr/local/libexec/terrarium/setup` as root on every boot from the Gondolin
+  init. `setup` creates both users if missing, sets permissions, makes `/var/lib/terrarium`,
+  `/var/lib/terrarium-grade` and `/run/terrarium/{exec,xfer}` root-only, mounts cgroup2 at
+  `/sys/fs/cgroup` with a `terrarium/` subtree, shortens the dirty writeback interval and removes pip's
+  `EXTERNALLY-MANAGED` marker. `postBuild.commands` would force a container build on macOS, so all setup
+  happens here instead.
 - `/usr/local/libexec/terrarium/` holds root-owned helpers:
-  - `run <id> <agent|root> <cwd> argv...`: exec launcher. It records `pid starttime` under
-    `/run/terrarium/exec/` so the driver can kill the whole session on timeout or abort.
-  - `kill <id>`: kills that session (`kill -KILL -- -pid` plus `pkill -s`) after checking starttime.
+  - `run <id> <agent|grader|root> <cwd> argv...`: exec launcher. Each exec gets its own cgroup
+    (`/sys/fs/cgroup/terrarium/<who>-<id>`) and a `pid starttime` record under `/run/terrarium/exec/`.
+  - `kill <id>`: `cgroup.kill` on that exec's cgroup (catches `setsid` and double forks), then the old
+    process group and session kill as a fallback.
+  - `kill-user <agent|grader>`: kills every process of that user: all their cgroups, then any pid left with
+    that uid. The backend runs it at the end of every session run and before grading.
   - `put <id> <stage> <dest> [mode]`: writes a staged file as agent. Writes then honour uid 1000
     permissions and guest symlinks.
+  - `read.py`: the only way the host reads guest files. JSON on stdin (paths, per-file and total caps);
+    opens each path component with `O_NOFOLLOW` (root reads; `--follow` when run as agent), `O_NONBLOCK`,
+    and reads only regular files (`fstat` S_ISREG), so a FIFO, `/dev/zero` or a symlink into a root-only
+    dir can't block, flood or leak. The driver adds a 30 s exec timeout.
+  - `grade.py` with `grade_rpc.py`, `grade_worker.py`, `grade_runner.py`: hidden-test grading (eval check
+    type `tests`). As root it kills every agent process, copies the workspace to a job dir, starts the
+    candidate's code in a worker as `agent` and the hidden tests in a runner as `grader` (`python3 -I -S`),
+    connected by a socketpair. Plain values cross by value, everything else as references, and a
+    comparison between a reference and a test-side value is refused, so candidate code never sees the
+    expected values. The runner writes its counts to a dir only `grader` can write; pass means passed ==
+    expected > 0 there. Candidate exits, `sys.exit`, patched `unittest`, forged results files and
+    leftover daemons all fail.
   - `observer.py`: the manifest walker. It runs as root with `python3 -I -S` and prints JSON
     entries for path, type, size, mode, mtimeNs, ctimeNs, ino, nlink, linkTarget and sha256.
     - Walks fd-relative with `O_NOFOLLOW`, so symlinks are never followed.
@@ -67,6 +86,10 @@ Results go to `data/vm-verify/latest.json`.
     - Heavy dirs (`node_modules`, `.venv`, `__pycache__`, `.git/objects` and others) are listed but not hashed.
     - Capped at 20,000 entries. Files over 256 MiB are listed without a hash.
     - 1,017 entries take 2 ms inside the guest and about 50 ms round trip from the host.
+- Helper migration: at boot the driver compares a sha256 of the guest's helper files with the backend's
+  copy (`guest/files/usr/local/libexec/terrarium`, shipped in the app bundle too). If they differ, it
+  pushes the current helpers and reruns `setup`, so envs on an older image get the grader user, cgroups
+  and safe reads without a rebuild.
 
 ## Gotchas
 
@@ -74,5 +97,5 @@ Results go to `data/vm-verify/latest.json`.
   as zombies until the VM restarts. They hold no memory or files, but they do show up in `ps`.
 - Every boot runs `rootfs-init-extra.sh` under `set -eu`, wrapped so that a failure can't stop the
   boot. A broken change there only shows up as missing users or permissions.
-- Changing the package list or helpers needs a rebuild. Existing envs keep booting their recorded
-  image until they are recreated.
+- Changing the package list needs a rebuild. Existing envs keep booting their recorded image (by
+  absolute path) until they are recreated; helper changes reach them through the boot-time migration.
