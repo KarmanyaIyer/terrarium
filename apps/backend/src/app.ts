@@ -47,8 +47,11 @@ export async function createApp(config: Config): Promise<App> {
   await gateway.listen();
   const drivers = await loadDrivers();
   const envs = new EnvManager({ store, hub, dataDir: config.dataDir, drivers });
+  // Dev only: TERRARIUM_TOKENIZER_URL points the tokenizer elsewhere (e.g. a dead port) to try the estimate fallback
+  // against the real model.
+  const tokenizerUrl = config.dev ? process.env.TERRARIUM_TOKENIZER_URL : undefined;
   const tokens = new TokenCounter({
-    baseUrl: () => inference.omlx.baseUrl,
+    baseUrl: () => tokenizerUrl || inference.omlx.baseUrl,
     apiKey: () => inference.omlx.key,
     ensureReady: () => inference.omlx.ensureStarted(),
   });
