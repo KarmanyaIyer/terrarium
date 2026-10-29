@@ -1,0 +1,80 @@
+{
+  "1: process state the candidate's code changes reaches the tests": {
+    "env_leak": [false, "fail"],
+    "env_ok": [true, "pass"],
+    "cwd_leak": [false, "fail"],
+    "cwd_ok": [true, "pass"],
+    "argv_leak": [false, "fail"],
+    "argv_ok": [true, "pass"],
+    "stdout_leak": [false, "fail"],
+    "stdout_swap": [true, "pass"],
+    "print_swap": [false, "fail"],
+    "print_hook": [true, "pass"],
+    "syspath_leak": [false, "inexact"],
+    "syspath_tests": [true, "pass"],
+    "syspath_order": [true, "pass"],
+    "umask_ok": [true, "pass"],
+    "tz_ok": [true, "pass"],
+    "locale_ok": [true, "pass"]
+  },
+  "2: context managers with an exception in the with body; test handles where built-in data is needed": {
+    "ctx_cwd": [true, "pass"],
+    "ctx_reraise": [false, "fail"],
+    "ctx_reraise_ok": [true, "pass"],
+    "ctx_tb": [true, "pass"],
+    "ctx_tb_names": [true, "inexact"],
+    "handle_typeerror": [false, "inexact"]
+  },
+  "3: logging, __slots__, function and module types, tracebacks, ids, standard-library assignments": {
+    "log_handler": [false, "inexact"],
+    "log_levels_ok": [true, "pass"],
+    "log_config_leak": [false, "inexact"],
+    "log_basic_ok": [true, "pass"],
+    "slots_weak": [true, "pass"],
+    "slots_weak_lenient": [false, "fail"],
+    "func_type": [false, "fail"],
+    "func_type_ok": [true, "pass"],
+    "star_import": [true, "pass"],
+    "module_vars": [false, "inexact"],
+    "module_type": [false, "inexact"],
+    "module_reload": [true, "pass"],
+    "tb_names": [false, "inexact"],
+    "id_cached": [false, "fail"],
+    "stdlib_assign": [false, "inexact"],
+    "stdlib_assign_tests": [true, "pass"],
+    "class_assign": [false, "inexact"],
+    "class_assign_tests": [true, "pass"],
+    "class_descr_tests": [true, "inexact"],
+    "sysmodules_tests": [true, "inexact"],
+    "mock_module_attr": [true, "pass"],
+    "std_module_arg": [true, "pass"],
+    "fn_meta_cand": [true, "pass"],
+    "fn_meta_lenient": [false, "fail"],
+    "fn_meta_tests": [true, "pass"],
+    "fn_code_cand": [true, "inexact"],
+    "gen_lifecycle": [true, "pass"],
+    "gen_dropped": [false, "fail"],
+    "hints_str": [true, "inexact"],
+    "hints_ok": [true, "pass"],
+    "module_reimport": [true, "pass"],
+    "module_reimport_lenient": [false, "fail"]
+  },
+  "4: refcounts, referrers and process-wide counts of shared objects": {
+    "refcount_leak": [false, "inexact"],
+    "gc_cycle_ok": [true, "pass"],
+    "cpu_time": [false, "inexact"],
+    "thread_leak": [false, "inexact"]
+  },
+  "5: identity of values that cross by value": {
+    "tuple_identity": [false, "fail"],
+    "tuple_identity_ok": [true, "pass"],
+    "str_identity": [false, "fail"],
+    "str_identity_ok": [true, "pass"],
+    "ident_cache": [false, "fail"],
+    "interned_ok": [true, "pass"],
+    "ident_impure": [false, "inexact"]
+  },
+  "6: namedtuple __replace__": {
+    "ntuple_replace": [true, "pass"]
+  }
+}

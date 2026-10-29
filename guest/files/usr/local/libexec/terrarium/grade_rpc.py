@@ -59,7 +59,7 @@ import threading
 import time
 import types
 import weakref
-from operator import is_not
+from operator import attrgetter, is_not
 
 # The grader's own references: what tests or candidate code assign to these modules' attributes (mirrored to the
 # other process, or refused) never reaches the grader's protocol or its type checks. `_time` is the module itself
@@ -1016,6 +1016,8 @@ class Decoder:
         self.alias = {}
         self.nans = {}
         self.after = []
+        side.decoded += 1
+        self.serial = side.decoded  # this message's number among the ones this side read
 
     def dec(self, x, depth=0):
         if x is None or isinstance(x, (bool, int, float, str)):
@@ -1110,6 +1112,9 @@ class Decoder:
         k = x.get("k")
         if k is not None:
             self.side._vput(k, obj)
+        elif self.side.unkeyed is not None:
+            # NaNs keep their identity within a message (one object sent twice arrives as one).
+            self.side.unkeyed[id(obj)] = self.serial if type(obj) is float and obj != obj else 0
         return obj
 
 
@@ -1178,6 +1183,8 @@ class Side:
         self.vlast = []  # keys made or received before that: measured at this send
         self.vdrops = []  # keys this side forgot, for the other side to forget too
         self.vsweep_at = VALUE_SWEEP
+        self.unkeyed = None  # the tests' side: id -> message number (NaNs; else 0) of by-value objects without a key
+        self.decoded = 0
         self.vobj[0] = float("nan")
         self.vfree = self._vrefs(0)
         del self.vobj[0]
@@ -2172,6 +2179,50 @@ _CO_VARARGS, _CO_VARKEYWORDS, _CO_GENERATOR, _CO_COROUTINE, _CO_ASYNC_GENERATOR 
 # signature, flags, file and first line): inspect's signature, source and kind checks.
 _CODE_READERS = frozenset(("_signature_from_function", "_has_code_flag", "getfile", "findsource", "_signature_is_functionlike"))
 _CODE_ATTRS = frozenset(("__code__", "gi_code", "gi_frame"))
+# A candidate function's attributes its stand-in copies, kept the same both ways (fn_changes): what either side's code
+# sets on its function reaches the other's before that runs. On 3.14+ __annotate__ (reading __annotations__ there would
+# evaluate them; setting __annotations__ sets __annotate__ to None). The tests can't set a stand-in's __defaults__,
+# __kwdefaults__ or __code__ (code_guard); the candidate's side watches its function's __code__ too.
+_FN_ANN = "__annotate__" if sys.version_info >= (3, 14) else "__annotations__"
+_FN_TP = ("__type_params__",) if sys.version_info >= (3, 12) else ()
+_FN_TESTS = ("__name__", "__qualname__", "__module__", "__doc__", _FN_ANN) + _FN_TP
+_FN_CAND = _FN_TESTS + ("__defaults__", "__kwdefaults__", "__code__")
+_GEN_SYNC = ("__name__", "__qualname__")
+_FN_DESC_KEY = {"__name__": "name", "__qualname__": "qual", "__module__": "mod", "__doc__": "doc", "__defaults__": "defaults", "__kwdefaults__": "kwdefaults", "__annotations__": "ann", "__type_params__": "tp"}
+_FN_GET = {names: attrgetter(*names) for names in (_FN_TESTS, _FN_CAND, _GEN_SYNC)}
+
+
+def fn_changes(who, obj, names, snap):
+    """[(name, value)] for each attribute of obj (a function or generator: a stand-in, or the candidate's own) in
+    names that is no longer the one in snap, and their values now; a change the other side can't take is Inexact."""
+    cur = _FN_GET[names](obj)
+    if not any(map(is_not, cur, snap)):
+        return None, snap
+    out = []
+    for name, a, b in zip(names, cur, snap):
+        if a is b:
+            continue
+        if name == "__annotate__":
+            if a is not None:
+                raise Inexact("%s replaced __annotate__ of a function the other process has a copy of" % who)
+            out.append(("__annotations__", obj.__annotations__))
+        elif name == "__code__":
+            raise Inexact("%s replaced __code__ of a function the other process has a copy of" % who)
+        else:
+            out.append((name, a))
+    return out, cur
+
+
+def fn_change_in(dec, raw):
+    """Decoded (rid, name, value) changes to functions or generators (fn_changes), in the order they were encoded."""
+    if not isinstance(raw, list):
+        raise ProtocolError("bad function attributes")
+    out = []
+    for e in raw:
+        if not (isinstance(e, list) and len(e) == 3 and type(e[0]) is int and (e[1] in _FN_DESC_KEY or e[1] == "close")):
+            raise ProtocolError("bad function attributes")
+        out.append((e[0], e[1], None if e[1] == "close" else dec.dec(e[2])))
+    return out
 
 
 def _make_forwarder(p, desc):
@@ -2210,7 +2261,9 @@ def _make_forwarder(p, desc):
     elif flags & _CO_COROUTINE:
         head, body = "async def", "return await _terrarium_p(%s)" % args
     elif flags & _CO_GENERATOR:
-        head, body = "def", "return (yield from _terrarium_p(%s))" % args
+        # Calling it returns the stand-in for the candidate's generator at once (one process creates the generator at
+        # the call, running none of its code); its code is flagged a generator's for inspect, as the candidate's is.
+        head, body = "def", "return _terrarium_p(%s)" % args
     else:
         head, body = "def", "return _terrarium_p(%s)" % args
     src = "def _terrarium_make(_terrarium_p):\n %s _terrarium_f(%s):\n  %s\n return _terrarium_f\n" % (head, ", ".join(params), body)
@@ -2221,7 +2274,12 @@ def _make_forwarder(p, desc):
     kw = {"co_name": desc["co"], "co_filename": desc["file"], "co_firstlineno": desc["line"]}
     if hasattr(co, "co_qualname"):
         kw["co_qualname"] = desc["coq"]
-    f.__code__ = co.replace(**kw)
+    if flags & _CO_GENERATOR:
+        # A new function rather than __code__ assignment, which 3.15 warns about when the kind differs.
+        kw["co_flags"] = co.co_flags | _CO_GENERATOR
+        f = types.FunctionType(co.replace(**kw), f.__globals__, f.__name__, None, f.__closure__)
+    else:
+        f.__code__ = co.replace(**kw)
     f.__name__, f.__qualname__, f.__module__, f.__doc__ = desc["name"], desc["qual"], desc["mod"], desc["doc"]
     f.__defaults__, f.__kwdefaults__ = defaults, kwdefaults
     f.__dict__ = desc["dict"]
@@ -2238,14 +2296,17 @@ def _fwd_annotate(p):
     def __annotate__(format):
         if format != 1:
             raise NotImplementedError
-        return dict(getattr(p, "__annotations__"))
+        # The candidate's own dict (linked): changes either side makes to it reach the other.
+        return getattr(p, "__annotations__")
 
     return __annotate__
 
 
-def _gen_wrap(p):
-    """A real generator standing for candidate generator p (its proxy): what PEP 380's yield from does, without
-    asking p for an iterator (that would be this generator again)."""
+def _gen_wrap(p, me):
+    """A real generator standing for candidate generator p (its proxy): next, send, throw and close are p's. me: [a
+    weak reference to this generator, started]. When it is being finalized (its weak references are cleared first)
+    p is left alone: the candidate's generator is closed when the candidate lets go of it too, as in one process."""
+    me[1] = True
     try:
         y = p.__next__()
     except StopIteration as e:
@@ -2253,10 +2314,9 @@ def _gen_wrap(p):
     while True:
         try:
             sent = yield y
-        except GeneratorExit:
-            p.close()
-            raise
-        except BaseException as e:  # noqa: B036 - thrown in: passed on, as yield from does
+        except BaseException as e:  # noqa: B036 - thrown in (close() throws GeneratorExit): passed on
+            if isinstance(e, GeneratorExit) and me[0]() is None:
+                return
             try:
                 y = p.throw(e)
             except StopIteration as e2:
@@ -2296,6 +2356,8 @@ class Client(Side):
         self.state = {}  # process state as both sides last had it
         self.ended = None  # process state the candidate changed that this process can't take: every later call fails
         self.ran = False  # candidate code has run (a call was made)
+        self.unkeyed = {}
+        self.loaded = set()  # candidate modules the tests imported
         self.orig = {"stdout": sys.stdout, "stderr": sys.stderr, "stdin": sys.stdin, "print": builtins.print, "input": builtins.input}
         self.stdin_obj = None  # the tests' io.StringIO stdin the candidate last got the text of
         self.env0 = dict(os.environ)
@@ -2311,6 +2373,7 @@ class Client(Side):
         self.fwd = weakref.WeakValueDictionary()  # rid -> the real function standing for candidate function rid
         self.fwd_rids = weakref.WeakKeyDictionary()  # that function -> rid
         self.fwd_desc = {}  # rid -> its decoded description, while its proxy lives
+        self.fwd_snap = {}  # rid -> its stand-in's _FN_TESTS (generators: _GEN_SYNC) as the candidate's last had them
         self.gens = weakref.WeakValueDictionary()  # rid -> the real generator standing for candidate generator rid
         self.gen_rids = weakref.WeakKeyDictionary()  # that generator -> its proxy (kept as long as it)
         self.fn_inexact = None  # why the tests' process can't have stand-in functions (their closures, globals)
@@ -2364,6 +2427,7 @@ class Client(Side):
             del self.ids[id(p)]
             del self.proxies[rid]
             self.fwd_desc.pop(rid, None)
+            self.fwd_snap.pop(rid, None)
             self.release[rid] = None
         finally:
             self.lock.release()
@@ -2812,6 +2876,7 @@ class Client(Side):
         f = _make_forwarder(p, desc)
         self.fwd[rid] = f
         self.fwd_rids[f] = rid
+        self.fwd_snap[rid] = _FN_GET[_FN_TESTS](f)
         return f
 
     def _fn_desc(self, raw, dec, d):
@@ -2842,10 +2907,13 @@ class Client(Side):
         if g is None:
             if not (isinstance(names, list) and len(names) == 2 and all(type(n) is str for n in names)):
                 raise ProtocolError("bad generator")
-            g = _gen_wrap(p)
+            me = [None, False]
+            g = _gen_wrap(p, me)
+            me[0] = weakref.ref(g)
             g.__name__, g.__qualname__ = names
             self.gens[rid] = g
-            self.gen_rids[g] = (rid, p)
+            self.gen_rids[g] = (rid, p, me)
+            self.fwd_snap[rid] = _FN_GET[_GEN_SYNC](g)
         return g
 
     def _standin_rid(self, v):
@@ -2961,7 +3029,38 @@ class Client(Side):
             w.flush()
             if self.std_orig:
                 self._std_state(enc, st, s)
+        if self.fwd_snap:
+            fn = self._fn_state(enc)
+            if fn:
+                st["fn"] = fn
         return st
+
+    def _fn_state(self, enc):
+        """What the tests set on stand-in functions and generators since the candidate's own last had it."""
+        out, new = [], []
+        for rid, snap in list(self.fwd_snap.items()):
+            f, names = self.fwd.get(rid), _FN_TESTS
+            if f is None:
+                f, names = self.gens.get(rid), _GEN_SYNC
+                if f is None:
+                    continue
+                me = self.gen_rids[f][2]
+                if not me[1] and f.gi_frame is None:
+                    # Closed (or thrown into) before it started: none of its code ran, and the candidate's one is
+                    # closed the same way.
+                    me[1] = True
+                    out.append([rid, "close", None])
+            ch, cur = fn_changes("the tests", f, names, snap)
+            if ch:
+                out.extend([rid, name, enc.enc(v)] for name, v in ch)
+                new.append((rid, ch, cur))
+        for rid, ch, cur in new:
+            self.fwd_snap[rid] = cur
+            desc = self.fwd_desc.get(rid)
+            if desc is not None:
+                for name, v in ch:
+                    desc[_FN_DESC_KEY[name]] = v
+        return out
 
     def _std_changed(self, where, path, name, old):
         """StdWatch: the tests changed a standard-library module's or class's attribute (sent with the next call)."""
@@ -3036,6 +3135,8 @@ class Client(Side):
             out[name] = None if v == ["orig"] else [dec.dec(v[1])]
         if "argv" in cst:
             out["argv"] = dec.dec(cst["argv"])
+        if "fn" in cst:
+            out["fn"] = fn_change_in(dec, cst["fn"])
         return out
 
     def _apply_cst(self, cst):
@@ -3088,6 +3189,24 @@ class Client(Side):
             x = lg.root if name == "" else lg.getLogger(name)
             if type(x.handlers) is not _CandidateHandlers:
                 x.handlers = _CandidateHandlers(list.copy(x.handlers))
+        for rid, name, value in cst.get("fn") or ():
+            # The candidate's code set an attribute of a function or generator the tests have a stand-in for.
+            if name not in _FN_DESC_KEY:
+                raise ProtocolError("bad function attribute")
+            desc = self.fwd_desc.get(rid)
+            if desc is not None:
+                desc[_FN_DESC_KEY[name]] = value
+            f, names = self.fwd.get(rid), _FN_TESTS
+            if f is None:
+                f, names = self.gens.get(rid), _GEN_SYNC
+                if f is None or name not in _GEN_SYNC:
+                    continue
+            try:
+                setattr(f, name, value)
+            except Exception as e:
+                self._end("the candidate's code set %s of a function to a value its stand-in here can't take (%s)" % (name, clip(_safe_str(e), 200)))
+                continue
+            self.fwd_snap[rid] = _FN_GET[names](f)
         if "tz" in cst:
             # The environment (TZ) is already the candidate's: time.tzset() here gives the same zone, or the run ends.
             if _tzset is not None:
@@ -3310,7 +3429,11 @@ class Client(Side):
         return self.call("status")
 
     def module(self, name):
-        return self.call("import", name=name)
+        """The candidate's module name. Loaded again (the tests deleted it from sys.modules): the candidate's process
+        runs it again too, into a new module, as one process's import would."""
+        fresh = name in self.loaded
+        self.loaded.add(name)
+        return self.call("import", name=name, fresh=fresh)
 
     def _crossed(self, x):
         """Whether x is, or stands for, an object the candidate's process has too (a candidate object, a linked
@@ -3420,6 +3543,33 @@ class Client(Side):
                     raise Inexact("the tests set %s of a candidate function's stand-in, which the candidate's own function wouldn't get" % args[1])
 
         sys.addaudithook(code_guard)
+        # Identity: a by-value object that crossed without a key (a tuple or frozenset holding more than plain data, a
+        # number in a container's contents) arrives as a new object each time, where one process could have one.
+        ut = _std("unittest")
+
+        def same(args):
+            if len(args) < 3:
+                return
+            a, b = args[1], args[2]
+            t = type(a)
+            if t is not type(b) or not (self._identity_unsure(a) or self._identity_unsure(b)):
+                return
+            if t is int or t is float or t is complex:
+                if a != a and b != b:
+                    n = self.unkeyed.get(id(a), 0)
+                    if n and n == self.unkeyed.get(id(b)):
+                        return  # two NaNs from one message: as separate or as one as they were there
+                elif a != b:
+                    return  # different numbers are different objects in any process
+            raise Inexact("assertIs/assertIsNot of a %s that may have crossed from the candidate's process without its identity (one process could have the same object)" % t.__name__)
+
+        _guard(ut.TestCase, "assertIs", same)
+        _guard(ut.TestCase, "assertIsNot", same)
+        # String annotations (`from __future__ import annotations`) evaluate in the function's globals: a stand-in's
+        # are this module's, not the candidate module's.
+        for mod, name, evals in ((_std("typing"), "get_type_hints", lambda a, k: (a[0] if a else k.get("globalns")) is None), (_std("inspect"), "get_annotations", lambda a, k: k.get("eval_str") and k.get("globals") is None), (_std("annotationlib"), "get_annotations", lambda a, k: k.get("eval_str") and k.get("globals") is None)):
+            if mod is not None and getattr(mod, name, None) is not None:
+                setattr(mod, name, self._hints_guard(getattr(mod, name), evals))
         # Last: the guards above aren't the tests' changes.
         w = StdWatch(self._std_changed)
         self.watch = w if w.ok else None
@@ -3427,6 +3577,30 @@ class Client(Side):
     def _linked(self, x):
         n = self.link_of.get(id(x))
         return n is not None and self.links.get(n) is x
+
+    def _hints_guard(self, real, evals):
+        def guarded(obj, *args, **kwargs):
+            if self._standin_rid(obj) is not None and evals(args, kwargs) and any(type(v) is str for v in dict(obj.__annotations__).values()):
+                raise Inexact("%s evaluates the string annotations of a candidate function in its globals, which in this process are the grader's" % real.__name__)
+            return real(obj, *args, **kwargs)
+
+        guarded.__name__ = guarded.__qualname__ = real.__name__
+        guarded.__doc__ = real.__doc__
+        guarded.__wrapped__ = real
+        return guarded
+
+    def _identity_unsure(self, x):
+        """Whether x is an immutable value whose identity the candidate's process may have had and this one lost."""
+        t = type(x)
+        if t is not int and t is not float and t is not complex and not isinstance(x, (tuple, frozenset)):
+            return False
+        k = self.vkey.get(id(x))
+        if k is not None and self.vobj.get(k) is x:
+            return False
+        if id(x) in self.unkeyed:
+            return True
+        # A number in a container's contents crosses without a key: once candidate code has run, any could have.
+        return t is not tuple and t is not frozenset and not isinstance(x, tuple) and self.ran and not (t is int and -5 <= x <= 256)
 
     def candidate_id(self, obj):
         """id() for the tests: a candidate object's (or a value it sent) is its id in the candidate process."""
@@ -3692,6 +3866,7 @@ class Server(Side):
         self.loglevels = LOG_DEFAULT  # loggers as last exchanged
         self.loghandlers = set()  # loggers the candidate's code added handlers or filters to ("" for root)
         self.loghandlers_sent = set()
+        self.fn_sent = {}  # rid -> [function or generator the tests have a stand-in for, the names kept, their values]
         self.rlimit = sys.getrecursionlimit()  # recursion limit last exchanged
         import warnings
 
@@ -3833,9 +4008,15 @@ class Server(Side):
             return {"t": "meth", "f": enc.enc(v.__func__, depth + 1), "s": enc.enc(v.__self__, depth + 1)}
         tag = self._object(enc, v, depth)
         if t is types.FunctionType:
-            tag["fn"] = self._fn_desc(enc, v, depth + 1) if "c" in tag else 1
+            if "c" in tag:
+                tag["fn"] = self._fn_desc(enc, v, depth + 1)
+                self.fn_sent[tag["id"]] = [v, _FN_CAND, _FN_GET[_FN_CAND](v)]
+            else:
+                tag["fn"] = 1
         elif t is types.GeneratorType:
             tag["gen"] = [str(v.__name__), str(v.__qualname__)]
+            if "c" in tag:
+                self.fn_sent[tag["id"]] = [v, _GEN_SYNC, _FN_GET[_GEN_SYNC](v)]
         return tag
 
     def _fn_desc(self, enc, f, d):
@@ -4252,6 +4433,29 @@ class Server(Side):
             self.warn = warnings_state()
         for path, name, how, value in st.get("std") or ():
             self._std_apply(path, name, how, value)
+        for rid, name, value in st.get("fn") or ():
+            # The tests set an attribute of their stand-in for this function (or generator): the candidate's own gets it.
+            if name == "close":
+                g = self.objs.get(rid)
+                if type(g) is types.GeneratorType:
+                    try:
+                        g.close()
+                    except Exception as e:
+                        self._poison("closing a candidate generator the tests closed failed (%s)" % clip(_safe_str(e), 200))
+                continue
+            hit = self.fn_sent.get(rid)
+            if hit is None:
+                if rid in self.objs:
+                    self._poison("the tests set %s of a candidate function the grader didn't send them" % name)
+                continue
+            if name not in hit[1] and not (name == "__annotations__" and "__annotate__" in hit[1]):
+                raise ProtocolError("bad function attribute")
+            try:
+                setattr(hit[0], name, value)
+            except Exception as e:
+                self._poison("the tests set %s of a candidate function to a value it can't take here (%s)" % (name, clip(_safe_str(e), 200)))
+                continue
+            hit[2] = _FN_GET[hit[1]](hit[0])
 
     def _std_apply(self, path, name, how, value):
         """A standard-library module's or class's attribute as the tests changed it."""
@@ -4344,6 +4548,17 @@ class Server(Side):
             self.loghandlers_sent = set(self.loghandlers)
         if path_changed(self.path_obj, self.path0):
             self._poison("the candidate's code changed sys.path, which the tests' process can't share (its imports would differ)")
+        fn = []
+        for rid, hit in list(self.fn_sent.items()):
+            try:
+                ch, hit[2] = fn_changes("the candidate's code", hit[0], hit[1], hit[2])
+            except Inexact as e:
+                self._poison(str(e))
+                break
+            if ch:
+                fn.extend([rid, name, enc.enc(v)] for name, v in ch)
+        if fn:
+            cst["fn"] = fn
         return cst
 
     def _report(self, msg, enc):
@@ -4456,10 +4671,13 @@ class Server(Side):
                             raise ProtocolError("bad standard-library state")
                         out.append((e[0], e[1], e[2], dec.dec(e[3]) if len(e) == 4 else None))
                     st["std"] = out
+                if "fn" in st:
+                    st["fn"] = fn_change_in(dec, st["fn"])
             self._incoming(dec, msg)
             weak = msg.get("weak") or ()
             # In the order the tests dropped them: an object the tests held weakly must die as its proxy did.
             for rid in msg.get("release") or ():
+                self.fn_sent.pop(rid, None)
                 obj = self.objs.pop(rid, None)
                 if obj is not None and self.ids.get(id(obj)) == rid:
                     del self.ids[id(obj)]
@@ -4518,6 +4736,8 @@ class Server(Side):
 
             if req.get("reload") is True:
                 return importlib.reload(sys.modules[str(name)])
+            if req.get("fresh") is True:
+                sys.modules.pop(str(name), None)
             return importlib.import_module(str(name))
         if op == "gc":
             gen = got[0] if got else 2

@@ -10,8 +10,8 @@ class T(unittest.TestCase):
             os.environ["TZ"] = "UTC"
             time.tzset()
             self.assertEqual(m.zone(), ("UTC", "UTC"))
-            m.set_tz("EST5EDT")
-            self.assertEqual(tuple(time.tzname), ("EST", "EDT"))
+            m.set_tz("ABC+3")
+            self.assertEqual((time.tzname[0], time.timezone), ("ABC", 3 * 3600))
         finally:
             if saved is None:
                 os.environ.pop("TZ", None)

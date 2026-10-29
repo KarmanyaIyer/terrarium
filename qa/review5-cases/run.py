@@ -2,7 +2,7 @@
 `python3 -m unittest`, side by side. The isolated run's own verdict is what counts (the plain run beside it can be
 forged): "pass", "fail" (a test failed or raised an ordinary exception) or "inexact" (a grader error).
 
-EXPECT: case -> (plain unittest passes?, the isolated run's verdict). A case where plain unittest fails must never
+expect.json: case -> (plain unittest passes?, the isolated run's verdict). A case where plain unittest fails must never
 get an isolated "pass"; one where it passes gets "pass", or "inexact" where the grader can't reproduce Python.
 usage: run.py [case ...] (default: all). PY=<python> picks the interpreter (default: this one)."""
 import json, os, re, shutil, subprocess, sys, tempfile, time
@@ -10,69 +10,9 @@ import json, os, re, shutil, subprocess, sys, tempfile, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 GRADE = os.environ.get("GRADE") or os.path.join(HERE, "../../guest/files/usr/local/libexec/terrarium/grade.py")
 PY = os.environ.get("PY") or sys.executable
-EXPECT = {
-    # 1: state candidate code changes reaches the tests
-    "env_leak": (False, "fail"),
-    "env_ok": (True, "pass"),
-    "cwd_leak": (False, "fail"),
-    "cwd_ok": (True, "pass"),
-    "argv_leak": (False, "fail"),
-    "argv_ok": (True, "pass"),
-    "stdout_leak": (False, "fail"),
-    "stdout_swap": (True, "pass"),
-    "print_swap": (False, "fail"),
-    "print_hook": (True, "pass"),
-    "syspath_leak": (False, "inexact"),
-    "syspath_tests": (True, "pass"),
-    "syspath_order": (True, "pass"),
-    "umask_ok": (True, "pass"),
-    "tz_ok": (True, "pass"),
-    "locale_ok": (True, "pass"),
-    # 2: context managers with an exception in the with body; test handles where built-in data is needed
-    "ctx_cwd": (True, "pass"),
-    "ctx_reraise": (False, "fail"),
-    "ctx_reraise_ok": (True, "pass"),
-    "ctx_tb": (True, "pass"),
-    "ctx_tb_names": (True, "inexact"),
-    "handle_typeerror": (False, "inexact"),
-    # 3: the documented gaps
-    "log_handler": (False, "inexact"),
-    "log_levels_ok": (True, "pass"),
-    "log_config_leak": (False, "inexact"),
-    "log_basic_ok": (True, "pass"),
-    "slots_weak": (True, "pass"),
-    "slots_weak_lenient": (False, "fail"),
-    "func_type": (False, "fail"),
-    "func_type_ok": (True, "pass"),
-    "star_import": (True, "pass"),
-    "module_vars": (False, "inexact"),
-    "module_type": (False, "inexact"),
-    "module_reload": (True, "pass"),
-    "tb_names": (False, "inexact"),
-    "id_cached": (False, "fail"),
-    "stdlib_assign": (False, "inexact"),
-    "stdlib_assign_tests": (True, "pass"),
-    "class_assign": (False, "inexact"),
-    "class_assign_tests": (True, "pass"),
-    "class_descr_tests": (True, "inexact"),
-    "sysmodules_tests": (True, "inexact"),
-    "mock_module_attr": (True, "pass"),
-    "std_module_arg": (True, "pass"),
-    # 4: refcounts and referrers of candidate objects
-    "refcount_leak": (False, "inexact"),
-    "gc_cycle_ok": (True, "pass"),
-    "cpu_time": (False, "inexact"),
-    "thread_leak": (False, "inexact"),
-    # 5: identity of values that cross by value
-    "tuple_identity": (False, "fail"),
-    "tuple_identity_ok": (True, "pass"),
-    "str_identity": (False, "fail"),
-    "str_identity_ok": (True, "pass"),
-    "ident_cache": (False, "fail"),
-    "interned_ok": (True, "pass"),
-    # 6: namedtuples (3.13+ adds __replace__)
-    "ntuple_replace": (True, "pass"),
-}
+# expect.json: item -> {case: [plain unittest passes?, the isolated run's verdict]} (the node and VM tests read it too).
+with open(os.path.join(HERE, "expect.json")) as f:
+    EXPECT = {k: tuple(v) for g in json.load(f).values() for k, v in g.items()}
 FORGE = (
     "import sys as _s, unittest as _u\n"
     "if 'test_hidden' in _s.modules:\n"
