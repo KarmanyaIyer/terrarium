@@ -836,6 +836,12 @@ select.input {
   gap: 10px;
   font-size: var(--fs-sm);
 }
+.dl-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
 .dl-bar {
   height: 5px;
   border-radius: 3px;
@@ -988,9 +994,14 @@ select.input {
 }
 .st-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
   min-width: 0;
+}
+.st-row > .num,
+.st-row > .warn-text {
+  white-space: nowrap;
 }
 .st-row select.input {
   max-width: 280px;
@@ -1098,6 +1109,8 @@ select.input {
   cursor: pointer;
 }
 .ec-pick {
+  border: 0;
+  background: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;

@@ -47,8 +47,10 @@ export default function ModelsView() {
   const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.otherLoaded + r.e.bytes)) || 1;
   const loaded = models.filter((m) => m.loaded);
   const resident = loaded.reduce((a, m) => a + (m.residentBytes ?? 0), 0);
+  // Failed downloads stay until dismissed; canceled ones go at once.
+  const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
   const active = Object.values(downloads)
-    .filter((d) => d.status === "running" || (d.finishedAt && Date.now() - d.finishedAt < 60_000 && d.status !== "done"))
+    .filter((d) => d.status === "running" || (d.status === "error" && !dismissed.has(d.id)))
     .sort((a, b) => b.startedAt - a.startedAt);
 
   const usedBy = (id: string) => Object.values(sessions).filter((s) => s.modelId === id && !s.evalRunId);
@@ -91,7 +93,7 @@ export default function ModelsView() {
       {active.length > 0 && (
         <div className="dl-strip">
           {active.map((d) => (
-            <DownloadRow key={d.id} d={d} />
+            <DownloadRow key={d.id} d={d} onDismiss={() => setDismissed((x) => new Set(x).add(d.id))} />
           ))}
         </div>
       )}
@@ -262,7 +264,7 @@ export default function ModelsView() {
   );
 }
 
-function DownloadRow({ d }: { d: ModelDownload }) {
+function DownloadRow({ d, onDismiss }: { d: ModelDownload; onDismiss: () => void }) {
   const pct = d.bytesTotal ? Math.min(100, (d.bytesDone / d.bytesTotal) * 100) : 0;
   return (
     <div className={`dl-row ${d.status}`}>
@@ -278,8 +280,13 @@ function DownloadRow({ d }: { d: ModelDownload }) {
           <X /> Cancel
         </button>
       ) : (
-        <span className={d.status === "error" ? "err-text truncate" : "dim"} title={d.error}>
-          {d.status === "error" ? d.error : d.status}
+        <span className="dl-end">
+          <span className={d.status === "error" ? "err-text truncate" : "dim"} title={d.error}>
+            {d.status === "error" ? d.error : d.status}
+          </span>
+          <button className="icon-btn" aria-label="Dismiss" title="Dismiss" onClick={onDismiss}>
+            <X />
+          </button>
         </span>
       )}
     </div>

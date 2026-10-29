@@ -57,7 +57,7 @@ export function HarnessTip({ id }: { id: HarnessProfile }) {
         {info && info.tools.length > 0 && (
           <>
             <span>Tool specs</span>
-            <span>≈{fmtInt(info.tokensEst.tools)} tokens</span>
+            <span>≈{fmtInt(info.tokensEst.tools)} tokens, plus the chat template's tool instructions (exact count in the Prompt tab)</span>
           </>
         )}
       </div>
@@ -77,7 +77,7 @@ export const ENV_ROWS: { label: string; vm: ReactNode; sim: ReactNode }[] = [
   { label: "Installs", vm: "pip and npm (network on)", sim: "None: no package manager, no compiler" },
   { label: "Boundary", vm: "Hardware virtualization (Apple Hypervisor); own kernel", sim: "Software: interpreter in a node process under macOS sandbox-exec" },
   { label: "Files", vm: "VM disk; snapshots copy it", sim: "In memory, saved to data/envs" },
-  { label: "Cost", vm: "Its RAM (1 GiB default) while running; boots in 1 to 2 s", sim: "~90 MiB, starts instantly" },
+  { label: "Cost", vm: "Its RAM (1 GiB default) while running; boots in 1 to 2 s", sim: "~50 to 90 MiB, starts instantly" },
   { label: "Limit", vm: "2 running at once", sim: "None" },
 ];
 

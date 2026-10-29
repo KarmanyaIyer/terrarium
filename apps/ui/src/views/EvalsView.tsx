@@ -177,7 +177,7 @@ function History({ runs, showSuite }: { runs: EvalRunSummary[]; showSuite: boole
               </td>
               {showSuite && <td className="nowrap">{r.suiteTitle}</td>}
               <td className="nowrap dim">
-                {harnessLabel(r.config.harness).split(":")[0]}
+                {harnessLabel(r.config.harness)}
                 {r.config.thinking ? ", thinking" : ""}
               </td>
               <td>

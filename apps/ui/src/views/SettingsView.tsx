@@ -70,6 +70,8 @@ function MemorySection({ settings, totalBytes, running, update }: { settings: Ap
   const applied = running.memoryCeilingBytes != null ? Math.round(running.memoryCeilingBytes / 1e9) : null;
   const stale = running.status === "ready" && applied != null && applied !== Math.max(4, Math.round(settings.memoryBudgetBytes / 1e9));
   const [restarting, setRestarting] = useState(false);
+  // Stopping oMLX aborts in-flight model calls, so don't offer it mid-run.
+  const busy = useStore((s) => Object.values(s.sessions).some((x) => x.status === "running") || s.evalRuns.some((r) => r.status === "running"));
   const restart = async () => {
     setRestarting(true);
     await act("Restart oMLX", async (b) => {
@@ -111,7 +113,7 @@ function MemorySection({ settings, totalBytes, running, update }: { settings: Ap
         {stale && (
           <>
             <span className="warn-text">oMLX is running with {fmtBytes((applied ?? 0) * 1e9)}</span>
-            <button className="btn sm" disabled={restarting} onClick={() => void restart()}>
+            <button className="btn sm" disabled={restarting || busy} title={busy ? "Stop running sessions and evals first: restarting aborts them" : undefined} onClick={() => void restart()}>
               {restarting ? <Loader2 className="spin" /> : <RotateCw />} Restart oMLX
             </button>
           </>
@@ -262,7 +264,7 @@ function PathRow({ k, label, tip, path, bytes }: { k: PathKey; label: string; ti
 }
 
 function StorageSection({ info, onRefresh }: { info: SettingsInfo | null; onRefresh: () => void }) {
-  const data = info?.disk.filter((d) => d.key !== "models") ?? [];
+  const data = (info?.disk.filter((d) => d.key !== "models") ?? []).sort((a, b) => b.bytes - a.bytes); // bar and legend share one order
   const dataTotal = data.reduce((a, d) => a + d.bytes, 0);
   const models = info?.disk.find((d) => d.key === "models")?.bytes;
   return (
@@ -285,9 +287,7 @@ function StorageSection({ info, onRefresh }: { info: SettingsInfo | null; onRefr
               ))}
             </div>
             <div className="st-disk-legend">
-              {[...data]
-                .sort((a, b) => b.bytes - a.bytes)
-                .map((d) => (
+              {data.map((d) => (
                   <span key={d.key} title={exactBytes(d.bytes)}>
                     <i className={`seg-${d.key}`} />
                     {d.label} <span className="num dim">{fmtBytes(d.bytes)}</span>

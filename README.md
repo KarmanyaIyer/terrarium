@@ -79,7 +79,7 @@ it gets; the environment decides what those tools can touch.
 | Installs | pip and npm, when network is on | None: no package manager, no compiler |
 | Boundary | Hardware virtualization, own kernel | Software: interpreter in a sandboxed Node process |
 | Files | VM disk; snapshots copy it | In memory, saved to `data/envs` |
-| Cost | Its RAM (1 GiB default) while running; boots in 1 to 2 s | About 90 MiB, starts instantly |
+| Cost | Its RAM (1 GiB default) while running; boots in 1 to 2 s | About 50 to 90 MiB, starts instantly |
 | Limit | 2 running at once | None |
 | Defaults | 2 CPUs, 1 GiB RAM, 4 GiB disk, krun backend | Python on, JavaScript off, 64 MiB file limit |
 
@@ -90,12 +90,12 @@ environment sheet shows this comparison and explains every field on hover.
 
 ## Harness profiles
 
-The agent loop is the same for every profile; a profile is the system prompt plus the tool definitions.
+The agent loop is the same for every profile; a profile is the system prompt plus the tool definitions. Token sizes below are estimates; the model's chat template adds its own tool-calling instructions on top (with Qwen3.5 the Terrarium tools come to 583 tokens), and the Prompt tab shows the exact count for the loaded model.
 
 | Profile | Prompt | Tools | Use for |
 | --- | --- | --- | --- |
-| Terrarium: minimal prompt (`terrarium`) | about 140 tokens | bash, read, write, edit (about 340 tokens) | Default for small models: the short prompt leaves room for context, and the tools take flat arguments |
-| Pi: stock prompt (`pi-stock`) | about 320 tokens | read, bash, edit (a list of edits), write (about 440 tokens) | Comparison with the prompt and tool shapes the Pi coding agent ships |
+| Terrarium: minimal prompt (`terrarium`) | about 140 tokens | bash, read, write, edit (about 340 tokens of JSON) | Default for small models: the short prompt leaves room for context, and the tools take flat arguments |
+| Pi: stock prompt (`pi-stock`) | about 320 tokens | read, bash, edit (a list of edits), write (about 440 tokens of JSON) | Comparison with the prompt and tool shapes the Pi coding agent ships |
 | Chat: no tools (`chat`) | about 15 tokens | none | Plain questions and answers |
 
 Token counts are estimates; the session's Prompt tab shows exact counts from the model's tokenizer when it is
