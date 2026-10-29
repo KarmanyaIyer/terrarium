@@ -1,0 +1,165 @@
+// Full harness loop against a scripted fake model: tools run in a real sim env, file changes are captured,
+// a text tool call is repaired, the transcript resumes, and time travel shows the tree at each step.
+
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { after, before, test } from "node:test";
+import type { ModelInfo, TraceEvent } from "@terrarium/shared";
+import { EnvManager } from "../envs/manager.ts";
+import { simDriver } from "../envs/sim/driver.ts";
+import { FileViews } from "../files.ts";
+import { Hub } from "../hub.ts";
+import { Gateway } from "../inference/gateway.ts";
+import type { InferenceService } from "../inference/service.ts";
+import { Store } from "../store/db.ts";
+import { startFakeOpenAI, type FakeOpenAI, type ScriptedReply } from "../test-support/fake-openai.ts";
+import { SIM_NOTE, TERRARIUM_PROMPT } from "./prompts.ts";
+import { SessionManager } from "./sessions.ts";
+
+const MODEL: ModelInfo = {
+  id: "fake-model",
+  name: "Fake",
+  family: "qwen3.5",
+  params: "4B",
+  quant: "4bit",
+  diskBytes: 1,
+  nativeContext: 32768,
+  toolFormat: "qwen3_coder XML",
+  thinking: "optional",
+  kvBytesPerToken: 1,
+  fixedBytes: 1,
+  weightsBytes: 1,
+  loaded: false,
+  defaultContext: 8192,
+  defaultMaxOutput: 2048,
+  sampling: { temperature: 0.7, topP: 0.8, topK: 20, presencePenalty: 1.5 },
+};
+
+let dir: string;
+let store: Store;
+let hub: Hub;
+let fake: FakeOpenAI;
+let gateway: Gateway;
+let envs: EnvManager;
+let sessions: SessionManager;
+const events: TraceEvent[] = [];
+const script: ScriptedReply[] = [
+  { toolCall: { name: "write", args: { path: "hello.py", content: "print('hi')\n" } } },
+  { toolCall: { name: "bash", args: { command: "python3 hello.py" } } },
+  { text: 'Checking files.\n<tool_call>{"name": "bash", "arguments": {"command": "ls"}}</tool_call>' },
+  { toolCall: { name: "edit", args: { path: "hello.py", old_text: "hi", new_text: "hello" } } },
+  { text: "Done: hello.py prints hello." },
+  { text: "Second run reply." },
+];
+
+before(async () => {
+  dir = mkdtempSync(join(tmpdir(), "terrarium-ses-"));
+  store = new Store(join(dir, "db.sqlite"), join(dir, "blobs"));
+  hub = new Hub();
+  hub.listen((m) => {
+    if (m.type === "trace") events.push(m.event);
+  });
+  fake = await startFakeOpenAI(script);
+  gateway = new Gateway(store, { baseUrl: () => fake.origin, apiKey: () => "k", ensureReady: async () => {} });
+  await gateway.listen();
+  envs = new EnvManager({ store, hub, dataDir: dir, drivers: { sim: simDriver, vm: null } });
+  const inference = { model: async (id: string) => (id === MODEL.id ? MODEL : null), ensureModel: async () => {} } as unknown as InferenceService;
+  sessions = new SessionManager({ store, hub, envs, inference, gateway });
+});
+
+after(async () => {
+  await sessions.stopAll();
+  await envs.stopAll();
+  await gateway.close();
+  await fake.close();
+  store.close();
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("agent loop: tools, file diffs, repair, context, resume, time travel", async () => {
+  const env = await envs.create({ name: "t", type: "sim" });
+  const s = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
+  assert.equal(s.maxOutputTokens, 2048);
+  const out = await sessions.run(s.id, "Make hello.py print hello.", { maxTurns: 10 });
+  assert.equal(out.reason, "done", out.error);
+  assert.equal(out.finalText, "Done: hello.py prints hello.");
+
+  const types = events.map((e) => e.type);
+  assert.equal(types[0], "user_message");
+  assert.equal(types.at(-1), "run_end");
+  for (const t of ["env_lifecycle", "turn_start", "model_call_start", "model_call_end", "assistant_message", "tool_start", "tool_end", "fs_change", "context", "harness_repair"]) assert.ok(types.includes(t as any), `missing ${t}`);
+  // Seqs are strictly increasing for persisted events.
+  const persisted = store.events(s.id);
+  for (let i = 1; i < persisted.length; i++) assert.equal(persisted[i].seq, persisted[i - 1].seq + 1);
+
+  const toolEnds = events.filter((e) => e.type === "tool_end");
+  assert.deepEqual(toolEnds.map((e) => (e.type === "tool_end" ? e.name : "")), ["write", "bash", "bash", "edit"]);
+  const run = toolEnds[1];
+  assert.ok(run.type === "tool_end" && run.exitCode === 0 && run.stdout === "hi\n" && run.resultForModel === "hi");
+  assert.ok(toolEnds[0].type === "tool_end" && toolEnds[0].fileChanges === 1);
+
+  const fsEvents = events.filter((e) => e.type === "fs_change");
+  assert.equal(fsEvents.length, 2, "write and edit change files; read-only bash calls do not");
+  const edit = fsEvents[1].type === "fs_change" ? fsEvents[1].changes[0] : undefined;
+  assert.equal(edit?.path, "/workspace/hello.py");
+  assert.equal(edit?.kind, "modified");
+  const diff = store.blobs.getText(edit!.diffBlob!)!;
+  assert.match(diff, /-print\('hi'\)\n\+print\('hello'\)/);
+
+  const repair = events.find((e) => e.type === "harness_repair");
+  assert.ok(repair?.type === "harness_repair" && repair.repaired[0].name === "bash");
+
+  const ctx = events.filter((e) => e.type === "context");
+  assert.ok(ctx.some((e) => e.type === "context" && e.usage.source === "server"));
+
+  // Exact request: our prompt + sim note, our tools, our budget, thinking off, family sampling.
+  const req0 = fake.requests[0];
+  assert.equal(req0.messages[0].role, "system");
+  assert.equal(req0.messages[0].content, TERRARIUM_PROMPT + SIM_NOTE);
+  assert.deepEqual(req0.tools.map((t: any) => t.function.name), ["bash", "read", "write", "edit"]);
+  assert.equal(req0.max_tokens, 2048);
+  assert.deepEqual(req0.chat_template_kwargs, { enable_thinking: false });
+  assert.equal(req0.top_k, 20);
+
+  // Resume: the next run sends the earlier transcript (including the repaired call and its result).
+  const callsBefore = fake.requests.length;
+  const out2 = await sessions.run(s.id, "Thanks.");
+  assert.equal(out2.reason, "done");
+  const req = fake.requests[callsBefore];
+  const roles = req.messages.map((m: any) => m.role);
+  assert.equal(roles.filter((r: string) => r === "system").length, 1);
+  assert.ok(roles.filter((r: string) => r === "tool").length >= 4);
+  assert.match(JSON.stringify(req.messages.at(-1).content), /Thanks\./);
+
+  // Time travel: before the first fs_change there is no hello.py; after it there is, with the first content.
+  const views = new FileViews({ store, envs });
+  const firstFs = fsEvents[0].seq;
+  const t0 = await views.tree(env.id, { sessionId: s.id, at: firstFs - 1 });
+  assert.equal(t0.children?.some((c) => c.name === "hello.py"), false);
+  const t1 = await views.tree(env.id, { sessionId: s.id, at: firstFs });
+  assert.equal(t1.children?.find((c) => c.name === "hello.py")?.change, "added");
+  const f1 = await views.file(env.id, "/workspace/hello.py", { sessionId: s.id, at: firstFs });
+  assert.equal(f1.content, "print('hi')\n");
+  const fNow = await views.file(env.id, "hello.py", {});
+  assert.equal(fNow.content, "print('hello')\n");
+});
+
+test("busy env and running session are rejected; stop works", async () => {
+  const env = await envs.create({ name: "t2", type: "sim" });
+  const a = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
+  const b = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
+  // The fake has run out of script and answers "done" immediately, so hold the env manually.
+  await envs.acquire(env.id, "someone-else");
+  assert.throws(() => sessions.sendMessage(a.id, "hi"), /busy/);
+  envs.release(env.id, "someone-else");
+  const p = sessions.run(b.id, "hi");
+  assert.throws(() => sessions.sendMessage(b.id, "again"), /already running/);
+  await p;
+  await assert.rejects(sessions.create({ envId: null, modelId: MODEL.id, harness: "terrarium" }), /needs an environment/);
+  await assert.rejects(sessions.create({ envId: null, modelId: "nope", harness: "chat" }), /model not found/);
+  const chat = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat", contextWindow: 4096 });
+  assert.equal(chat.contextWindow, 4096);
+  assert.equal(chat.maxOutputTokens, 1024);
+});

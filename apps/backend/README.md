@@ -7,7 +7,8 @@ store, eval runner. Contract with the UI: `packages/shared/src/index.ts`. Design
 
 ```
 pnpm --filter @terrarium/backend dev        # node --watch src/main.ts, port 8787, token printed
-pnpm --filter @terrarium/backend test       # node --test (unit + integration; e2e needs oMLX + a model)
+pnpm --filter @terrarium/backend test       # node --test (unit + integration; no model needed)
+pnpm --filter @terrarium/backend test:e2e   # real oMLX + Qwen3.5-4B in a sim env (~10-20 min on a busy Mac)
 pnpm --filter @terrarium/backend typecheck
 pnpm --filter @terrarium/backend build      # tsc -> dist/ (rewriteRelativeImportExtensions)
 ```
@@ -22,9 +23,33 @@ Environment:
 | `TERRARIUM_MODELS` | `<repo>/models` | MLX model dirs |
 | `TERRARIUM_VENV` | `<repo>/.venv` | Python venv with oMLX |
 | `TERRARIUM_PARENT_STDIN` | unset | `1` = exit when stdin closes (Tauri sidecar) |
-| `TERRARIUM_DEV` | unset (`1` in `dev`) | allows `http://localhost:5173` origin, prints token |
+| `TERRARIUM_DEV` | unset (`1` in `dev`) | prints the generated token and a UI link to stderr |
+| `TERRARIUM_LOG` | `info` | `debug`/`info`/`warn`/`error` |
 
-Stdout carries exactly one line, the handshake `{"port":N}`. Logs go to stderr.
+Stdout carries exactly one line, the handshake `{"port":N}`. Logs go to stderr. In dev, open the printed
+`http://localhost:5173/#url=...&token=...` link (the UI reads url/token from the hash).
+
+Request gate: Host must be exactly `127.0.0.1:<port>` or `localhost:<port>`; Origin, when present, must be
+`tauri://localhost`, `http://tauri.localhost` or `http://localhost:5173`; `Authorization: Bearer <token>` on
+every route except CORS preflight; WebSocket `/api/ws` takes the token as subprotocol `terrarium.<token>`.
+JSON bodies only (`415` otherwise), 1 MiB cap (16 MiB for `POST /api/envs` with seed files).
+
+## Harness notes
+
+- Model calls go through the gateway at `/s/<sessionId>/<callId>/v1/*`, which records the exact request
+  JSON, raw SSE, assembled response, usage and server timing per call (`model_calls`, blobs).
+- pi-ai's `streamSimple` clamps `max_tokens` to `window - estimate - 4096` (0 to a few dozen tokens on an
+  8K window once a session grows). The harness calls the openai-completions adapter's `stream` directly
+  with `max_tokens = min(session max output, window - prompt - 64)`, prompt from the last server
+  `prompt_tokens` ratio (`harness/budget.ts`). Test: `harness/stream.test.ts`.
+- oMLX withholds tool-call markup it cannot parse and fails the response with `incomplete_tool_call` /
+  `invalid_tool_call`. The harness retries such a call up to 2 times and emits a `warning` (code `other`)
+  each time. Text tool calls that do reach us (`<tool_call>` JSON, qwen3_coder XML, Gemma markup, bare
+  JSON) are repaired with a `harness_repair` event.
+- Compaction is deterministic: shorten old tool outputs to head/tail, then drop the oldest turns and note
+  it on the task message. `compaction` event each time it changes the context.
+- Files: manifest before/after each `bash`/`write`/`edit`; changed text files up to 2 MiB stored as blobs
+  with unified diffs (`fs_change`); the manifest is stored at that event's seq for `tree?at=`/`file?at=`.
 
 ## oMLX install (pinned 0.7.2, 2026-10-28)
 
@@ -58,8 +83,9 @@ No extras installed (no `mcp`, `grammar`, `audio`, `cluster`). The wheel pins `m
 - Flags: `--host 127.0.0.1 --port <random> --api-key <random per launch> --model-dir models
   --base-path data/omlx --no-hf-cache --memory-guard-gb <budget> --sse-keepalive-mode comment
   --paged-ssd-cache-dir data/omlx/cache --paged-ssd-cache-max-size 4GB`.
-- Per-model settings are applied before load: `model_type_override: "llm"`, `max_context_window`,
-  `max_tokens`, sampling defaults.
+- Per-model settings are applied before load: `max_context_window`, `max_tokens` (server cap, at least the
+  session's output budget), sampling defaults; `model_type_override: "llm"` for Qwen3.5 only (Gemma 4 and
+  the Prism Bonsai packs need oMLX's VLM loader).
 
 oMLX sets its process title to `omlx-server`, so `pgrep -f omlx_serve` does not find it. The manager tracks
 the child PID it spawned and kills that.

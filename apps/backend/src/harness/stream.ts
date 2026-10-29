@@ -6,7 +6,7 @@
 // an explicit max_tokens computed from server-calibrated token counts (budget.ts), so the clamp never runs.
 
 import type { StreamFn } from "@earendil-works/pi-agent-core";
-import type { Api, Model } from "@earendil-works/pi-ai";
+import { type Api, type AssistantMessage, type AssistantMessageEvent, type AssistantMessageEventStream, createAssistantMessageEventStream, type Model } from "@earendil-works/pi-ai";
 import { stream as openaiStream } from "@earendil-works/pi-ai/api/openai-completions";
 import type { CallResult, Gateway } from "../inference/gateway.ts";
 import type { Tracer } from "../trace.ts";
@@ -52,7 +52,13 @@ export interface StreamHooks {
   /** Gateway finished the call (runs before the agent sees the final message). */
   onCallEnd(result: CallResult, info: CallInfo): void;
   onRepair(callId: string, info: RepairInfo): void;
+  /** The server rejected a malformed tool call and the call is being retried. */
+  onRetry?(callId: string, attempt: number, reason: string): void;
 }
+
+/** oMLX withholds tool-call markup it can't parse and fails the response (no text reaches us to repair). */
+export const TOOL_PARSE_ERROR = /incomplete_tool_call|invalid_tool_call|unrecoverable tool call/i;
+export const MAX_TOOL_PARSE_RETRIES = 2;
 
 /** pi-ai Model for an oMLX model id. baseUrl is replaced per call with the gateway URL. */
 export function omlxModel(id: string, window: number, maxOutput: number): Model<"openai-completions"> {
@@ -77,8 +83,58 @@ export function omlxModel(id: string, window: number, maxOutput: number): Model<
   } as Model<"openai-completions">;
 }
 
+/**
+ * Retries a call when the server rejected a malformed tool call. Events of an attempt are buffered and
+ * forwarded only once it is final, so the agent never sees two partial messages. (Live streaming to the UI
+ * comes from the gateway's model_delta events, not from these.)
+ */
 export function makeStreamFn(h: StreamHooks): StreamFn {
+  const once = makeSingleCall(h);
   return async (model: Model<Api>, context, options) => {
+    const out = createAssistantMessageEventStream();
+    void (async () => {
+      for (let attempt = 0; ; attempt++) {
+        const events: AssistantMessageEvent[] = [];
+        let callId = "";
+        let src: AssistantMessageEventStream;
+        try {
+          ({ stream: src, callId } = await once(model, context, options));
+          for await (const ev of src) events.push(ev);
+        } catch (err) {
+          events.push({ type: "error", reason: "error", error: errorFor(model, err) } as AssistantMessageEvent);
+        }
+        const last = events.at(-1);
+        const msg = last?.type === "error" ? last.error : undefined;
+        const retry = msg && !options?.signal?.aborted && attempt < MAX_TOOL_PARSE_RETRIES && TOOL_PARSE_ERROR.test(msg.errorMessage ?? "");
+        if (retry) {
+          h.onRetry?.(callId, attempt + 1, msg.errorMessage ?? "tool call rejected by the server");
+          continue;
+        }
+        for (const ev of events) out.push(ev);
+        out.end();
+        return;
+      }
+    })();
+    return out;
+  };
+}
+
+function errorFor(model: Model<Api>, err: unknown): AssistantMessage {
+  return {
+    role: "assistant",
+    content: [],
+    api: model.api,
+    provider: model.provider,
+    model: model.id,
+    usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+    stopReason: "error",
+    errorMessage: err instanceof Error ? err.message : String(err),
+    timestamp: Date.now(),
+  };
+}
+
+function makeSingleCall(h: StreamHooks) {
+  return async (model: Model<Api>, context: Parameters<StreamFn>[1], options: Parameters<StreamFn>[2]): Promise<{ stream: AssistantMessageEventStream; callId: string }> => {
     const p = h.params();
     const raw = rawEstimate(context.messages);
     const estimate = Math.ceil(raw * h.calibrator.factor);
@@ -118,6 +174,6 @@ export function makeStreamFn(h: StreamHooks): StreamFn {
       },
       () => h.gateway.cancel(callId, "stream failed"),
     );
-    return withTextToolCallFallback(source, h.toolNames, { fencedBash: h.fencedBash, idPrefix: callId, onRepair: (r) => h.onRepair(callId, r) });
+    return { stream: withTextToolCallFallback(source, h.toolNames, { fencedBash: h.fencedBash, idPrefix: callId, onRepair: (r) => h.onRepair(callId, r) }), callId };
   };
 }

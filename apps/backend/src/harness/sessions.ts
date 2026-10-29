@@ -573,6 +573,13 @@ export class SessionManager {
             currentCallId = info.callId;
           },
           onCallEnd,
+          onRetry: (callId, attempt, reason) =>
+            tracer.emit({
+              type: "warning",
+              code: "other",
+              message: `The server could not parse the model's tool call and returned an error (${reason}). Retrying the same request (retry ${attempt} of 2).`,
+              data: { callId, attempt },
+            }),
           onRepair: (callId, info) =>
             tracer.emit({
               type: "harness_repair",

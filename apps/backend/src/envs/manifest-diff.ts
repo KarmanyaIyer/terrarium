@@ -75,6 +75,8 @@ export function manifestTree(manifest: Manifest, baseline?: Manifest | null): Fi
     for (const e of baseline.entries) {
       if (changeByPath.get(e.path) !== "deleted" || nodes.has(e.path)) continue;
       const parent = ensureDir(e.path.slice(0, e.path.lastIndexOf("/")) || "/");
+      // Its directory was replaced by a file (marked type_changed): there is nowhere to show it.
+      if (!parent.children) continue;
       const node: FileNode = { path: e.path, name: e.path.split("/").pop() || e.path, type: e.type, size: e.size, change: "deleted" };
       if (e.type === "dir") node.children = [];
       parent.children!.push(node);
