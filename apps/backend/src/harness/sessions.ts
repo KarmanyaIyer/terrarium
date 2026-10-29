@@ -711,6 +711,20 @@ export class SessionManager {
             saveOriginal: (toolCallId, text) => this.store.blobs.put(this.toolResultText(id, toolCallId) ?? text),
           });
           lastCompaction = res;
+          if (res.removedTurns || res.truncatedResults || res.shortened.length) {
+            messages.splice(0, messages.length, ...res.messages);
+            tracer.emit({
+              type: "compaction",
+              beforeTokens: res.beforeTokens,
+              afterTokens: res.afterTokens,
+              removedTurns: res.removedTurns,
+              note: res.note,
+              ...(res.shortened.length ? { shortened: res.shortened } : {}),
+              limit: res.limit,
+              exact,
+            });
+          }
+          // After the compaction row, which it refers to.
           if (earlier && !earlierFate) {
             earlierFate = true;
             const ts = (earlier as { timestamp?: number }).timestamp;
@@ -723,19 +737,6 @@ export class SessionManager {
                 ? `Your earlier message that got no reply (${exact ? "" : "about "}${fmt(size)} tokens) is sent as an earlier turn.`
                 : `Your earlier message that got no reply (${exact ? "" : "about "}${fmt(size)} tokens) was removed by compaction to fit the ${fmt(window)}-token window: the model does not see it.`,
               data: { messageTokens: size, kept: kept ? 1 : 0 },
-            });
-          }
-          if (res.removedTurns || res.truncatedResults || res.shortened.length) {
-            messages.splice(0, messages.length, ...res.messages);
-            tracer.emit({
-              type: "compaction",
-              beforeTokens: res.beforeTokens,
-              afterTokens: res.afterTokens,
-              removedTurns: res.removedTurns,
-              note: res.note,
-              ...(res.shortened.length ? { shortened: res.shortened } : {}),
-              limit: res.limit,
-              exact,
             });
           }
           if (!warnedFull && res.afterTokens > window - maxOutput - 256 && window - res.afterTokens - 64 >= MIN_REPLY_TOKENS) {
