@@ -409,8 +409,9 @@ export class VmRuntime implements EnvRuntime {
         vm = await g.VM.create(await this.vmOptions(backend, image));
         this.net.watchStack(vm);
         const created = vm;
+        const since = Date.now();
         const starting = vm.start();
-        this.guard = guardWhenSpawned(() => created.getHostPid(), starting, this.id, vmmRunDir());
+        this.guard = guardWhenSpawned(() => created.getHostPid(), starting, { envId: this.id, dir: vmmRunDir(), since, vmm: backend, disk: this.diskPath });
         await starting;
         await this.ensureHelpers(vm);
         this.vm = vm;
