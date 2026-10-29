@@ -246,14 +246,29 @@ export interface UpdateSessionRequest {
   maxOutputTokens?: number;
 }
 
-/** Breakdown for the context meter. Token counts; `source` says whether from server usage or estimate. */
+/**
+ * Breakdown for the context meter. Token counts; `source`: `server` = the last call's usage, `tokenizer` = counted
+ * by the model's own tokenizer before sending, `estimate` = heuristic (tokenizer unreachable).
+ */
 export interface ContextUsage {
   window: number;
   systemAndTools: number;
   history: number;
   outputReserve: number;
   free: number;
-  source: "server" | "estimate";
+  source: "server" | "tokenizer" | "estimate";
+}
+
+/** A tool output shortened by compaction because it didn't fit the window otherwise. */
+export interface ShortenedOutput {
+  toolCallId: string;
+  toolName: string;
+  /** Tokens kept from the start and the end, and the output's size before shortening. */
+  keptHead: number;
+  keptTail: number;
+  total: number;
+  /** Blob with the text the model had before shortening. */
+  originalBlob?: string;
 }
 
 export interface ModelCallUsage {
@@ -311,6 +326,7 @@ export type TraceEvent = EventBase &
         turn: number;
         modelId: Id;
         promptTokensEst: number;
+        promptCount?: "tokenizer" | "estimate"; // how promptTokensEst was obtained (absent on older events: estimate)
         contextWindow: number;
         maxTokens: number;
         requestBlob?: string; // exact request bytes, named from the start so blob GC keeps them during a long call
@@ -342,7 +358,16 @@ export type TraceEvent = EventBase &
       }
     | { type: "fs_change"; toolCallId: string | null; changes: FileChange[] }
     | { type: "net"; entry: NetEntry }
-    | { type: "compaction"; beforeTokens: number; afterTokens: number; removedTurns: number; note: string }
+    | {
+        type: "compaction";
+        beforeTokens: number;
+        afterTokens: number;
+        removedTurns: number;
+        note: string;
+        shortened?: ShortenedOutput[];
+        limit?: number; // prompt tokens that leave the session's output cap free
+        exact?: boolean; // token counts from the model's tokenizer
+      }
     | { type: "harness_repair"; callId: Id; original: string; repaired: ToolCallRef[]; reason: string }
     | {
         type: "warning";
@@ -350,7 +375,7 @@ export type TraceEvent = EventBase &
         message: string;
         data?: Record<string, number | string>;
       }
-    | { type: "error"; message: string; detail?: string }
+    | { type: "error"; message: string; detail?: string; code?: "context_overflow"; data?: Record<string, number | string> }
     | { type: "env_lifecycle"; envId: Id; action: "start" | "stop" | "snapshot" | "reset" | "fork" | "restore"; detail?: string }
     | { type: "context"; usage: ContextUsage }
     | { type: "run_end"; reason: "done" | "stopped" | "max_turns" | "error" | "length" }

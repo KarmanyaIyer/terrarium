@@ -12,6 +12,8 @@ export interface FakeOpenAI {
   origin: string; // http://127.0.0.1:<port> (what the gateway's upstream wants)
   baseUrl: string; // origin + /v1
   requests: Record<string, any>[];
+  /** Bodies sent to /v1/tokenize (not in `requests`). */
+  tokenizeRequests: Record<string, any>[];
   close(): Promise<void>;
 }
 
@@ -21,11 +23,26 @@ function chunk(model: string, delta: Record<string, unknown>, finish: string | n
 
 export async function startFakeOpenAI(script: ScriptedReply[] | ((body: Record<string, any>, n: number) => ScriptedReply), opts: { promptTokens?: (body: Record<string, any>) => number } = {}): Promise<FakeOpenAI> {
   const requests: Record<string, any>[] = [];
+  const tokenizeRequests: Record<string, any>[] = [];
   const server: Server = createServer((req, res) => {
     const chunks: Buffer[] = [];
     req.on("data", (c) => chunks.push(c));
     req.on("end", () => {
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+      // oMLX-style tokenizer: counts a chat body exactly as the completion's usage will (same function).
+      if (req.url === "/v1/tokenize") {
+        tokenizeRequests.push(body);
+        // Like Qwen's chat template: a chat with no user turn is refused.
+        if (Array.isArray(body.messages) && !body.messages.some((m: { role?: string }) => m.role === "user")) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: { message: "Chat template error: No user query found in messages." } }));
+          return;
+        }
+        const count = typeof body.prompt === "string" ? Math.ceil(body.prompt.length / 4) : (opts.promptTokens?.(body) ?? Math.ceil(JSON.stringify(body.messages ?? []).length / 4));
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ count, max_model_len: 32768, tokens: [] }));
+        return;
+      }
       requests.push(body);
       const n = requests.length - 1;
       const reply = typeof script === "function" ? script(body, n) : (script[n] ?? { text: "done" });
@@ -77,6 +94,7 @@ export async function startFakeOpenAI(script: ScriptedReply[] | ((body: Record<s
     origin: `http://127.0.0.1:${port}`,
     baseUrl: `http://127.0.0.1:${port}/v1`,
     requests,
+    tokenizeRequests,
     close: () =>
       new Promise((r) => {
         server.close(() => r());

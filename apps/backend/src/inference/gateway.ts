@@ -30,6 +30,7 @@ export interface CallContext {
   contextWindow: number;
   maxTokens: number;
   promptTokensEst: number;
+  promptCount?: "tokenizer" | "estimate";
 }
 
 export interface CallResult {
@@ -183,6 +184,7 @@ export class Gateway {
       turn: ctx.turn,
       modelId: ctx.modelId,
       promptTokensEst: ctx.promptTokensEst,
+      ...(ctx.promptCount ? { promptCount: ctx.promptCount } : {}),
       contextWindow: ctx.contextWindow,
       maxTokens: ctx.maxTokens,
       requestBlob,

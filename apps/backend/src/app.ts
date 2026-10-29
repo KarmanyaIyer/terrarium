@@ -12,6 +12,7 @@ import { SessionManager } from "./harness/sessions.ts";
 import { Hub } from "./hub.ts";
 import { Gateway } from "./inference/gateway.ts";
 import { InferenceService } from "./inference/service.ts";
+import { TokenCounter } from "./inference/tokens.ts";
 import { ResourceSampler } from "./resources.ts";
 import { Store } from "./store/db.ts";
 import { BlobGc } from "./store/gc.ts";
@@ -46,7 +47,12 @@ export async function createApp(config: Config): Promise<App> {
   await gateway.listen();
   const drivers = await loadDrivers();
   const envs = new EnvManager({ store, hub, dataDir: config.dataDir, drivers });
-  const sessions = new SessionManager({ store, hub, envs, inference, gateway });
+  const tokens = new TokenCounter({
+    baseUrl: () => inference.omlx.baseUrl,
+    apiKey: () => inference.omlx.key,
+    ensureReady: () => inference.omlx.ensureStarted(),
+  });
+  const sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens });
   const evals = new EvalRunner({ store, hub, envs, sessions, inference, policy, dataDir: config.dataDir });
   const files = new FileViews({ store, envs });
   const sampler = new ResourceSampler(hub, envs, inference);

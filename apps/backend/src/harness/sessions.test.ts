@@ -14,6 +14,7 @@ import { FileViews } from "../files.ts";
 import { Hub } from "../hub.ts";
 import { Gateway } from "../inference/gateway.ts";
 import type { InferenceService } from "../inference/service.ts";
+import { TokenCounter } from "../inference/tokens.ts";
 import { Store } from "../store/db.ts";
 import { startFakeOpenAI, type FakeOpenAI, type ScriptedReply } from "../test-support/fake-openai.ts";
 import { SIM_NOTE, TERRARIUM_PROMPT } from "./prompts.ts";
@@ -67,7 +68,8 @@ before(async () => {
   await gateway.listen();
   envs = new EnvManager({ store, hub, dataDir: dir, drivers: { sim: simDriver, vm: null } });
   const inference = { model: async (id: string) => (id === MODEL.id ? MODEL : null), ensureModel: async () => {} } as unknown as InferenceService;
-  sessions = new SessionManager({ store, hub, envs, inference, gateway });
+  const tokens = new TokenCounter({ baseUrl: () => fake.origin, apiKey: () => "k", ensureReady: async () => {} });
+  sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens });
 });
 
 after(async () => {
@@ -176,6 +178,27 @@ test("busy env and running session are rejected; stop works", async () => {
   assert.equal(sessions.get(b.id).title, "hi");
   await sessions.run(b.id, "a second message");
   assert.equal(sessions.get(b.id).title, "hi");
+});
+
+test("a message to a session whose env an eval case owns is refused before the run starts (409, the reason)", async () => {
+  const env = await envs.create({ name: "owned", type: "sim" });
+  const s = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
+  store.run("INSERT INTO eval_runs (id, suite_id, suite_title, config_json, cases_json, status, started_at) VALUES ('run_own', 'tb', 'Tool basics', '{}', '[]', 'running', 0)");
+  store.run("INSERT INTO eval_results (run_id, case_id, model_id, status, env_id) VALUES ('run_own', 'tb-1', ?, 'running', ?)", MODEL.id, env.id);
+  const before = store.events(s.id).length;
+  try {
+    assert.throws(
+      () => sessions.sendMessage(s.id, "hi"),
+      (err: any) => err.status === 409 && err.message === 'env read-only: eval "Tool basics" case tb-1 running',
+    );
+    assert.throws(() => sessions.continue(s.id), (err: any) => err.status === 409);
+    assert.equal(sessions.get(s.id).status, "idle");
+    assert.equal(sessions.isRunning(s.id), false);
+    assert.equal(store.events(s.id).length, before, "no run started: no user_message, no error, no run_end");
+  } finally {
+    store.run("DELETE FROM eval_results WHERE run_id = 'run_own'");
+    store.run("DELETE FROM eval_runs WHERE id = 'run_own'");
+  }
 });
 
 test("truncation warning names the call's budget and whether the window or the cap set it (review 2, #9)", async () => {

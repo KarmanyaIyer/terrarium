@@ -26,11 +26,11 @@ import { SessionTracer } from "../trace.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
 import { logger } from "../util/log.ts";
-import { TokenCalibrator } from "./budget.ts";
-import { compact } from "./compaction.ts";
+import { type ChatTokenizer, MIN_REPLY_TOKENS, PromptCounter, TokenCalibrator } from "./budget.ts";
+import { compact, type CompactionResult } from "./compaction.ts";
 import { FsObserver } from "./observer.ts";
 import { CHAT_PROMPT, PI_STOCK_PROMPT, SIM_NOTE, TERRARIUM_PROMPT } from "./prompts.ts";
-import { type CallInfo, makeStreamFn, omlxModel, type Sampling } from "./stream.ts";
+import { type CallInfo, makeStreamFn, omlxModel, requestBody, type Sampling } from "./stream.ts";
 import { type ToolDetails, piStockTools, terrariumTools } from "./tools.ts";
 
 const log = logger("sessions");
@@ -91,6 +91,38 @@ function textOf(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) return content.map((c: any) => (c?.type === "text" ? c.text : "")).join("");
   return "";
+}
+
+const fmt = (n: number) => n.toLocaleString("en-US");
+
+/** Context sizes offered in the UI; the remedy names the smallest that fits. */
+const WINDOWS = [4096, 8192, 16384, 32768, 65536, 131072, 262144];
+
+export function windowFor(tokens: number, nativeContext: number): number | undefined {
+  return WINDOWS.find((w) => w >= tokens && w <= nativeContext);
+}
+
+/** oMLX's message when a prompt is over the context length it loaded the model with. */
+const SERVER_OVERFLOW_RE = /Prompt is too long: (\d+) tokens > (\d+) maximum context length/;
+
+/**
+ * The inference server refused the prompt as too long: the error with the real numbers and what to do. Only
+ * reachable when the tokenizer couldn't be used before sending (the harness refuses over-window prompts itself).
+ */
+export function explainServerOverflow(raw: string, window: number, maxOutput: number, nativeContext: number): { message: string; detail: string; data: Record<string, number> } | null {
+  const m = raw.match(SERVER_OVERFLOW_RE);
+  if (!m) return null;
+  const prompt = Number(m[1]);
+  const serverMax = Number(m[2]);
+  const need = windowFor(prompt + maxOutput + 320, nativeContext);
+  return {
+    message: `The inference server rejected the request: the prompt is ${fmt(prompt)} tokens, over the ${fmt(serverMax)}-token context the model is loaded with (session window ${fmt(window)}).`,
+    detail: [
+      `Server: ${raw}`,
+      need ? `Raise the session's context window to ${fmt(need)} or more, or start a new session.` : `The prompt is too long for this model (native context ${fmt(nativeContext)}); start a new session or shorten the last message.`,
+    ].join("\n"),
+    data: { promptTokens: prompt, serverMaxContext: serverMax, contextWindow: window, maxOutputTokens: maxOutput, ...(need ? { suggestedWindow: need } : {}) },
+  };
 }
 
 /** Gemma 4 emits an empty thought channel when thinking is off; hide it in the transcript view only. */
@@ -177,14 +209,16 @@ export class SessionManager {
   private envs: EnvManager;
   private inference: InferenceService;
   private gateway: Gateway;
+  private tokens: ChatTokenizer | undefined;
   private live = new Map<string, Live>();
 
-  constructor(opts: { store: Store; hub: Hub; envs: EnvManager; inference: InferenceService; gateway: Gateway }) {
+  constructor(opts: { store: Store; hub: Hub; envs: EnvManager; inference: InferenceService; gateway: Gateway; tokens?: ChatTokenizer }) {
     this.store = opts.store;
     this.hub = opts.hub;
     this.envs = opts.envs;
     this.inference = opts.inference;
     this.gateway = opts.gateway;
+    this.tokens = opts.tokens;
     this.store.run("UPDATE sessions SET status = 'idle' WHERE status IN ('running', 'stopping')");
     this.envs.hooks.onSessionNet = (sessionId, entry) => this.onNet(sessionId, entry);
     this.envs.hooks.onEnvInterrupted = async (_envId, sessionId) => {
@@ -408,10 +442,8 @@ export class SessionManager {
     const r = this.row(id);
     const live = this.liveFor(id);
     if (live.running) throw new HttpError(409, "session is already running");
-    if (r.harness !== "chat" && r.env_id) {
-      const holder = this.envs.activeSession(r.env_id);
-      if (holder && holder !== id) throw new HttpError(409, `environment is busy with session ${holder}`);
-    }
+    // Refuse up front what acquire() would refuse once the run started (another session, an eval case's env).
+    if (r.harness !== "chat" && r.env_id) this.envs.assertUsableBy(r.env_id, id);
     live.stopRequested = false;
     live.timedOut = false;
     // An untitled session is named after its first message, so the sidebar isn't a column of "New session".
@@ -515,11 +547,18 @@ export class SessionManager {
       let lastAssistant: AssistantMessage | null = null;
       const befores = new Map<string, Manifest>();
       const fileChanges = new Map<string, number>();
+      const agentModel = omlxModel(model.id, window, maxOutput);
+      const counter = new PromptCounter({ modelId: model.id, tokenizer: this.tokens, calibrator: live.calibrator, body: (messages) => requestBody(agentModel, { messages }, thinking) });
+      // System prompt + tool declarations, counted once per run (they don't change within one).
+      let sysTokens: number | null = null;
+      let lastCompaction: CompactionResult | null = null;
+      let overflow: { message: string; detail: string; data: Record<string, number | string> } | null = null;
+      let warnedMismatch = false;
 
-      const contextUsage = (prompt: number, completion: number, source: ContextUsage["source"]): ContextUsage => {
-        const sys = Math.min(prompt, live.calibrator.estimate(agent.state.messages.filter((m) => m.role === "system")));
+      const contextUsage = (prompt: number, completion: number, reserve: number, source: ContextUsage["source"]): ContextUsage => {
+        const sys = Math.min(prompt, sysTokens ?? counter.estimate(agent.state.messages.filter((m) => m.role === "system")));
         const used = prompt + completion;
-        return { window, systemAndTools: sys, history: Math.max(0, used - sys), outputReserve: maxOutput, free: Math.max(0, window - used - maxOutput), source };
+        return { window, systemAndTools: sys, history: Math.max(0, used - sys), outputReserve: reserve, free: Math.max(0, window - used - reserve), source };
       };
       const emitContext = (usage: ContextUsage) => {
         tracer.emit({ type: "context", usage });
@@ -529,8 +568,19 @@ export class SessionManager {
       const onCallEnd = (res: CallResult, info: CallInfo) => {
         const u = res.usage;
         if (u && u.promptTokens > 0) {
-          live.calibrator.observe(info.rawEstimate, u.promptTokens);
-          emitContext(contextUsage(u.promptTokens, u.completionTokens, "server"));
+          counter.observe(info.prompt, info.rawEstimate, u.promptTokens);
+          emitContext(contextUsage(u.promptTokens, u.completionTokens, maxOutput, "server"));
+          // The tokenizer renders the same template as the call, so the counts agree; if the server ever counts
+          // more, later counts add the difference (PromptCounter.observe) and this says so once.
+          if (info.prompt.exact && !warnedMismatch && u.promptTokens > info.prompt.tokens) {
+            warnedMismatch = true;
+            tracer.emit({
+              type: "warning",
+              code: "other",
+              message: `The server counted ${u.promptTokens} prompt tokens; the tokenizer counted ${info.prompt.tokens} before sending. Later counts in this run add the ${u.promptTokens - info.prompt.tokens}-token difference.`,
+              data: { promptTokens: u.promptTokens, counted: info.prompt.tokens },
+            });
+          }
           if (info.estimate > window && u.promptTokens < info.estimate * 0.6) {
             tracer.emit({
               type: "warning",
@@ -584,22 +634,47 @@ export class SessionManager {
         convertToLlm: (messages) => messages.filter(isLlmMessage),
         transformContext: async (messages) => {
           loopMessages = messages;
-          const res = compact(messages, {
+          overflow = null;
+          // The tokenizer is the model's own, served by oMLX: make sure it is up (the call would do this anyway).
+          await this.inference.ensureModel(model.id, window, maxOutput).catch(() => {});
+          sysTokens ??= (await counter.countSystem(messages.filter((m) => m.role === "system"))).tokens;
+          let exact = true;
+          const res = await compact(messages, {
             window,
             outputBudget: maxOutput,
-            estimate: (m) => live.calibrator.estimate(m),
+            count: async (m) => {
+              const c = await counter.count(m);
+              exact &&= c.exact;
+              return c.tokens;
+            },
+            countText: async (t) => {
+              const c = await counter.countText(t);
+              exact &&= c.exact;
+              return c.tokens;
+            },
             filesChanged: () => (observer ? [...observer.changedPaths].map((p) => p.replace(/^\/workspace\//, "")) : []),
+            saveOriginal: (toolCallId, text) => this.store.blobs.put(this.toolResultText(id, toolCallId) ?? text),
           });
-          if (res.removedTurns || res.truncatedResults) {
+          lastCompaction = res;
+          if (res.removedTurns || res.truncatedResults || res.shortened.length) {
             messages.splice(0, messages.length, ...res.messages);
-            tracer.emit({ type: "compaction", beforeTokens: res.beforeTokens, afterTokens: res.afterTokens, removedTurns: res.removedTurns, note: res.note });
+            tracer.emit({
+              type: "compaction",
+              beforeTokens: res.beforeTokens,
+              afterTokens: res.afterTokens,
+              removedTurns: res.removedTurns,
+              note: res.note,
+              ...(res.shortened.length ? { shortened: res.shortened } : {}),
+              limit: res.limit,
+              exact,
+            });
           }
-          if (!warnedFull && res.afterTokens > window - maxOutput - 256) {
+          if (!warnedFull && res.afterTokens > window - maxOutput - 256 && window - res.afterTokens - 64 >= MIN_REPLY_TOKENS) {
             warnedFull = true;
             tracer.emit({
               type: "warning",
               code: "context_near_full",
-              message: `Prompt is about ${res.afterTokens} tokens after compaction; only ${Math.max(0, window - res.afterTokens)} of ${window} tokens are left for the reply.`,
+              message: `Prompt is ${exact ? "" : "about "}${res.afterTokens} tokens after compaction; only ${Math.max(0, window - res.afterTokens)} of ${window} tokens are left for the reply.`,
               data: { contextWindow: window, promptTokens: res.afterTokens, maxOutput },
             });
           }
@@ -613,8 +688,16 @@ export class SessionManager {
           ensureReady: (p) => this.inference.ensureModel(p.modelId, p.window, p.maxOutput),
           toolNames: () => tools.map((t) => t.name),
           fencedBash: false,
+          count: (m) => counter.count(m),
           onCallStart: (info) => {
             currentCallId = info.callId;
+            emitContext(contextUsage(info.prompt.tokens, 0, info.maxTokens, info.prompt.exact ? "tokenizer" : "estimate"));
+          },
+          onOverflow: async (info) => {
+            currentCallId = info.callId;
+            overflow = await this.describeOverflow(info, { lastCompaction, sysTokens, counter, model, maxOutput });
+            emitContext(contextUsage(info.prompt.tokens, 0, Math.max(0, window - info.prompt.tokens), info.prompt.exact ? "tokenizer" : "estimate"));
+            return overflow.message;
           },
           onCallEnd,
           onRetry: (callId, attempt, reason) =>
@@ -663,13 +746,23 @@ export class SessionManager {
 
       agent.subscribe((ev: AgentEvent) => {
         try {
-          this.onAgentEvent(ev, { tracer, live, currentCallId: () => currentCallId, fileChanges, onAssistant: (m) => (lastAssistant = m) });
+          this.onAgentEvent(ev, {
+            tracer,
+            live,
+            currentCallId: () => currentCallId,
+            fileChanges,
+            onAssistant: (m) => (lastAssistant = m),
+            explainError: (msg) => {
+              if (overflow && msg === overflow.message) return { message: overflow.message, detail: overflow.detail, code: "context_overflow", data: overflow.data };
+              const server = explainServerOverflow(msg, window, maxOutput, model.nativeContext);
+              return server ? { ...server, code: "context_overflow" } : null;
+            },
+          });
         } catch (err) {
           log.warn(`event mapping failed for ${id}`, err);
         }
       });
 
-      emitContext(contextUsage(live.calibrator.estimate([...agent.state.messages, { role: "user", content: text, timestamp: Date.now() }]), 0, "estimate"));
       if (opts.timeoutMs) {
         timeout = setTimeout(() => {
           live.timedOut = true;
@@ -713,9 +806,79 @@ export class SessionManager {
     return { reason, finalText, ...(error ? { error } : {}), ...(live.timedOut ? { timedOut: true } : {}) };
   }
 
+  /** What the model got from a tool call (tool_end.resultForModel), from the trace. */
+  private toolResultText(sessionId: string, toolCallId: string): string | undefined {
+    const r = this.store.get<{ payload_json: string }>(
+      "SELECT payload_json FROM events WHERE session_id = ? AND type = 'tool_end' AND json_extract(payload_json, '$.toolCallId') = ?",
+      sessionId,
+      toolCallId,
+    );
+    if (!r) return undefined;
+    const v = (JSON.parse(r.payload_json) as { resultForModel?: unknown }).resultForModel;
+    return typeof v === "string" ? v : undefined;
+  }
+
+  /** The prompt can't leave room for a reply even after compaction: what takes the space and what to do. */
+  private async describeOverflow(
+    info: CallInfo,
+    c: { lastCompaction: CompactionResult | null; sysTokens: number | null; counter: PromptCounter; model: ModelInfo; maxOutput: number },
+  ): Promise<{ message: string; detail: string; data: Record<string, number | string> }> {
+    const window = info.params.window;
+    const prompt = info.prompt.tokens;
+    const about = info.prompt.exact ? "" : "about ";
+    const msgs = c.lastCompaction?.messages ?? [];
+    let task: AgentMessage | undefined;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].role === "user") {
+        task = msgs[i];
+        break;
+      }
+    }
+    const taskTokens = task ? (await c.counter.countText(textOf((task as { content: unknown }).content))).tokens : 0;
+    const sys = c.sysTokens ?? 0;
+    const room = Math.max(0, window - prompt);
+    const need = windowFor(prompt + Math.min(c.maxOutput, 1024) + 320, c.model.nativeContext);
+    const message =
+      prompt >= window
+        ? `Request not sent: the prompt is ${about}${fmt(prompt)} tokens after compaction, over the ${fmt(window)}-token context window.`
+        : `Request not sent: the prompt is ${about}${fmt(prompt)} tokens after compaction, leaving ${fmt(room)} of the ${fmt(window)}-token context window for the reply (at least ${MIN_REPLY_TOKENS} needed).`;
+    const parts = [`System prompt and tools: ${fmt(sys)} tokens.`];
+    if (task) parts.push(`Latest user message: ${fmt(taskTokens)} tokens.`);
+    parts.push(`Everything else: ${fmt(Math.max(0, prompt - sys - taskTokens))} tokens (compaction keeps the newest step).`);
+    if (c.lastCompaction?.removedTurns || c.lastCompaction?.shortened.length) {
+      parts.push(`Compaction removed ${c.lastCompaction.removedTurns} earlier steps and shortened ${c.lastCompaction.shortened.length} tool outputs; nothing else may be removed.`);
+    }
+    parts.push(
+      need
+        ? `Raise the context window to ${fmt(need)}${taskTokens > window / 2 ? ", or send a shorter message" : ""}.`
+        : `This is more than the model's ${fmt(c.model.nativeContext)}-token native context: send a shorter message or start a new session.`,
+    );
+    return {
+      message,
+      detail: parts.join("\n"),
+      data: {
+        promptTokens: prompt,
+        contextWindow: window,
+        maxOutputTokens: c.maxOutput,
+        systemTokens: sys,
+        messageTokens: taskTokens,
+        counted: info.prompt.exact ? "tokenizer" : "estimate",
+        ...(need ? { suggestedWindow: need } : {}),
+      },
+    };
+  }
+
   private onAgentEvent(
     ev: AgentEvent,
-    ctx: { tracer: SessionTracer; live: Live; currentCallId: () => string; fileChanges: Map<string, number>; onAssistant: (m: AssistantMessage) => void },
+    ctx: {
+      tracer: SessionTracer;
+      live: Live;
+      currentCallId: () => string;
+      fileChanges: Map<string, number>;
+      onAssistant: (m: AssistantMessage) => void;
+      /** A structured error (numbers, remedy) for a call error the harness recognizes. */
+      explainError?: (message: string) => { message: string; detail?: string; code?: "context_overflow"; data?: Record<string, number | string> } | null;
+    },
   ): void {
     const { tracer, live } = ctx;
     switch (ev.type) {
@@ -731,7 +894,10 @@ export class SessionManager {
         const thinking = m.content.filter((c) => c.type === "thinking").map((c) => (c as { thinking: string }).thinking).join("");
         const toolCalls = m.content.filter((c) => c.type === "toolCall").map((c): ToolCallRef => ({ id: c.id, name: c.name, args: c.arguments }));
         tracer.emit({ type: "assistant_message", callId: ctx.currentCallId(), text, ...(thinking ? { thinking } : {}), toolCalls });
-        if (m.stopReason === "error") tracer.emit({ type: "error", message: m.errorMessage ?? "model call failed" });
+        if (m.stopReason === "error") {
+          const known = m.errorMessage ? ctx.explainError?.(m.errorMessage) : null;
+          tracer.emit(known ? { type: "error", ...known } : { type: "error", message: m.errorMessage ?? "model call failed" });
+        }
         break;
       }
       case "tool_execution_start":

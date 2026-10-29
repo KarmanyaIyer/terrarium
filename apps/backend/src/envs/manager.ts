@@ -803,6 +803,13 @@ export class EnvManager {
     return this.active.get(id);
   }
 
+  /** Throws the 409 acquire() would, so a run that can't get the env is refused before it starts. */
+  assertUsableBy(id: string, sessionId: string): void {
+    const holder = this.active.get(id);
+    if (holder && holder !== sessionId) throw new HttpError(409, `environment is busy with session ${holder}`);
+    this.assertNotEvalOwned(id, sessionId);
+  }
+
   /** Running runtimes, for the resource sampler. */
   running(): { id: string; runtime: EnvRuntime }[] {
     return [...this.runtimes.entries()].filter(([, rt]) => rt.isRunning()).map(([id, runtime]) => ({ id, runtime }));
