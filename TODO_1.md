@@ -64,8 +64,13 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
       regressions (getsource, async def, primed generators, O(N^2) function scan), 42 lenient cases (11 new; all need
       a forged plain run, no shipped suite affected). Decision: fix regressions + cheap lenient items, document the
       rest, stop adversarial hardening (each round's new code opened new edge cases)
-- [ ] Review 6 fixes (TODO_16)
-- [x] Repackaged at 8c2d21f, e2e (19 calls, 0 one-token replies), launch + quit clean; repackage again after review 6
+- [x] Review 6 fixes (TODO_16): all 4 regressions + low correct-code failures fixed, cheap lenient items fixed, 24
+      known-lenient cases documented in guest/README.md and tracked by the case runner. Backend 216/218 (2 gated),
+      review 4/5/6 cases as expected, HumanEval 164/164, MBPP 427/427, real VMs pass. Hardening stopped here.
+- [x] e2e fix (b2f21c7): server-rejected tool calls (retried) were counted as one-token replies, and "model runs
+      spread.py before fixing it" was asserted (model obedience, not harness behavior). Now reported, not asserted;
+      unretried errors still fail the test
+- [x] Repackaged at 08b4f52, e2e 16 calls / 0 one-token replies, launch + quit clean
 - [ ] Switchboard: "Local models" card (commit 5e87b58 there) points at retired local_llms; s-switchboard still
       has someone else's uncommitted continuity work, so left untouched. Terrarium is a Mac app and needs no card.
 
