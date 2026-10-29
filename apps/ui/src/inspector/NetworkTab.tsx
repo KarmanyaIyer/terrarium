@@ -117,8 +117,9 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
                       select({ kind: "net", entryId: e.id, seq: ev?.seq ?? 0 }, { follow: false });
                     }}
                   >
-                    <td className="num dim nowrap" title={exactTime(e.ts)}>
+                    <td className="num dim nowrap" title={e.repeats && e.lastTs ? `${exactTime(e.ts)} to ${exactTime(e.lastTs)}` : exactTime(e.ts)}>
                       {clockTime(e.ts)}
+                      {e.repeats && e.repeats > 1 ? <div className="net-repeats">×{e.repeats}</div> : null}
                     </td>
                     <td className="net-url">
                       {/* the selected row shows the whole request instead of a cut-off line */}

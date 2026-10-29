@@ -170,6 +170,8 @@ export function titleFrom(text: string): string {
 }
 
 export class SessionManager {
+  /** A session was deleted: blobs only it referenced may be garbage now. */
+  onDeleted?: (sessionId: string) => void;
   private store: Store;
   private hub: Hub;
   private envs: EnvManager;
@@ -371,6 +373,7 @@ export class SessionManager {
     });
     this.live.delete(id);
     if (!r.ephemeral) this.hub.broadcast({ type: "session_deleted", sessionId: id });
+    this.onDeleted?.(id);
   }
 
   // ---------- runs ----------

@@ -1,7 +1,7 @@
 // Content-addressed blob store: data/blobs/<sha256[0:2]>/<sha256>. Writes are atomic (tmp + rename).
 
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
@@ -27,13 +27,28 @@ export class BlobStore {
     const bytes = typeof data === "string" ? Buffer.from(data, "utf8") : data;
     const sha = sha256(bytes);
     const path = this.pathFor(sha);
-    if (!existsSync(path)) {
+    if (!this.touch(sha)) {
       mkdirSync(join(this.dir, sha.slice(0, 2)), { recursive: true });
       const tmp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
       writeFileSync(tmp, bytes, { mode: 0o600 });
       renameSync(tmp, path);
     }
     return sha;
+  }
+
+  /**
+   * Mark an existing blob as just used (mtime = now) so a GC sweep in progress, which spares recent blobs,
+   * can't delete it under a reference being written. Returns whether the blob exists.
+   */
+  touch(sha: string): boolean {
+    if (!SHA_RE.test(sha)) return false;
+    const now = new Date();
+    try {
+      utimesSync(this.pathFor(sha), now, now);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   putJson(value: unknown): string {

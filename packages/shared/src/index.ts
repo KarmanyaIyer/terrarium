@@ -127,8 +127,10 @@ export interface NetEntry {
   decision: "allow" | "deny";
   reason: string; // "mode off", "private range 192.168.1.4", "not in registries list", "allowed: web"
   status?: number;
-  bytesIn?: number;
+  bytesIn?: number; // summed over repeats
   bytesOut?: number;
+  repeats?: number; // identical attempts collapsed into this entry (absent: 1)
+  lastTs?: Millis; // when the last of them happened
 }
 
 export interface ExecRequest {

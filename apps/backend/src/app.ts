@@ -14,6 +14,7 @@ import { Gateway } from "./inference/gateway.ts";
 import { InferenceService } from "./inference/service.ts";
 import { ResourceSampler } from "./resources.ts";
 import { Store } from "./store/db.ts";
+import { BlobGc } from "./store/gc.ts";
 import { logger } from "./util/log.ts";
 
 const log = logger("app");
@@ -50,6 +51,13 @@ export async function createApp(config: Config): Promise<App> {
   const files = new FileViews({ store, envs });
   const sampler = new ResourceSampler(hub, envs, inference);
   sampler.start(1000);
+  const gc = new BlobGc(store);
+  envs.hooks.onDeleted = () => gc.schedule();
+  sessions.onDeleted = () => gc.schedule();
+  void gc.run({ graceMs: 60_000 }).then(
+    (r) => r.removed && log.info(`startup gc removed ${r.removed} unreferenced blobs (${Math.round(r.removedBytes / 1024)} KiB)`),
+    (err) => log.warn("startup blob gc failed", err),
+  );
 
   let shuttingDown: Promise<void> | null = null;
   const app: App = {
@@ -77,6 +85,7 @@ export async function createApp(config: Config): Promise<App> {
     shutdown() {
       shuttingDown ??= (async () => {
         sampler.stop();
+        gc.cancel();
         const step = async (name: string, fn: () => Promise<unknown>) => {
           try {
             await fn();

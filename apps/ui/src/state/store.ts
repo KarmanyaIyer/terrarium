@@ -259,7 +259,9 @@ function handleMessage(msg: WsMessage) {
     case "env_net":
       set((s) => {
         const cur = s.net[msg.entry.envId];
-        if (!cur || cur.some((x) => x.id === msg.entry.id)) return {};
+        if (!cur) return {};
+        // A known id is a repeat count update for a collapsed row.
+        if (cur.some((x) => x.id === msg.entry.id)) return { net: { ...s.net, [msg.entry.envId]: cur.map((x) => (x.id === msg.entry.id ? msg.entry : x)) } };
         return { net: { ...s.net, [msg.entry.envId]: [...cur, msg.entry] } };
       });
       break;

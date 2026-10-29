@@ -6,6 +6,7 @@ import { DatabaseSync, type SQLInputValue, type StatementSync } from "node:sqlit
 import { fileURLToPath } from "node:url";
 import type { TraceEvent } from "@terrarium/shared";
 import { BlobStore } from "./blobs.ts";
+import { ManifestStore } from "./manifests.ts";
 
 const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), "migrations");
 
@@ -14,12 +15,14 @@ export type Row = Record<string, SQLInputValue>;
 export class Store {
   readonly db: DatabaseSync;
   readonly blobs: BlobStore;
+  readonly manifests: ManifestStore;
   private stmts = new Map<string, StatementSync>();
 
   constructor(dbPath: string, blobDir: string) {
     this.db = new DatabaseSync(dbPath);
     this.db.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA foreign_keys = OFF; PRAGMA busy_timeout = 5000;");
     this.blobs = new BlobStore(blobDir);
+    this.manifests = new ManifestStore(this.blobs);
     this.migrate();
   }
 

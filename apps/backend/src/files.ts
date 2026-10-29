@@ -31,7 +31,7 @@ export class FileViews {
   }
 
   private manifestBlob(blob: string | undefined): Manifest | null {
-    return blob ? this.store.blobs.getJson<Manifest>(blob) : null;
+    return blob ? this.store.manifests.load(blob) : null;
   }
 
   private baseline(envId: string, sessionId: string | undefined): Manifest | null {

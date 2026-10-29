@@ -26,10 +26,14 @@ import { logger } from "../util/log.ts";
 import { KeyedMutex } from "../util/mutex.ts";
 import { diffManifests } from "./manifest-diff.ts";
 import { DEFAULT_SIM } from "./sim/driver.ts";
-import type { EnvDriver, EnvRuntime, Manifest } from "./types.ts";
+import type { EnvDriver, EnvRuntime, Manifest, NetAttempt } from "./types.ts";
 
 const log = logger("envs");
 export const MAX_RUNNING_VMS = 2;
+/** Identical net attempts (same session, request, decision, reason and status) this close together share a row. */
+export const NET_REPEAT_WINDOW_MS = 60_000;
+/** A collapsed row is written and broadcast at most this often while repeats keep coming. */
+const NET_FLUSH_MS = 1000;
 export const DEFAULT_VM: VmConfig = { cpus: 2, memoryMiB: 1024, diskMiB: 4096, backend: "krun" };
 const NETWORK_MODES = new Set<NetworkMode>(["off", "registries", "web"]);
 
@@ -79,6 +83,8 @@ export interface EnvHooks {
   onSessionNet?: (sessionId: string, entry: NetEntry) => void;
   /** The env is being stopped/reset/deleted while a session uses it: abort that session's run. */
   onEnvInterrupted?: (envId: string, sessionId: string) => Promise<void>;
+  /** An env was deleted: blobs only it referenced may be garbage now. */
+  onDeleted?: (envId: string) => void;
 }
 
 export class EnvManager {
@@ -89,6 +95,7 @@ export class EnvManager {
   private runtimes = new Map<string, EnvRuntime>();
   private unsubNet = new Map<string, () => void>();
   private mutex = new KeyedMutex();
+  private netRepeats = new Map<string, { entry: NetEntry; timer: NodeJS.Timeout | null }>();
   /** One lock across the running-VM count and the boot, so concurrent starts can't exceed MAX_RUNNING_VMS. */
   private vmBoot = new KeyedMutex();
   private active = new Map<string, string>(); // envId -> sessionId using it
@@ -171,6 +178,7 @@ export class EnvManager {
         status: r.status ?? undefined,
         bytesIn: r.bytes_in ?? undefined,
         bytesOut: r.bytes_out ?? undefined,
+        ...(r.repeats > 1 ? { repeats: r.repeats, lastTs: r.last_ts ?? undefined } : {}),
       }));
   }
 
@@ -223,7 +231,10 @@ export class EnvManager {
     this.unsubNet.set(
       id,
       rt.onNet((attempt) => {
-        const entry: NetEntry = { ...attempt, id: newId("net"), envId: id, sessionId: this.active.get(id) };
+        const sessionId = this.active.get(id);
+        if (this.collapseRepeat(id, sessionId, attempt)) return;
+        const entry: NetEntry = { ...attempt, id: newId("net"), envId: id, sessionId };
+        this.rememberNet(entry);
         this.store.run(
           "INSERT INTO net_log (id, env_id, session_id, ts, method, url, host, ip, decision, reason, status, bytes_in, bytes_out) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           entry.id,
@@ -244,6 +255,67 @@ export class EnvManager {
         if (entry.sessionId) this.hooks.onSessionNet?.(entry.sessionId, entry);
       }),
     );
+  }
+
+  private netKey(envId: string, sessionId: string | undefined, a: NetAttempt): string {
+    return JSON.stringify([envId, sessionId ?? null, a.method, a.url, a.host, a.ip ?? null, a.decision, a.reason, a.status ?? null]);
+  }
+
+  private rememberNet(entry: NetEntry): void {
+    const now = entry.ts;
+    for (const [k, v] of this.netRepeats) {
+      if (now - (v.entry.lastTs ?? v.entry.ts) <= NET_REPEAT_WINDOW_MS && this.netRepeats.size < 2000) break; // oldest first
+      if (v.timer) {
+        clearTimeout(v.timer);
+        this.flushNet(v.entry);
+      }
+      this.netRepeats.delete(k);
+    }
+    this.netRepeats.set(this.netKey(entry.envId, entry.sessionId, entry), { entry, timer: null });
+  }
+
+  /**
+   * Fold an attempt into the row of an identical one seen within the window: count, last time and bytes are
+   * updated in the DB and broadcast at most once a second; the trace keeps the first event only.
+   */
+  private collapseRepeat(envId: string, sessionId: string | undefined, a: NetAttempt): boolean {
+    const key = this.netKey(envId, sessionId, a);
+    const hit = this.netRepeats.get(key);
+    if (!hit || a.ts - (hit.entry.lastTs ?? hit.entry.ts) > NET_REPEAT_WINDOW_MS) return false;
+    const e = hit.entry;
+    e.repeats = (e.repeats ?? 1) + 1;
+    e.lastTs = a.ts;
+    if (a.bytesIn !== undefined) e.bytesIn = (e.bytesIn ?? 0) + a.bytesIn;
+    if (a.bytesOut !== undefined) e.bytesOut = (e.bytesOut ?? 0) + a.bytesOut;
+    // Most recently used last, so rememberNet's scan from the front meets stale keys first.
+    this.netRepeats.delete(key);
+    this.netRepeats.set(key, hit);
+    hit.timer ??= setTimeout(() => {
+      hit.timer = null;
+      this.flushNet(e);
+    }, NET_FLUSH_MS);
+    hit.timer.unref?.();
+    return true;
+  }
+
+  private flushNet(e: NetEntry): void {
+    try {
+      this.store.run("UPDATE net_log SET repeats = ?, last_ts = ?, bytes_in = ?, bytes_out = ? WHERE id = ?", e.repeats ?? 1, e.lastTs ?? null, e.bytesIn ?? null, e.bytesOut ?? null, e.id);
+    } catch (err) {
+      log.warn(`net log update for ${e.id} failed`, err);
+      return;
+    }
+    this.hub.broadcast({ type: "env_net", entry: { ...e } });
+  }
+
+  /** Write out pending repeat counts (shutdown, tests). */
+  flushNetRepeats(): void {
+    for (const v of this.netRepeats.values()) {
+      if (!v.timer) continue;
+      clearTimeout(v.timer);
+      v.timer = null;
+      this.flushNet(v.entry);
+    }
   }
 
   // ---------- lifecycle ----------
@@ -511,6 +583,7 @@ export class EnvManager {
       this.manifests.delete(id);
       this.hub.broadcast({ type: "env_deleted", envId: id });
     });
+    this.hooks.onDeleted?.(id);
   }
 
   /** Ephemeral eval forks: destroy storage after the case; trace, manifests and blobs stay. */
@@ -543,6 +616,7 @@ export class EnvManager {
         }
       }),
     );
+    this.flushNetRepeats();
   }
 
   // ---------- use by sessions / user shell ----------

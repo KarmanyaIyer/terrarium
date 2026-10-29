@@ -712,6 +712,10 @@
   font-size: var(--fs-xs);
   margin-top: 1px;
 }
+.net-repeats {
+  font-size: var(--fs-xs);
+  color: var(--warn-text);
+}
 
 /* ---------- env ---------- */
 

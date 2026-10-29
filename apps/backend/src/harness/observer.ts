@@ -7,6 +7,7 @@ import type { EnvManager } from "../envs/manager.ts";
 import { diffManifests } from "../envs/manifest-diff.ts";
 import type { EnvRuntime, Manifest } from "../envs/types.ts";
 import type { Store } from "../store/db.ts";
+import type { SavedManifest } from "../store/manifests.ts";
 import type { Tracer } from "../trace.ts";
 import { logger } from "../util/log.ts";
 
@@ -44,6 +45,7 @@ export class FsObserver {
   private tracer: Tracer;
   private current: Manifest | null = null;
   private seenVersion = -1;
+  private lastSaved: SavedManifest | null = null;
   /** Paths changed since session start (across runs), for compaction notes. */
   readonly changedPaths: Set<string>;
 
@@ -70,7 +72,7 @@ export class FsObserver {
     const paths: string[] = [];
     for (const e of m.entries) {
       if (e.type !== "file" || e.heavy || !e.sha256 || e.size > MAX_CAPTURE_BYTES) continue;
-      if (this.store.blobs.has(e.sha256)) continue;
+      if (this.store.blobs.touch(e.sha256)) continue; // already captured; touched so a GC sweep keeps it
       if (bytes + e.size > BASELINE_CAPTURE_BYTES || paths.length >= BASELINE_CAPTURE_FILES) break;
       paths.push(e.path);
       bytes += e.size;
@@ -109,9 +111,14 @@ export class FsObserver {
     });
   }
 
+  /** Stored as a delta against this session's previous manifest (see store/manifests.ts). */
   private saveManifest(m: Manifest, seq: number): void {
-    const blob = this.store.blobs.putJson(m);
-    this.store.run("INSERT INTO manifests (env_id, session_id, seq, blob, created_at) VALUES (?, ?, ?, ?, ?)", this.envId, this.sessionId, seq, blob, Date.now());
+    if (!this.lastSaved) {
+      const r = this.store.get<{ blob: string }>("SELECT blob FROM manifests WHERE session_id = ? AND env_id = ? ORDER BY seq DESC LIMIT 1", this.sessionId, this.envId);
+      this.lastSaved = r ? this.store.manifests.loadSaved(r.blob) : null;
+    }
+    this.lastSaved = this.store.manifests.save(m, this.lastSaved);
+    this.store.run("INSERT INTO manifests (env_id, session_id, seq, blob, created_at) VALUES (?, ?, ?, ?, ?)", this.envId, this.sessionId, seq, this.lastSaved.blob, Date.now());
   }
 
   /** Diff against `before`, capture content and diffs, emit fs_change. Returns the changes. */
