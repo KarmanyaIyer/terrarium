@@ -98,7 +98,7 @@ function RunRow({ r, on }: { r: EvalRunSummary; on: boolean }) {
         </span>
       </span>
       <span className="ev-row-score num" title={`${t.pass} passed of ${done} finished (${t.total} cells)`}>
-        {done ? fmtPct(t.pass / done) : "–"}
+        {done ? fmtPct((t.pass / done) * 100) : "–"}
       </span>
     </button>
   );
@@ -245,7 +245,7 @@ function RunView({ runId }: { runId: string }) {
                       <span className="num">
                         {tt.pass}/{tt.total}
                       </span>
-                      <span className="dim num">{done ? fmtPct(tt.pass / done) : ""}</span>
+                      <span className="dim num">{done ? fmtPct((tt.pass / done) * 100) : ""}</span>
                     </div>
                     <div className="ev-bar" title={`${tt.pass} pass, ${tt.fail} fail, ${tt.error} error, ${tt.total - done} not finished`}>
                       <span className="pass" style={{ flexGrow: tt.pass }} />

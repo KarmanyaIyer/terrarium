@@ -1140,3 +1140,25 @@
 .key.think {
   background: repeating-linear-gradient(45deg, var(--c-think) 0 2px, var(--c-model) 2px 3.2px);
 }
+
+/* headers never wrap: fixed items keep their width, stats and commands give way */
+.blk-head > * {
+  flex: none;
+  white-space: nowrap;
+}
+.blk-head > .call-stats,
+.blk-head > .tool-cmd {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.blk-head > .blk-spacer {
+  flex: 1 1 0;
+}
+.thinking-head > * {
+  flex: none;
+  white-space: nowrap;
+}
+.thinking-head > .thinking-preview {
+  flex: 0 1 auto;
+  min-width: 0;
+}

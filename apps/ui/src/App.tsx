@@ -137,7 +137,7 @@ export function App() {
             {view.kind === "models" && <ModelsView />}
           </Suspense>
         </main>
-        {inspectorOpen && view.kind !== "models" && <Inspector />}
+        {inspectorOpen && view.kind !== "models" && view.kind !== "evals" && <Inspector />}
       </div>
       <Palette />
       <NewEnvSheet />

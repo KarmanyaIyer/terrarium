@@ -474,12 +474,11 @@ export function openEnv(envId: Id, tab: InspectorTab = "env") {
 
 export function select(sel: Selection | null, opts: { follow?: boolean } = {}) {
   const patch: Partial<Store> = { selection: sel };
+  // the Files tab always tracks the selected tool call; tab switches only when following
+  if (sel?.kind === "tool") patch.filesFocus = { toolCallId: sel.toolCallId };
   if (sel && opts.follow !== false) {
     if (sel.kind === "call") patch.inspectorTab = "request";
     if (sel.kind === "net") patch.inspectorTab = "network";
-    if (sel.kind === "tool") {
-      patch.filesFocus = { toolCallId: sel.toolCallId };
-    }
   }
   set(patch);
 }

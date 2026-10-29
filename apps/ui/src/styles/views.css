@@ -110,6 +110,7 @@
 }
 .table td {
   padding: 6px 10px;
+  white-space: nowrap;
   border-bottom: 0.5px solid var(--line);
   vertical-align: middle;
   max-width: 320px;
@@ -337,6 +338,8 @@
 .form-grid > label,
 .form-grid > span {
   color: var(--fg-2);
+  align-self: start;
+  line-height: 24px;
 }
 .form-grid > *:nth-child(even) {
   justify-self: start;
@@ -828,4 +831,9 @@ select.input {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--fs-sm);
+}
+.md-users .cell-link {
+  margin: 0;
+  padding: 1px 4px;
+  overflow: visible;
 }

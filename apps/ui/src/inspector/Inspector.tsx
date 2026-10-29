@@ -74,7 +74,12 @@ export function Inspector() {
   const d = useMemo(() => derive(trace), [trace]);
 
   // the inspector follows the open session's env unless another env was picked
-  const envId = inspectorEnvId && envs[inspectorEnvId] ? inspectorEnvId : (session?.envId ?? null);
+  const envId =
+    inspectorEnvId && envs[inspectorEnvId]
+      ? inspectorEnvId
+      : session
+        ? session.envId
+        : (Object.values(envs).find((e) => !e.ephemeral)?.id ?? null);
   const env = envId ? envs[envId] : undefined;
   const sessionForEnv = session && session.envId === envId ? session : undefined;
 
@@ -127,7 +132,7 @@ export function Inspector() {
         {active === "network" && env && <NetworkTab env={env} session={sessionForEnv} />}
         {active === "env" && env && <EnvTab env={env} />}
         {active === "shell" && env && <ShellTab env={env} />}
-        {active === "env" && !env && <div className="empty">No environment. Chat sessions run without one.</div>}
+        {active === "env" && !env && <div className="empty">{session ? "This chat has no environment" : "No environments"}</div>}
       </div>
     </aside>
   );

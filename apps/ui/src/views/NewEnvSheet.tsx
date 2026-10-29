@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Box, Loader2, Terminal, X } from "lucide-react";
 import type { CreateEnvRequest, EnvFacts, EnvSummary, EnvType, NetworkMode, Snapshot } from "@terrarium/shared";
 import { act, openEnv, useStore } from "../state/store";
-import { fmtBytes, fmtMiB, relTime } from "../lib/format";
+import { fmtBytes, relTime } from "../lib/format";
 import { Kbd, Segmented, Switch } from "../components/ui";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 
@@ -17,6 +17,8 @@ const NET_OPTS: { value: NetworkMode; label: string; title: string }[] = [
 
 /** Rough RSS of a sim env (node child process + in-memory FS); VMs reserve their configured RAM. */
 const SIM_RSS = 90 * MiB;
+
+const sizeLabel = (mib: number) => (mib >= 1024 ? `${mib / 1024} GiB` : `${mib} MiB`);
 
 function nextName(envs: EnvSummary[], type: EnvType) {
   const base = type === "vm" ? "vm" : "sim";
@@ -256,14 +258,14 @@ function Sheet({ onClose }: { onClose: () => void }) {
                   value={String(memMiB)}
                   onChange={(v) => setMemMiB(Number(v))}
                   ariaLabel="Memory"
-                  options={[512, 1024, 2048, 4096].map((n) => ({ value: String(n), label: fmtMiB(n) }))}
+                  options={[512, 1024, 2048, 4096].map((n) => ({ value: String(n), label: sizeLabel(n) }))}
                 />
                 <span>Disk</span>
                 <Segmented
                   value={String(diskMiB)}
                   onChange={(v) => setDiskMiB(Number(v))}
                   ariaLabel="Disk"
-                  options={[2048, 4096, 8192, 16384].map((n) => ({ value: String(n), label: fmtMiB(n) }))}
+                  options={[2048, 4096, 8192, 16384].map((n) => ({ value: String(n), label: sizeLabel(n) }))}
                 />
                 <span title="Hypervisor backend for the micro-VM">Backend</span>
                 <Segmented
@@ -288,12 +290,12 @@ function Sheet({ onClose }: { onClose: () => void }) {
                   value={String(simMax)}
                   onChange={(v) => setSimMax(Number(v))}
                   ariaLabel="Filesystem limit"
-                  options={[16, 64, 256].map((n) => ({ value: String(n * MiB), label: fmtMiB(n) }))}
+                  options={[16, 64, 256].map((n) => ({ value: String(n * MiB), label: sizeLabel(n) }))}
                 />
               </>
             )}
 
-            <span>Memory</span>
+            <span title="Memory this environment takes from the Mac while it runs">On this Mac</span>
             <MemImpact adds={adds} free={free} total={total} vm={type === "vm"} />
           </div>
 
