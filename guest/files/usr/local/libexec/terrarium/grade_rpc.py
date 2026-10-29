@@ -315,6 +315,8 @@ def changed(v, snap, base):
     keys, vals, fac = snap
     if dict.__len__(v) != len(keys):
         return True
+    if not keys:
+        return base is DefaultDict and _FACTORY.__get__(v) is not fac
     if base is OrderedDict:
         return any(map(is_not, OrderedDict.__iter__(v), keys)) or any(map(is_not, OrderedDict.values(v), vals))
     if any(map(is_not, dict.__iter__(v), keys)) or any(map(is_not, dict.values(v), vals)):
@@ -644,6 +646,51 @@ except ImportError:  # pragma: no cover - CPython always has it
     _locale = None
 
 
+def _random_reader(inst, gs):
+    """A function reading inst's Mersenne Twister state (index and 624 words) in place, if inst is a plain
+    random.Random on CPython and what it reads is what getstate() says; else None."""
+    try:
+        import ctypes
+        import random
+
+        if type(inst) is not random.Random or getattr(gs, "__self__", None) is not inst or getattr(gs, "__func__", None) is not random.Random.getstate:
+            return None
+        buf = (ctypes.c_char * 2500).from_address(id(inst) + object.__basicsize__)
+        words = struct.unpack("=i624I", buf.raw)
+        state = gs()[1]
+        if words[0] != state[-1] or words[1:] != state[:-1]:
+            return None
+        return lambda: buf.raw
+    except Exception:
+        return None
+
+
+class RandomState:
+    """The random module's state, compared with the last one cheaply: getstate() (a 625-tuple) only once the
+    generator's raw state or gauss_next changed (_random_reader), or every time where that can't be read."""
+
+    def __init__(self):
+        self.key = None  # (the module's generator, its getstate, a reader or None)
+        self.tok = None
+
+    def maybe(self, r):
+        """r.getstate() unless the state is surely the one this last returned (then None)."""
+        gs = getattr(r, "getstate", None)
+        if gs is None:
+            return None
+        inst = getattr(r, "_inst", None)
+        k = self.key
+        if k is None or k[0] is not inst or k[1] is not gs:
+            k = self.key = (inst, gs, _random_reader(inst, gs))
+            self.tok = None
+        if k[2] is not None:
+            tok = (k[2](), inst.gauss_next)
+            if tok == self.tok:
+                return None
+            self.tok = tok
+        return gs()
+
+
 def umask_now(last):
     """The process umask, read by setting the value last seen (so there is no window with another one unless it
     changed, which a thread creating files could see)."""
@@ -931,6 +978,8 @@ _FS_EVENTS = frozenset(_FS_CHANGE) | frozenset(_FS_LOOK)
 # After these anything in the workspace may have changed: another process, or native code.
 _FS_ANY = frozenset(("subprocess.Popen", "os.system", "os.exec", "os.posix_spawn", "os.spawn", "os.fork", "os.forkpty", "ctypes.dlopen", "ctypes.dlsym", "ctypes.call_function"))
 _O_WRITE = os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND
+# What getcwd() returns changes only after these (or _FS_ANY), so it isn't asked every message.
+_CWD_EVENTS = frozenset(("os.chdir", "os.rename", "os.rmdir", "shutil.rmtree"))
 # Calls on the tests' side that look at files without an audit event (os.path's checks and pathlib go through them).
 _FS_CALLS = ("stat", "lstat", "access", "readlink")
 _FS_SQLITE = ("-journal", "-wal", "-shm")
@@ -2610,6 +2659,9 @@ class Client(Side):
         self.fs_changed = set()  # paths in the workspace the candidate's code changed in its copy ("/"-separated)
         self.fs_any = False  # ... or anything in it (another process, native code)
         self.fs_busy = set()
+        self.cwd_maybe = True  # getcwd() may have changed since last asked (_CWD_EVENTS)
+        self.cwd_any = False  # ... after any change (_FS_ANY)
+        self.rstate = RandomState()
         self.proc = None  # ProcSettings (install_guards)
         self.orig = {"stdout": sys.stdout, "stderr": sys.stderr, "stdin": sys.stdin, "print": builtins.print, "input": builtins.input}
         self.stdin_obj = None  # the tests' io.StringIO stdin the candidate last got the text of
@@ -3235,13 +3287,15 @@ class Client(Side):
                 st["env"] = env_diff(last, env)
                 s["env"] = env
             s["env_raw"] = None if raw is None else dict(raw)
-        try:
-            cwd = _getcwd()
-        except OSError as e:
-            raise Inexact("the tests' working directory is gone (%s)" % e.strerror) from None
-        if cwd != s.get("cwd", self.cwd0):
-            s["cwd"] = cwd
-            st["cwd"] = cwd_out(cwd, self.cwd0)
+        if self.cwd_maybe or self.cwd_any:
+            self.cwd_maybe = False
+            try:
+                cwd = _getcwd()
+            except OSError as e:
+                raise Inexact("the tests' working directory is gone (%s)" % e.strerror) from None
+            if cwd != s.get("cwd", self.cwd0):
+                s["cwd"] = cwd
+                st["cwd"] = cwd_out(cwd, self.cwd0)
         um = umask_now(s.get("umask", self.umask0))
         if um != s.get("umask", self.umask0):
             s["umask"] = st["umask"] = um
@@ -3257,9 +3311,9 @@ class Client(Side):
                 raise Inexact("logging: the tests set a logger's level, propagate or disabled to something other than an int or bool")
             s["loglevels"] = st["loglevels"] = ll
         r = sys.modules.get("random")
-        if r is not None and hasattr(r, "getstate"):
-            rs = r.getstate()
-            if rs != s.get("random"):
+        if r is not None:
+            rs = self.rstate.maybe(r)
+            if rs is not None and rs != s.get("random"):
                 s["random"] = rs
                 st["random"] = [rs[0], list(rs[1]), rs[2]]
         lim = sys.getrecursionlimit()
@@ -3824,7 +3878,12 @@ class Client(Side):
             elif ev == "object.__setattr__":
                 if args[1] in ("__code__", "__defaults__", "__kwdefaults__") and self._standin_rid(args[0]) is not None and id(_getframe(1).f_globals) != own:
                     raise Inexact("the tests set %s of a candidate function's stand-in, which the candidate's own function wouldn't get" % args[1])
+            elif ev in _FS_ANY:
+                if ev[0] != "c" or fs_owner(_getframe(1), _GRADER_GLOBALS):  # not the grader's own ctypes calls
+                    self.cwd_any = True
             elif ev in _FS_EVENTS:
+                if ev in _CWD_EVENTS:
+                    self.cwd_maybe = True
                 if ev == "sqlite3.connect" and type(args[0]) in (str, bytes) and args[0] in _FS_MEMORY:
                     return
                 write = ev in _FS_CHANGE and ev != "sqlite3.connect" and (ev != "open" or (type(args[2]) is int and args[2] & _O_WRITE and type(args[0]) is not int))
@@ -4207,6 +4266,9 @@ class Server(Side):
         self.fn_sent = {}  # rid -> [function or generator the tests have a stand-in for, the names kept, their values]
         self.fs_new = []  # workspace paths the candidate's code changed, not yet reported (see _FS_CHANGE)
         self.fs_seen = set()
+        self.cwd_maybe = True  # getcwd() may have changed since last asked (_CWD_EVENTS)
+        self.cwd_any = False  # ... after any change (_FS_ANY)
+        self.rstate = RandomState()
         self.proc = None  # ProcSettings (_install_guards)
         self.rlimit = sys.getrecursionlimit()  # recursion limit last exchanged
         import warnings
@@ -4293,7 +4355,10 @@ class Server(Side):
             if ev in _FS_ANY:
                 if ev[0] != "c" or fs_owner(_getframe(1), _GRADER_GLOBALS):  # not the grader's own ctypes calls
                     self._fs_note("*")
+                    self.cwd_any = True
                 return
+            if ev in _CWD_EVENTS:
+                self.cwd_maybe = True
             spec = _FS_CHANGE.get(ev)
             if spec is None or (ev == "open" and not (type(args[2]) is int and args[2] & _O_WRITE and type(args[0]) is not int)):
                 return
@@ -4903,14 +4968,16 @@ class Server(Side):
                 cst["env"] = env_diff(self.env_last, env)
                 self.env_last = env
             self.env_raw = None if raw is None else dict(raw)
-        try:
-            cwd = _getcwd()
-        except OSError as e:
-            self._poison("the candidate's working directory is gone (%s)" % e.strerror)
-            cwd = self.cwd_last
-        if cwd != self.cwd_last:
-            self.cwd_last = cwd
-            cst["cwd"] = cwd_out(cwd, self.cwd0)
+        if self.cwd_maybe or self.cwd_any:
+            self.cwd_maybe = False
+            try:
+                cwd = _getcwd()
+            except OSError as e:
+                self._poison("the candidate's working directory is gone (%s)" % e.strerror)
+                cwd = self.cwd_last
+            if cwd != self.cwd_last:
+                self.cwd_last = cwd
+                cst["cwd"] = cwd_out(cwd, self.cwd0)
         um = umask_now(self.umask)
         if um != self.umask:
             self.umask = cst["umask"] = um
@@ -4968,7 +5035,7 @@ class Server(Side):
             msg["cst"] = cst
         if self.random is not None:
             r = sys.modules.get("random")
-            rs = r.getstate() if r is not None else None
+            rs = self.rstate.maybe(r) if r is not None else None
             if rs is not None and rs != self.random:
                 self.random = rs
                 msg["random"] = [rs[0], list(rs[1]), rs[2]]
