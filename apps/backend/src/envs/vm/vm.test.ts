@@ -17,6 +17,7 @@ import { type VmRuntime, createVmDriver } from "./driver.ts";
 import { REPO_DIR } from "../../config.ts";
 import { gradeCommand, gradeTests, runTestsGrader, testsGrade, writeHiddenFiles } from "../../evals/graders.ts";
 import { isoVerdict, REVIEW5, REVIEW5_DIR } from "../../evals/review5.ts";
+import { REVIEW6, REVIEW6_DIR, REVIEW6_PERF } from "../../evals/review6.ts";
 
 const enabled = process.env.TERRARIUM_VM_TESTS === "1";
 const driver = createVmDriver();
@@ -618,22 +619,25 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     record("gradingReview4Ms", times);
   });
 
-  test("grading: review 5 cases: the isolated run's own verdict, never a pass where plain unittest fails (review 5, #1-#6)", async () => {
+  // One review 5 or 6 case (m.py, tests.py and any files beside them), m.py forged or not.
+  const gradeCase = async (base: string, name: string, forged: boolean) => {
     const check = { type: "tests" as const, file: "/grader/test_hidden.py", timeoutSec: 60 };
-    const grade = async (name: string, forged: boolean) => {
-      await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
-      const dir = path.join(REVIEW5_DIR, name);
-      for (const d of fs.readdirSync(dir, { recursive: true, withFileTypes: true })) {
-        const f = path.relative(dir, path.join(d.parentPath, d.name));
-        if (!d.isFile() || f === "tests.py") continue;
-        const src = fs.readFileSync(path.join(dir, f), "utf8");
-        if (f.includes("/")) await sh(a, `mkdir -p "$(dirname '/workspace/${f}')"`);
-        await a.writeFile(`/workspace/${f}`, forged && f === "m.py" ? FORGE + src : src, { as: "agent" });
-      }
-      const r = await runTestsGrader(a, check, [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(dir, "tests.py"), "utf8") }]);
-      assert.ok(r.summary, `${name}: grader output unreadable (${r.output})`);
-      return { s: r.summary, code: r.exitCode };
-    };
+    await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+    const dir = path.join(base, name);
+    for (const d of fs.readdirSync(dir, { recursive: true, withFileTypes: true })) {
+      const f = path.relative(dir, path.join(d.parentPath, d.name));
+      if (!d.isFile() || f === "tests.py") continue;
+      const src = fs.readFileSync(path.join(dir, f), "utf8");
+      if (f.includes("/")) await sh(a, `mkdir -p "$(dirname '/workspace/${f}')"`);
+      await a.writeFile(`/workspace/${f}`, forged && f === "m.py" ? FORGE + src : src, { as: "agent" });
+    }
+    const r = await runTestsGrader(a, check, [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(dir, "tests.py"), "utf8") }]);
+    assert.ok(r.summary, `${name}: grader output unreadable (${r.output})`);
+    return { s: r.summary, code: r.exitCode };
+  };
+
+  test("grading: review 5 cases: the isolated run's own verdict, never a pass where plain unittest fails (review 5, #1-#6)", async () => {
+    const grade = (name: string, forged: boolean) => gradeCase(REVIEW5_DIR, name, forged);
     const times: Record<string, number> = {};
     for (const cases of Object.values(REVIEW5)) {
       for (const [name, [plainOk, iso]] of Object.entries(cases)) {
@@ -654,6 +658,36 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
     await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
     record("gradingReview5Ms", times);
+  });
+
+  test("grading: review 6 cases: the isolated run's own verdict, never a pass where plain unittest fails; known-lenient gaps reported (review 6)", async () => {
+    const times: Record<string, number> = {};
+    const gaps: Record<string, string> = {};
+    for (const cases of Object.values(REVIEW6)) {
+      for (const [name, [plainOk, iso]] of Object.entries(cases)) {
+        const t0 = performance.now();
+        const { s, code } = await gradeCase(REVIEW6_DIR, name, false);
+        times[name] = Math.round(performance.now() - t0);
+        const why = `${name}: ${s.verdict} ${testsGrade(s, code).detail}`;
+        const p = s.plain ?? {};
+        assert.equal(!p.error && (p.expected ?? 0) > 0 && p.passed === p.expected, plainOk, `${name}: plain unittest. ${why}`);
+        if (iso === "known-lenient") {
+          gaps[name] = isoVerdict(s);
+          continue;
+        }
+        assert.equal(isoVerdict(s), iso, why);
+        if (REVIEW6_PERF.has(name)) assert.ok(times[name]! < 20_000, `${name} took ${times[name]}ms`);
+        if (plainOk) continue;
+        assert.equal(testsGrade(s, code).pass, false, why);
+        const f = await gradeCase(REVIEW6_DIR, name, true);
+        assert.notEqual(f.s.verdict, "pass", `${name} forged: ${testsGrade(f.s, f.code).detail}`);
+        assert.equal(testsGrade(f.s, f.code).pass, false, `${name} forged: ${testsGrade(f.s, f.code).detail}`);
+      }
+    }
+    assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
+    await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+    record("gradingReview6Ms", times);
+    record("gradingReview6KnownLenient", gaps);
   });
 
   test("grading: every coding suite reference passes (time per case)", async () => {

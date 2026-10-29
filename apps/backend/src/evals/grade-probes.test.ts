@@ -1,8 +1,9 @@
-// Review 3's, review 4's and review 5's probes (qa/review3-probes, qa/review4-probes, qa/review5-cases: m.py +
-// tests.py each) through grade.py --local and through plain `python3 -m unittest`: the grade must be what plain
-// unittest says, or a visible disagreement; never a pass where plain unittest fails, even when the plain run is
-// forged to pass. The perf probes must also grade in seconds (review 3, #3; review 4, #7). Review 5's cases check
-// the isolated run's own verdict: pass, fail, or a grader error where it can't be what one process would give.
+// Review 3's, review 4's, review 5's and review 6's probes (qa/review3-probes, qa/review4-probes, qa/review5-cases,
+// qa/review6-cases: m.py + tests.py each) through grade.py --local and through plain `python3 -m unittest`: the
+// grade must be what plain unittest says, or a visible disagreement; never a pass where plain unittest fails, even
+// when the plain run is forged to pass. The perf probes must also grade in seconds (review 3, #3; review 4, #7;
+// review 6, #4). Review 5's and 6's cases check the isolated run's own verdict: pass, fail, or a grader error where
+// it can't be what one process would give.
 
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
@@ -14,11 +15,13 @@ import { REPO_DIR } from "../config.ts";
 import { HOST_HELPERS_DIR } from "../envs/vm/driver.ts";
 import { testsGrade, type GradeSummary } from "./graders.ts";
 import { isoVerdict, REVIEW5, REVIEW5_DIR } from "./review5.ts";
+import { REVIEW6, REVIEW6_DIR, REVIEW6_PERF } from "./review6.ts";
 
 const GRADE = join(HOST_HELPERS_DIR, "grade.py");
 const PROBES = join(REPO_DIR, "qa/review3-probes");
 const PROBES4 = join(REPO_DIR, "qa/review4-probes");
 const PROBES5 = REVIEW5_DIR;
+const PROBES6 = REVIEW6_DIR;
 // Replaces unittest's TestCase.run in the plain run, where the hidden tests share the candidate's process: the
 // plain run passes everything, so only the isolated run stands between such a candidate and a pass.
 const FORGE = [
@@ -59,7 +62,7 @@ interface Probe {
 }
 
 async function probe(name: string, timeout = 60, dir = PROBES, forged = false): Promise<Probe> {
-  const base = join(tmp, `${dir === PROBES ? "r3" : dir === PROBES4 ? "r4" : "r5"}-${name}${forged ? "-forged" : ""}`);
+  const base = join(tmp, `${dir === PROBES ? "r3" : dir === PROBES4 ? "r4" : dir === PROBES5 ? "r5" : "r6"}-${name}${forged ? "-forged" : ""}`);
   const ws = join(base, "ws");
   mkdirSync(ws, { recursive: true });
   for (const f of readdirSync(join(dir, name))) if (f !== "tests.py") cpSync(join(dir, name, f), join(ws, f), { recursive: true });
@@ -184,6 +187,38 @@ for (const [item, cases] of Object.entries(REVIEW5)) {
       assert.equal(r.plainOk, plainOk, `${r.name}: plain unittest`);
       assert.equal(isoVerdict(s), iso, why);
       if (!plainOk) assert.notEqual(s.verdict, "pass", why);
+    }
+    for (const r of forged) assert.notEqual(r.summary.verdict, "pass", `${r.name} forged: ${testsGrade(r.summary, r.code).detail}`);
+  });
+}
+
+// Review 6: as review 5. "known-lenient" cases are documented gaps (guest/README.md): plain unittest must still fail
+// them; the isolated verdict is reported, not checked. Expectations: qa/review6-cases/expect.json.
+test("review 6 cases cover qa/review6-cases", () => {
+  const all = readdirSync(PROBES6, { withFileTypes: true }).filter((d) => d.isDirectory() && d.name !== "__pycache__").map((d) => d.name);
+  const known = Object.values(REVIEW6).flatMap((g) => Object.keys(g));
+  assert.deepEqual(all.filter((n) => !known.includes(n)).sort(), []);
+  assert.deepEqual(known.filter((n) => !all.includes(n)).sort(), []);
+});
+
+for (const [item, cases] of Object.entries(REVIEW6)) {
+  test(`review 6, #${item}: the isolated run's own verdict`, { skip: !PY && "no python3 >= 3.10" }, async (t) => {
+    const names = Object.keys(cases);
+    const honest = await batches(names, (n) => probe(n, 30, PROBES6));
+    const lenient = names.filter((n) => !cases[n]![0] && cases[n]![1] !== "known-lenient");
+    const forged = await batches(lenient, (n) => probe(n, 30, PROBES6, true));
+    for (const r of honest) {
+      const [plainOk, iso] = cases[r.name]!;
+      const s = r.summary;
+      const why = `${r.name}: ${s.verdict} ${testsGrade(s, r.code).detail}`;
+      assert.equal(r.plainOk, plainOk, `${r.name}: plain unittest`);
+      if (iso === "known-lenient") {
+        t.diagnostic(`${r.name}: known-lenient, isolated run ${isoVerdict(s)}`);
+        continue;
+      }
+      assert.equal(isoVerdict(s), iso, why);
+      if (!plainOk) assert.notEqual(s.verdict, "pass", why);
+      if (REVIEW6_PERF.has(r.name)) assert.ok(((s as { wallSeconds?: number }).wallSeconds ?? 99) < 10, `${r.name} isolated run took ${(s as { wallSeconds?: number }).wallSeconds}s`);
     }
     for (const r of forged) assert.notEqual(r.summary.verdict, "pass", `${r.name} forged: ${testsGrade(r.summary, r.code).detail}`);
   });
