@@ -544,11 +544,14 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     let t = performance.now();
     const { bytes } = await a.snapshot(snapDir);
     const snapshotMs = Math.round(performance.now() - t);
-    assert.ok(a.isRunning(), "snapshot leaves a running env running");
+    assert.equal(a.isRunning(), false, "snapshot leaves the VM stopped; the manager boots it under the VM cap");
+    await a.start();
     await sh(a, "echo modified > /workspace/snap/data.txt && echo extra > /workspace/snap/extra.txt");
     t = performance.now();
     await a.restore(snapDir);
     const restoreMs = Math.round(performance.now() - t);
+    assert.equal(a.isRunning(), false);
+    await a.start();
     assert.equal((await sh(a, "cat /workspace/snap/data.txt")).out, "original");
     assert.equal((await sh(a, "test -e /workspace/snap/extra.txt; echo $?")).out, "1");
     assert.equal((await sh(a, "python3 -c 'import six; print(six.__version__)'")).out, "1.17.0");

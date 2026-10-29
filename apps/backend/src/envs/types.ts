@@ -75,9 +75,9 @@ export interface EnvRuntime {
   /** Trustworthy listing of `root` (default /workspace) with sha256 of changed or all regular files. */
   manifest(root?: string, opts?: { previous?: Manifest }): Promise<Manifest>;
 
-  /** Write a complete restorable copy of current state into destDir (may pause the env briefly). */
+  /** Write a complete restorable copy of current state into destDir. VM: a running VM is stopped and left stopped. */
   snapshot(destDir: string): Promise<{ bytes: number }>;
-  /** Replace current state with snapshot contents (env stopped first if needed). */
+  /** Replace current state with snapshot contents. VM: a running VM is stopped and left stopped. */
   restore(snapshotDir: string): Promise<void>;
   /** Stop and delete all storage. */
   destroy(): Promise<void>;

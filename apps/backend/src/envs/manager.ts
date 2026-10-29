@@ -139,6 +139,7 @@ export class EnvManager {
       diskBytes: this.sizes.get(row.id),
       createdAt: row.created_at,
       ephemeral: !!row.ephemeral,
+      ...(row.released ? { released: true } : {}),
     };
   }
 
@@ -349,7 +350,7 @@ export class EnvManager {
       this.attach(id, rt);
       if (req.type === "vm" && req.seedFiles?.length) await this.seed(id, rt, req.seedFiles);
       // Factory snapshot: reset returns here.
-      const snap = await this.takeSnapshot(id, rt, "factory", "factory");
+      const snap = await this.snapshot(id, "factory", "factory");
       this.store.run("UPDATE envs SET factory_snapshot_id = ? WHERE id = ?", snap.id, id);
       this.setStatus(id, "stopped");
     } catch (err) {
@@ -375,49 +376,121 @@ export class EnvManager {
   }
 
   async start(id: string): Promise<EnvSummary> {
-    await this.mutex.run(id, async () => {
-      const row = this.row(id);
-      const rt = await this.runtimeFor(row);
-      if (rt.isRunning()) {
-        if (row.status !== "running" && row.status !== "busy") this.setStatus(id, this.active.has(id) ? "busy" : "running");
-        return;
-      }
-      this.setStatus(id, "starting");
-      try {
-        await this.boot(row, rt);
-      } catch (err) {
-        if (err instanceof HttpError) {
-          this.setStatus(id, row.status, row.status_detail); // no VM slot (409): nothing happened
-          throw err;
-        }
-        this.setStatus(id, "error", `start failed: ${errorMessage(err)}`);
-        throw new HttpError(500, `start failed: ${errorMessage(err)}`);
-      }
-      this.touch(id);
-      this.setStatus(id, this.active.has(id) ? "busy" : "running");
-      // Facts change with the env (installed tools, disk use, a reset), so they are gathered on every start.
-      await this.refreshFacts(id, rt);
-    });
+    await this.mutex.run(id, () => this.startUnlocked(id));
     return this.get(id);
   }
 
-  /** Boot a runtime; VMs take the global boot lock and make room first. Callers hold the env's mutex. */
-  private async boot(row: EnvRow, rt: EnvRuntime): Promise<void> {
-    if (row.type !== "vm") return rt.start();
-    await this.vmBoot.run("vm", async () => {
-      await this.makeRoomForVm(row.id);
-      await rt.start();
-    });
+  private async startUnlocked(id: string): Promise<void> {
+    const row = this.row(id);
+    const rt = await this.runtimeFor(row);
+    if (rt.isRunning()) {
+      if (row.status !== "running" && row.status !== "busy") this.setStatus(id, this.active.has(id) ? "busy" : "running");
+      return;
+    }
+    this.setStatus(id, "starting");
+    try {
+      await this.boot(row, rt);
+    } catch (err) {
+      if (err instanceof HttpError) {
+        this.setStatus(id, row.status, row.status_detail); // no VM slot (409): nothing happened
+        throw err;
+      }
+      this.setStatus(id, "error", `start failed: ${errorMessage(err)}`);
+      throw new HttpError(500, `start failed: ${errorMessage(err)}`);
+    }
+    this.touch(id);
+    this.setStatus(id, this.active.has(id) ? "busy" : "running");
+    // Facts change with the env (installed tools, disk use, a reset), so they are gathered on every start.
+    await this.refreshFacts(id, rt);
   }
 
-  /** Write files as the agent into a fresh env through the managed start/stop (VM cap and env mutex). */
-  private async seed(id: string, rt: EnvRuntime, files: { path: string; content: string }[]): Promise<void> {
-    await this.start(id);
-    try {
-      for (const f of files) await rt.writeFile(f.path, f.content, { as: "agent" });
-    } finally {
-      await this.mutex.run(id, () => this.stopUnlocked(id));
+  /**
+   * Boot a runtime. Callers hold the env's mutex. A VM boots under the global boot lock, which covers the running-VM
+   * count and the boot. With no slot free, the least recently used idle VM is stopped outside that lock, under its
+   * own mutex, and the count is taken again. Nothing waits for an env mutex while holding the boot lock, so a
+   * lifecycle op that holds its env's mutex and waits for the boot lock (start, snapshot, reset) can't deadlock it.
+   */
+  private async boot(row: EnvRow, rt: EnvRuntime): Promise<void> {
+    if (row.type !== "vm") return rt.start();
+    for (let attempt = 0; ; attempt++) {
+      const victim = await this.vmBoot.run("vm", async () => {
+        const others = this.runningVms(row.id);
+        if (others.length < MAX_RUNNING_VMS) {
+          await rt.start();
+          return null;
+        }
+        const idle = others.find((r) => this.idleVm(r));
+        if (!idle || attempt > MAX_RUNNING_VMS + 2) throw new HttpError(409, `${MAX_RUNNING_VMS} VMs are already running sessions; stop one first`);
+        return idle.id;
+      });
+      if (!victim) return;
+      await this.mutex
+        .run(victim, async () => {
+          // Checked again under its lock: a session may have taken it, or it stopped meanwhile.
+          const cur = this.store.get<EnvRow>("SELECT * FROM envs WHERE id = ?", victim);
+          if (!cur || !this.runtimes.get(victim)?.isRunning() || !this.idleVm(cur)) return;
+          log.info(`stopping idle VM ${victim} to make room for ${row.id}`);
+          await this.stopUnlocked(victim, "stopped to make room for another VM");
+        })
+        .catch((err) => log.warn(`stopping ${victim} to make room failed`, err));
     }
+  }
+
+  /** Other VMs that are up, least recently used first. */
+  private runningVms(exceptId: string): EnvRow[] {
+    return this.store
+      .all<EnvRow>("SELECT * FROM envs WHERE type = 'vm' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", exceptId)
+      .filter((r) => this.runtimes.get(r.id)?.isRunning());
+  }
+
+  private idleVm(r: EnvRow): boolean {
+    return r.status === "running" && !this.active.has(r.id);
+  }
+
+  /**
+   * Run `fn` (a snapshot or a restore; a VM is stopped for either) and start the env again afterwards if it was
+   * running. A VM holds the boot lock from before it goes down until it is back, so no other VM can take its slot
+   * meanwhile, and the restart counts running VMs like any boot. Callers hold the env's mutex. The caller gets fn's
+   * result or error; a failed restart leaves the env in error.
+   */
+  private async keepRunning<T>(row: EnvRow, rt: EnvRuntime, fn: () => Promise<T>): Promise<T> {
+    if (!rt.isRunning()) return fn();
+    const restart = async () => {
+      if (!rt.isRunning()) {
+        try {
+          if (row.type === "vm" && this.runningVms(row.id).length >= MAX_RUNNING_VMS) throw new Error(`${MAX_RUNNING_VMS} other VMs are running`);
+          await rt.start();
+        } catch (err) {
+          log.warn(`restart of ${row.id} failed`, err);
+          this.setStatus(row.id, "error", `restart failed: ${errorMessage(err)}`);
+          return;
+        }
+      }
+      this.setStatus(row.id, this.active.has(row.id) ? "busy" : "running");
+    };
+    const run = async () => {
+      try {
+        return await fn();
+      } finally {
+        await restart();
+      }
+    };
+    return row.type === "vm" ? this.vmBoot.run("vm", run) : run();
+  }
+
+  /**
+   * Write files as the agent into a fresh env through the managed start/stop (VM cap). The env's mutex is held
+   * throughout, so making room for another VM can't stop it halfway through.
+   */
+  private async seed(id: string, rt: EnvRuntime, files: { path: string; content: string }[]): Promise<void> {
+    await this.mutex.run(id, async () => {
+      await this.startUnlocked(id);
+      try {
+        for (const f of files) await rt.writeFile(f.path, f.content, { as: "agent" });
+      } finally {
+        await this.stopUnlocked(id);
+      }
+    });
   }
 
   private async refreshFacts(id: string, rt: EnvRuntime): Promise<void> {
@@ -427,21 +500,6 @@ export class EnvManager {
       this.broadcast(id);
     } catch (err) {
       log.warn(`facts for ${id} failed`, err);
-    }
-  }
-
-  /** At most MAX_RUNNING_VMS VMs run; starting another stops the least recently used idle one. */
-  private async makeRoomForVm(startingId: string): Promise<void> {
-    const running = this.store
-      .all<EnvRow>("SELECT * FROM envs WHERE type = 'vm' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", startingId)
-      .filter((r) => this.runtimes.get(r.id)?.isRunning());
-    if (running.length < MAX_RUNNING_VMS) return;
-    const idle = running.filter((r) => r.status === "running" && !this.active.has(r.id));
-    const excess = running.length - MAX_RUNNING_VMS + 1;
-    if (idle.length < excess) throw new HttpError(409, `${MAX_RUNNING_VMS} VMs are already running sessions; stop one first`);
-    for (const r of idle.slice(0, excess)) {
-      log.info(`stopping idle VM ${r.id} to make room for ${startingId}`);
-      await this.stopUnlocked(r.id, "stopped to make room for another VM");
     }
   }
 
@@ -478,16 +536,19 @@ export class EnvManager {
       const snap = this.snapshotRow(target);
       const rt = await this.runtimeFor(row);
       const wasRunning = rt.isRunning();
-      await this.stopUnlocked(id);
-      await rt.restore(snap.path);
+      // A session using the env winds down first, outside the VM boot lock (that can take a while).
+      const sessionId = this.active.get(id);
+      if (sessionId) await this.hooks.onEnvInterrupted?.(id, sessionId);
+      await this.keepRunning(row, rt, async () => {
+        await this.stopUnlocked(id);
+        await rt.restore(snap.path);
+        if (wasRunning) this.setStatus(id, "starting");
+      });
       this.bump(id);
       this.manifests.delete(id);
       this.sizes.delete(id);
       if (wasRunning) {
-        this.setStatus(id, "starting");
-        await this.boot(row, rt);
-        this.setStatus(id, "running");
-        await this.refreshFacts(id, rt);
+        if (rt.isRunning()) await this.refreshFacts(id, rt);
       } else {
         this.store.run("UPDATE envs SET facts_json = NULL WHERE id = ?", id);
         this.broadcast(id);
@@ -500,7 +561,8 @@ export class EnvManager {
     return this.mutex.run(id, async () => {
       const row = this.row(id);
       const rt = await this.runtimeFor(row);
-      const snap = await this.takeSnapshot(id, rt, kind, label?.trim() || new Date().toISOString().replace("T", " ").slice(0, 19));
+      // A running VM is stopped for the copy; keepRunning boots it again under the VM cap.
+      const snap = await this.keepRunning(row, rt, () => this.takeSnapshot(id, rt, kind, label?.trim() || new Date().toISOString().replace("T", " ").slice(0, 19)));
       this.broadcast(id);
       return snap;
     });

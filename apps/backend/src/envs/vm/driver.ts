@@ -611,42 +611,38 @@ export class VmRuntime implements EnvRuntime {
 
   // ---------- snapshots ----------
 
+  // A running VM is shut down for snapshot and restore and left stopped: booting is the manager's job (VM cap and
+  // boot lock), and it starts the VM again.
+
   snapshot(destDir: string): Promise<{ bytes: number }> {
     return this.serial(async () => {
-      const wasRunning = this.isRunning();
       await this.shutdown();
-      try {
-        fs.mkdirSync(destDir, { recursive: true, mode: 0o700 });
-        const dst = path.join(destDir, DISK_FILE);
-        cloneFile(this.diskPath, dst);
-        const bytes = fs.statSync(dst).size;
-        const meta: SnapshotMeta = {
-          format: "terrarium-vm-snapshot/1",
-          imageId: this.meta.imageId,
-          sourceEnvId: this.id,
-          createdAt: Date.now(),
-          diskBytes: bytes,
-          vm: this.config,
-        };
-        writeJson(path.join(destDir, SNAPSHOT_META), meta);
-        return { bytes };
-      } finally {
-        if (wasRunning) await this.boot();
-      }
+      fs.mkdirSync(destDir, { recursive: true, mode: 0o700 });
+      const dst = path.join(destDir, DISK_FILE);
+      cloneFile(this.diskPath, dst);
+      const bytes = fs.statSync(dst).size;
+      const meta: SnapshotMeta = {
+        format: "terrarium-vm-snapshot/1",
+        imageId: this.meta.imageId,
+        sourceEnvId: this.id,
+        createdAt: Date.now(),
+        diskBytes: bytes,
+        vm: this.config,
+      };
+      writeJson(path.join(destDir, SNAPSHOT_META), meta);
+      return { bytes };
     });
   }
 
   restore(snapshotDir: string): Promise<void> {
     return this.serial(async () => {
       const snap = readSnapshotMeta(snapshotDir);
-      const wasRunning = this.isRunning();
       await this.shutdown();
       const tmp = `${this.diskPath}.restore`;
       cloneFile(path.join(snapshotDir, DISK_FILE), tmp);
       fs.renameSync(tmp, this.diskPath);
       this.meta = { ...this.meta, imageId: snap.imageId };
       writeJson(path.join(this.dir, META_FILE), this.meta);
-      if (wasRunning) await this.boot();
     });
   }
 
