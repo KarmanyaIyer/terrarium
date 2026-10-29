@@ -106,11 +106,11 @@ function MemorySection({ settings, totalBytes, running, update }: { settings: Ap
           onPointerUp={() => gb * 1e9 !== settings.memoryBudgetBytes && update({ memoryBudgetBytes: gb * 1e9 })}
           onKeyUp={() => gb * 1e9 !== settings.memoryBudgetBytes && update({ memoryBudgetBytes: gb * 1e9 })}
         />
-        <span className="num strong">{gb} GB</span>
+        <span className="num strong" title={`${gb} GB, passed to oMLX as --memory-guard-gb`}>{fmtBytes(gb * 1e9)}</span>
         <span className="dim num">of {fmtBytes(totalBytes)} RAM</span>
         {stale && (
           <>
-            <span className="warn-text">oMLX is running with {applied} GB</span>
+            <span className="warn-text">oMLX is running with {fmtBytes((applied ?? 0) * 1e9)}</span>
             <button className="btn sm" disabled={restarting} onClick={() => void restart()}>
               {restarting ? <Loader2 className="spin" /> : <RotateCw />} Restart oMLX
             </button>
