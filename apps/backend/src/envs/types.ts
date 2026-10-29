@@ -29,6 +29,7 @@ export interface ManifestEntry {
   size: number;
   mode: number;
   mtimeNs: string; // decimal string
+  ctimeNs?: string; // decimal string; VM observer only. Unlike mtime it can't be reset by the agent (touch -d)
   ino: number;
   nlink: number;
   linkTarget?: string;
@@ -64,7 +65,8 @@ export interface EnvRuntime {
 
   exec(command: string, opts?: ExecOptions): Promise<ExecOutcome>;
   /** Paths resolve inside the env (guest-side symlink resolution only). Never touches host paths. */
-  readFile(path: string, opts?: { maxBytes?: number }): Promise<ReadResult>;
+  /** VM: `as` defaults to root (observer/diff capture); pass "agent" for model tools so uid 1000 permissions apply. */
+  readFile(path: string, opts?: { maxBytes?: number; as?: "agent" | "root" }): Promise<ReadResult>;
   writeFile(path: string, data: string | Uint8Array, opts?: { as?: "agent" | "root"; mode?: number }): Promise<void>;
   /** Trustworthy listing of `root` (default /workspace) with sha256 of changed or all regular files. */
   manifest(root?: string, opts?: { previous?: Manifest }): Promise<Manifest>;
