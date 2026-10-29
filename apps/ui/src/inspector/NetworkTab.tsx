@@ -4,6 +4,7 @@ import { act, loadNet, NET_LIMIT_MAX, select, useStore } from "../state/store";
 import { clockTime, exactTime, fmtBytes, fmtInt } from "../lib/format";
 import { Segmented } from "../components/ui";
 import { NetIcon } from "../components/Sidebar";
+import { evalOwner } from "../lib/envuse";
 
 export function NetworkTab({ env, session }: { env: EnvSummary; session?: SessionSummary }) {
   const entries = useStore((s) => s.net[env.id]);
@@ -52,8 +53,15 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
       <div className="net-mode">
         <NetIcon mode={env.network} size={13} />
         <span className="dim">Mode</span>
-        {env.released ? (
-          <span>{env.network}</span>
+        {env.released || evalOwner(env) ? (
+          <>
+            <span>{env.network}</span>
+            {evalOwner(env) && (
+              <span className="chip" title={`Read-only while ${evalOwner(env)!.reason}`}>
+                read-only: eval running
+              </span>
+            )}
+          </>
         ) : (
           <Segmented<NetworkMode>
             small

@@ -6,17 +6,18 @@ import { exactBytes, fmtBytes, fmtMiB, fmtPct } from "../lib/format";
 import { ConfirmButton, Popover, Segmented, Time, usePop } from "../components/ui";
 import { Sparkline } from "../components/Sparkline";
 import { EnvChip, NetIcon } from "../components/Sidebar";
+import { busyReason, evalOwner } from "../lib/envuse";
 
 function putEnv(e: EnvSummary | undefined) {
   if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
 }
 
-function SnapshotButton({ env, onDone }: { env: EnvSummary; onDone: () => void }) {
+function SnapshotButton({ env, inUse, onDone }: { env: EnvSummary; inUse?: string; onDone: () => void }) {
   const pop = usePop();
   const [label, setLabel] = useState("");
   return (
     <>
-      <button ref={pop.ref} className="btn sm" onClick={pop.toggle} disabled={env.status !== "running" && env.status !== "stopped"}>
+      <button ref={pop.ref} className="btn sm" onClick={pop.toggle} disabled={!!inUse || (env.status !== "running" && env.status !== "stopped")} title={inUse && `Busy: ${inUse}`}>
         <Camera /> Snapshot
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={260}>
@@ -42,14 +43,16 @@ function SnapshotButton({ env, onDone }: { env: EnvSummary; onDone: () => void }
 export function EnvTab({ env }: { env: EnvSummary }) {
   const samples = useStore((s) => s.samples);
   const envs = useStore((s) => s.envs);
-  const sessions = useStore((s) => s.sessions);
   const [snaps, setSnaps] = useState<Snapshot[] | null>(null);
   const [rev, setRev] = useState(0);
   const [name, setName] = useState(env.name);
   const [editing, setEditing] = useState(false);
   const f = env.facts;
   const busy = env.status === "starting" || env.status === "stopping" || env.status === "busy";
-  const running = Object.values(sessions).some((s) => s.envId === env.id && s.status === "running");
+  // A session run, shell command or eval case: the backend refuses to take the env down under it.
+  const inUse = busyReason(env);
+  const inUseTitle = inUse && `Busy: ${inUse}`;
+  const evalUse = evalOwner(env);
 
   useEffect(() => setName(env.name), [env.name]);
   useEffect(() => {
@@ -113,15 +116,15 @@ export function EnvTab({ env }: { env: EnvSummary }) {
             <Play /> Start
           </button>
         ) : (
-          <button className="btn sm" disabled={busy || running} title={running ? "A session is running in this env" : undefined} onClick={() => void act("Stop", (b) => b.stopEnv(env.id)).then(putEnv)}>
+          <button className="btn sm" disabled={busy || !!inUse} title={inUseTitle} onClick={() => void act("Stop", (b) => b.stopEnv(env.id)).then(putEnv)}>
             <Square /> Stop
           </button>
         )}
         {/* a released eval fork has no storage left to start, snapshot, fork or reset */}
         {!env.released && (
           <>
-            <SnapshotButton env={env} onDone={() => setRev((r) => r + 1)} />
-            <button className="btn sm" disabled={busy} onClick={() => void act("Fork", (b) => b.forkEnv(env.id, {})).then((e) => e && openEnv(e.id))}>
+            <SnapshotButton env={env} inUse={inUse} onDone={() => setRev((r) => r + 1)} />
+            <button className="btn sm" disabled={busy || !!inUse} title={inUseTitle} onClick={() => void act("Fork", (b) => b.forkEnv(env.id, {})).then((e) => e && openEnv(e.id))}>
               <GitFork /> Fork
             </button>
             <ConfirmButton
@@ -129,8 +132,8 @@ export function EnvTab({ env }: { env: EnvSummary }) {
               label="Reset"
               icon={<RotateCcw />}
               confirmLabel={env.baseSnapshotId ? "Reset to base snapshot" : "Reset to clean image"}
-              disabled={busy || running}
-              title="Discard all changes in this environment"
+              disabled={busy || !!inUse}
+              title={inUseTitle ?? "Discard all changes in this environment"}
               onConfirm={() => act("Reset", (b) => b.resetEnv(env.id, {})).then(putEnv)}
             />
           </>
@@ -141,16 +144,30 @@ export function EnvTab({ env }: { env: EnvSummary }) {
           label="Delete"
           icon={<Trash2 />}
           confirmLabel={`Delete ${env.name}`}
-          disabled={running}
+          disabled={!!inUse}
+          title={inUseTitle}
           onConfirm={() => act("Delete", (b) => b.deleteEnv(env.id))}
         />
       </div>
+      {inUse && (
+        <div className="env-busy" title={inUseTitle}>
+          <span className="dot busy" />
+          <span className="truncate">{inUse}</span>
+        </div>
+      )}
 
       <div className="env-net">
         <NetIcon mode={env.network} size={13} />
         <span className="dim">Network</span>
-        {env.released ? (
-          <span>{env.network}</span>
+        {env.released || evalUse ? (
+          <>
+            <span>{env.network}</span>
+            {evalUse && (
+              <span className="chip" title={`Read-only while ${evalUse.reason}`}>
+                read-only: eval running
+              </span>
+            )}
+          </>
         ) : (
           <Segmented<NetworkMode>
             small
@@ -366,7 +383,8 @@ export function EnvTab({ env }: { env: EnvSummary }) {
                       className="ghost"
                       label="Restore"
                       confirmLabel="Restore, discarding changes"
-                      disabled={busy || running}
+                      disabled={busy || !!inUse}
+                      title={inUseTitle}
                       onConfirm={() => act("Restore", (b) => b.resetEnv(env.id, { snapshotId: s.id })).then(putEnv)}
                     />
                     <button className="btn sm ghost" onClick={() => void act("Fork", (b) => b.forkEnv(env.id, { snapshotId: s.id })).then((e) => e && openEnv(e.id))}>

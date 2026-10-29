@@ -5,6 +5,7 @@ import { act, useStore } from "../state/store";
 import { clockTime, exactTime, fmtMs } from "../lib/format";
 import { ansiSpans } from "../components/Ansi";
 import { Expander, Segmented } from "../components/ui";
+import { evalOwner } from "../lib/envuse";
 
 interface Entry {
   id: number;
@@ -27,6 +28,9 @@ export function ShellTab({ env }: { env: EnvSummary }) {
   const endRef = useRef<HTMLDivElement>(null);
   const isVm = env.type === "vm";
   const up = env.status === "running" || env.status === "busy";
+  // While an eval case runs or is graded here, nobody else may change the env (the backend answers 409).
+  const evalUse = evalOwner(env);
+  const readOnly = evalUse && `Read-only while ${evalUse.reason}`;
 
   useEffect(() => {
     setEntries(history.get(env.id) ?? []);
@@ -54,8 +58,8 @@ export function ShellTab({ env }: { env: EnvSummary }) {
       <div className="shell-log selectable">
         {entries.length === 0 && (
           <div className="empty">
-            {up ? "No commands yet" : env.released ? `${env.name}: storage released` : `${env.name} is ${env.status}`}
-            {(env.status === "stopped" || env.status === "error") && !env.released && (
+            {readOnly ?? (up ? "No commands yet" : env.released ? `${env.name}: storage released` : `${env.name} is ${env.status}`)}
+            {(env.status === "stopped" || env.status === "error") && !env.released && !readOnly && (
               <button
                 className="btn sm"
                 type="button"
@@ -135,8 +139,9 @@ export function ShellTab({ env }: { env: EnvSummary }) {
         <input
           className="input mono shell-field"
           value={cmd}
-          disabled={!up}
-          placeholder={up ? "ls -la /workspace" : env.released ? "" : `Start ${env.name} to run commands`}
+          disabled={!up || !!readOnly}
+          title={readOnly}
+          placeholder={readOnly ?? (up ? "ls -la /workspace" : env.released ? "" : `Start ${env.name} to run commands`)}
           onChange={(e) => setCmd(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "ArrowUp" && cmds.length) {
@@ -157,7 +162,7 @@ export function ShellTab({ env }: { env: EnvSummary }) {
             }
           }}
         />
-        <button className="btn sm" type="submit" disabled={!up || !cmd.trim()}>
+        <button className="btn sm" type="submit" disabled={!up || !!readOnly || !cmd.trim()} title={readOnly}>
           <CornerDownLeft /> Run
         </button>
       </form>

@@ -5,6 +5,7 @@ import { act, openEnv, useStore } from "../state/store";
 import { fmtBytes, relTime } from "../lib/format";
 import { Kbd, Segmented, Switch } from "../components/ui";
 import { EnvChip, NetIcon } from "../components/Sidebar";
+import { busyReason } from "../lib/envuse";
 
 const MiB = 1024 * 1024;
 type Source = "clean" | "fork" | "snapshot";
@@ -103,7 +104,9 @@ function Sheet({ onClose }: { onClose: () => void }) {
   useEffect(() => nameRef.current?.select(), []);
 
   const needsSrc = source !== "clean";
-  const valid = name.trim().length > 0 && (!needsSrc || !!srcEnv) && (source !== "snapshot" || !!snapId);
+  // A fork snapshots the source's live disk, which the backend refuses while something uses it.
+  const srcBusy = source === "fork" && src ? busyReason(src) : undefined;
+  const valid = name.trim().length > 0 && (!needsSrc || !!srcEnv) && (source !== "snapshot" || !!snapId) && !srcBusy;
 
   const create = async () => {
     if (!valid || busy) return;
@@ -220,6 +223,11 @@ function Sheet({ onClose }: { onClose: () => void }) {
                       </option>
                     ))}
                   </select>
+                  {srcBusy && (
+                    <span className="dim truncate" title={`Busy: ${srcBusy}`}>
+                      busy: {srcBusy}
+                    </span>
+                  )}
                   {source === "snapshot" &&
                     (snaps == null ? (
                       <Loader2 size={13} className="spin dim" />

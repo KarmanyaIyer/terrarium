@@ -8,6 +8,7 @@ import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
 import { ConfirmButton, Popover, Segmented, Switch, usePop } from "../components/ui";
 import { EnvChip, NetIcon } from "../components/Sidebar";
+import { evalOwner } from "../lib/envuse";
 import { Timeline } from "./session/Timeline";
 import { CallBlock, RowBlock, ToolBlock, UserBlock } from "./session/Blocks";
 import { Composer } from "./session/Composer";
@@ -169,13 +170,13 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
             onChange={(v) => patchSession(s.id, { thinking: v })}
           />
         )}
-        {env && s.evalRunId && (
-          <span className="hdr-btn static">
+        {env && (s.evalRunId || evalOwner(env)) && (
+          <span className="hdr-btn static" title={!s.evalRunId && evalOwner(env) ? `Read-only while ${evalOwner(env)!.reason}` : undefined}>
             <NetIcon mode={env.network} />
             <span className="dim">network</span> {env.network}
           </span>
         )}
-        {env && !s.evalRunId && (
+        {env && !s.evalRunId && !evalOwner(env) && (
           <div className="hdr-net">
             <NetIcon mode={env.network} />
             <Segmented<NetworkMode>
