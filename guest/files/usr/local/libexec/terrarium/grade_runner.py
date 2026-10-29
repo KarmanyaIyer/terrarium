@@ -18,6 +18,7 @@ import dis
 import importlib.abc
 import importlib.machinery
 import importlib.util
+import io
 import json
 import os
 import re
@@ -25,6 +26,7 @@ import socket
 import sys
 import threading
 import time
+import tokenize
 import traceback
 import types
 import unittest
@@ -112,8 +114,24 @@ class ProxyModule(types.ModuleType):
 # As type(m) shows a module: only `type(m) is types.ModuleType` tells them apart (MODULE_TYPE_CHECK).
 ProxyModule.__name__ = ProxyModule.__qualname__ = "module"
 ProxyModule.__module__ = "builtins"
-# A line of the tests comparing a type() with types.ModuleType: a candidate module's stand-in isn't one.
-MODULE_TYPE_CHECK = re.compile(r"^(?=.*\btype\().*\bModuleType\b", re.M)
+# A statement of the tests comparing a type() with types.ModuleType: a candidate module's stand-in isn't one.
+MODULE_TYPE_CHECK = re.compile(r"^(?=.*\btype\s*\().*\bModuleType\b", re.M)
+
+
+def logical_lines(source):
+    """source with each statement on one line (tokens space-separated), so a check per line sees all of it."""
+    out, cur = [], []
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(source).readline):
+            if tok.type == tokenize.NEWLINE:
+                out.append(" ".join(cur))
+                cur = []
+            elif tok.type not in (tokenize.NL, tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT):
+                cur.append(tok.string)
+    except (tokenize.TokenError, SyntaxError):
+        return source
+    out.append(" ".join(cur))
+    return "\n".join(out)
 
 
 class CandidateLoader(importlib.abc.Loader):
@@ -367,7 +385,7 @@ def main():
         client.fn_inexact = "the tests read functions' closures or globals: a candidate function stands in this process as a real function whose closure and globals are the grader's"
     if GEN_INTROSPECTION.search(source):
         client.gen_inexact = "the tests read gi_yieldfrom: a candidate generator stands in this process as a generator that doesn't delegate"
-    if MODULE_TYPE_CHECK.search(source):
+    if MODULE_TYPE_CHECK.search(source) or MODULE_TYPE_CHECK.search(logical_lines(source)):
         client.module_inexact = "the tests compare a type() with types.ModuleType: a candidate module stands in this process as a module subclass"
     if client.watch is None:
         # Without CPython's watchers (before 3.12) only mock.patch reaches the candidate's process.

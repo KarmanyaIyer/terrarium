@@ -23,11 +23,11 @@
   },
   "5: identity outside assertIs": {
     "id_fs_impure": [false, "fail"],
-    "ident_is_lenient": [false, "known-lenient"],
+    "ident_is_lenient": [false, "fail"],
     "id_list_big_false": [false, "known-lenient"],
     "id_dict_same_false": [false, "known-lenient"],
     "id_nan_sticky_false": [false, "known-lenient"],
-    "identity_assert_keyword": [false, "known-lenient"],
+    "identity_assert_keyword": [false, "inexact"],
     "id_nan_sticky_in": [true, "fail"]
   },
   "6: a process the tests start reads their sealed copy": {
@@ -74,8 +74,8 @@
   "11: misc": {
     "warn_import_silent": [false, "fail"],
     "warn_import_probe": [true, "pass"],
-    "ref_int_low": [false, "known-lenient"],
-    "module_type_multiline": [false, "known-lenient"],
+    "ref_int_low": [false, "inexact"],
+    "module_type_multiline": [false, "inexact"],
     "sizeof_dunder9": [true, "fail"],
     "skip_only": [true, "fail"]
   }

@@ -1305,10 +1305,13 @@ class Encoder:
 
     def keyed(self, v, build):
         """build()'s tag for by-value object v with its new key (if it holds only plain data), or [key] if v crossed
-        before."""
+        before. One without a key met again in this message is an alias to it (it arrives as one object)."""
         k = self.side.vkey.get(id(v))
         if k is not None:
             return [k]
+        a = self.memo.get(id(v))
+        if a is not None:
+            return {"t": "alias", "id": a}
         if id(v) in self.busy:
             raise Unsendable("a %s that contains itself can't be sent" % type(v).__name__)
         self.busy.add(id(v))
@@ -1319,6 +1322,11 @@ class Encoder:
             self.busy.discard(id(v))
         if self.refs == refs:
             tag["k"] = self.new_key(v)
+        else:
+            a = len(self.keep)
+            self.keep.append(v)
+            self.memo[id(v)] = a
+            tag["a"] = a
         return tag
 
     def aliased(self, v, build):
@@ -4156,7 +4164,7 @@ class Client(Side):
 
         def shared(what):
             def check(args):
-                if any(map(self._crossed, args)):
+                if any(map(self._crossed, args)) or any(map(self._identity_unsure, args)):
                     raise Inexact("%s of an object the candidate's process shares: one process would count what the candidate's code holds too" % what)
 
             return check
@@ -4246,6 +4254,9 @@ class Client(Side):
             elif ev in _FS_ANY:
                 if ev[0] != "c" or fs_owner(_getframe(1), _GRADER_GLOBALS):  # not the grader's own ctypes calls
                     self.cwd_any = True
+                    if self.fs_changed:
+                        # (Not after the candidate's own process start, fs_any: a version check there is common.)
+                        raise Inexact("the tests ran another process or native code (%s) after the candidate's code changed its copy of the workspace (it would see the tests' copy, without the change)" % ev)
             elif ev in _FS_EVENTS:
                 if ev in _CWD_EVENTS:
                     self.cwd_maybe = True
@@ -4291,8 +4302,18 @@ class Client(Side):
                     return  # different numbers are different objects in any process
             raise Inexact("assertIs/assertIsNot of a %s that may have crossed from the candidate's process without its identity (one process could have the same object)" % t.__name__)
 
-        _guard(ut.TestCase, "assertIs", same)
-        _guard(ut.TestCase, "assertIsNot", same)
+        def keywords(real):
+            # expr1=/expr2= given by keyword are checked too.
+            def guarded(self_, expr1, expr2, msg=None):
+                same((self_, expr1, expr2))
+                return real(self_, expr1, expr2, msg)
+
+            guarded.__name__ = guarded.__qualname__ = real.__name__
+            guarded.__doc__ = real.__doc__
+            return guarded
+
+        ut.TestCase.assertIs = keywords(ut.TestCase.assertIs)
+        ut.TestCase.assertIsNot = keywords(ut.TestCase.assertIsNot)
         self.proc = ProcSettings(self._end, Inexact)
         # String annotations (`from __future__ import annotations`) evaluate in the function's globals: a stand-in's
         # are this module's, not the candidate module's.
