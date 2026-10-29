@@ -299,7 +299,8 @@ def run_tests(tests, results):
         spec.loader.exec_module(mod)
         suite = unittest.defaultTestLoader.loadTestsFromModule(mod)
         results.out["expected"] = suite.countTestCases()
-        runner = unittest.TextTestRunner(stream=sys.stderr, verbosity=2, resultclass=Recorder)
+        # warnings="default" as unittest.main() (python -m unittest) sets when there are no -W options.
+        runner = unittest.TextTestRunner(stream=sys.stderr, verbosity=2, resultclass=Recorder, warnings=None if sys.warnoptions else "default")
 
         def make_result():
             results.res = Recorder(runner.stream, runner.descriptions, runner.verbosity)
