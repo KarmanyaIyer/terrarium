@@ -1,0 +1,166 @@
+{
+  "id": "reasoning",
+  "title": "Reasoning and knowledge",
+  "description": "Short word problems, logic puzzles and facts with one unambiguous answer.",
+  "envType": "none",
+  "cases": [
+    {
+      "id": "rs-trains",
+      "title": "Trains leaving at different times",
+      "prompt": "Two stations are 300 km apart. Train A leaves the first station at 09:00 travelling at 70 km/h toward the second. Train B leaves the second station at 09:30 travelling at 80 km/h toward the first, on the same line. At what time do they meet? Reply with only the time in 24-hour HH:MM format.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "regex",
+        "expected": "(^|\\D)11:16(\\D|$)"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-discount-tax",
+      "title": "Undo a discount and a tax",
+      "prompt": "A jacket was discounted by 20%, and then 8% sales tax was added to the discounted price. The final price was $64.80. What was the original price before the discount, in dollars? Reply with only the number.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "75",
+        "tolerance": 0.005
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-divisible",
+      "title": "Divisible by 3 or 5, not both",
+      "prompt": "How many positive integers less than 100 are divisible by 3 or by 5, but not by both? Reply with only the number.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "40"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-pipes",
+      "title": "Two pipes and a drain",
+      "prompt": "Pipe A alone fills a tank in 6 hours. Pipe B alone fills it in 3 hours. A drain alone empties a full tank in 4 hours. Starting from empty with both pipes and the drain open, how many hours does it take to fill the tank? Reply with only the number.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "4",
+        "tolerance": 0.01
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-race-order",
+      "title": "Race order logic puzzle",
+      "prompt": "Ana, Ben, Cal, Dee and Eli ran a race with no ties. Ana finished before Ben. Cal finished immediately after Dee. Eli was neither first nor last. Ben was not last. Dee was not first. Eli and Ana did not finish next to each other. Give the finishing order from first to last. Reply with only the five names separated by commas.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "regex",
+        "expected": "^[^A-Za-z]*Ana\\W+Ben\\W+Eli\\W+Dee\\W+Cal[^A-Za-z]*$"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-tungsten",
+      "title": "Chemical symbol for tungsten",
+      "prompt": "What is the chemical symbol for the element tungsten? Reply with only the symbol.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "regex",
+        "expected": "^[^A-Za-z]*W[^A-Za-z]*$"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-weekday",
+      "title": "Weekday a leap year later",
+      "prompt": "1 March 2023 was a Wednesday. What day of the week was 1 March 2024? Reply with only the day name.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "regex",
+        "expected": "^[^A-Za-z0-9]*[Ff]riday[^A-Za-z0-9]*$"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-dice",
+      "title": "Probability with two dice",
+      "prompt": "Two fair six-sided dice are rolled. What is the probability that their sum is 8? Reply with only the probability as a fraction in lowest terms, like 1/2.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "regex",
+        "expected": "^[^0-9]*5\\s*/\\s*36[^0-9]*$"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-boxes",
+      "title": "Mislabeled fruit boxes",
+      "prompt": "Three boxes are labeled Apples, Oranges and Mixed. Every label is wrong. You take one fruit from the box labeled Mixed and it is an apple. What does the box labeled Oranges contain? Reply with exactly one word: Apples, Oranges or Mixed.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "regex",
+        "expected": "^[^A-Za-z0-9]*[Mm]ixed[^A-Za-z0-9]*$"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-python-alias",
+      "title": "Predict Python list aliasing",
+      "prompt": "What does this Python program print? Reply with only the printed value.\n\nx = [1, 2, 3]\ny = x\ny.append(4)\nz = x[:]\nz.append(5)\nprint(len(x) + len(z))",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "9"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-prime",
+      "title": "Smallest prime above 200",
+      "prompt": "What is the smallest prime number greater than 200? Reply with only the number.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "number",
+        "expected": "211"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    },
+    {
+      "id": "rs-author",
+      "title": "Author of a classic novel",
+      "prompt": "Who wrote the novel One Hundred Years of Solitude? Reply with only the author's name.",
+      "envType": "none",
+      "check": {
+        "type": "answer",
+        "mode": "regex",
+        "expected": "M[aá]rquez"
+      },
+      "maxTurns": 1,
+      "timeoutSec": 300
+    }
+  ]
+}
