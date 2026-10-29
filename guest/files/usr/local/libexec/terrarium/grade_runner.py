@@ -227,6 +227,8 @@ MIRRORED = {"sys": ("stdout", "stderr", "stdin", "argv"), "builtins": ("print", 
 
 # What a candidate function's stand-in here (a real function) can't answer as the candidate's function would.
 FN_INTROSPECTION = re.compile(r"__closure__|__globals__|cell_contents|getclosurevars|func_closure|func_globals")
+# ... and a candidate generator's (a real generator, which never delegates with `yield from`).
+GEN_INTROSPECTION = re.compile(r"gi_yieldfrom")
 
 
 def refuse_log_asserts():
@@ -362,6 +364,8 @@ def main():
         source = f.read()
     if FN_INTROSPECTION.search(source):
         client.fn_inexact = "the tests read functions' closures or globals: a candidate function stands in this process as a real function whose closure and globals are the grader's"
+    if GEN_INTROSPECTION.search(source):
+        client.gen_inexact = "the tests read gi_yieldfrom: a candidate generator stands in this process as a generator that doesn't delegate"
     if MODULE_TYPE_CHECK.search(source):
         client.module_inexact = "the tests compare a type() with types.ModuleType: a candidate module stands in this process as a module subclass"
     if client.watch is None:

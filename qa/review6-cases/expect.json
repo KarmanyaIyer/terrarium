@@ -64,10 +64,10 @@
     "thread_env_lenient": [false, "known-lenient"]
   },
   "10: stand-ins expose grader state": {
-    "tb_chain": [false, "inexact"],
-    "traceback_line": [false, "inexact"],
+    "tb_chain": [false, "fail"],
+    "traceback_line": [false, "fail"],
     "gi_yieldfrom": [false, "inexact"],
-    "generator_external_close": [false, "inexact"],
+    "generator_external_close": [false, "fail"],
     "fn_referents": [false, "inexact"],
     "fn_weakrefcount": [false, "inexact"]
   },
