@@ -169,7 +169,9 @@ functions, generators and modules standing for the candidate's and kept in sync 
 mirrored both ways: streams, argv, environment, working directory, umask, locale, time zone, logger levels,
 random, decimal, warnings, the tests' `sys.path` and standard-library assignments, settings CPython keeps in
 C) and raises a grader error where it can't (state one process can't share, introspection of the other
-half: refcounts, referrers, frames); a forged plain run can then only turn a fail into a disagreement. The
+half: refcounts, referrers, frames, the tests looking at workspace files candidate code changed in its own
+copy), and a run in which code caught a grader error can't pass; a forged plain run can then only turn a fail
+into a disagreement. The
 remaining differences only make it stricter; they are listed in guest/README.md. Every case runs as a
 normal session in a disposable fork, so clicking any result opens the full transcript, files and raw
 requests. One click runs a suite across selected models. Built-in suites: tool basics (sim), shell data

@@ -93,8 +93,10 @@ Results go to `data/vm-verify/latest.json`.
     - Rule: it never reports a pass that the same tests would not give the same code in one process.
       Where it can reproduce Python exactly it answers; where it can't, it raises `Inexact`, a grader
       error. Grader errors (`GraderError`: `Inexact`, a candidate process gone or hung, a value that can't
-      cross) are not `Exception` subclasses, so `assertRaises` never counts them. A forged plain run can
-      therefore turn a fail into a disagreement, never into a pass.
+      cross) are not `Exception` subclasses, so `assertRaises` never counts them. Code that catches one
+      anyway (a bare `except:`) can't pass the run either: one made in the tests' process fails it even if
+      every test passed, and candidate code going on after catching one ends the run. A forged plain run
+      can therefore turn a fail into a disagreement, never into a pass.
     - Values: None, bools, ints of any size, floats, strings, bytes, complex, Decimal, Fraction, datetime
       types, ranges and slices cross by value; tuples, frozensets and namedtuples by value with their
       sharing (one object met twice in a message arrives as one, so `[[0] * 3] * 2` keeps its shared rows
@@ -181,7 +183,9 @@ Results go to `data/vm-verify/latest.json`.
     - Process introspection that can't see the other half is a grader error: `sys.getrefcount`,
       `gc.get_referrers`, `weakref.getweakrefcount` or `getweakrefs` of an object both processes share (a
       proxy, a linked container, a by-value object that crossed, a test object the candidate holds) on
-      either side; `gc.get_referents` or `sys.getsizeof` of a proxy or a linked container; once candidate
+      either side; `gc.get_referents` or `sys.getsizeof` of a proxy or a linked container (from candidate
+      code: `gc.get_referents` of any shared object, `sys.getsizeof` of one other than a tuple, number,
+      bytes or ASCII string, whose copies have the original's size); once candidate
       code has run, the tests' process-wide counts (`gc.get_objects`, `get_stats`, `get_count`, `freeze`,
       `sys.getallocatedblocks`, `time.process_time` and `thread_time`, `os.times`, `resource.getrusage`,
       `tracemalloc` statistics, `threading.active_count` and `enumerate`); candidate code calling
@@ -236,8 +240,9 @@ Results go to `data/vm-verify/latest.json`.
       - a module candidate code writes into its workspace during the run can't be imported by the tests
         (the workspace's modules are fixed when the run starts).
     - Cost: about 70 us per call on an M-series Mac (one round trip; the plain run's call is about 0.1
-      us). 5,000 calls returning a list each grade in 1 s; 6,000 records kept by the candidate in 1.5 s; a
-      binary search over a 1M-element list, 300 calls, in 0.8 s.
+      us); looking a candidate function up again for every call (`m.f(x)` in a loop rather than
+      `f = m.f`) adds about 25 us, for its stand-in. 5,000 calls returning a list each grade in 1 s; 6,000
+      records kept by the candidate in 1.5 s; a binary search over a 1M-element list, 300 calls, in 0.8 s.
     - The runner writes its counts to a dir only `grader` can write; pass means the runner exited 0 and
       passed == expected > 0 there. Failures beyond the first 50 are counted in `moreFailures`.
       Candidate exits, `sys.exit`, forged results files, rewriting the source after the copy (directly or

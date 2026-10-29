@@ -78,6 +78,11 @@
   },
   "4: refcounts, referrers and process-wide counts of shared objects": {
     "refcount_leak": [false, "inexact"],
+    "sizeof_ok": [true, "pass"],
+    "sizeof_list": [true, "inexact"],
+    "caught_gone_lenient": [false, "inexact"],
+    "caught_inexact_lenient": [false, "inexact"],
+    "caught_cand_lenient": [false, "inexact"],
     "gc_cycle_ok": [true, "pass"],
     "cpu_time": [false, "inexact"],
     "thread_leak": [false, "inexact"]

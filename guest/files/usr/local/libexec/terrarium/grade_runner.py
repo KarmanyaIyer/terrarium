@@ -31,7 +31,7 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from grade_rpc import GRADER_CODE, TEST_ARGV, CandidateGone, Client, Inexact, guard_frames, proxy_rid, std_module, type_path  # noqa: E402
+from grade_rpc import GRADER_CODE, RAISED, TEST_ARGV, CandidateGone, Client, Inexact, guard_frames, proxy_rid, std_module, type_path  # noqa: E402
 
 sys.path.remove(HERE)
 
@@ -367,7 +367,8 @@ def main():
     # what one process would show: a grader error. The runner and unittest's own reporting may read them.
     guard_frames(GRADER_CODE | {id(globals())}, GRADER_CODE, Inexact, True)
     run_tests(tests, results)
-    results.write({"candidate": client.gone, "seconds": round(time.monotonic() - t0, 2)})
+    # A grading error the tests' code caught (a bare except) still counts: grade.py fails a run that made one.
+    results.write({"candidate": client.gone, "grader": RAISED[1] if RAISED[0] else None, "seconds": round(time.monotonic() - t0, 2)})
 
 
 if __name__ == "__main__":

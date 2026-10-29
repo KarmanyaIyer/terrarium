@@ -111,9 +111,19 @@ class ProtocolError(Exception):
     pass
 
 
+# Grading errors made in this process: how many, and the last one. Code catching one (a bare except) carries on
+# where one process wouldn't have raised at all, so a run that made one can't pass (grade_runner, Server._handle).
+RAISED = [0, None]
+
+
 class GraderError(BaseException):
     """A failure of the grading, not an exception from the candidate's code. Not an Exception subclass, so
     a hidden test's assertRaises can't catch it; unittest records it as an error."""
+
+    def __init__(self, *args):
+        BaseException.__init__(self, *args)
+        RAISED[0] += 1
+        RAISED[1] = "%s: %s" % (type(self).__name__, clip(args[0] if args else "", 300))
 
 
 class CandidateGone(GraderError):
@@ -278,6 +288,9 @@ def _pointer_reader():
 
 
 _READ, _SAME = _pointer_reader()
+# Lists up to this long are compared element by element: quicker than the pointer compare's fixed cost (0.4 to 1
+# us: three ctypes calls and the audit events they raise).
+_SHORT_LIST = 64
 
 
 def _threaded():
@@ -289,7 +302,7 @@ def shallow(v, base):
     elements so they stay alive. Containers nested in v are links of their own."""
     if base is list:
         items = list(list.__iter__(v))
-        return (_READ(v) if _READ is not None and not _threaded() else None, items)
+        return (_READ(v) if _READ is not None and len(items) > _SHORT_LIST and not _threaded() else None, items)
     if base is bytearray:
         return bytes(memoryview(v))
     if base is set:
@@ -986,6 +999,8 @@ _FS_SQLITE = ("-journal", "-wal", "-shm")
 _FS_MEMORY = (":memory:", "", b":memory:", b"")  # sqlite3 databases that aren't files
 # Where a file operation from these (or the grader) isn't the code under test's: see fs_owner().
 _FS_OWNERS = frozenset(("unittest", "importlib", "_frozen_importlib", "_frozen_importlib_external", "zipimport"))
+# Types whose sys.getsizeof() follows from the value alone, so a copy that crossed reports the original's.
+_SIZED = frozenset((tuple, int, bool, float, complex, bytes, type(None)))
 
 
 def fd_path(fd):
@@ -4326,8 +4341,15 @@ class Server(Side):
 
             return check
 
-        for mod, name in ((sys, "getrefcount"), (sys, "getsizeof"), (gc, "get_referrers"), (gc, "get_referents"), (wr, "getweakrefcount"), (wr, "getweakrefs")):
+        def sized(args):
+            # A copy of a tuple, number, bytes or ASCII string has the original's size; a list, dict or set's
+            # depends on how it grew, another string's on whether its UTF-8 form was cached.
+            if args and self._crossed(args[0]) and not (type(args[0]) in _SIZED or type(args[0]) is str and args[0].isascii()):
+                raise self._poison("the candidate's code called sys.getsizeof() on an object the tests' process shares (its copy here may not be the size of theirs)")
+
+        for mod, name in ((sys, "getrefcount"), (gc, "get_referrers"), (gc, "get_referents"), (wr, "getweakrefcount"), (wr, "getweakrefs")):
             _guard(mod, name, shared("%s.%s()" % (mod.__name__, name)))
+        _guard(sys, "getsizeof", sized)
         _guard(gc, "get_objects", never("gc.get_objects()"))
         # logging: the tests' process can't have the candidate's handlers and filters (the logger's list there ends
         # the run when used), nor its logger class or record factory.
@@ -5162,6 +5184,7 @@ class Server(Side):
     def _handle(self, msg, got):
         req = msg.get("req")
         self.depth += 1
+        n = RAISED[0]
         try:
             if not isinstance(req, dict):
                 raise ProtocolError("bad request")
@@ -5177,9 +5200,13 @@ class Server(Side):
                 self._poison("%s: %s" % (type(e).__name__, _safe_str(e)))
             elif type(e) is TypeError and _TEST_DATA in _safe_str(e):
                 self._poison(_DATA_ERR % clip(_safe_str(e), 200))
+            elif RAISED[0] != n and not isinstance(e, GraderError):
+                self._poison("the candidate's code caught a grading error (%s)" % RAISED[1])
             self._send({"rep": {"raise": True}}, [e])
             return
         self.depth -= 1
+        if RAISED[0] != n:
+            self._poison("the candidate's code caught a grading error (%s)" % RAISED[1])
         self._send({"rep": {"ok": True}}, [result])
 
     def _op(self, req, got):

@@ -316,6 +316,9 @@ def outcome(runner, results, timed_out, timeout):
         r["error"] = data["error"][:1000] if isinstance(data.get("error"), str) else None
         if isinstance(data.get("candidate"), str):
             r["candidate"] = data["candidate"][:1000]
+        if isinstance(data.get("grader"), str) and not r["error"] and r["passed"] == r["expected"]:
+            # Every test passed, but one met a grading error and caught it: one process wouldn't have raised it.
+            r["error"] = "the tests caught a grading error: %s" % data["grader"][:1000]
         if type(data.get("seconds")) in (int, float):
             r["seconds"] = data["seconds"]
     return r
