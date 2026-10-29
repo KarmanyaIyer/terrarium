@@ -60,8 +60,12 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
 - [x] Review 5 on the Legion, bounded to false passes / breakage / display / hangs (9f28698): backend and UI clean;
       6 grader fidelity items (qa/REVIEW_5_bounded.md), all fixed (TODO_15), plus a bare-`except:` false pass found
       in verification. Backend 204/206 (2 gated), VM 22/22, HumanEval 164/164, MBPP 427/427, UI 13/13
-- [ ] Final bounded review of the review 5 grader diff (9f28698..HEAD) on the Legion
-- [ ] Repackage, e2e, launch + quit check
+- [x] Review 6 on the Legion, final bounded review of the review 5 grader diff (qa/REVIEW_6_final.md): 4 normal-use
+      regressions (getsource, async def, primed generators, O(N^2) function scan), 42 lenient cases (11 new; all need
+      a forged plain run, no shipped suite affected). Decision: fix regressions + cheap lenient items, document the
+      rest, stop adversarial hardening (each round's new code opened new edge cases)
+- [ ] Review 6 fixes (TODO_16)
+- [x] Repackaged at 8c2d21f, e2e (19 calls, 0 one-token replies), launch + quit clean; repackage again after review 6
 - [ ] Switchboard: "Local models" card (commit 5e87b58 there) points at retired local_llms; s-switchboard still
       has someone else's uncommitted continuity work, so left untouched. Terrarium is a Mac app and needs no card.
 
