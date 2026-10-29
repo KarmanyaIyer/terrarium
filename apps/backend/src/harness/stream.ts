@@ -3,8 +3,9 @@
 // pi-ai's streamSimple() clamps max_tokens to (contextWindow - estimated input - 4096) (simple-options.js
 // clampMaxTokensToContext). On an 8K window that leaves a few hundred tokens or less, and estimates drift, so
 // long sessions degrade into one-token replies. We call the openai-completions adapter's `stream` directly with
-// an explicit max_tokens computed from the prompt's exact token count (budget.ts), so the clamp never runs. A
-// prompt counted to leave less than MIN_REPLY_TOKENS of the window is not sent; the call fails with the numbers.
+// an explicit max_tokens computed from the prompt's token count (budget.ts: exact, or an estimate that errs high when
+// the tokenizer failed), so the clamp never runs. A prompt counted to leave less than MIN_REPLY_TOKENS of the window
+// is not sent; the call fails with the numbers.
 
 import type { StreamFn } from "@earendil-works/pi-agent-core";
 import { type Api, type AssistantMessage, type AssistantMessageEvent, type AssistantMessageEventStream, type Context, createAssistantMessageEventStream, type Message, type Model } from "@earendil-works/pi-ai";
@@ -46,7 +47,7 @@ export interface StreamHooks {
   gateway: Gateway;
   tracer: Tracer;
   calibrator: TokenCalibrator;
-  /** Prompt tokens for the messages being sent (budget.ts PromptCounter). Without it: calibrated heuristic. */
+  /** Prompt tokens for the messages being sent (budget.ts PromptCounter). Without it: calibrated heuristic (tests). */
   count?(messages: Message[]): Promise<PromptCount>;
   params(): CallParams;
   /** Start oMLX and make sure the model accepts this window/output (oMLX loads the model on first request). */
@@ -177,12 +178,12 @@ function makeSingleCall(h: StreamHooks) {
     const raw = rawEstimate(context.messages);
     await h.ensureReady(p);
     const prompt: PromptCount = h.count ? await h.count(context.messages) : { tokens: Math.ceil(raw * h.calibrator.factor), exact: false };
-    // An estimate is deliberately high (budget.ts ESTIMATE_SAFETY): it never refuses a call, and the reply keeps
-    // at least MIN_REPLY_TOKENS; if the server finds the prompt too long, its error is explained (sessions.ts).
-    const maxTokens = prompt.exact ? callBudget(p.window, prompt.tokens, p.maxOutput) : Math.min(p.maxOutput, Math.max(MIN_REPLY_TOKENS, p.window - prompt.tokens - 64));
+    // An estimate errs high (budget.ts conservativeTokens), so it is held to the window like an exact count: oMLX only
+    // enforces the context it loaded the model with, which can be larger than this session's window.
+    const maxTokens = callBudget(p.window, prompt.tokens, p.maxOutput);
     const callId = newId("call");
     const info: CallInfo = { callId, rawEstimate: raw, estimate: prompt.tokens, prompt, maxTokens, params: p };
-    if (prompt.exact && p.window - prompt.tokens - 64 < MIN_REPLY_TOKENS) {
+    if (p.window - prompt.tokens - 64 < MIN_REPLY_TOKENS) {
       const message =
         (await h.onOverflow?.(info)) ??
         `Request not sent: the prompt is ${prompt.exact ? "" : "about "}${prompt.tokens} tokens, which leaves no room for a reply in the ${p.window}-token context window.`;

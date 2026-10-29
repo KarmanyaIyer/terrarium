@@ -117,7 +117,8 @@ REST (JSON):
   as `user_exec` on the env, never shown to the model) · `GET /api/envs/:id/net?limit=`
 - Sessions: `POST /api/sessions` · `PATCH /api/sessions/:id` (model, context, title) ·
   `GET /api/sessions/:id/events?after=<seq>` · `POST /api/sessions/:id/messages` ·
-  `POST /api/sessions/:id/continue` · `POST /api/sessions/:id/stop` · `DELETE /api/sessions/:id`
+  `POST /api/sessions/:id/continue` · `POST /api/sessions/:id/retry` (send the latest message again when it got no
+  reply) · `POST /api/sessions/:id/stop` · `DELETE /api/sessions/:id`
 - Model calls: `GET /api/model-calls/:id` → full request + response JSON
 - Blobs: `GET /api/blobs/:sha256`
 - Models/inference: `GET /api/models` · `POST /api/models/:id/{load,unload}` ·

@@ -27,7 +27,7 @@ import { HttpError, errorMessage } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
 import { logger } from "../util/log.ts";
 import { type ChatTokenizer, MIN_REPLY_TOKENS, PromptCounter, TokenCalibrator } from "./budget.ts";
-import { compact, type CompactionResult } from "./compaction.ts";
+import { compact, type CompactionResult, windowThatFits } from "./compaction.ts";
 import { FsObserver } from "./observer.ts";
 import { CHAT_PROMPT, PI_STOCK_PROMPT, SIM_NOTE, TERRARIUM_PROMPT } from "./prompts.ts";
 import { type CallInfo, makeStreamFn, omlxModel, requestBody, type Sampling } from "./stream.ts";
@@ -98,8 +98,9 @@ const fmt = (n: number) => n.toLocaleString("en-US");
 /** Context sizes offered in the UI; the remedy names the smallest that fits. */
 const WINDOWS = [4096, 8192, 16384, 32768, 65536, 131072, 262144];
 
-export function windowFor(tokens: number, nativeContext: number): number | undefined {
-  return WINDOWS.find((w) => w >= tokens && w <= nativeContext);
+/** The smallest window in which compaction keeps a `prompt`-token prompt with the full output cap free. */
+export function windowFor(prompt: number, maxOutput: number, nativeContext: number): number | undefined {
+  return windowThatFits(prompt, maxOutput, WINDOWS, nativeContext);
 }
 
 /** oMLX's message when a prompt is over the context length it loaded the model with. */
@@ -114,7 +115,7 @@ export function explainServerOverflow(raw: string, window: number, maxOutput: nu
   if (!m) return null;
   const prompt = Number(m[1]);
   const serverMax = Number(m[2]);
-  const need = windowFor(prompt + maxOutput + 320, nativeContext);
+  const need = windowFor(prompt, maxOutput, nativeContext);
   return {
     message: `The inference server rejected the request: the prompt is ${fmt(prompt)} tokens, over the ${fmt(serverMax)}-token context the model is loaded with (session window ${fmt(window)}).`,
     detail: [
@@ -428,6 +429,25 @@ export class SessionManager {
     return this.get(id);
   }
 
+  /**
+   * Send the latest user message again: the one a refused or failed run left without a reply (e.g. over the context
+   * window, before the window was raised). It stays the current instruction, so compaction never drops it.
+   */
+  retry(id: string): SessionSummary {
+    this.assertNotEval(id);
+    const pending = this.unanswered(this.row(id));
+    if (!pending) throw new HttpError(409, "nothing to retry: the latest message already has a reply");
+    this.startRun(id, textOf((pending as { content: unknown }).content), {}, true);
+    return this.get(id);
+  }
+
+  /** The transcript's last message when it is a user message with no reply (its run was refused, failed or stopped). */
+  private unanswered(r: SessionRow): AgentMessage | undefined {
+    const t = sanitizeTranscript(this.loadTranscript(r));
+    const last = t.at(-1);
+    return last?.role === "user" ? last : undefined;
+  }
+
   /** Eval case sessions are driven by their run (sessions.run), never by user messages. */
   private assertNotEval(id: string): void {
     if (this.row(id).eval_run_id) throw new HttpError(409, "eval case sessions are read-only: the run drives them and their env is discarded afterwards");
@@ -438,18 +458,21 @@ export class SessionManager {
     return this.startRun(id, text, opts);
   }
 
-  private startRun(id: string, text: string, opts: RunOptions): Promise<RunOutcome> {
+  private startRun(id: string, text: string, opts: RunOptions, retry = false): Promise<RunOutcome> {
     const r = this.row(id);
     const live = this.liveFor(id);
     if (live.running) throw new HttpError(409, "session is already running");
-    // Refuse up front what acquire() would refuse once the run started (another session, an eval case's env).
-    if (r.harness !== "chat" && r.env_id) this.envs.assertUsableBy(r.env_id, id);
+    // Refuse up front what acquire() would refuse once the run started (env deleted, another session, an eval case's env).
+    if (r.harness !== "chat" && r.env_id) {
+      if (!this.envs.exists(r.env_id)) throw new HttpError(409, `environment deleted: this session's environment (${r.env_id}) no longer exists; switch the session to the chat harness or start a new session`);
+      this.envs.assertUsableBy(r.env_id, id);
+    }
     live.stopRequested = false;
     live.timedOut = false;
     // An untitled session is named after its first message, so the sidebar isn't a column of "New session".
     if (r.last_seq === 0 && r.title === DEFAULT_TITLE) this.store.run("UPDATE sessions SET title = ? WHERE id = ?", titleFrom(text), id);
     this.setStatus(id, "running");
-    const p = this.runInner(live, text, opts)
+    const p = this.runInner(live, text, opts, retry)
       .catch((err): RunOutcome => {
         log.error(`run failed for ${id}`, err);
         return { reason: "error", finalText: "", error: errorMessage(err) };
@@ -493,7 +516,7 @@ export class SessionManager {
     this.store.run("UPDATE sessions SET transcript_blob = ? WHERE id = ?", blob, id);
   }
 
-  private async runInner(live: Live, text: string, opts: RunOptions): Promise<RunOutcome> {
+  private async runInner(live: Live, text: string, opts: RunOptions, retry = false): Promise<RunOutcome> {
     const id = live.id;
     const r = this.row(id);
     const tracer = live.tracer;
@@ -507,7 +530,10 @@ export class SessionManager {
     let timeout: NodeJS.Timeout | undefined;
     const envId = r.harness !== "chat" ? r.env_id : null;
 
-    tracer.emit({ type: "user_message", text });
+    tracer.emit(retry ? { type: "user_message", text, retry: true } : { type: "user_message", text });
+    // A new message after one that got no reply: that one becomes an earlier turn, which compaction drops first.
+    const earlier = retry ? undefined : this.unanswered(r);
+    let earlierFate = false;
     try {
       const model = await this.requireModel(r.model_id);
       const thinking = !!r.thinking && model.thinking !== "none";
@@ -548,7 +574,20 @@ export class SessionManager {
       const befores = new Map<string, Manifest>();
       const fileChanges = new Map<string, number>();
       const agentModel = omlxModel(model.id, window, maxOutput);
-      const counter = new PromptCounter({ modelId: model.id, tokenizer: this.tokens, calibrator: live.calibrator, body: (messages) => requestBody(agentModel, { messages }, thinking) });
+      const counter = new PromptCounter({
+        modelId: model.id,
+        tokenizer: this.tokens,
+        calibrator: live.calibrator,
+        body: (messages) => requestBody(agentModel, { messages }, thinking),
+        signal: () => live.agent?.signal,
+        onFallback: (why) =>
+          tracer.emit({
+            type: "warning",
+            code: "token_estimate",
+            message: `Token counts are estimates for the rest of this run: the model's tokenizer failed (${why}). They err high, so compaction may remove more than needed and a prompt that would fit may be refused.`,
+            data: { reason: why },
+          }),
+      });
       // System prompt + tool declarations, counted once per run (they don't change within one).
       let sysTokens: number | null = null;
       let lastCompaction: CompactionResult | null = null;
@@ -579,6 +618,16 @@ export class SessionManager {
               code: "other",
               message: `The server counted ${u.promptTokens} prompt tokens; the tokenizer counted ${info.prompt.tokens} before sending. Later counts in this run add the ${u.promptTokens - info.prompt.tokens}-token difference.`,
               data: { promptTokens: u.promptTokens, counted: info.prompt.tokens },
+            });
+          }
+          if (!info.prompt.exact && !warnedMismatch && u.promptTokens > info.prompt.tokens) {
+            warnedMismatch = true;
+            const over = u.promptTokens + info.maxTokens - window;
+            tracer.emit({
+              type: "warning",
+              code: "token_estimate",
+              message: `The server counted ${u.promptTokens} prompt tokens; the estimate was ${info.prompt.tokens}.${over > 0 ? ` With ${info.maxTokens} tokens of reply room this request asked for ${over} more than the ${window}-token window.` : ""} Later estimates in this session are scaled up.`,
+              data: { promptTokens: u.promptTokens, estimate: info.prompt.tokens, contextWindow: window, maxTokens: info.maxTokens },
             });
           }
           if (info.estimate > window && u.promptTokens < info.estimate * 0.6) {
@@ -656,6 +705,20 @@ export class SessionManager {
             saveOriginal: (toolCallId, text) => this.store.blobs.put(this.toolResultText(id, toolCallId) ?? text),
           });
           lastCompaction = res;
+          if (earlier && !earlierFate) {
+            earlierFate = true;
+            const ts = (earlier as { timestamp?: number }).timestamp;
+            const kept = res.messages.some((m) => m === earlier || (m.role === "user" && (m as { timestamp?: number }).timestamp === ts && textOf((m as { content: unknown }).content) === textOf((earlier as { content: unknown }).content)));
+            const size = (await counter.countText(textOf((earlier as { content: unknown }).content))).tokens;
+            tracer.emit({
+              type: "warning",
+              code: "other",
+              message: kept
+                ? `Your earlier message that got no reply (${exact ? "" : "about "}${fmt(size)} tokens) is sent as an earlier turn.`
+                : `Your earlier message that got no reply (${exact ? "" : "about "}${fmt(size)} tokens) was removed by compaction to fit the ${fmt(window)}-token window: the model does not see it.`,
+              data: { messageTokens: size, kept: kept ? 1 : 0 },
+            });
+          }
           if (res.removedTurns || res.truncatedResults || res.shortened.length) {
             messages.splice(0, messages.length, ...res.messages);
             tracer.emit({
@@ -770,7 +833,8 @@ export class SessionManager {
           agent.abort();
         }, opts.timeoutMs);
       }
-      await agent.prompt(text);
+      if (retry) await agent.continue();
+      else await agent.prompt(text);
 
       const last = lastAssistant as AssistantMessage | null;
       if (last) finalText = displayText(last.content.filter((c) => c.type === "text").map((c) => (c as { text: string }).text).join(""));
@@ -837,7 +901,8 @@ export class SessionManager {
     const taskTokens = task ? (await c.counter.countText(textOf((task as { content: unknown }).content))).tokens : 0;
     const sys = c.sysTokens ?? 0;
     const room = Math.max(0, window - prompt);
-    const need = windowFor(prompt + Math.min(c.maxOutput, 1024) + 320, c.model.nativeContext);
+    // Sized like compaction's limit (window - output cap - margin), so in that window the message stays whole.
+    const need = windowFor(prompt, c.maxOutput, c.model.nativeContext);
     const message =
       prompt >= window
         ? `Request not sent: the prompt is ${about}${fmt(prompt)} tokens after compaction, over the ${fmt(window)}-token context window.`
@@ -850,9 +915,10 @@ export class SessionManager {
     }
     parts.push(
       need
-        ? `Raise the context window to ${fmt(need)}${taskTokens > window / 2 ? ", or send a shorter message" : ""}.`
+        ? `Raise the context window to ${fmt(need)} (output cap ${fmt(c.maxOutput)})${taskTokens > window / 2 ? ", or send a shorter message" : ""}, then retry.`
         : `This is more than the model's ${fmt(c.model.nativeContext)}-token native context: send a shorter message or start a new session.`,
     );
+    if (task) parts.push("Your message is kept in the conversation without a reply. Retry sends it again; a new message instead sends it as an earlier turn, which compaction drops first.");
     return {
       message,
       detail: parts.join("\n"),

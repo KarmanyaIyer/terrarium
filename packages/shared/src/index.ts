@@ -318,7 +318,7 @@ interface EventBase {
 
 export type TraceEvent = EventBase &
   (
-    | { type: "user_message"; text: string }
+    | { type: "user_message"; text: string; retry?: true } // retry: the latest message sent again (it is already in the transcript)
     | { type: "turn_start"; turn: number }
     | {
         type: "model_call_start";
@@ -371,7 +371,7 @@ export type TraceEvent = EventBase &
     | { type: "harness_repair"; callId: Id; original: string; repaired: ToolCallRef[]; reason: string }
     | {
         type: "warning";
-        code: "output_truncated" | "context_near_full" | "prompt_truncated_by_server" | "model_switched" | "other";
+        code: "output_truncated" | "context_near_full" | "prompt_truncated_by_server" | "model_switched" | "token_estimate" | "other";
         message: string;
         data?: Record<string, number | string>;
       }

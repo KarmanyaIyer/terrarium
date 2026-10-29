@@ -102,7 +102,7 @@ function routes(app: App): Route[] {
     r("GET", "/api/envs/:id/tree", ({ params, query }) => files.tree(params[0], { at: intParam(query, "at"), sessionId: query.get("sessionId") || undefined })),
     r("GET", "/api/envs/:id/file", ({ params, query }) => files.file(params[0], query.get("path"), { at: intParam(query, "at"), sessionId: query.get("sessionId") || undefined })),
     r("POST", "/api/envs/:id/exec", ({ params, body }) => envs.exec(params[0], (body ?? {}) as ExecRequest)),
-    r("GET", "/api/envs/:id/net", ({ params, query }) => envs.netLog(params[0], Math.min(Math.max(intParam(query, "limit") ?? 500, 1), 5000))),
+    r("GET", "/api/envs/:id/net", ({ params, query }) => envs.netLog(params[0], intParam(query, "limit") ?? 500)),
 
     // ---- sessions ----
     r("GET", "/api/sessions", () => sessions.list()),
@@ -127,6 +127,7 @@ function routes(app: App): Route[] {
     }),
     r("POST", "/api/sessions/:id/messages", ({ params, body }) => sessions.sendMessage(params[0], ((body ?? {}) as SendMessageRequest).text), { status: 202 }),
     r("POST", "/api/sessions/:id/continue", ({ params }) => sessions.continue(params[0]), { status: 202 }),
+    r("POST", "/api/sessions/:id/retry", ({ params }) => sessions.retry(params[0]), { status: 202 }),
     r("POST", "/api/sessions/:id/stop", ({ params }) => sessions.stop(params[0])),
 
     // ---- model calls / blobs ----

@@ -18,7 +18,7 @@ import type { InferenceService } from "../inference/service.ts";
 import { TokenCounter } from "../inference/tokens.ts";
 import { Store } from "../store/db.ts";
 import { startFakeOpenAI, type FakeOpenAI, type ScriptedReply } from "../test-support/fake-openai.ts";
-import { ESTIMATE_SAFETY, PromptCounter, rawEstimate, TokenCalibrator } from "./budget.ts";
+import { conservativeTokens, PromptCounter, rawEstimate, TokenCalibrator } from "./budget.ts";
 import { explainServerOverflow, SessionManager } from "./sessions.ts";
 
 const MODEL: ModelInfo = {
@@ -168,12 +168,91 @@ test("a message that can't fit even after compaction is refused before sending, 
   assert.equal(err.data!.counted, "tokenizer");
   assert.equal(err.data!.suggestedWindow, 8192);
   assert.match(err.detail!, /Latest user message: [\d,]+ tokens\./);
-  assert.match(err.detail!, /Raise the context window to 8,192, or send a shorter message\./);
+  assert.match(err.detail!, /Raise the context window to 8,192 \(output cap 512\), or send a shorter message, then retry\./);
   // The meter shows the real prompt, never a negative free.
   const ctx = of(s.id, "context").at(-1)!;
   assert.equal(ctx.usage.source, "tokenizer");
   assert.equal(ctx.usage.systemAndTools + ctx.usage.history, err.data!.promptTokens);
   assert.equal(ctx.usage.free, 0);
+});
+
+const textOfMsg = (m: { content: unknown }) => (typeof m.content === "string" ? m.content : (m.content as { text?: string }[]).map((p) => p.text ?? "").join(""));
+const settled = async (id: string) => {
+  for (let i = 0; i < 500 && sessions.isRunning(id); i++) await new Promise((r) => setTimeout(r, 10));
+  assert.equal(sessions.isRunning(id), false, "the run ended");
+};
+const paste = (words: number) => `Notes: ${Array.from({ length: words }, (_, i) => `amber${i * 7919}`).join(" ")}`;
+
+test("over the window: the suggested window is one compaction keeps the message whole in, and Retry sends it again as the current instruction (review 4, #3)", async () => {
+  const s = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat", contextWindow: 8192, thinking: true });
+  assert.equal(s.maxOutputTokens, 4096, "thinking on: the cap is half the window");
+  const text = paste(2700); // ~14,000 tokens, like the review's 14,059-token paste
+  const before = fake.requests.length;
+  assert.equal((await sessions.run(s.id, text)).reason, "error");
+  assert.equal(fake.requests.length, before, "refused, not sent");
+  const err = of(s.id, "error").at(-1)!;
+  const prompt = err.data!.promptTokens as number;
+  const want = err.data!.suggestedWindow as number;
+  // Old sizing (prompt + min(cap, 1024) + 320) named 16K for this prompt; compaction's limit there is 16,384 - 4,096 - 256.
+  assert.ok(prompt > 12032 && prompt + 1024 + 320 <= 16384, `a ${prompt}-token prompt: more than compaction keeps in 16K with a 4,096 cap`);
+  assert.ok(want - 4096 - 256 >= prompt, `in ${want}, compaction's limit ${want - 4096 - 256} holds the ${prompt}-token prompt`);
+  assert.match(err.detail!, new RegExp(`Raise the context window to ${want.toLocaleString("en-US")} \\(output cap 4,096\\), or send a shorter message, then retry\\.`));
+  assert.match(err.detail!, /Your message is kept in the conversation without a reply\. Retry sends it again/);
+
+  // The remedy as the UI applies it (window raised, cap kept), then Retry.
+  await sessions.update(s.id, { contextWindow: want, maxOutputTokens: 4096 });
+  reply = () => ({ text: "The notes are amber numbers." });
+  const sent = fake.requests.length;
+  sessions.retry(s.id);
+  await settled(s.id);
+  const req = fake.requests[sent];
+  assert.ok(req, "the retry was sent");
+  const users = req.messages.filter((m: { role: string }) => m.role === "user");
+  assert.equal(users.length, 1, "the message went once, not twice");
+  assert.equal(textOfMsg(users[0]), text, "whole: nothing dropped or shortened");
+  assert.equal(req.messages.at(-1).role, "user", "it is the current instruction");
+  assert.ok(dense(req) + req.max_tokens <= want);
+  assert.equal(req.max_tokens, 4096, "the full output cap");
+  const um = of(s.id, "user_message");
+  assert.equal(um.length, 2);
+  assert.equal(um[1].retry, true);
+  assert.equal(um[1].text, text);
+  assert.equal(of(s.id, "run_end").at(-1)!.reason, "done");
+  assert.throws(() => sessions.retry(s.id), /nothing to retry: the latest message already has a reply/);
+});
+
+test("a new message after a refused one: the trace says whether the model sees the refused one (review 4, #3)", async () => {
+  // Still too small: compaction drops the refused paste, and says so.
+  const a = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat", contextWindow: 2048 });
+  assert.equal((await sessions.run(a.id, paste(900))).reason, "error");
+  reply = () => ({ text: "hi" });
+  const sentA = fake.requests.length;
+  assert.equal((await sessions.run(a.id, "Never mind, just say hi.")).reason, "done");
+  assert.ok(!fake.requests[sentA].messages.some((m: { content: unknown }) => textOfMsg(m as { content: unknown }).includes("amber7919")), "the paste was not sent");
+  const dropped = of(a.id, "warning").filter((w) => w.code === "other" && /earlier message that got no reply/.test(w.message));
+  assert.equal(dropped.length, 1);
+  assert.match(dropped[0].message, /^Your earlier message that got no reply \([\d,]+ tokens\) was removed by compaction to fit the 2,048-token window: the model does not see it\.$/);
+
+  // Window raised, but a new message instead of Retry: the paste goes as an earlier turn.
+  const b = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat", contextWindow: 2048 });
+  assert.equal((await sessions.run(b.id, paste(900))).reason, "error");
+  await sessions.update(b.id, { contextWindow: 16384 });
+  const sentB = fake.requests.length;
+  assert.equal((await sessions.run(b.id, "Summarize the notes.")).reason, "done");
+  const users = fake.requests[sentB].messages.filter((m: { role: string }) => m.role === "user");
+  assert.equal(users.length, 2);
+  assert.match(textOfMsg(users[0]), /^Notes: amber0/);
+  const kept = of(b.id, "warning").filter((w) => w.code === "other" && /earlier message that got no reply/.test(w.message));
+  assert.match(kept[0]?.message ?? "", /^Your earlier message that got no reply \([\d,]+ tokens\) is sent as an earlier turn\.$/);
+});
+
+test("Send and Continue on a session whose environment was deleted are refused with that reason (review 4, #11)", async () => {
+  const env = await envs.create({ name: "gone", type: "sim" });
+  const s = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
+  await envs.delete(env.id);
+  assert.throws(() => sessions.sendMessage(s.id, "hello"), (e: Error & { status?: number }) => e.status === 409 && /^environment deleted: this session's environment \(/.test(e.message));
+  assert.throws(() => sessions.continue(s.id), /environment deleted/);
+  assert.equal(of(s.id, "user_message").length, 0, "no run started");
 });
 
 test("when the tokenizer is unreachable, a server rejection is shown with its numbers and the remedy", async () => {
@@ -201,14 +280,14 @@ test("explainServerOverflow suggests the smallest window that fits within the mo
   assert.equal(explainServerOverflow("400 something else", 8192, 1024, 32768), null);
 });
 
-test("PromptCounter: exact with a tokenizer, safety-scaled estimate without, and server usage corrects later counts", async () => {
+test("PromptCounter: exact with a tokenizer, an estimate that errs high without, and server usage corrects later counts", async () => {
   const msgs = [{ role: "user", content: "x".repeat(3500), timestamp: 0 }] as AgentMessage[];
   const body = async (m: unknown[]) => ({ messages: m, tools: [] });
   let n = 1000;
   const tok = { countChat: async () => n, countText: async (_m: string, t: string) => t.length };
   const c = new PromptCounter({ modelId: "m", tokenizer: tok, calibrator: new TokenCalibrator(), body });
   const first = await c.count(msgs);
-  assert.deepEqual(first, { tokens: 1000, exact: true, tokenized: 1000 });
+  assert.deepEqual({ tokens: first.tokens, exact: first.exact, tokenized: first.tokenized }, { tokens: 1000, exact: true, tokenized: 1000 });
   c.observe(first, rawEstimate(msgs), 1012);
   assert.equal((await c.count(msgs)).tokens, 1012, "the server counted 12 more: later counts add them");
   c.observe({ tokens: 1012, exact: true, tokenized: 1000 }, rawEstimate(msgs), 1000);
@@ -218,7 +297,7 @@ test("PromptCounter: exact with a tokenizer, safety-scaled estimate without, and
   const e = new PromptCounter({ modelId: "m", tokenizer: broken, calibrator: new TokenCalibrator(), body });
   const est = await e.count(msgs);
   assert.equal(est.exact, false);
-  assert.equal(est.tokens, Math.ceil(rawEstimate(msgs) * ESTIMATE_SAFETY));
+  assert.ok(est.tokens >= conservativeTokens("x".repeat(3500)), `estimate ${est.tokens}`);
   assert.equal(e.lastFailure, "down");
   n = 0;
 
@@ -236,5 +315,7 @@ test("PromptCounter: exact with a tokenizer, safety-scaled estimate without, and
   const q = new PromptCounter({ modelId: "m", tokenizer: qwen, calibrator: new TokenCalibrator(), body });
   assert.deepEqual(await q.countSystem(sys), { tokens: 270, exact: true });
   assert.equal(q.lastFailure, null);
-  assert.deepEqual(await e.countSystem(sys), { tokens: e.estimate(sys), exact: false });
+  const es = await e.countSystem(sys);
+  assert.equal(es.exact, false);
+  assert.ok(es.tokens >= conservativeTokens("You are terse."), `system estimate ${es.tokens}`);
 });

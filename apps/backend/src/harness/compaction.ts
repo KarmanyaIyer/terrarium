@@ -77,8 +77,16 @@ export function shortenedMarker(head: number, tail: number, total: number): stri
   return `\n[tool output shortened by the harness to fit the context window: kept the first ${head} and last ${tail} of ${total} tokens]\n`;
 }
 
+/** Tokens kept free beyond the output budget: compaction's limit is window - output budget - this. */
+export const COMPACTION_MARGIN = 256;
+
+/** Smallest window whose compaction limit holds `promptTokens` with `outputBudget` free, from `windows` (ascending). */
+export function windowThatFits(promptTokens: number, outputBudget: number, windows: number[], max: number): number | undefined {
+  return windows.find((w) => w <= max && w - outputBudget - COMPACTION_MARGIN >= promptTokens);
+}
+
 export async function compact(messages: AgentMessage[], opts: CompactionOptions): Promise<CompactionResult> {
-  const margin = opts.margin ?? 256;
+  const margin = opts.margin ?? COMPACTION_MARGIN;
   const limit = opts.window - opts.outputBudget - margin;
   const countText = opts.countText ?? ((t: string) => Math.ceil(t.length / 3.5));
   const beforeTokens = await opts.count(messages);
