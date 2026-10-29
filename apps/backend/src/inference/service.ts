@@ -24,6 +24,8 @@ export class InferenceService {
   private pushedWindow = new Map<string, { window: number; maxOutput: number }>();
   /** Loaded model ids as of the last status poll; a change broadcasts the model list. */
   private loadedKey = "";
+  /** A model dir was added or removed since oMLX last scanned its model dir. */
+  private rescanPending = false;
 
   constructor(opts: { store: Store; hub: Hub; modelsDir: string; venvDir: string; omlxDataDir: string }) {
     this.store = opts.store;
@@ -120,6 +122,7 @@ export class InferenceService {
   async ensureModel(id: string, window: number, maxOutput = 0): Promise<void> {
     await this.mutex.run(`model:${id}`, async () => {
       await this.omlx.ensureStarted();
+      if (this.rescanPending) await this.reloadIfIdle(!(await this.omlxStatus())?.models.some((m) => m.id === id));
       const pushed = this.pushedWindow.get(id);
       if (pushed && pushed.window >= window && pushed.maxOutput >= maxOutput) return;
       const model = await this.model(id);
@@ -143,6 +146,7 @@ export class InferenceService {
     if (!this.omlx.isReady()) return;
     await this.omlx.unload(id);
     this.statusCache = null;
+    await this.reloadIfIdle();
     await this.broadcastModels();
   }
 
@@ -165,12 +169,25 @@ export class InferenceService {
     return model;
   }
 
-  /** Model dirs were added or removed: oMLX re-scans its model dir (when running) and the UI gets the new list. */
+  /** Model dirs were added or removed: oMLX re-scans its model dir and the UI gets the new list. */
   async rescan(): Promise<void> {
+    this.rescanPending = true;
+    this.statusCache = null;
+    await this.reloadIfIdle();
+    await this.broadcastModels();
+  }
+
+  /**
+   * oMLX's reload unloads every loaded model and aborts their running requests, so a pending re-scan waits until
+   * nothing is loaded. `force`: a model oMLX doesn't know yet is about to load.
+   */
+  private async reloadIfIdle(force = false): Promise<void> {
+    if (!this.rescanPending || !this.omlx.isReady()) return;
+    if (!force && (await this.loadedModels()).length) return;
+    this.rescanPending = false;
+    await this.omlx.request("POST", "/admin/api/reload").catch((err) => log.warn("oMLX reload failed", err));
     this.statusCache = null;
     this.pushedWindow.clear();
-    if (this.omlx.isReady()) await this.omlx.request("POST", "/admin/api/reload").catch((err) => log.warn("oMLX reload failed", err));
-    await this.broadcastModels();
   }
 
   async rss(): Promise<number | undefined> {

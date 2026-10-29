@@ -156,7 +156,8 @@ def download(repo, dest):
                     out({"desc": self.desc, "n": self.n})
             return r
 
-    snapshot_download(repo, local_dir=dest, allow_patterns=ALLOW, tqdm_class=Progress)
+    # allow_patterns also match nested paths ("*.json" matches "sub/x.json"); inspect sized root files only.
+    snapshot_download(repo, local_dir=dest, allow_patterns=ALLOW, ignore_patterns=["*/*"], tqdm_class=Progress)
     out({"done": True})
 
 
