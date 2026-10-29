@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
+import { AlertTriangle, Check, LayoutList, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
 import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, ModelInfo, StartEvalRunRequest } from "@terrarium/shared";
 import { act, loadEvalRun, loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { fmtCtx, fmtInt, fmtMs, fmtPct, plural } from "../lib/format";
-import { ChartTip, ConfirmButton, Expander, Segmented, Switch, Time, type TipState } from "../components/ui";
+import { ConfirmButton, Expander, Hint, Segmented, Switch, Time } from "../components/ui";
 import { CodeView } from "../components/CodeView";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { fitLabel, modelName } from "../components/ModelPicker";
-import { HARNESS, HarnessTip } from "../lib/explain";
+import { HARNESS, HarnessTip, harnessLabel } from "../lib/explain";
 
 export default function EvalsView() {
   const view = useStore((s) => s.view);
@@ -20,22 +20,19 @@ export default function EvalsView() {
     if (!suites) void loadSuites();
   }, [suites]);
 
-  // default: the newest run
-  const runId = v.runId ?? (!v.suiteId ? runs[0]?.id : undefined);
-  const suiteId = runId ? undefined : (v.suiteId ?? suites?.[0]?.id);
+  const runId = v.runId;
+  const suiteId = runId ? runs.find((r) => r.id === runId)?.suiteId : v.suiteId;
+  const suite = !runId && suiteId ? suites?.find((s) => s.id === suiteId) : undefined;
 
   return (
     <div className="evals">
       <aside className="ev-rail">
-        <div className="ev-rail-head">
-          <h2>Runs</h2>
-          <span className="dim num">{runs.length}</span>
-        </div>
-        <div className="ev-list">
-          {runs.length === 0 && <div className="ev-empty dim">No runs yet</div>}
-          {runs.map((r) => (
-            <RunRow key={r.id} r={r} on={r.id === runId} />
-          ))}
+        <div className="ev-list ev-list-top">
+          <button className={`ev-row${!runId && !suiteId ? " on" : ""}`} onClick={() => openView({ kind: "evals" })}>
+            <LayoutList size={13} className="dim" />
+            <span className="ev-row-main">Overview</span>
+            <span className="dim num">{runs.length ? plural(runs.length, "run") : ""}</span>
+          </button>
         </div>
         <div className="ev-rail-head">
           <h2>Suites</h2>
@@ -43,26 +40,33 @@ export default function EvalsView() {
         </div>
         <div className="ev-list">
           {suites == null && <Loader2 size={13} className="spin dim ev-empty" />}
-          {suites?.map((s) => (
-            <button key={s.id} className={`ev-row${s.id === suiteId ? " on" : ""}`} onClick={() => openView({ kind: "evals", suiteId: s.id })}>
-              <span className="ev-row-main">
-                <span className="truncate">{s.title}</span>
-                <span className="ev-row-meta dim">
-                  {s.source ? `${s.source.dataset}${s.source.total ? `, ${fmtInt(s.source.total)} total` : ""}` : plural(s.cases.length, "case")}
+          {suites?.map((s) => {
+            const last = runs.find((r) => r.suiteId === s.id);
+            return (
+              <button key={s.id} className={`ev-row${s.id === suiteId ? " on" : ""}`} onClick={() => openView({ kind: "evals", suiteId: s.id })}>
+                <span className="ev-row-main">
+                  <span className="truncate">{s.title}</span>
+                  <span className="ev-row-meta dim">
+                    {plural(s.cases.length, "case")}
+                    {s.source?.total ? ` of ${fmtInt(s.source.total)}` : ""}
+                  </span>
                 </span>
-              </span>
-              <SuiteEnv t={s.envType} />
-            </button>
-          ))}
+                {last && <RailScore r={last} />}
+                <SuiteEnv t={s.envType} />
+              </button>
+            );
+          })}
         </div>
       </aside>
       <div className="ev-main">
         {runId ? (
           <RunView key={runId} runId={runId} />
+        ) : suite ? (
+          <SuiteView key={suite.id} suite={suite} />
         ) : suiteId && suites ? (
-          <SuiteView key={suiteId} suite={suites.find((s) => s.id === suiteId)!} />
+          <div className="empty">Suite not found</div>
         ) : (
-          <div className="empty">No eval suites found</div>
+          <Overview suites={suites} runs={runs} />
         )}
       </div>
     </div>
@@ -78,29 +82,243 @@ function SuiteEnv({ t }: { t: EvalSuite["envType"] | EvalCase["envType"] }) {
   );
 }
 
-function totalsOf(r: EvalRunSummary) {
+type Totals = { pass: number; fail: number; error: number; total: number };
+const ZERO: Totals = { pass: 0, fail: 0, error: 0, total: 0 };
+
+function totalsOf(r: EvalRunSummary): Totals {
   return Object.values(r.totals).reduce(
     (a, t) => ({ pass: a.pass + t.pass, fail: a.fail + t.fail, error: a.error + t.error, total: a.total + t.total }),
-    { pass: 0, fail: 0, error: 0, total: 0 },
+    ZERO,
   );
 }
 
-function RunRow({ r, on }: { r: EvalRunSummary; on: boolean }) {
+const doneOf = (t: Totals) => t.pass + t.fail + t.error;
+
+/** Latest run of a suite in the rail: its pass rate, or a spinner while it runs. */
+function RailScore({ r }: { r: EvalRunSummary }) {
+  if (r.status === "running") return <Loader2 size={12} className="spin accent-text" aria-label="Running" />;
   const t = totalsOf(r);
-  const done = t.pass + t.fail + t.error;
+  const done = doneOf(t);
   return (
-    <button className={`ev-row${on ? " on" : ""}`} onClick={() => openView({ kind: "evals", runId: r.id })}>
-      <span className={`dot ${r.status === "running" ? "live" : r.status === "error" ? "error" : r.status === "done" ? "ready" : ""}`} />
-      <span className="ev-row-main">
-        <span className="truncate">{r.suiteTitle}</span>
-        <span className="ev-row-meta dim">
-          {plural(r.config.modelIds.length, "model")}, <Time ts={r.startedAt} />
+    <span className="ev-row-score num" title={`Latest run: ${t.pass} passed of ${done}`}>
+      {done ? fmtPct((t.pass / done) * 100) : "–"}
+    </span>
+  );
+}
+
+function ScoreBar({ t }: { t: Totals }) {
+  const done = doneOf(t);
+  return (
+    <div className="ev-bar" title={`${t.pass} pass, ${t.fail} fail, ${t.error} error${t.total > done ? `, ${t.total - done} not finished` : ""}`}>
+      <span className="pass" style={{ flexGrow: t.pass }} />
+      <span className="fail" style={{ flexGrow: t.fail }} />
+      <span className="error" style={{ flexGrow: t.error }} />
+      <span className="rest" style={{ flexGrow: t.total - done }} />
+    </div>
+  );
+}
+
+/** One model's score in a history row: name, passed/finished, bar. */
+function ModelScore({ name, t }: { name: string; t: Totals }) {
+  const done = doneOf(t);
+  return (
+    <span className="ev-mscore">
+      <span className="truncate">{name}</span>
+      <span className="num strong">
+        {t.pass}/{done}
+      </span>
+      <ScoreBar t={t} />
+    </span>
+  );
+}
+
+function RunStatus({ s }: { s: EvalRunSummary["status"] }) {
+  if (s === "done") return null;
+  return (
+    <span className={`chip ${s === "running" ? "accent" : s === "error" ? "err" : "warn"}`}>
+      {s === "running" && <Loader2 size={10} className="spin" />} {s}
+    </span>
+  );
+}
+
+function History({ runs, showSuite }: { runs: EvalRunSummary[]; showSuite: boolean }) {
+  const models = useStore((s) => s.models);
+  if (!runs.length) return <div className="ev-empty dim">No runs yet</div>;
+  return (
+    <table className="table ev-history">
+      <thead>
+        <tr>
+          <th>Started</th>
+          {showSuite && <th>Suite</th>}
+          <th>Harness</th>
+          <th>Score</th>
+          <th className="r">Took</th>
+          <th />
+        </tr>
+      </thead>
+      <tbody>
+        {runs.map((r) => {
+          const go = () => openView({ kind: "evals", runId: r.id });
+          return (
+            <tr
+              key={r.id}
+              className="click"
+              tabIndex={0}
+              onClick={go}
+              onKeyDown={(e) => {
+                if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  go();
+                }
+              }}
+            >
+              <td className="nowrap dim">
+                <Time ts={r.startedAt} />
+              </td>
+              {showSuite && <td className="nowrap">{r.suiteTitle}</td>}
+              <td className="nowrap dim">
+                {harnessLabel(r.config.harness).split(":")[0]}
+                {r.config.thinking ? ", thinking" : ""}
+              </td>
+              <td>
+                <div className="ev-hscores">
+                  {r.config.modelIds.map((id) => (
+                    <ModelScore key={id} name={modelName(models, id)} t={r.totals[id] ?? ZERO} />
+                  ))}
+                </div>
+              </td>
+              <td className="r num dim nowrap">{r.finishedAt ? fmtMs(r.finishedAt - r.startedAt) : ""}</td>
+              <td className="r">
+                <RunStatus s={r.status} />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+// ---------- what a suite tests, how it is graded ----------
+
+const GRADED: Record<EvalCheck["type"], { label: string; tip: string }> = {
+  answer: {
+    label: "final answer",
+    tip: "The final reply is compared with the expected answer: exact text, a regex, a number (with tolerance) or a choice letter.",
+  },
+  command: { label: "command", tip: "After the agent's processes are killed, a command runs in the env as the agent user. Exit 0 passes." },
+  file: { label: "file", tip: "A workspace file must exist, equal the expected text, or contain it." },
+  tests: {
+    label: "hidden tests",
+    tip: "A grader-only unittest file the agent can't read. After the agent's processes are killed the tests run twice: isolated (code as uid 1000, tests as uid 1001, separate processes) and plain unittest. Passes only when both runs pass every test; if they disagree it is a grader error, not a pass.",
+  },
+  isolation: { label: "escape blocked", tip: "Each case tries to reach something outside its env. Passes when the attempt is blocked and the host canary never appears." },
+  speed: { label: "timing", tip: "Measures prefill and decode tokens/s. There is no wrong answer." },
+};
+
+const ENV_RUN: Record<EvalSuite["envType"], string> = {
+  vm: "Each case runs in a fresh VM forked from a clean base. Network is off unless the case sets it.",
+  sim: "Each case runs in a fresh simulated shell forked from a clean base. Network is off unless the case sets it.",
+  none: "No environment: the model answers in chat, without tools.",
+  mixed: "Each case runs in a fresh env of its own type, forked from a clean base. Network is off unless the case sets it.",
+};
+
+function checkTypes(s: EvalSuite): EvalCheck["type"][] {
+  return [...new Set(s.cases.map((c) => c.check.type))];
+}
+
+function GradedBy({ s }: { s: EvalSuite }) {
+  return (
+    <span className="ev-graded">
+      {checkTypes(s).map((t, i) => (
+        <span key={t}>
+          {i > 0 && ", "}
+          <Hint tip={GRADED[t].tip} width={340}>
+            <span className="hint-text">{GRADED[t].label}</span>
+          </Hint>
         </span>
-      </span>
-      <span className="ev-row-score num" title={`${t.pass} passed of ${done} finished (${t.total} cells)`}>
-        {done ? fmtPct((t.pass / done) * 100) : "–"}
-      </span>
-    </button>
+      ))}
+    </span>
+  );
+}
+
+function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunSummary[] }) {
+  const models = useStore((s) => s.models);
+  return (
+    <div className="ev-overview">
+      <div className="view-head">
+        <h1>Evals</h1>
+        <span className="dim">Pick a suite to see its cases and run it</span>
+      </div>
+      <div className="ev-scroll">
+        <table className="table ev-suites">
+          <thead>
+            <tr>
+              <th>Suite</th>
+              <th className="r">Cases</th>
+              <th>Env</th>
+              <th>Graded by</th>
+              <th>Latest run</th>
+            </tr>
+          </thead>
+          <tbody>
+            {suites == null && (
+              <tr>
+                <td colSpan={5}>
+                  <Loader2 size={13} className="spin dim" />
+                </td>
+              </tr>
+            )}
+            {suites?.map((s) => {
+              const last = runs.find((r) => r.suiteId === s.id);
+              const go = () => openView({ kind: "evals", suiteId: s.id });
+              return (
+                <tr
+                  key={s.id}
+                  className="click"
+                  tabIndex={0}
+                  onClick={go}
+                  onKeyDown={(e) => {
+                    if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      go();
+                    }
+                  }}
+                >
+                  <td className="ev-suite-cell">
+                    <div className="strong">{s.title}</div>
+                    <div className="dim ev-desc">{s.description}</div>
+                  </td>
+                  <td className="r num nowrap">
+                    {s.cases.length}
+                    {s.source?.total ? <span className="dim2"> of {fmtInt(s.source.total)}</span> : null}
+                  </td>
+                  <td>
+                    <SuiteEnv t={s.envType} />
+                  </td>
+                  <td className="nowrap" onClick={(e) => e.stopPropagation()}>
+                    <GradedBy s={s} />
+                  </td>
+                  <td>
+                    {last ? (
+                      <div className="ev-hscores">
+                        {last.config.modelIds.map((id) => (
+                          <ModelScore key={id} name={modelName(models, id)} t={last.totals[id] ?? ZERO} />
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="dim2">never run</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <h3 className="ev-sec-title">Run history</h3>
+        <History runs={runs} showSuite />
+      </div>
+    </div>
   );
 }
 
@@ -146,12 +364,58 @@ function checkSummary(c: EvalCheck): string {
   }
 }
 
+/** The grader's one-line reason; the full grading output is in the hover. */
+function reasonOf(c: EvalCase, r: EvalResult | undefined): string {
+  if (!r) return "";
+  if (c.check.type === "speed" && r.score != null) return `${r.score} tok/s`;
+  if (r.status === "running" || r.status === "pending") return "";
+  return r.detail?.split("\n")[0] ?? STATUS_LABEL[r.status];
+}
+
+function GradeTip({ r, model }: { r: EvalResult; model: string }) {
+  return (
+    <div className="ev-gradetip">
+      <div className="tip-title">
+        {STATUS_LABEL[r.status]} <span className="dim">{model}</span>
+      </div>
+      {r.detail && <pre className="mono">{r.detail}</pre>}
+      <div className="dim num">
+        {r.durationMs != null && fmtMs(r.durationMs)}
+        {r.tokens && `, ${fmtInt(r.tokens.prompt)} tokens in, ${fmtInt(r.tokens.completion)} out`}
+      </div>
+    </div>
+  );
+}
+
+function ResultCell({ c, r, model }: { c: EvalCase; r?: EvalResult; model: string }) {
+  const st = r?.status ?? "pending";
+  const body = (
+    <div className={`ev-res ${st}`}>
+      <span className="ev-res-glyph" aria-label={STATUS_LABEL[st]}>
+        <CellGlyph s={st} />
+      </span>
+      <span className="ev-res-reason truncate">{reasonOf(c, r)}</span>
+      {r?.sessionId && (
+        <button className="cell-link ev-res-link" onClick={() => openSession(r.sessionId!)}>
+          Transcript
+        </button>
+      )}
+    </div>
+  );
+  if (!r || (!r.detail && r.durationMs == null)) return body;
+  return (
+    <Hint tip={<GradeTip r={r} model={model} />} width={460} className="ev-res-hint">
+      {body}
+    </Hint>
+  );
+}
+
 function RunView({ runId }: { runId: string }) {
   const detail = useStore((s) => s.evalDetails[runId]);
   const summary = useStore((s) => s.evalRuns.find((r) => r.id === runId));
   const models = useStore((s) => s.models);
+  const suites = useStore((s) => s.suites);
   const [caseSel, setCaseSel] = useState<string | null>(null);
-  const [tip, setTip] = useState<TipState | null>(null);
 
   useEffect(() => {
     void loadEvalRun(runId);
@@ -166,11 +430,12 @@ function RunView({ runId }: { runId: string }) {
 
   if (!run) return <div className="empty">{summary ? "Loading run" : "Run not found"}</div>;
   const cfg = run.config;
-  const t = totalsOf(run);
   const finished = run.results.filter((r) => r.status === "pass" || r.status === "fail" || r.status === "error").length;
   const remaining = run.results.filter((r) => r.status === "pending" || r.status === "running").length;
   const selCase = run.cases.find((c) => c.id === caseSel);
   const dur = (run.finishedAt ?? Date.now()) - run.startedAt;
+  const mixed = suites?.find((s) => s.id === run.suiteId)?.envType === "mixed";
+  const toggle = (id: string) => setCaseSel(id === caseSel ? null : id);
 
   return (
     <div className="ev-run">
@@ -180,11 +445,9 @@ function RunView({ runId }: { runId: string }) {
             {run.suiteTitle}
           </button>
         </h1>
-        <span className={`chip ${run.status === "running" ? "accent" : run.status === "done" ? "" : run.status === "error" ? "err" : "warn"}`}>
-          {run.status === "running" && <Loader2 size={10} className="spin" />} {run.status}
-        </span>
+        <RunStatus s={run.status} />
         <span className="dim num">
-          {finished}/{run.results.length} cells, {fmtMs(dur)}
+          {finished}/{run.results.length} finished, {fmtMs(dur)}
         </span>
         <span className="blk-spacer" />
         {run.status === "running" ? (
@@ -209,7 +472,10 @@ function RunView({ runId }: { runId: string }) {
       </div>
       <div className="ev-config">
         <span>
-          <span className="dim">Harness</span> {cfg.harness}
+          <span className="dim">Harness</span>{" "}
+          <Hint tip={<HarnessTip id={cfg.harness} />} width={340}>
+            <span className="hint-text">{harnessLabel(cfg.harness)}</span>
+          </Hint>
         </span>
         <span>
           <span className="dim">Thinking</span> {cfg.thinking ? "on" : "off"}
@@ -233,120 +499,71 @@ function RunView({ runId }: { runId: string }) {
         <span>
           <span className="dim">Started</span> <Time ts={run.startedAt} />
         </span>
-        <span className="num">
-          <span className="ok-text">{t.pass} pass</span> <span className="err-text">{t.fail} fail</span>{" "}
-          <span className="warn-text">{t.error} error</span>
-        </span>
       </div>
 
-      <div className="ev-matrix-wrap">
-        <table className="ev-matrix">
+      <div className="ev-scroll">
+        <div className="ev-scores">
+          {cfg.modelIds.map((id) => {
+            const t = run.totals[id] ?? ZERO;
+            const done = doneOf(t);
+            return (
+              <div key={id} className="ev-score-card">
+                <span className="truncate strong">{modelName(models, id)}</span>
+                <div className="ev-score-big">
+                  <span className="num">
+                    {t.pass}
+                    <span className="dim">/{done}</span>
+                  </span>
+                  <span className="dim num">{done ? fmtPct((t.pass / done) * 100) : ""}</span>
+                </div>
+                <ScoreBar t={t} />
+                <span className="dim2 num ev-score-sub">
+                  {t.fail} fail, {t.error} error{t.total > done ? `, ${t.total - done} left` : ""}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <table className="table ev-results">
           <thead>
             <tr>
-              <th className="ev-case-h">Case</th>
-              <th className="ev-check-h">Check</th>
-              {cfg.modelIds.map((id) => {
-                const tt = run.totals[id] ?? { pass: 0, fail: 0, error: 0, total: 0 };
-                const done = tt.pass + tt.fail + tt.error;
-                return (
-                  <th key={id} className="ev-model-h">
-                    <button className="cell-link strong" title="Open in Models" onClick={() => openView({ kind: "models" })}>
-                      {modelName(models, id)}
-                    </button>
-                    <div className="ev-score" title={`${tt.pass} passed of ${done} finished; ${tt.total} cases`}>
-                      <span className="num">
-                        {tt.pass}/{done} passed
-                      </span>
-                      <span className="dim num">{done ? fmtPct((tt.pass / done) * 100) : ""}</span>
-                      {done < tt.total && <span className="dim2 num">{tt.total - done} left</span>}
-                    </div>
-                    <div className="ev-bar" title={`${tt.pass} pass, ${tt.fail} fail, ${tt.error} error, ${tt.total - done} not finished`}>
-                      <span className="pass" style={{ flexGrow: tt.pass }} />
-                      <span className="fail" style={{ flexGrow: tt.fail }} />
-                      <span className="error" style={{ flexGrow: tt.error }} />
-                      <span className="rest" style={{ flexGrow: tt.total - done }} />
-                    </div>
-                  </th>
-                );
-              })}
+              <th>Case</th>
+              {cfg.modelIds.map((id) => (
+                <th key={id}>{cfg.modelIds.length > 1 ? modelName(models, id) : "Result"}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {run.cases.map((c) => (
               <tr key={c.id} className={c.id === caseSel ? "sel" : undefined}>
                 <td
-                  className="ev-case"
+                  className="ev-case click"
                   tabIndex={0}
+                  title="Prompt, check and files"
                   aria-expanded={c.id === caseSel}
-                  onClick={() => setCaseSel(c.id === caseSel ? null : c.id)}
+                  onClick={() => toggle(c.id)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      setCaseSel(c.id === caseSel ? null : c.id);
+                      toggle(c.id);
                     }
                   }}
                 >
-                  <div className="truncate">{c.title}</div>
+                  <div className="truncate">
+                    {c.title} {mixed && <SuiteEnv t={c.envType} />}
+                  </div>
                   <div className="mono dim2 ev-case-id">{c.id}</div>
                 </td>
-                <td className="ev-check" onClick={() => setCaseSel(c.id === caseSel ? null : c.id)}>
-                  <span className="dim">{c.check.type}</span> <SuiteEnv t={c.envType} />
-                </td>
-                {cfg.modelIds.map((m) => {
-                  const r = byCell.get(`${c.id}\u0000${m}`);
-                  const st = r?.status ?? "pending";
-                  return (
-                    <td key={m} className="ev-cell-td">
-                      <button
-                        className={`ev-cell ${st}`}
-                        disabled={!r?.sessionId}
-                        aria-label={`${c.title}, ${modelName(models, m)}: ${STATUS_LABEL[st]}`}
-                        onClick={() => r?.sessionId && openSession(r.sessionId)}
-                        onMouseMove={(e) =>
-                          setTip({
-                            x: e.clientX,
-                            y: e.clientY,
-                            content: (
-                              <>
-                                <div className="tip-title">
-                                  {STATUS_LABEL[st]} <span className="dim">{modelName(models, m)}</span>
-                                </div>
-                                {r?.detail && <div className="tip-detail mono">{r.detail}</div>}
-                                {r?.durationMs != null && (
-                                  <div className="tip-row">
-                                    <span>Duration</span>
-                                    <span>{fmtMs(r.durationMs)}</span>
-                                  </div>
-                                )}
-                                {r?.tokens && (
-                                  <div className="tip-row">
-                                    <span>Tokens</span>
-                                    <span>
-                                      {fmtInt(r.tokens.prompt)} in, {fmtInt(r.tokens.completion)} out
-                                    </span>
-                                  </div>
-                                )}
-                              </>
-                            ),
-                          })
-                        }
-                        onMouseLeave={() => setTip(null)}
-                      >
-                        <CellGlyph s={st} />
-                        {c.check.type === "speed" && r?.score != null ? (
-                          <span className="num">{r.score} tok/s</span>
-                        ) : (
-                          r?.durationMs != null && <span className="num">{fmtMs(r.durationMs)}</span>
-                        )}
-                      </button>
-                    </td>
-                  );
-                })}
+                {cfg.modelIds.map((m) => (
+                  <td key={m} className="ev-res-td">
+                    <ResultCell c={c} r={byCell.get(`${c.id}\u0000${m}`)} model={modelName(models, m)} />
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
-        <ChartTip tip={tip} />
       </div>
       {selCase && <CaseDetail c={selCase} results={run.results.filter((r) => r.caseId === selCase.id)} onClose={() => setCaseSel(null)} />}
     </div>
@@ -396,9 +613,9 @@ function CaseDetail({ c, results, onClose }: { c: EvalCase; results?: EvalResult
                     <button className="cell-link" title="Open in Models" onClick={() => openView({ kind: "models" })}>
                       {modelName(models, r.modelId)}
                     </button>
-                    <span className="dim mono truncate ev-case-result-detail" title={r.detail}>
-                      {r.detail ?? ""}
-                    </span>
+                    <Hint tip={<GradeTip r={r} model={modelName(models, r.modelId)} />} width={460} className="ev-case-result-detail">
+                      <span className="dim mono truncate">{reasonOf(c, r)}</span>
+                    </Hint>
                     {r.envId && envs[r.envId] && envs[r.envId].status !== "error" && (
                       <button
                         className="btn sm ghost"
@@ -568,27 +785,34 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
   return (
     <div className="ev-suite">
       <div className="view-head">
-        <h1 title={suite.description}>{suite.title}</h1>
+        <h1>{suite.title}</h1>
         <SuiteEnv t={suite.envType} />
+        <span className="dim truncate">{suite.description}</span>
       </div>
-      {suite.source && (
-        <div className="ev-config">
+      <div className="ev-config">
+        <span>
+          <span className="dim">Cases</span> <span className="num">{suite.cases.length}</span>
+          {suite.source?.total != null && <span className="dim num"> sampled from {fmtInt(suite.source.total)}</span>}
+        </span>
+        <span>
+          <span className="dim">Graded by</span> <GradedBy s={suite} />
+        </span>
+        <span>
+          <span className="dim">Env</span>{" "}
+          <Hint tip={ENV_RUN[suite.envType]} width={320}>
+            <span className="hint-text">{suite.envType === "none" ? "none" : "fresh fork per case"}</span>
+          </Hint>
+        </span>
+        {suite.source && (
           <span>
-            <span className="dim">Dataset</span> {suite.source.dataset}
+            <span className="dim">Dataset</span>{" "}
+            <Hint tip={<span className="mono selectable">{suite.source.url}</span>} width={360}>
+              <span className="hint-text">{suite.source.dataset}</span>
+            </Hint>
+            {suite.source.license && <span className="dim"> ({suite.source.license})</span>}
           </span>
-          {suite.source.total != null && (
-            <span className="num">
-              <span className="dim">Total</span> {fmtInt(suite.source.total)}
-            </span>
-          )}
-          {suite.source.license && (
-            <span>
-              <span className="dim">License</span> {suite.source.license}
-            </span>
-          )}
-          <span className="mono dim truncate selectable">{suite.source.url}</span>
-        </div>
-      )}
+        )}
+      </div>
       <div className="ev-suite-body">
         <div className="ev-runcfg">
           <h3>Run</h3>
@@ -636,7 +860,9 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
             />
             {sampleable && (
               <>
-                <span>Sample</span>
+                <Hint tip="Cases drawn at random from the dataset. The same seed draws the same cases, so runs compare.">
+                  <span>Sample</span>
+                </Hint>
                 <div className="form-row">
                   <input className="input num ev-num" value={sampleSize} onChange={(e) => setSampleSize(e.target.value)} aria-label="Sample size" />
                   <span className="dim">seed</span>
@@ -661,23 +887,16 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
             </button>
             <span className="dim num">{plural(cells, "cell")}</span>
           </div>
-          {runs.length > 0 && (
-            <>
-              <h3>Past runs</h3>
-              <div className="ev-list">
-                {runs.map((r) => (
-                  <RunRow key={r.id} r={r} on={false} />
-                ))}
-              </div>
-            </>
-          )}
         </div>
-        <div className="ev-cases">
-          <table className="table">
+        <div className="ev-scroll">
+          <h3 className="ev-sec-title">Run history</h3>
+          <History runs={runs} showSuite={false} />
+          <h3 className="ev-sec-title">Cases</h3>
+          <table className="table ev-cases">
             <thead>
               <tr>
                 <th>Case</th>
-                <th>Env</th>
+                {suite.envType === "mixed" && <th>Env</th>}
                 <th>Check</th>
                 <th className="r">Turns</th>
                 <th className="r">Timeout</th>
@@ -703,18 +922,21 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
                     <div className="truncate">{c.title}</div>
                     <div className="mono dim2 ev-case-id">{c.id}</div>
                   </td>
-                  <td className="nowrap">
-                    <SuiteEnv t={c.envType} /> {c.envType !== "none" && <NetIcon mode={c.network ?? "off"} />}
-                  </td>
-                  <td className="ev-check-sum">
-                    <span className="dim">{c.check.type}</span> <span className="mono truncate">{checkSummary(c.check)}</span>
+                  {suite.envType === "mixed" && (
+                    <td className="nowrap">
+                      <SuiteEnv t={c.envType} /> {c.envType !== "none" && <NetIcon mode={c.network ?? "off"} />}
+                    </td>
+                  )}
+                  <td className="ev-check-sum mono" title={checkSummary(c.check)}>
+                    {checkSummary(c.check)}
                   </td>
                   <td className="r num">{c.maxTurns}</td>
                   <td className="r num">{c.timeoutSec}s</td>
                 </tr>
               ))}
             </tbody>
-          </table>        </div>
+          </table>
+        </div>
       </div>
       {selCase && <CaseDetail c={selCase} onClose={() => setCaseSel(null)} />}
     </div>

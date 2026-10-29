@@ -505,52 +505,6 @@ select.input {
 .ev-config > .truncate {
   max-width: 420px;
 }
-.ev-matrix-wrap {
-  flex: 1;
-  overflow: auto;
-  min-height: 0;
-  padding: 0 0 16px;
-}
-.ev-matrix {
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: var(--fs-md);
-  min-width: 100%;
-}
-.ev-matrix th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--bg-0);
-  border-bottom: 0.5px solid var(--line-2);
-  padding: 8px 6px 7px;
-  text-align: left;
-  font-weight: 500;
-  vertical-align: bottom;
-}
-.ev-case-h,
-.ev-check-h {
-  font-size: var(--fs-sm);
-  color: var(--fg-3);
-}
-.ev-case-h {
-  padding-left: 16px !important;
-  min-width: 220px;
-}
-.ev-model-h {
-  min-width: 132px;
-  max-width: 180px;
-}
-.ev-score {
-  display: flex;
-  flex-wrap: wrap;
-  row-gap: 0;
-  gap: 6px;
-  align-items: baseline;
-  font-size: var(--fs-sm);
-  margin: 2px 0 4px;
-  font-weight: 400;
-}
 .ev-bar {
   display: flex;
   height: 5px;
@@ -575,36 +529,13 @@ select.input {
   background: var(--c-free);
   box-shadow: inset 0 0 0 0.5px var(--line-2);
 }
-.ev-matrix td {
-  border-bottom: 0.5px solid var(--line);
-  padding: 3px 6px;
-  vertical-align: middle;
-}
-.ev-matrix tr.sel td {
-  background: var(--accent-wash);
-}
 .ev-case {
   padding-left: 16px !important;
   max-width: 340px;
   min-width: 0;
 }
-.ev-case,
-.ev-check {
-  cursor: default;
-}
-.ev-matrix tr:hover .ev-case,
-.ev-matrix tr:hover .ev-check {
-  background: var(--bg-hover);
-}
 .ev-case-id {
   font-size: var(--fs-xs);
-}
-.ev-check {
-  white-space: nowrap;
-  font-size: var(--fs-sm);
-}
-.ev-cell-td {
-  padding: 3px 4px !important;
 }
 .ev-cell {
   display: flex;
@@ -665,16 +596,6 @@ select.input {
 .tip-title {
   font-weight: 600;
   margin-bottom: 2px;
-}
-.tip-detail {
-  max-width: 300px;
-  white-space: pre-wrap;
-  margin-bottom: 3px;
-  font-size: var(--fs-xs);
-}
-.tip-hint {
-  margin-top: 3px;
-  font-size: var(--fs-xs);
 }
 
 .ev-casepanel {
@@ -821,11 +742,6 @@ select.input {
 .ev-num {
   width: 56px;
   height: 22px;
-}
-.ev-cases {
-  flex: 1;
-  overflow: auto;
-  min-width: 0;
 }
 .ev-check-sum {
   max-width: 300px !important;
@@ -1015,20 +931,6 @@ select.input {
   background: var(--err-wash);
   color: var(--err-text);
   font-size: var(--fs-sm);
-}
-
-/* eval matrix: the Check column (also shown in the case panel) goes before model columns clip */
-.ev-main {
-  container-type: inline-size;
-}
-@container (max-width: 760px) {
-  .ev-check-h,
-  .ev-matrix .ev-check {
-    display: none;
-  }
-  .ev-case-h {
-    min-width: 150px;
-  }
 }
 .md-facts {
   display: flex;
@@ -1230,4 +1132,162 @@ select.input {
 }
 .vh-ceiling .cell-link {
   max-width: none;
+}
+
+/* evals: overview, history, scoreboard, results */
+.ev-list-top {
+  padding-top: 6px;
+}
+.ev-overview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.ev-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  min-width: 0;
+  padding-bottom: 16px;
+}
+.ev-sec-title {
+  margin: 18px 16px 6px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--fg-2);
+}
+.ev-suite-cell {
+  white-space: normal !important;
+  max-width: 460px !important;
+}
+.ev-desc {
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  margin-top: 1px;
+}
+.hint-text {
+  text-decoration: underline dotted var(--fg-4);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.ev-hscores {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ev-mscore {
+  display: grid;
+  grid-template-columns: minmax(0, 130px) 44px 70px;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+}
+.ev-mscore .num {
+  text-align: right;
+}
+.ev-history td {
+  vertical-align: top;
+}
+.ev-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px 14px;
+}
+.ev-score-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 210px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  box-shadow: inset 0 0 0 0.5px var(--line-2);
+}
+.ev-score-big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ev-score-big > .num:first-child {
+  font-size: 22px;
+  font-weight: 600;
+}
+.ev-score-sub {
+  font-size: var(--fs-xs);
+}
+.ev-results td {
+  max-width: none;
+}
+.ev-results tr.sel td {
+  background: var(--bg-active);
+}
+.ev-res-td {
+  padding: 3px 8px !important;
+  min-width: 260px;
+}
+.ev-res-hint {
+  display: flex;
+  width: 100%;
+}
+.ev-res {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  color: var(--fg-3);
+}
+.ev-res-glyph {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+}
+.ev-res-reason {
+  flex: 1;
+  min-width: 0;
+}
+.ev-res.pass .ev-res-glyph {
+  color: var(--ok-text);
+}
+.ev-res.fail {
+  background: var(--err-wash);
+}
+.ev-res.fail .ev-res-glyph,
+.ev-res.fail .ev-res-reason {
+  color: var(--err-text);
+}
+.ev-res.error {
+  background: var(--warn-wash);
+}
+.ev-res.error .ev-res-glyph,
+.ev-res.error .ev-res-reason {
+  color: var(--warn-text);
+}
+.ev-res.running .ev-res-glyph {
+  color: var(--accent);
+}
+.ev-res-link {
+  flex: none;
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
+}
+.ev-gradetip pre {
+  margin: 4px 0 6px;
+  max-height: 55vh;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--fs-xs);
+}
+.ev-graded {
+  white-space: nowrap;
+}
+.accent-text {
+  color: var(--accent);
 }
