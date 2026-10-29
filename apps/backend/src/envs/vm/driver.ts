@@ -816,16 +816,8 @@ export function createVmDriver(options: VmDriverOptions = {}): EnvDriver {
       }
       const meta: EnvMeta = { version: 1, id: spec.id, imageId, vm, createdAt: Date.now() };
       writeJson(path.join(spec.dir, META_FILE), meta);
-      const rt = await runtime(meta, spec.dir, spec.network);
-      if (spec.seedFiles?.length) {
-        await rt.start();
-        try {
-          for (const f of spec.seedFiles) await rt.writeFile(f.path, f.content, { as: "agent" });
-        } finally {
-          await rt.stop();
-        }
-      }
-      return rt;
+      // No seeding here: booting is the manager's job (VM cap and boot lock); it seeds through its own start.
+      return runtime(meta, spec.dir, spec.network);
     },
 
     async open(spec): Promise<EnvRuntime> {

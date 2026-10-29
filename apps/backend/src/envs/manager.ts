@@ -89,6 +89,8 @@ export class EnvManager {
   private runtimes = new Map<string, EnvRuntime>();
   private unsubNet = new Map<string, () => void>();
   private mutex = new KeyedMutex();
+  /** One lock across the running-VM count and the boot, so concurrent starts can't exceed MAX_RUNNING_VMS. */
+  private vmBoot = new KeyedMutex();
   private active = new Map<string, string>(); // envId -> sessionId using it
   private manifests = new Map<string, Manifest>(); // last known /workspace manifest per env
   private versions = new Map<string, number>(); // bumps when something other than the harness changes the env
@@ -270,8 +272,9 @@ export class EnvManager {
     this.store.run("UPDATE envs SET status_detail = 'creating' WHERE id = ?", id);
     this.broadcast(id);
     try {
-      const rt = await driver.create({ id, dir: this.envDir(id), network, ...config, seedFiles: req.seedFiles });
+      const rt = await driver.create({ id, dir: this.envDir(id), network, ...config, seedFiles: req.type === "sim" ? req.seedFiles : undefined });
       this.attach(id, rt);
+      if (req.type === "vm" && req.seedFiles?.length) await this.seed(id, rt, req.seedFiles);
       // Factory snapshot: reset returns here.
       const snap = await this.takeSnapshot(id, rt, "factory", "factory");
       this.store.run("UPDATE envs SET factory_snapshot_id = ? WHERE id = ?", snap.id, id);
@@ -306,19 +309,42 @@ export class EnvManager {
         if (row.status !== "running" && row.status !== "busy") this.setStatus(id, this.active.has(id) ? "busy" : "running");
         return;
       }
-      if (row.type === "vm") await this.makeRoomForVm(id);
       this.setStatus(id, "starting");
       try {
-        await rt.start();
+        await this.boot(row, rt);
       } catch (err) {
+        if (err instanceof HttpError) {
+          this.setStatus(id, row.status, row.status_detail); // no VM slot (409): nothing happened
+          throw err;
+        }
         this.setStatus(id, "error", `start failed: ${errorMessage(err)}`);
         throw new HttpError(500, `start failed: ${errorMessage(err)}`);
       }
       this.touch(id);
       this.setStatus(id, this.active.has(id) ? "busy" : "running");
-      if (!row.facts_json) await this.refreshFacts(id, rt);
+      // Facts change with the env (installed tools, disk use, a reset), so they are gathered on every start.
+      await this.refreshFacts(id, rt);
     });
     return this.get(id);
+  }
+
+  /** Boot a runtime; VMs take the global boot lock and make room first. Callers hold the env's mutex. */
+  private async boot(row: EnvRow, rt: EnvRuntime): Promise<void> {
+    if (row.type !== "vm") return rt.start();
+    await this.vmBoot.run("vm", async () => {
+      await this.makeRoomForVm(row.id);
+      await rt.start();
+    });
+  }
+
+  /** Write files as the agent into a fresh env through the managed start/stop (VM cap and env mutex). */
+  private async seed(id: string, rt: EnvRuntime, files: { path: string; content: string }[]): Promise<void> {
+    await this.start(id);
+    try {
+      for (const f of files) await rt.writeFile(f.path, f.content, { as: "agent" });
+    } finally {
+      await this.mutex.run(id, () => this.stopUnlocked(id));
+    }
   }
 
   private async refreshFacts(id: string, rt: EnvRuntime): Promise<void> {
@@ -334,8 +360,8 @@ export class EnvManager {
   /** At most MAX_RUNNING_VMS VMs run; starting another stops the least recently used idle one. */
   private async makeRoomForVm(startingId: string): Promise<void> {
     const running = this.store
-      .all<EnvRow>("SELECT * FROM envs WHERE type = 'vm' AND id != ? AND status IN ('starting', 'running', 'busy', 'stopping') ORDER BY COALESCE(last_used_at, created_at)", startingId)
-      .filter((r) => this.runtimes.get(r.id)?.isRunning() || r.status === "starting");
+      .all<EnvRow>("SELECT * FROM envs WHERE type = 'vm' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", startingId)
+      .filter((r) => this.runtimes.get(r.id)?.isRunning());
     if (running.length < MAX_RUNNING_VMS) return;
     const idle = running.filter((r) => r.status === "running" && !this.active.has(r.id));
     const excess = running.length - MAX_RUNNING_VMS + 1;
@@ -385,9 +411,14 @@ export class EnvManager {
       this.manifests.delete(id);
       this.sizes.delete(id);
       if (wasRunning) {
-        await rt.start();
+        this.setStatus(id, "starting");
+        await this.boot(row, rt);
         this.setStatus(id, "running");
-      } else this.broadcast(id);
+        await this.refreshFacts(id, rt);
+      } else {
+        this.store.run("UPDATE envs SET facts_json = NULL WHERE id = ?", id);
+        this.broadcast(id);
+      }
     });
     return this.get(id);
   }
@@ -433,11 +464,7 @@ export class EnvManager {
       const cfg = this.config(src);
       const rt = await driver.create({ id, dir: this.envDir(id), network, ...cfg, fromSnapshotDir: snap.path });
       this.attach(id, rt);
-      if (opts.seedFiles?.length) {
-        await rt.start();
-        for (const f of opts.seedFiles) await rt.writeFile(f.path, f.content, { as: "agent" });
-        await rt.stop();
-      }
+      if (opts.seedFiles?.length) await this.seed(id, rt, opts.seedFiles);
       this.setStatus(id, "stopped");
     } catch (err) {
       this.setStatus(id, "error", `fork failed: ${errorMessage(err)}`);

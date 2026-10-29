@@ -100,7 +100,7 @@ export interface EnvCreateSpec {
   sim?: SimConfig;
   /** Initialize from a snapshot directory produced by `snapshot()`; omitted = clean factory state. */
   fromSnapshotDir?: string;
-  seedFiles?: { path: string; content: string }[]; // written as agent into a clean env
+  seedFiles?: { path: string; content: string }[]; // sim only (written into state.json); the manager seeds VMs after create
 }
 
 export interface EnvDriver {
