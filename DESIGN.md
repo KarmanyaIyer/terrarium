@@ -156,10 +156,11 @@ Suites are JSON in `evals/suites/`. A case: id, title, prompt, setup files, env 
 max turns, timeout, and a check: `answer` (exact/regex/number/choice), `file` (path + contains/equals),
 `command` (after every agent process is killed, runs in /workspace as the agent uid with a clean PATH and
 an empty HOME, never as root and never as a uid that can read `/grader`; pass on exit 0, so it can't be
-trusted to judge code it runs), or `tests` (VM only: hidden unittest file in `/grader`, run by the guest
-grader with candidate code as the agent uid and the tests as the grader uid in separate processes; the
-tests read the candidate's source from a root-owned copy taken before candidate code runs; pass only when
-every counted test passed). Every case runs as a
+trusted to judge code it runs), or `tests` (VM only: hidden unittest file in `/grader`, graded twice by
+the guest grader: isolated, with candidate code as the agent uid and the tests as the grader uid in
+separate processes, then plain in-process unittest as the agent uid; the tests read the candidate's source
+from a root-owned copy without symlinks, taken before candidate code runs; pass only when both runs pass
+every counted test; runs that disagree are a grader error, shown with both runs' results). Every case runs as a
 normal session in a disposable fork, so clicking any result opens the full transcript, files and raw
 requests. One click runs a suite across selected models. Built-in suites: tool basics (sim), shell data
 tasks (sim), coding with tests (vm), chat reasoning/knowledge sample (none), isolation probes (vm+sim,

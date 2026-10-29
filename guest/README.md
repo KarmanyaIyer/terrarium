@@ -72,25 +72,51 @@ Results go to `data/vm-verify/latest.json`.
     and reads only regular files (`fstat` S_ISREG), so a FIFO, `/dev/zero` or a symlink into a root-only
     dir can't block, flood or leak. The driver adds a 30 s exec timeout.
   - `grade.py` with `grade_rpc.py`, `grade_worker.py`, `grade_runner.py`: hidden-test grading (eval check
-    type `tests`). As root it kills every agent process and copies the workspace twice into a job dir:
-    `src` (root-owned, read-only; what the hidden tests read as the candidate's source, via
-    `terrarium_grading.workspace`) and `ws` (agent-owned; where the candidate's code runs). Both copies
-    are taken before any candidate code runs. It starts the candidate's code in a worker as `agent` in
-    `ws` and the hidden tests in a runner as `grader` (`python3 -I -S`), connected by a socketpair.
+    type `tests`). As root it kills every agent process and, before any candidate code runs, copies the
+    workspace three times into a job dir: `src` (root-owned, read-only, symlinks removed and never
+    followed; what the hidden tests read as the candidate's source, via `terrarium_grading.workspace`),
+    `ws` (agent-owned; the isolated run) and `plain/ws` (agent-owned, in a root-only dir until the plain
+    run). Then two runs of up to `--timeout` each:
+    - Isolated: the candidate's code in a worker as `agent` in `ws`, the hidden tests in a runner as
+      `grader` (`python3 -I -S`), connected by a socketpair. Details below.
+    - Plain: once the isolated run's processes are dead and its counts read (its `ws` and results are
+      deleted), `grade_runner.py --plain` as `agent` in `plain/ws` with a copy of the tests: ordinary
+      in-process unittest, exact Python semantics. Candidate code can forge these counts, so this run
+      never passes on its own. Every agent process is killed afterwards.
+    - Verdict: pass only when both runs counted passed == expected > 0; both failing is a fail; runs that
+      disagree are `"verdict": "disagree"`, which the backend shows as a grader error (never a pass) with
+      both runs' counts and failures. The summary is the isolated run's fields plus `plain` and `verdict`.
+
+    The isolated run:
     - Plain values cross by value, everything else as references, and a comparison between a reference
-      and a test-side value is refused, so candidate code never sees the expected values.
-    - Lists, dicts, sets and bytearrays the tests pass in are linked: when candidate code changes its copy
-      (during the call or later, through an object that kept it), the change is written back into the
-      test's object in place, as in one process.
+      and a test-side value is refused, so candidate code never sees the expected values. One NaN object
+      sent twice in a message arrives as one object; separately computed NaNs stay separate.
+    - Lists, dicts (with OrderedDict, defaultdict, Counter), sets and bytearrays passed either way are
+      linked: before each message a side sends the new contents of the linked containers it changed (a
+      shallow identity check of the ones it still holds or just handed over), so changes made during a
+      call or later, through an object that kept the container, reach the other side in place. Containers
+      nested in linked ones are linked too, and one container met twice in a message arrives as one object
+      (`[[0] * 3] * 2` keeps its shared rows). The test side drops links it no longer holds. Syncing may
+      use a quarter of the budget (5-30 s); past that the candidate counts as gone, a grader error rather
+      than a timeout. The cost per message grows with the linked containers both sides still hold
+      (about 0.25 us each): 6,000 records kept by the candidate grade in 0.5 s, 12,000 containers kept by
+      both through 6,000 calls hit the limit.
+    - namedtuples and defaultdicts keep their types both ways. A test callback's exception reaches
+      candidate code as the same class; the candidate's `SystemExit` is a real `SystemExit` with its code;
+      `issubclass` works between candidate classes.
     - A candidate object whose class derives from a built-in data type (namedtuple, OrderedDict or list
-      subclass, IntEnum) arrives as a hybrid: `==` and `in` are answered locally from its data, methods
-      and attributes go to the candidate's object.
+      subclass, IntEnum) arrives as a hybrid: its data is local, methods and attributes go to the
+      candidate's object. Dunders the class overrides (`__contains__`, `__getitem__`, `__len__`, `__iter__`,
+      `__hash__`, `__missing__` and others) run in the candidate, as in one process; an overridden `__eq__`
+      or `__ne__` counts only when it agrees with comparing the local data. Immutable hybrids re-read
+      their data after every candidate call.
     - Grader failures (candidate process gone or hung, a value that can't cross) are not `Exception`
       subclasses, so `assertRaises` never counts them. One candidate call may use the whole `--timeout`;
       a call still running near the end fails, and the counts are still written.
     - The runner writes its counts to a dir only `grader` can write; pass means the runner exited 0 and
-      passed == expected > 0 there. Candidate exits, `sys.exit`, patched `unittest`, forged results
-      files, rewriting the source after the copy and leftover daemons all fail.
+      passed == expected > 0 there. Failures beyond the first 50 are counted in `moreFailures`.
+      Candidate exits, `sys.exit`, patched `unittest`, forged results files, rewriting the source after
+      the copy (directly or through a symlink) and leftover daemons all fail.
   - `grade.py --command <cmd>`: eval check type `command` in a VM. As root it kills every agent and
     grader process, then runs `bash -c <cmd>` as `agent` in `/workspace` with
     `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin` and a fresh empty `HOME`, so
