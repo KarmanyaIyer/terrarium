@@ -1,0 +1,189 @@
+/* Terrarium tokens. Chrome is graphite; color is reserved for data and status.
+   Mono text means verbatim: bytes the model saw or produced, or the env reported. */
+
+:root {
+  color-scheme: light;
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --fs-2xs: 10px;
+  --fs-xs: 10.5px;
+  --fs-sm: 11px;
+  --fs-md: 12px;
+  --fs-lg: 13px;
+  --fs-xl: 14px;
+
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 9px;
+
+  --topbar-h: 40px;
+  --header-h: 40px;
+
+  /* surfaces */
+  --bg-0: #e9ecea; /* window chrome: top bar, sidebar */
+  --bg-1: #f6f7f6; /* main pane */
+  --bg-2: #ffffff; /* raised: inputs, popovers, blocks */
+  --bg-well: #eff1f0; /* verbatim output wells */
+  --bg-hover: rgba(24, 40, 32, 0.055);
+  --bg-active: rgba(24, 40, 32, 0.09);
+  --bg-inverse: #1c2420;
+  --line: rgba(20, 36, 28, 0.1);
+  --line-2: rgba(20, 36, 28, 0.17);
+  --line-3: rgba(20, 36, 28, 0.28);
+  --shadow-pop: 0 0 0 0.5px rgba(20, 36, 28, 0.16), 0 8px 28px rgba(20, 36, 28, 0.16), 0 2px 6px rgba(20, 36, 28, 0.08);
+
+  /* ink */
+  --fg-1: #18211c;
+  --fg-2: #4b5650;
+  --fg-3: #7d8781;
+  --fg-4: #a8b0ab;
+  --fg-inverse: #f2f5f3;
+
+  /* accent = the agent: live edge, running, selection, primary action */
+  --accent: #2369c9;
+  --accent-hi: #2a78d6;
+  --accent-fg: #ffffff;
+  --accent-wash: rgba(42, 120, 214, 0.1);
+  --accent-wash-2: rgba(42, 120, 214, 0.18);
+  --accent-line: rgba(42, 120, 214, 0.55);
+  --focus: 0 0 0 2px var(--bg-1), 0 0 0 3.5px var(--accent-hi);
+
+  /* status (reserved; always paired with an icon or label) */
+  --ok: #0ca30c;
+  --ok-text: #137a2f;
+  --ok-wash: rgba(12, 163, 12, 0.1);
+  --warn: #f0a400;
+  --warn-text: #8f5a00;
+  --warn-wash: rgba(250, 178, 25, 0.14);
+  --warn-line: rgba(214, 146, 0, 0.5);
+  --err: #d03b3b;
+  --err-text: #b82e2e;
+  --err-wash: rgba(208, 59, 59, 0.09);
+  --err-line: rgba(208, 59, 59, 0.45);
+
+  /* data: model lane + tool kinds (validated: light all-pairs, labels as secondary encoding) */
+  --c-model: #2a78d6;
+  --c-model-pre: #a9caf2;
+  --c-think: #6da7ec;
+  --c-bash: #6250d6;
+  --c-read: #e87ba4;
+  --c-write: #1baf7a;
+  --c-edit: #eda100;
+  --c-other: #8d9690;
+  --c-sys: #5c6a73;
+  --c-vm: #6250d6;
+  --c-vm-2: #9085e9;
+  --c-sim: #1baf7a;
+  --c-backend: #8d9690;
+  --c-free: #e2e6e3;
+  --c-other-mem: #c6ccc8;
+
+  /* file change kinds (git convention) */
+  --add: #137a2f;
+  --mod: #a26a00;
+  --del: #b82e2e;
+  --add-wash: rgba(12, 163, 12, 0.1);
+  --del-wash: rgba(208, 59, 59, 0.09);
+
+  /* ansi */
+  --ansi-red: #c4302b;
+  --ansi-green: #198038;
+  --ansi-yellow: #946200;
+  --ansi-blue: #2369c9;
+  --ansi-magenta: #a3368f;
+  --ansi-cyan: #0f7d8a;
+  --ansi-white: #6e7671;
+  --ansi-black: #18211c;
+
+  /* syntax */
+  --syn-kw: #a3368f;
+  --syn-str: #198038;
+  --syn-num: #2369c9;
+  --syn-com: #8a938d;
+  --syn-fn: #6250d6;
+  --syn-type: #0f7d8a;
+  --syn-meta: #946200;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-0: #151817;
+    --bg-1: #1a1d1c;
+    --bg-2: #222624;
+    --bg-well: #131615;
+    --bg-hover: rgba(220, 240, 230, 0.05);
+    --bg-active: rgba(220, 240, 230, 0.085);
+    --bg-inverse: #e8ece9;
+    --line: rgba(220, 240, 230, 0.075);
+    --line-2: rgba(220, 240, 230, 0.13);
+    --line-3: rgba(220, 240, 230, 0.24);
+    --shadow-pop: 0 0 0 0.5px rgba(220, 240, 230, 0.16), 0 10px 32px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+
+    --fg-1: #e3e8e5;
+    --fg-2: #a3aca7;
+    --fg-3: #737d78;
+    --fg-4: #525b57;
+    --fg-inverse: #18211c;
+
+    --accent: #3d8be6;
+    --accent-hi: #4d96ec;
+    --accent-fg: #ffffff;
+    --accent-wash: rgba(57, 135, 229, 0.14);
+    --accent-wash-2: rgba(57, 135, 229, 0.24);
+    --accent-line: rgba(77, 150, 236, 0.6);
+
+    --ok: #2fb84a;
+    --ok-text: #4cc764;
+    --ok-wash: rgba(47, 184, 74, 0.13);
+    --warn: #fab219;
+    --warn-text: #f2b84b;
+    --warn-wash: rgba(250, 178, 25, 0.12);
+    --warn-line: rgba(250, 178, 25, 0.42);
+    --err: #e5534f;
+    --err-text: #f07470;
+    --err-wash: rgba(229, 83, 79, 0.13);
+    --err-line: rgba(229, 83, 79, 0.5);
+
+    --c-model: #3987e5;
+    --c-model-pre: #1e4f8c;
+    --c-think: #2a6cc0;
+    --c-bash: #9085e9;
+    --c-read: #e87ba4;
+    --c-write: #199e70;
+    --c-edit: #c98500;
+    --c-other: #6f7974;
+    --c-sys: #7a8a94;
+    --c-vm: #9085e9;
+    --c-vm-2: #6250d6;
+    --c-sim: #199e70;
+    --c-backend: #6f7974;
+    --c-free: #252a28;
+    --c-other-mem: #3b423f;
+
+    --add: #4cc764;
+    --mod: #e0a83a;
+    --del: #f07470;
+    --add-wash: rgba(47, 184, 74, 0.12);
+    --del-wash: rgba(229, 83, 79, 0.12);
+
+    --ansi-red: #f07470;
+    --ansi-green: #5ccf74;
+    --ansi-yellow: #e8b84a;
+    --ansi-blue: #6aa8f0;
+    --ansi-magenta: #d98ad0;
+    --ansi-cyan: #4ec3cf;
+    --ansi-white: #c3cbc6;
+    --ansi-black: #7d8781;
+
+    --syn-kw: #d98ad0;
+    --syn-str: #7fd18f;
+    --syn-num: #79b2f2;
+    --syn-com: #66706b;
+    --syn-fn: #b0a7f2;
+    --syn-type: #5fc6d1;
+    --syn-meta: #e8b84a;
+  }
+}

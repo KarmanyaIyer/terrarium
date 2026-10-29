@@ -492,3 +492,8 @@ export interface UpdateModelRequest {
   defaultMaxOutput?: number;
   sampling?: Partial<ModelInfo["sampling"]>;
 }
+
+/** POST /api/models/:id/load. context omitted = model's defaultContext. */
+export interface LoadModelRequest {
+  context?: number;
+}

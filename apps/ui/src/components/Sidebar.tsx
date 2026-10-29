@@ -1,0 +1,198 @@
+import { useMemo } from "react";
+import { Boxes, ChevronRight, FlaskConical, Globe, MessageSquare, Package, Plus, Trash2, WifiOff } from "lucide-react";
+import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
+import { act, openEnv, openSession, openView, setPref, useStore } from "../state/store";
+import { ConfirmButton, Time } from "./ui";
+import { newSession } from "../lib/actions";
+
+export function NetIcon({ mode, size = 12 }: { mode: NetworkMode; size?: number }) {
+  const title =
+    mode === "off"
+      ? "Network off: every connection is denied"
+      : mode === "registries"
+        ? "Network: package registries only (GET/HEAD to PyPI, npm, GitHub downloads, Alpine)"
+        : "Network: public web (private and loopback ranges still denied)";
+  const I = mode === "off" ? WifiOff : mode === "registries" ? Package : Globe;
+  return (
+    <span className={`net-icon ${mode}`} title={title} aria-label={title}>
+      <I size={size} />
+    </span>
+  );
+}
+
+export function EnvChip({ type }: { type: EnvSummary["type"] }) {
+  return (
+    <span className={`chip ${type}`} title={type === "vm" ? "Linux micro-VM" : "Simulated shell (not a real OS)"}>
+      {type === "vm" ? "VM" : "SIM"}
+    </span>
+  );
+}
+
+function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
+  return (
+    <div className={`sb-session${active ? " active" : ""}`} onClick={() => openSession(s.id)} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && openSession(s.id)}>
+      <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
+      <span className="truncate sb-title">{s.title}</span>
+      <Time ts={s.updatedAt} className="sb-time" />
+      <span className="sb-hover" onClick={(e) => e.stopPropagation()}>
+        <ConfirmButton
+          small
+          className="ghost icon-only"
+          label=""
+          icon={<Trash2 />}
+          title="Delete session"
+          confirmLabel="Delete"
+          onConfirm={() => act("Delete session", (b) => b.deleteSession(s.id))}
+        />
+      </span>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  const envs = useStore((s) => s.envs);
+  const sessions = useStore((s) => s.sessions);
+  const view = useStore((s) => s.view);
+  const expanded = useStore((s) => s.expandedEnvs);
+  const inspectorEnvId = useStore((s) => s.inspectorEnvId);
+  const showEphemeral = useStore((s) => s.showEphemeral);
+  const models = useStore((s) => s.models);
+  const evalRuns = useStore((s) => s.evalRuns);
+  const width = useStore((s) => s.sidebarWidth);
+
+  const envList = useMemo(
+    () => Object.values(envs).filter((e) => showEphemeral || !e.ephemeral).sort((a, b) => a.createdAt - b.createdAt),
+    [envs, showEphemeral],
+  );
+  const byEnv = useMemo(() => {
+    const m: Record<string, SessionSummary[]> = {};
+    for (const s of Object.values(sessions)) {
+      if (s.evalRunId && !showEphemeral) continue;
+      const k = s.envId ?? "";
+      (m[k] ??= []).push(s);
+    }
+    for (const k of Object.keys(m)) m[k].sort((a, b) => b.updatedAt - a.updatedAt);
+    return m;
+  }, [sessions, showEphemeral]);
+  const ephemeralCount = Object.values(envs).filter((e) => e.ephemeral).length;
+  const activeId = view.kind === "session" ? view.id : null;
+  const loaded = models.filter((m) => m.loaded).length;
+  const runningEvals = evalRuns.filter((r) => r.status === "running").length;
+  const chats = byEnv[""] ?? [];
+
+  return (
+    <nav className="sidebar" style={{ width }}>
+      <div className="sb-scroll">
+        <div className="sb-head">
+          <span>Environments</span>
+          <button className="icon-btn sm" title="New environment" onClick={() => useStore.setState({ newEnvOpen: true })}>
+            <Plus />
+          </button>
+        </div>
+        {envList.length === 0 && (
+          <div className="sb-empty">
+            No environments
+            <button className="btn sm" onClick={() => useStore.setState({ newEnvOpen: true })}>
+              <Plus /> New environment
+            </button>
+          </div>
+        )}
+        {envList.map((e) => {
+          const open = !!expanded[e.id];
+          const list = byEnv[e.id] ?? [];
+          const running = list.some((s) => s.status === "running");
+          return (
+            <div key={e.id} className="sb-env-group">
+              <div
+                className={`sb-env${inspectorEnvId === e.id ? " inspecting" : ""}`}
+                onClick={() => {
+                  useStore.setState({ expandedEnvs: { ...expanded, [e.id]: !open } });
+                  openEnv(e.id);
+                }}
+                role="button"
+                tabIndex={0}
+                title={e.statusDetail ?? `${e.name}: ${e.status}`}
+              >
+                <ChevronRight className={`sb-tw${open ? " open" : ""}`} size={12} />
+                <span className={`dot ${e.status}`} />
+                <span className="truncate sb-title">{e.name}</span>
+                {running && <span className="dot live" title="A session is running" />}
+                <EnvChip type={e.type} />
+                <NetIcon mode={e.network} />
+              </div>
+              {open && (
+                <div className="sb-sessions">
+                  {list.map((s) => (
+                    <SessionRow key={s.id} s={s} active={s.id === activeId} />
+                  ))}
+                  <button className="sb-new" onClick={() => void newSession(e.id)}>
+                    <Plus size={11} /> New session
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <div className="sb-head">
+          <span>Chats</span>
+          <button className="icon-btn sm" title="New chat (no environment)" onClick={() => void newSession(null)}>
+            <Plus />
+          </button>
+        </div>
+        {chats.length === 0 && (
+          <button className="sb-new" onClick={() => void newSession(null)}>
+            <Plus size={11} /> New chat
+          </button>
+        )}
+        <div className="sb-sessions flat">
+          {chats.map((s) => (
+            <SessionRow key={s.id} s={s} active={s.id === activeId} />
+          ))}
+        </div>
+      </div>
+
+      <div className="sb-foot">
+        <button className={`sb-nav${view.kind === "evals" ? " active" : ""}`} onClick={() => openView({ kind: "evals" })}>
+          <FlaskConical size={13} />
+          <span>Evals</span>
+          {runningEvals > 0 && (
+            <span className="sb-badge live" title="Eval runs in progress">
+              <span className="dot live" />
+              {runningEvals}
+            </span>
+          )}
+        </button>
+        <button className={`sb-nav${view.kind === "models" ? " active" : ""}`} onClick={() => openView({ kind: "models" })}>
+          <Boxes size={13} />
+          <span>Models</span>
+          <span className="sb-badge num" title="Models loaded in oMLX">
+            {loaded}/{models.length}
+          </span>
+        </button>
+        {ephemeralCount > 0 && (
+          <button className="sb-nav small" onClick={() => useStore.setState({ showEphemeral: !showEphemeral })} title="Eval forks are disposable envs, one per eval cell">
+            <MessageSquare size={12} />
+            <span>{showEphemeral ? "Hide" : "Show"} eval forks</span>
+            <span className="sb-badge num">{ephemeralCount}</span>
+          </button>
+        )}
+      </div>
+      <div
+        className="resize-x right"
+        onMouseDown={(ev) => {
+          const x0 = ev.clientX;
+          const w0 = width;
+          const move = (m: MouseEvent) => useStore.setState({ sidebarWidth: Math.max(180, Math.min(380, w0 + m.clientX - x0)) });
+          const up = () => {
+            window.removeEventListener("mousemove", move);
+            window.removeEventListener("mouseup", up);
+            setPref("sidebarWidth", useStore.getState().sidebarWidth);
+          };
+          window.addEventListener("mousemove", move);
+          window.addEventListener("mouseup", up);
+        }}
+      />
+    </nav>
+  );
+}
