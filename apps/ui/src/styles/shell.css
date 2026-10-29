@@ -302,6 +302,12 @@
   color: var(--fg-3);
   flex: none;
 }
+.sb-time.live-text {
+  color: var(--accent);
+}
+.sb-session.active .sb-time.live-text {
+  color: var(--accent-fg);
+}
 .sb-hover {
   display: none;
   position: absolute;

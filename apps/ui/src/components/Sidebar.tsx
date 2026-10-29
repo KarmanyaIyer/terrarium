@@ -44,7 +44,7 @@ function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
     >
       <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
       <span className="truncate sb-title">{s.title}</span>
-      <Time ts={s.updatedAt} className="sb-time" />
+      {s.status === "running" ? <span className="sb-time live-text">running</span> : <Time ts={s.updatedAt} className="sb-time" />}
       <span className="sb-hover" onClick={(e) => e.stopPropagation()}>
         <ConfirmButton
           small

@@ -149,7 +149,7 @@ export function buildInvoiceRun(sessionId: string, envId: string): Built {
     text: "No network here, so I'll use the standard library `decimal` module instead.",
     tool: {
       name: "edit",
-      args: { path: "/workspace/src/invoice/totals.py", oldText: TOTALS_V1.slice(28), newText: TOTALS_V2.slice(28) },
+      args: { path: "/workspace/src/invoice/totals.py", oldText: TOTALS_V1.slice(TOTALS_V1.indexOf("def ")), newText: TOTALS_V2.slice(TOTALS_V2.indexOf("from ")) },
     },
     ttftMs: 700,
   });
@@ -499,6 +499,15 @@ export function buildReadme(sessionId: string, envId: string): Built {
 
 export type CellOutcome = "pass" | "fail" | "error";
 
+const MODEL_TPS: Record<string, number> = {
+  "Qwen3.5-4B-MLX-4bit": 41.0,
+  "Qwen3.5-9B-MLX-4bit": 21.4,
+  "gemma-4-12B-it-4bit": 15.1,
+  "Ternary-Bonsai-2-2B-mlx-2bit": 68.0,
+  "Ternary-Bonsai-2-9B-mlx-2bit": 37.6,
+  "Ternary-Bonsai-2-27B-mlx-2bit": 13.2,
+};
+
 /** Sandbox boundary probes: what the agent tried and what stopped it. */
 const PROBES: Record<string, { say: string; command: string; exit: number; stderr: string; net?: { url: string; reason: string }; report: string }> = {
   "vm-host-file": {
@@ -567,31 +576,33 @@ export function buildEvalCell(
   });
   s.user(c.prompt);
   const code = CODING_CASES[c.id];
+  // decode speed differs per model, so cell durations differ too
+  const genTps = MODEL_TPS[modelId] ?? 21.4;
   if (envType === "none") {
     s.call({
       prompt: 120,
       text: outcome === "pass" ? "In May she sold 48 / 2 = 24 clips. Total: 48 + 24 = **72**." : "She sold 48 + 48 / 2 = **96** clips.",
-      genTps: 30,
+      genTps,
     });
   } else if (outcome === "error") {
-    s.call({ prompt: 1310, error: `oMLX returned 503: model is loading (${modelId})`, ttftMs: 30_000 });
+    s.call({ genTps, prompt: 1310, error: `oMLX returned 503: model is loading (${modelId})`, ttftMs: 30_000 });
     s.event({ type: "error", message: "Model call failed after 3 retries", detail: "503 Service Unavailable" });
     s.runEnd("error");
     return s.finalize();
   } else if (c.check.type === "isolation" && PROBES[c.id]) {
     const p = PROBES[c.id];
-    s.call({ prompt: 1240, text: p.say, tool: { name: "bash", args: { command: p.command } } });
+    s.call({ genTps, prompt: 1240, text: p.say, tool: { name: "bash", args: { command: p.command } } });
     s.tool({
       duration: p.net ? 5040 : 40,
       exit: p.exit,
       out: [{ dt: p.net ? 5010 : 20, stream: "stderr", text: p.stderr }],
       net: p.net ? [{ dt: 30, url: p.net.url, decision: "deny", reason: p.net.reason }] : undefined,
     });
-    s.call({ prompt: 1420, cached: 1240, text: p.report });
+    s.call({ genTps, prompt: 1420, cached: 1240, text: p.report });
   } else if (envType === "vm" && code) {
     const rel = code.path.replace("/workspace/", "");
     const testName = code.failing.split("::")[1];
-    s.call({ prompt: 1310, text: "Running the tests first.", tool: { name: "bash", args: { command: "cd /workspace && python -m pytest -q" } } });
+    s.call({ genTps, prompt: 1310, text: "Running the tests first.", tool: { name: "bash", args: { command: "cd /workspace && python -m pytest -q" } } });
     s.tool({
       duration: 1900,
       exit: 1,
@@ -600,16 +611,16 @@ export function buildEvalCell(
         { dt: 1850, text: `${R}FAILED${X} ${code.failing} - ${code.error}\n${R}1 failed${X}, ${G}1 passed${X} in 0.06s\n` },
       ],
     });
-    s.call({ prompt: 1540, cached: 1310, text: `\`${testName}\` fails. Reading \`${rel}\`.`, tool: { name: "read", args: { path: code.path } } });
+    s.call({ genTps, prompt: 1540, cached: 1310, text: `\`${testName}\` fails. Reading \`${rel}\`.`, tool: { name: "read", args: { path: code.path } } });
     s.tool({ duration: 30, out: [{ dt: 12, text: numbered(code.before) }] });
     s.call({
+      genTps,
       prompt: 1810,
       cached: 1540,
-      genTps: 19.6,
       tool: { name: "write", args: { path: code.path, content: code.after } },
     });
     s.tool({ duration: 48, out: [{ dt: 20, text: `Wrote ${code.after.length} bytes to ${code.path}` }], files: [{ path: code.path, content: code.after }] });
-    s.call({ prompt: 2150, cached: 1810, tool: { name: "bash", args: { command: "cd /workspace && python -m pytest -q" } } });
+    s.call({ genTps, prompt: 2150, cached: 1810, tool: { name: "bash", args: { command: "cd /workspace && python -m pytest -q" } } });
     s.tool({
       duration: 1700,
       exit: outcome === "pass" ? 0 : 1,
@@ -619,6 +630,7 @@ export function buildEvalCell(
           : [{ dt: 1650, text: `${R}F${X}${G}.${X}                                                                       [100%]\n${R}FAILED${X} ${code.failing}\n${R}1 failed${X}, ${G}1 passed${X} in 0.06s\n` }],
     });
     s.call({
+      genTps,
       prompt: 2290,
       cached: 2150,
       text:
@@ -627,13 +639,13 @@ export function buildEvalCell(
           : `I changed \`${rel}\`, but \`${testName}\` still fails. I'm out of ideas for this one.`,
     });
   } else {
-    s.call({ prompt: 1180, tool: { name: "bash", args: { command: "ls -la /workspace" } } });
+    s.call({ genTps, prompt: 1180, tool: { name: "bash", args: { command: "ls -la /workspace" } } });
     s.tool({ duration: 12, out: [{ dt: 6, text: setup.length ? Object.entries(files).map(([p, t]) => `-rw-r--r-- 1 agent agent ${String(t.length).padStart(5)} ${p.replace("/workspace/", "")}`).join("\n") + "\n" : "total 0\n" }] });
     // a fail writes the right content to the wrong name, which the file check catches
     const out = outcome === "pass" ? "/workspace/out.txt" : "/workspace/output.txt";
-    s.call({ prompt: 1290, cached: 1180, tool: { name: "write", args: { path: out, content: "done\n" } } });
+    s.call({ genTps, prompt: 1290, cached: 1180, tool: { name: "write", args: { path: out, content: "done\n" } } });
     s.tool({ duration: 9, out: [{ dt: 4, text: `Wrote 5 bytes to ${out}` }], files: [{ path: out, content: "done\n" }] });
-    s.call({ prompt: 1360, cached: 1290, text: `Wrote \`${out.replace("/workspace/", "")}\`.` });
+    s.call({ genTps, prompt: 1360, cached: 1290, text: `Wrote \`${out.replace("/workspace/", "")}\`.` });
   }
   s.runEnd("done");
   return s.finalize();
