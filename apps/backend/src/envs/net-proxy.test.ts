@@ -31,7 +31,7 @@ test("names the policy denies are never resolved", async () => {
       `${mode} ${url}`,
     );
   }
-  assert.deepEqual(looked, [], "no DNS query for a denied name");
+  assert.equal(looked.length, 0, "no DNS query for a denied name");
   assert.equal(attempts.length, denied.length);
   assert.ok(attempts.every((a) => a.decision === "deny"));
 
