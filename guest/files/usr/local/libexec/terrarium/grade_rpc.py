@@ -155,8 +155,24 @@ def _safe_str(e):
 
 
 class Channel:
+    FLOATS_MAX = 1 << 16
+
     def __init__(self, sock):
         self.sock = sock
+        # The tests' side: the values of the floats received (a float arrives as a new object, one process could have
+        # had it), or None once there were too many to keep; the candidate's side keeps none (floats_off).
+        self.floats = set()
+        self.floats_off = True
+        self.decoder = json.JSONDecoder(parse_float=self._float)
+
+    def _float(self, s):
+        v = float(s)
+        if self.floats is not None:
+            if len(self.floats) < self.FLOATS_MAX:
+                self.floats.add(v)
+            else:
+                self.floats = None
+        return v
 
     def send(self, obj):
         try:
@@ -173,7 +189,8 @@ class Channel:
         if n > MAX_MSG:
             raise ProtocolError("message of %d bytes" % n)
         try:
-            msg = json.loads(self._exact(n, deadline).decode("ascii"))
+            text = self._exact(n, deadline).decode("ascii")
+            msg = json.loads(text) if self.floats_off or self.floats is None else self.decoder.decode(text)
         except (ValueError, RecursionError) as e:
             raise ProtocolError("bad message: %s" % clip(e, 200))
         if not isinstance(msg, dict):
@@ -2854,6 +2871,7 @@ class Client(Side):
         self.ended = None  # process state the candidate changed that this process can't take: every later call fails
         self.ran = False  # candidate code has run (a call was made)
         self.unkeyed = {}
+        self.chan.floats_off = False
         self.loaded = set()  # candidate modules the tests imported
         self.unloaded = set()  # those the tests removed from sys.modules since the last message
         self.unimported = set()  # those removed in the candidate's sys.modules too
@@ -2883,6 +2901,8 @@ class Client(Side):
         self.fwd_desc = {}  # rid -> its decoded description, while its proxy lives
         self.fwd_snap = {}  # rid -> its stand-in's _FN_TESTS (generators: _GEN_SYNC) as the candidate's last had them
         self.fwd_dsnap = {}  # rid -> its stand-in's own dicts as the candidate's last had them (fn_dicts)
+        self.meths = {}  # rid -> [weak reference to the bound method standing for candidate bound method rid, its proxy]
+        self.meth_ids = {}  # id of such a bound method -> rid
         self.gens = weakref.WeakValueDictionary()  # rid -> the real generator standing for candidate generator rid
         self.gen_rids = weakref.WeakKeyDictionary()  # that generator -> its proxy (kept as long as it)
         # Stand-ins whose attributes are compared before each message: the ones whose candidate function or generator
@@ -3265,8 +3285,12 @@ class Client(Side):
             if rid is not None:
                 self.fn_out.append(rid)
                 return {"t": "obj", "id": rid}
-        if t is types.MethodType and (self._standin_rid(v.__func__) is not None or proxy_rid(v.__func__) is not None):
-            return {"t": "meth", "f": enc.enc(v.__func__, depth + 1), "s": enc.enc(v.__self__, depth + 1)}
+        if t is types.MethodType:
+            rid = self.meth_ids.get(id(v))
+            if rid is not None and self._meth_known(rid) is v:
+                return {"t": "obj", "id": rid}
+            if self._standin_rid(v.__func__) is not None or proxy_rid(v.__func__) is not None:
+                return {"t": "meth", "f": enc.enc(v.__func__, depth + 1), "s": enc.enc(v.__self__, depth + 1)}
         fields = ntuple_fields(t)
         if fields is not None and t is not tuple and _plain_ntuple(t):
             self.ntuples[(t.__name__, fields)] = t
@@ -3339,6 +3363,8 @@ class Client(Side):
                 return self._forwarder(rid, obj, x["fn"], dec, d)
             if "gen" in x:
                 return self._gen_standin(rid, obj, x["gen"])
+            if "meth" in x:
+                return self._meth(rid, obj, x["meth"], dec, d)
             return obj
         if t == "meth":
             f, s = dec.dec(x.get("f"), d), dec.dec(x.get("s"), d)
@@ -3386,6 +3412,36 @@ class Client(Side):
                 raise Inexact("the candidate's code handed over the standard-library module %s, which the tests' process can't import" % clip(x.get("n"), 100))
             return m
         raise ProtocolError("unknown tag %r" % clip(t, 40))
+
+    def _meth_known(self, rid):
+        e = self.meths.get(rid)
+        return None if e is None else e[0]()
+
+    def _meth(self, rid, p, raw, dec, d):
+        """The bound method standing for candidate bound method rid (p its proxy, kept while it lives), the same one
+        while it lives: one the candidate's code hands over twice is one object here too."""
+        m = self._meth_known(rid)
+        if raw == 1 and type(raw) is int:
+            if m is None:
+                raise ProtocolError("unknown method %d" % rid)
+            return m
+        if m is not None or not isinstance(raw, list) or len(raw) != 2:
+            raise ProtocolError("bad method")
+        f, s = dec.dec(raw[0], d), dec.dec(raw[1], d)
+        if not callable(f):
+            raise ProtocolError("bad method")
+        m = types.MethodType(f, s)
+        mid = id(m)
+
+        def gone(_, rid=rid, mid=mid):
+            # Its proxy goes too: the candidate's bound method is released.
+            if self.meth_ids.get(mid) == rid:
+                del self.meth_ids[mid]
+            self.meths.pop(rid, None)
+
+        self.meths[rid] = [weakref.ref(m, gone), p]
+        self.meth_ids[mid] = rid
+        return m
 
     def _forwarder(self, rid, p, raw, dec, d):
         """The real function standing for candidate function rid (p its proxy), the same one while it lives."""
@@ -4305,6 +4361,9 @@ class Client(Side):
             return False
         if id(x) in self.unkeyed:
             return True
+        if t is float:
+            # Floats in a message are recorded by value (Channel.floats): a float of a value never received is the tests'.
+            return self.chan.floats is None or x in self.chan.floats
         # A number in a container's contents crosses without a key: once candidate code has run, any could have.
         return t is not tuple and t is not frozenset and not isinstance(x, tuple) and self.ran and not (t is int and -5 <= x <= 256)
 
@@ -4649,9 +4708,9 @@ class Server(Side):
             return check
 
         def sized(args):
-            # A copy of a tuple, number, bytes or ASCII string has the original's size; a list, dict or set's
+            # A copy of a tuple (a plain namedtuple), number, bytes or ASCII string has the original's size; a list, dict or set's
             # depends on how it grew, another string's on whether its UTF-8 form was cached.
-            if args and self._crossed(args[0]) and not (type(args[0]) in _SIZED or type(args[0]) is str and args[0].isascii()):
+            if args and self._crossed(args[0]) and not (type(args[0]) in _SIZED or type(args[0]) is str and args[0].isascii() or isinstance(args[0], tuple) and ntuple_fields(type(args[0])) is not None and _plain_ntuple(type(args[0]))):
                 raise self._poison("the candidate's code called sys.getsizeof() on an object the tests' process shares (its copy here may not be the size of theirs)")
 
         for mod, name in ((sys, "getrefcount"), (gc, "get_referrers"), (gc, "get_referents"), (wr, "getweakrefcount"), (wr, "getweakrefs")):
@@ -4829,7 +4888,10 @@ class Server(Side):
             if name is not None:
                 return {"t": "smod", "n": name}
         if t is types.MethodType:
-            return {"t": "meth", "f": enc.enc(v.__func__, depth + 1), "s": enc.enc(v.__self__, depth + 1)}
+            # By reference (the tests' side keeps one bound method for it while it lives), described the first time.
+            tag = self._object(enc, v, depth)
+            tag["meth"] = [enc.enc(v.__func__, depth + 1), enc.enc(v.__self__, depth + 1)] if "c" in tag else 1
+            return tag
         tag = self._object(enc, v, depth)
         if t is types.FunctionType:
             if "c" in tag:
