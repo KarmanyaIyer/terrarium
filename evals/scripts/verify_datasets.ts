@@ -17,10 +17,13 @@ import { GRADE_PY, hostPython } from "./grade_local.ts";
 const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRATCH = join(EVALS, ".scratch", "datasets");
 
+// grade.py's --timeout per run; a tests check runs twice (isolated, then plain), plus setup and kills.
+const TIMEOUT = 50;
+
 function run(ws: string, tests: string): Promise<number> {
   return new Promise((done) => {
-    const p = spawn(hostPython(), ["-I", "-S", GRADE_PY, "--local", "--tests", tests, "--workspace", ws, "--timeout", "50"], { stdio: "ignore" });
-    const t = setTimeout(() => p.kill("SIGKILL"), 60_000);
+    const p = spawn(hostPython(), ["-I", "-S", GRADE_PY, "--local", "--tests", tests, "--workspace", ws, "--timeout", String(TIMEOUT)], { stdio: "ignore" });
+    const t = setTimeout(() => p.kill("SIGKILL"), (2 * TIMEOUT + 30) * 1000);
     p.on("exit", (code) => {
       clearTimeout(t);
       done(code ?? 1);
