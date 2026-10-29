@@ -5,7 +5,7 @@ import { act, openSession, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { exactBytes, fmtBytes, fmtCtx } from "../lib/format";
 import { ConfirmButton, Segmented } from "../components/ui";
-import { fitLabel } from "../components/ModelPicker";
+import { fitLabel, MemBar, memTitle } from "../components/ModelPicker";
 import { ServerButton } from "../components/TopBar";
 
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
@@ -30,7 +30,7 @@ export default function ModelsView() {
       }),
     [models, sample, budget, free],
   );
-  const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.bytes)) || 1;
+  const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.otherLoaded + r.e.bytes)) || 1;
   const loaded = models.filter((m) => m.loaded);
   const resident = loaded.reduce((a, m) => a + (m.residentBytes ?? 0), 0);
 
@@ -93,7 +93,18 @@ export default function ModelsView() {
               const busyUsers = users.filter((s) => s.status === "running");
               return (
                 <Fragment key={m.id}>
-                  <tr className={`click${isOpen ? " open" : ""}`} onClick={() => setOpen(isOpen ? null : m.id)}>
+                  <tr
+                    className={`click${isOpen ? " open" : ""}`}
+                    onClick={() => setOpen(isOpen ? null : m.id)}
+                    onKeyDown={(ev) => {
+                      if (ev.target === ev.currentTarget && (ev.key === "Enter" || ev.key === " ")) {
+                        ev.preventDefault();
+                        setOpen(isOpen ? null : m.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-expanded={isOpen}
+                  >
                     <td className="tw-col">
                       <ChevronRight size={12} className={`tw${isOpen ? " open" : ""}`} />
                     </td>
@@ -114,14 +125,8 @@ export default function ModelsView() {
                     <td className="r num">{fmtCtx(m.defaultContext)}</td>
                     <td className="r num">{fmtCtx(m.defaultMaxOutput)}</td>
                     <td>
-                      <div
-                        className="est-cell"
-                        title={`weights ${fmtBytes(e.weights)} + KV ${fmtBytes(e.kv)} + fixed ${fmtBytes(e.fixed)} + runtime ${fmtBytes(e.overhead)}`}
-                      >
-                        <span className="mp-bar">
-                          <span className={`mp-fill ${m.loaded ? "ok" : fit.cls}`} style={{ width: `${(e.bytes / scaleMax) * 100}%` }} />
-                          {budget.budgetBytes > 0 && <span className="mp-budget" style={{ left: `${(budget.budgetBytes / scaleMax) * 100}%` }} />}
-                        </span>
+                      <div className="est-cell" title={memTitle(e, budget.budgetBytes)}>
+                        <MemBar e={e} cls={m.loaded ? "ok" : fit.cls} scaleMax={scaleMax} budget={budget.budgetBytes} />
                         <span className="num">{fmtBytes(e.bytes)}</span>
                         {!m.loaded && <span className={`fit ${fit.cls}`}>{fit.text}</span>}
                       </div>

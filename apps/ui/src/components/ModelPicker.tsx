@@ -2,11 +2,29 @@ import { useMemo } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import type { ModelInfo, SessionSummary } from "@terrarium/shared";
 import { act, openView, useStore } from "../state/store";
-import { CONTEXT_CHOICES, estimate } from "../lib/memory";
+import { CONTEXT_CHOICES, estimate, type Estimate } from "../lib/memory";
 import { fmtBytes, fmtCtx, fmtInt } from "../lib/format";
 import { Popover, usePop } from "./ui";
 
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
+
+/** Budget bar: other loaded models (gray), then this model's estimate, against the budget tick. */
+export function MemBar({ e, cls, scaleMax, budget }: { e: Estimate; cls: string; scaleMax: number; budget: number }) {
+  const pct = (b: number) => `${(b / scaleMax) * 100}%`;
+  return (
+    <span className="mp-bar">
+      {e.otherLoaded > 0 && <span className="mp-base" style={{ width: pct(e.otherLoaded) }} />}
+      <span className={`mp-fill ${cls}`} style={{ left: pct(e.otherLoaded), width: pct(e.bytes) }} />
+      {budget > 0 && <span className="mp-budget" style={{ left: pct(budget) }} />}
+    </span>
+  );
+}
+
+export function memTitle(e: Estimate, budget: number): string {
+  const parts = `weights ${fmtBytes(e.weights)} + KV ${fmtBytes(e.kv)} + fixed ${fmtBytes(e.fixed)} + runtime ${fmtBytes(e.overhead)}`;
+  if (!e.otherLoaded) return `${parts}\nbudget ${fmtBytes(budget, 0)}`;
+  return `${parts}\nother loaded models ${fmtBytes(e.otherLoaded)} + this ${fmtBytes(e.bytes)} = ${fmtBytes(e.otherLoaded + e.bytes)} of ${fmtBytes(budget, 0)} budget`;
+}
 
 export function fitLabel(e: ReturnType<typeof estimate>, free: number | undefined) {
   if (!e.fitsFree) return { cls: "err", text: free != null ? `${fmtBytes(e.added - free)} short` : "won't fit" };
@@ -29,7 +47,7 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
       models.map((m) => ({ m, e: estimate(m, ctx, sample, budget, models) })).sort((a, b) => Number(b.m.loaded) - Number(a.m.loaded) || a.e.bytes - b.e.bytes),
     [models, ctx, sample, budget],
   );
-  const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.bytes));
+  const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.otherLoaded + r.e.bytes)) || 1;
 
   const patch = (p: Parameters<NonNullable<ReturnType<typeof useStore.getState>["backend"]>["updateSession"]>[1]) =>
     void act("Update session", (b) => b.updateSession(session.id, p)).then((s) => {
@@ -99,11 +117,8 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
                   <span>{m.quant}</span>
                   <span className="dim">{fmtBytes(m.diskBytes)}</span>
                 </span>
-                <span className="mp-mem num" title={`weights ${fmtBytes(e.weights)} + KV ${fmtBytes(e.kv)} + fixed ${fmtBytes(e.fixed)} + overhead ${fmtBytes(e.overhead)}`}>
-                  <span className="mp-bar">
-                    <span className={`mp-fill ${fit.cls}`} style={{ width: `${(e.bytes / scaleMax) * 100}%` }} />
-                    <span className="mp-budget" style={{ left: `${(budget.budgetBytes / scaleMax) * 100}%` }} />
-                  </span>
+                <span className="mp-mem num" title={memTitle(e, budget.budgetBytes)}>
+                  <MemBar e={e} cls={fit.cls} scaleMax={scaleMax} budget={budget.budgetBytes} />
                   <span>{fmtBytes(e.bytes)}</span>
                 </span>
                 <span className={`mp-fit ${fit.cls}`}>{m.loaded ? (m.loadedContext && m.loadedContext < ctx ? `loaded at ${fmtCtx(m.loadedContext)}` : "loaded") : fit.text}</span>

@@ -10,6 +10,8 @@ export interface Estimate {
   overhead: number;
   /** Bytes that loading would add now (0 extra if already loaded at a context >= ctx). */
   added: number;
+  /** Resident bytes of the other loaded models; this model shares the budget with them. */
+  otherLoaded: number;
   fitsFree: boolean;
   fitsBudget: boolean;
 }
@@ -39,6 +41,7 @@ export function estimate(
     fixed,
     overhead: OVERHEAD_BYTES,
     added,
+    otherLoaded,
     fitsFree: added <= free,
     fitsBudget: budget.budgetBytes <= 0 || otherLoaded + bytes <= budget.budgetBytes,
   };
