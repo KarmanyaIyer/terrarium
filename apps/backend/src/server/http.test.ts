@@ -77,6 +77,15 @@ test("Origin allowlist with CORS for allowed origins only", async () => {
   assert.equal((await req("/api/sessions", { method: "OPTIONS", headers: { Origin: "http://evil.com" } })).status, 403);
 });
 
+test("blobs carry CORS headers for allowed origins", async () => {
+  const sha = app.store.blobs.put("--- a/x\n+++ b/x\n");
+  const r = await req(`/api/blobs/${sha}`, { headers: { ...auth, Origin: "http://localhost:5173" } });
+  assert.equal(r.status, 200);
+  assert.equal(r.headers["access-control-allow-origin"], "http://localhost:5173");
+  assert.match(String(r.headers["cache-control"]), /immutable/);
+  assert.equal(r.body, "--- a/x\n+++ b/x\n");
+});
+
 test("bodies: JSON only, size capped, errors are ApiError JSON", async () => {
   const text = await req("/api/envs", { method: "POST", headers: { ...auth, "Content-Type": "text/plain" }, body: "{}" });
   assert.equal(text.status, 415);

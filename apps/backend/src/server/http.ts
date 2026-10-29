@@ -137,11 +137,13 @@ function routes(app: App): Route[] {
       };
       return detail;
     }),
-    r("GET", "/api/blobs/:sha", ({ params, res }) => {
+    r("GET", "/api/blobs/:sha", ({ params, req, res }) => {
       const sha = params[0];
       if (!/^[0-9a-f]{64}$/.test(sha)) throw new HttpError(400, "invalid blob id");
       const data = store.blobs.get(sha);
       if (!data) throw new HttpError(404, "blob not found");
+      // Same CORS headers as JSON routes: the UI reads blobs cross-origin (Vite dev server, tauri://localhost).
+      for (const [k, v] of Object.entries(baseHeaders(typeof req.headers.origin === "string" ? req.headers.origin : undefined))) res.setHeader(k, v);
       res.writeHead(200, { "Content-Type": "application/octet-stream", "Content-Length": data.length, "Cache-Control": "private, max-age=31536000, immutable" });
       res.end(data);
       return HANDLED;
