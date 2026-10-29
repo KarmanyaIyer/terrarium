@@ -356,6 +356,229 @@ export const LOG_FILES: Record<string, string> = {
   "/workspace/NOTES.md": "Logs copied from edge-2 on Oct 27.\n",
 };
 
+// ---------- coding-tests cases: buggy module, visible tests, and the fix a model makes ----------
+
+export interface CodingCase {
+  path: string;
+  before: string;
+  after: string;
+  testPath: string;
+  test: string;
+  failing: string; // pytest node id of the test that fails before the fix
+  error: string; // its assertion line
+}
+
+export const CODING_CASES: Record<string, CodingCase> = {
+  "ct-invoice": {
+    path: "/workspace/src/invoice/totals.py",
+    before: TOTALS_V1,
+    after: TOTALS_V2,
+    testPath: "/workspace/tests/test_totals.py",
+    test: TEST_TOTALS,
+    failing: "tests/test_totals.py::test_line_total_rounds_half_up",
+    error: "AssertionError: assert 1.0 == Decimal('1.01')",
+  },
+  "ct-slugify": {
+    path: "/workspace/slug.py",
+    before: `import re
+
+
+def slugify(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+`,
+    after: `import re
+import unicodedata
+
+
+def slugify(text: str) -> str:
+    ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")
+`,
+    testPath: "/workspace/tests/test_slug.py",
+    test: `from slug import slugify
+
+
+def test_ascii():
+    assert slugify("Hello, World!") == "hello-world"
+
+
+def test_accents():
+    assert slugify("Crème Brûlée") == "creme-brulee"
+`,
+    failing: "tests/test_slug.py::test_accents",
+    error: "AssertionError: assert 'cr-me-br-l-e' == 'creme-brulee'",
+  },
+  "ct-lru": {
+    path: "/workspace/cache.py",
+    before: `from collections import OrderedDict
+
+
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.data = OrderedDict()
+
+    def get(self, key):
+        return self.data.get(key)
+
+    def put(self, key, value):
+        self.data[key] = value
+        if len(self.data) > self.capacity:
+            self.data.popitem(last=False)
+`,
+    after: `from collections import OrderedDict
+
+
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.data = OrderedDict()
+
+    def get(self, key):
+        if key not in self.data:
+            return None
+        self.data.move_to_end(key)
+        return self.data[key]
+
+    def put(self, key, value):
+        self.data[key] = value
+        self.data.move_to_end(key)
+        if len(self.data) > self.capacity:
+            self.data.popitem(last=False)
+`,
+    testPath: "/workspace/tests/test_cache.py",
+    test: `from cache import LRUCache
+
+
+def test_evicts_least_recent():
+    c = LRUCache(2)
+    c.put("a", 1)
+    c.put("b", 2)
+    c.get("a")
+    c.put("c", 3)
+    assert c.get("b") is None
+    assert c.get("a") == 1
+`,
+    failing: "tests/test_cache.py::test_evicts_least_recent",
+    error: "AssertionError: assert None == 1",
+  },
+  "ct-parse-dur": {
+    path: "/workspace/durations.py",
+    before: `def parse_duration(text: str) -> int:
+    if text.endswith("h"):
+        return int(text[:-1]) * 3600
+    return int(text.rstrip("s"))
+`,
+    after: `import re
+
+UNITS = {"h": 3600, "m": 60, "s": 1}
+
+
+def parse_duration(text: str) -> int:
+    parts = re.findall(r"(\\d+)([hms])", text)
+    if not parts or "".join(n + u for n, u in parts) != text:
+        raise ValueError(f"bad duration: {text!r}")
+    return sum(int(n) * UNITS[u] for n, u in parts)
+`,
+    testPath: "/workspace/tests/test_durations.py",
+    test: `import pytest
+
+from durations import parse_duration
+
+
+def test_hours_minutes():
+    assert parse_duration("1h30m") == 5400
+
+
+def test_rejects_garbage():
+    with pytest.raises(ValueError):
+        parse_duration("soon")
+`,
+    failing: "tests/test_durations.py::test_hours_minutes",
+    error: "ValueError: invalid literal for int() with base 10: '1h30m'",
+  },
+  "ct-csv-merge": {
+    path: "/workspace/merge.py",
+    before: `def merge_rows(rows: list[dict], key: str) -> list[dict]:
+    seen = {}
+    for row in rows:
+        if row[key] not in seen:
+            seen[row[key]] = row
+    return list(seen.values())
+`,
+    after: `def merge_rows(rows: list[dict], key: str) -> list[dict]:
+    """Rows are in file order, so a later row with the same key is newer and wins."""
+    merged = {}
+    for row in rows:
+        merged[row[key]] = row
+    return list(merged.values())
+`,
+    testPath: "/workspace/tests/test_merge.py",
+    test: `from merge import merge_rows
+
+
+def test_newest_wins():
+    rows = [{"id": "1", "v": "old"}, {"id": "2", "v": "x"}, {"id": "1", "v": "new"}]
+    assert merge_rows(rows, "id") == [{"id": "1", "v": "new"}, {"id": "2", "v": "x"}]
+`,
+    failing: "tests/test_merge.py::test_newest_wins",
+    error: "AssertionError: assert [{'id': '1', 'v': 'old'}, ...] == [{'id': '1', 'v': 'new'}, ...]",
+  },
+  "ct-retry": {
+    path: "/workspace/retry.py",
+    before: `import functools
+import time
+
+
+def retry(times: int = 3, base: float = 0.1):
+    def wrap(fn):
+        @functools.wraps(fn)
+        def inner(*args, **kwargs):
+            for _ in range(times):
+                try:
+                    return fn(*args, **kwargs)
+                except Exception:
+                    time.sleep(base)
+        return inner
+    return wrap
+`,
+    after: `import functools
+import time
+
+
+def retry(times: int = 3, base: float = 0.1):
+    def wrap(fn):
+        @functools.wraps(fn)
+        def inner(*args, **kwargs):
+            for attempt in range(times):
+                try:
+                    return fn(*args, **kwargs)
+                except Exception:
+                    if attempt == times - 1:
+                        raise
+                    time.sleep(base * 2**attempt)
+        return inner
+    return wrap
+`,
+    testPath: "/workspace/tests/test_retry.py",
+    test: `import pytest
+
+from retry import retry
+
+
+def test_reraises_after_last_attempt():
+    @retry(times=2, base=0)
+    def boom():
+        raise RuntimeError("down")
+
+    with pytest.raises(RuntimeError):
+        boom()
+`,
+    failing: "tests/test_retry.py::test_reraises_after_last_attempt",
+    error: "Failed: DID NOT RAISE <class 'RuntimeError'>",
+  },
+};
+
 // ---------- eval suites ----------
 
 const cmd = (command: string) => ({ type: "command" as const, command });
@@ -424,7 +647,11 @@ export const SUITES: EvalSuite[] = [
       title,
       prompt,
       envType: "vm" as const,
-      setupFiles: [{ path: "/workspace/README.md", content: `# ${title}\n` }],
+      setupFiles: [
+        { path: "/workspace/README.md", content: `# ${title}\n\nRun the tests with \`python -m pytest -q\`.\n` },
+        { path: CODING_CASES[`ct-${id}`].path, content: CODING_CASES[`ct-${id}`].before },
+        { path: CODING_CASES[`ct-${id}`].testPath, content: CODING_CASES[`ct-${id}`].test },
+      ],
       hiddenFiles: [{ path: "/grader/test_hidden.py", content: "# grader-only\n" }],
       check: cmd("cd /workspace && python -m pytest -q /grader/test_hidden.py"),
       maxTurns: 16,

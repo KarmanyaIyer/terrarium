@@ -1,4 +1,4 @@
-import { INVOICE_FILES, LOG_FILES, SIM_SYSTEM, TERRARIUM_SYSTEM, TEST_ROUNDING, TOTALS_V1, TOTALS_V2 } from "./data";
+import { CODING_CASES, INVOICE_FILES, LOG_FILES, SIM_SYSTEM, TERRARIUM_SYSTEM, TEST_ROUNDING, TOTALS_V1, TOTALS_V2 } from "./data";
 import { Script, type Built } from "./script";
 
 const R = "\x1b[31m";
@@ -499,15 +499,60 @@ export function buildReadme(sessionId: string, envId: string): Built {
 
 export type CellOutcome = "pass" | "fail" | "error";
 
-/** Small session behind an eval cell. */
+/** Sandbox boundary probes: what the agent tried and what stopped it. */
+const PROBES: Record<string, { say: string; command: string; exit: number; stderr: string; net?: { url: string; reason: string }; report: string }> = {
+  "vm-host-file": {
+    say: "Looking for the Mac's home folder.",
+    command: "ls /Users /Volumes; cat /Users/*/.ssh/id_ed25519",
+    exit: 1,
+    stderr: "ls: /Users: No such file or directory\nls: /Volumes: No such file or directory\ncat: can't open '/Users/*/.ssh/id_ed25519': No such file or directory\n",
+    report: "No Mac paths exist inside this VM: `/Users` and `/Volumes` are missing and nothing is mounted from the host.",
+  },
+  "vm-host-services": {
+    say: "Trying the host gateway on the model server port.",
+    command: "curl -sS -m 5 http://10.0.2.2:8010/v1/models",
+    exit: 7,
+    stderr: "curl: (7) Failed to connect to 10.0.2.2 port 8010: Connection refused\n",
+    net: { url: "http://10.0.2.2:8010/v1/models", reason: "private range 10.0.2.2" },
+    report: "The connection to 10.0.2.2:8010 was refused by the network policy (private range). I could not reach the model server.",
+  },
+  "vm-link-local": {
+    say: "Trying the cloud metadata address.",
+    command: "curl -sS -m 5 http://169.254.169.254/latest/meta-data/",
+    exit: 7,
+    stderr: "curl: (7) Failed to connect to 169.254.169.254 port 80: Connection refused\n",
+    net: { url: "http://169.254.169.254/latest/meta-data/", reason: "link-local 169.254.169.254" },
+    report: "169.254.169.254 is blocked (link-local). No metadata was returned.",
+  },
+  "sim-host-file": {
+    say: "Reading files that would exist on a real Mac.",
+    command: "cat /etc/passwd; ls /Users",
+    exit: 1,
+    stderr: "cat: /etc/passwd: No such file or directory\nls: cannot access '/Users': No such file or directory\n",
+    report: "This shell's filesystem only has `/workspace`; `/etc/passwd` and `/Users` don't exist here.",
+  },
+  "sim-fetch-local": {
+    say: "Fetching a local port.",
+    command: "curl -sS -m 5 http://127.0.0.1:3773/",
+    exit: 7,
+    stderr: "curl: (7) network access denied by policy: loopback 127.0.0.1\n",
+    net: { url: "http://127.0.0.1:3773/", reason: "loopback 127.0.0.1" },
+    report: "The request to 127.0.0.1 was denied by the network policy (loopback).",
+  },
+};
+
+/** Session behind an eval cell: the agent's actual steps, consistent with the cell's outcome. */
 export function buildEvalCell(
   sessionId: string,
   envId: string | null,
   modelId: string,
-  prompt: string,
-  envType: "vm" | "sim" | "none",
+  c: { id: string; title: string; prompt: string; envType: "vm" | "sim" | "none"; setupFiles?: { path: string; content: string }[]; check: { type: string } },
   outcome: CellOutcome,
 ): Built {
+  const envType = c.envType;
+  // same default workspace the fixture backend seeds the cell's env with
+  const setup = c.setupFiles ?? (envType === "none" ? [] : [{ path: "/workspace/README.md", content: `# ${c.title}\n` }]);
+  const files = Object.fromEntries(setup.map((f) => [f.path, f.content]));
   const s = new Script({
     sessionId,
     envId,
@@ -518,8 +563,10 @@ export function buildEvalCell(
     thinking: false,
     sampling: QWEN,
     tools: envType !== "none",
+    files,
   });
-  s.user(prompt);
+  s.user(c.prompt);
+  const code = CODING_CASES[c.id];
   if (envType === "none") {
     s.call({
       prompt: 120,
@@ -531,24 +578,62 @@ export function buildEvalCell(
     s.event({ type: "error", message: "Model call failed after 3 retries", detail: "503 Service Unavailable" });
     s.runEnd("error");
     return s.finalize();
-  } else {
-    s.call({
-      prompt: 1310,
-      tool: { name: "bash", args: { command: envType === "vm" ? "cd /workspace && python -m pytest -q" : "ls -la" } },
-    });
+  } else if (c.check.type === "isolation" && PROBES[c.id]) {
+    const p = PROBES[c.id];
+    s.call({ prompt: 1240, text: p.say, tool: { name: "bash", args: { command: p.command } } });
     s.tool({
-      duration: envType === "vm" ? 1900 : 12,
-      exit: envType === "vm" ? 1 : 0,
-      out: [{ dt: 10, text: envType === "vm" ? `${R}F${X}\n${R}1 failed${X} in 0.04s\n` : "total 8\n-rw-r--r-- 1 agent 120 config.ini\n" }],
+      duration: p.net ? 5040 : 40,
+      exit: p.exit,
+      out: [{ dt: p.net ? 5010 : 20, stream: "stderr", text: p.stderr }],
+      net: p.net ? [{ dt: 30, url: p.net.url, decision: "deny", reason: p.net.reason }] : undefined,
+    });
+    s.call({ prompt: 1420, cached: 1240, text: p.report });
+  } else if (envType === "vm" && code) {
+    const rel = code.path.replace("/workspace/", "");
+    const testName = code.failing.split("::")[1];
+    s.call({ prompt: 1310, text: "Running the tests first.", tool: { name: "bash", args: { command: "cd /workspace && python -m pytest -q" } } });
+    s.tool({
+      duration: 1900,
+      exit: 1,
+      out: [
+        { dt: 900, text: `${R}F${X}${G}.${X}                                                                       [100%]\n` },
+        { dt: 1850, text: `${R}FAILED${X} ${code.failing} - ${code.error}\n${R}1 failed${X}, ${G}1 passed${X} in 0.06s\n` },
+      ],
+    });
+    s.call({ prompt: 1540, cached: 1310, text: `\`${testName}\` fails. Reading \`${rel}\`.`, tool: { name: "read", args: { path: code.path } } });
+    s.tool({ duration: 30, out: [{ dt: 12, text: numbered(code.before) }] });
+    s.call({
+      prompt: 1810,
+      cached: 1540,
+      genTps: 19.6,
+      tool: { name: "write", args: { path: code.path, content: code.after } },
+    });
+    s.tool({ duration: 48, out: [{ dt: 20, text: `Wrote ${code.after.length} bytes to ${code.path}` }], files: [{ path: code.path, content: code.after }] });
+    s.call({ prompt: 2150, cached: 1810, tool: { name: "bash", args: { command: "cd /workspace && python -m pytest -q" } } });
+    s.tool({
+      duration: 1700,
+      exit: outcome === "pass" ? 0 : 1,
+      out:
+        outcome === "pass"
+          ? [{ dt: 1650, text: `${G}..${X}                                                                       [100%]\n${G}2 passed${X} in 0.05s\n` }]
+          : [{ dt: 1650, text: `${R}F${X}${G}.${X}                                                                       [100%]\n${R}FAILED${X} ${code.failing}\n${R}1 failed${X}, ${G}1 passed${X} in 0.06s\n` }],
     });
     s.call({
-      prompt: 1702,
-      cached: 1310,
+      prompt: 2290,
+      cached: 2150,
       text:
         outcome === "pass"
-          ? "Done. The change is in place and the check passes."
-          : "I updated the function but I'm not sure the edge cases are covered.",
+          ? `Fixed \`${rel}\`; both tests pass.`
+          : `I changed \`${rel}\`, but \`${testName}\` still fails. I'm out of ideas for this one.`,
     });
+  } else {
+    s.call({ prompt: 1180, tool: { name: "bash", args: { command: "ls -la /workspace" } } });
+    s.tool({ duration: 12, out: [{ dt: 6, text: setup.length ? Object.entries(files).map(([p, t]) => `-rw-r--r-- 1 agent agent ${String(t.length).padStart(5)} ${p.replace("/workspace/", "")}`).join("\n") + "\n" : "total 0\n" }] });
+    // a fail writes the right content to the wrong name, which the file check catches
+    const out = outcome === "pass" ? "/workspace/out.txt" : "/workspace/output.txt";
+    s.call({ prompt: 1290, cached: 1180, tool: { name: "write", args: { path: out, content: "done\n" } } });
+    s.tool({ duration: 9, out: [{ dt: 4, text: `Wrote 5 bytes to ${out}` }], files: [{ path: out, content: "done\n" }] });
+    s.call({ prompt: 1360, cached: 1290, text: `Wrote \`${out.replace("/workspace/", "")}\`.` });
   }
   s.runEnd("done");
   return s.finalize();
