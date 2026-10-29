@@ -9,6 +9,7 @@ import { after, before, test } from "node:test";
 import type { ModelInfo, TraceEvent } from "@terrarium/shared";
 import { EnvManager } from "../envs/manager.ts";
 import { simDriver } from "../envs/sim/driver.ts";
+import { SimRuntime } from "../envs/sim/runtime.ts";
 import { FileViews } from "../files.ts";
 import { Hub } from "../hub.ts";
 import { Gateway } from "../inference/gateway.ts";
@@ -82,9 +83,17 @@ test("agent loop: tools, file diffs, repair, context, resume, time travel", asyn
   const env = await envs.create({ name: "t", type: "sim" });
   const s = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
   assert.equal(s.maxOutputTokens, 2048);
+  let kills = 0;
+  const kill = SimRuntime.prototype.killAgentProcesses;
+  SimRuntime.prototype.killAgentProcesses = async function () {
+    kills++;
+    return kill.call(this);
+  };
   const out = await sessions.run(s.id, "Make hello.py print hello.", { maxTurns: 10 });
+  SimRuntime.prototype.killAgentProcesses = kill;
   assert.equal(out.reason, "done", out.error);
   assert.equal(out.finalText, "Done: hello.py prints hello.");
+  assert.equal(kills, 1, "the run's end kills what the agent left running (review 1, #4)");
 
   const types = events.map((e) => e.type);
   assert.equal(types[0], "user_message");

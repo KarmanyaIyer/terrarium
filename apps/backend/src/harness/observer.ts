@@ -16,6 +16,14 @@ export const MAX_CAPTURE_BYTES = 2 * 1024 * 1024;
 const BASELINE_CAPTURE_BYTES = 32 * 1024 * 1024;
 const BASELINE_CAPTURE_FILES = 2000;
 const MAX_DIFF_CHARS = 1024 * 1024;
+const CAPTURE_BATCH = 200;
+
+interface Capture {
+  sha: string | null;
+  text: string | null;
+  binary: boolean;
+  tooLarge: boolean;
+}
 
 export function isBinary(data: Uint8Array): boolean {
   if (data.subarray(0, 8192).includes(0)) return true;
@@ -59,15 +67,15 @@ export class FsObserver {
     if (has) return;
     this.saveManifest(m, this.tracer.lastSeq());
     let bytes = 0;
-    let files = 0;
+    const paths: string[] = [];
     for (const e of m.entries) {
       if (e.type !== "file" || e.heavy || !e.sha256 || e.size > MAX_CAPTURE_BYTES) continue;
       if (this.store.blobs.has(e.sha256)) continue;
-      if (bytes + e.size > BASELINE_CAPTURE_BYTES || files >= BASELINE_CAPTURE_FILES) break;
-      await this.capture(e.path).catch(() => null);
+      if (bytes + e.size > BASELINE_CAPTURE_BYTES || paths.length >= BASELINE_CAPTURE_FILES) break;
+      paths.push(e.path);
       bytes += e.size;
-      files++;
     }
+    for (let i = 0; i < paths.length; i += CAPTURE_BATCH) await this.captureMany(paths.slice(i, i + CAPTURE_BATCH)).catch(() => null);
   }
 
   /** Current manifest; reuses the cached one unless something else (user shell, reset) touched the env. */
@@ -86,13 +94,19 @@ export class FsObserver {
     this.seenVersion = this.envs.version(this.envId);
   }
 
-  /** Read a file (root view), store it as a blob; returns sha or null when binary/too large/unreadable. */
-  private async capture(path: string): Promise<{ sha: string | null; text: string | null; binary: boolean; tooLarge: boolean }> {
-    const r = await this.runtime.readFile(path, { maxBytes: MAX_CAPTURE_BYTES, as: "root" });
-    if (r.truncated) return { sha: null, text: null, binary: false, tooLarge: true };
-    const binary = isBinary(r.data);
-    const sha = this.store.blobs.put(r.data);
-    return { sha, text: binary ? null : Buffer.from(r.data).toString("utf8"), binary, tooLarge: false };
+  /**
+   * Read files (root view, one guest round trip), store each as a blob. Per path: sha and text, or binary /
+   * too large, or null when unreadable (deleted again, or not a regular file any more).
+   */
+  private async captureMany(paths: string[]): Promise<(Capture | null)[]> {
+    const results = await this.runtime.readFiles(paths, { maxBytes: MAX_CAPTURE_BYTES, as: "root" });
+    return results.map((r) => {
+      if (r instanceof Error) return null;
+      if (r.truncated) return { sha: null, text: null, binary: false, tooLarge: true };
+      const binary = isBinary(r.data);
+      const sha = this.store.blobs.put(r.data);
+      return { sha, text: binary ? null : Buffer.from(r.data).toString("utf8"), binary, tooLarge: false };
+    });
   }
 
   private saveManifest(m: Manifest, seq: number): void {
@@ -112,11 +126,18 @@ export class FsObserver {
     this.accept(after);
     const changes = diffManifests(before, after);
     if (!changes.length) return [];
+    const heavy = new Set(after.entries.filter((e) => e.heavy).map((e) => e.path));
+    const wanted = changes.filter((c) => c.after?.type === "file" && !heavy.has(c.path) && (c.after.size ?? 0) <= MAX_CAPTURE_BYTES).map((c) => c.path);
+    const captured = new Map<string, Capture | null>();
+    for (let i = 0; i < wanted.length; i += CAPTURE_BATCH) {
+      const batch = wanted.slice(i, i + CAPTURE_BATCH);
+      const got = await this.captureMany(batch).catch(() => batch.map(() => null));
+      batch.forEach((p, j) => captured.set(p, got[j] ?? null));
+    }
     for (const c of changes) {
       this.changedPaths.add(c.path);
       if (c.after?.type !== "file" && c.before?.type !== "file") continue;
-      const entryHeavy = after.entries.find((e) => e.path === c.path)?.heavy;
-      if (entryHeavy) continue;
+      if (heavy.has(c.path)) continue;
       let oldText: string | null = "";
       if (c.before?.type === "file") {
         oldText = c.before.sha256 ? this.store.blobs.getText(c.before.sha256) : null;
@@ -128,20 +149,17 @@ export class FsObserver {
           c.tooLarge = true;
           continue;
         }
-        try {
-          const cap = await this.capture(c.path);
-          if (cap.tooLarge) {
-            c.tooLarge = true;
-            continue;
-          }
-          if (cap.binary) {
-            c.binary = true;
-            continue;
-          }
-          newText = cap.text;
-        } catch {
-          continue; // deleted again or unreadable between manifest and read
+        const cap = captured.get(c.path);
+        if (!cap) continue; // deleted again or unreadable between manifest and read
+        if (cap.tooLarge) {
+          c.tooLarge = true;
+          continue;
         }
+        if (cap.binary) {
+          c.binary = true;
+          continue;
+        }
+        newText = cap.text;
       }
       if (oldText === null || newText === null) continue;
       const patch = createTwoFilesPatch(`a${c.path}`, `b${c.path}`, oldText, newText, undefined, undefined, { context: 3 });

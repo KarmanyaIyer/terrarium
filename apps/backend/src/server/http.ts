@@ -278,7 +278,13 @@ export function createApiServer(app: App): ApiServer {
       if (!m) continue;
       pathMatched = true;
       if (route.method !== req.method) continue;
-      match = { route, params: m.slice(1).map((p) => decodeURIComponent(p)) };
+      let params: string[];
+      try {
+        params = m.slice(1).map((p) => decodeURIComponent(p));
+      } catch {
+        return sendJson(res, 400, { error: "malformed percent-escape in path" }, origin);
+      }
+      match = { route, params };
       break;
     }
     if (!match) return sendJson(res, pathMatched ? 405 : 404, { error: pathMatched ? "method not allowed" : "not found" }, origin);

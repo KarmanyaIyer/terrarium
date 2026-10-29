@@ -1,7 +1,9 @@
-// Host-side HTTP client for sim envs. Every hop: resolve DNS, ask the policy engine (with resolved IPs),
-// connect to the checked IP only (no second lookup, so no DNS rebinding), log the attempt either way.
+// Host-side HTTP client for sim envs. Every hop: ask the policy engine without addresses first (so a name
+// it denies is never looked up: no data leaves in DNS queries, no mDNS for .local), then resolve DNS, ask
+// again with the resolved IPs, connect to the checked IP only (no second lookup, so no DNS rebinding), and
+// log the attempt either way.
 
-import { lookup } from "node:dns/promises";
+import { lookup as dnsLookup } from "node:dns/promises";
 import { request as httpRequest, type IncomingHttpHeaders } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { isIP } from "node:net";
@@ -39,6 +41,10 @@ export class NetDenied extends Error {
 }
 
 const MAX_BODY = 16 * 1024 * 1024;
+
+/** Resolver used after the pre-DNS policy check (injectable for tests). */
+export type ProxyLookup = (host: string) => Promise<string[]>;
+const systemLookup: ProxyLookup = async (host) => (await dnsLookup(host, { all: true, verbatim: true })).map((a) => a.address);
 const HOP_HEADERS = new Set(["host", "connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade", "te", "trailer", "proxy-authorization"]);
 
 function flatHeaders(h: IncomingHttpHeaders): Record<string, string> {
@@ -52,6 +58,7 @@ export async function proxyFetch(
   policy: PolicyModule,
   req: ProxyRequest,
   onAttempt: (a: NetAttempt) => void,
+  lookup: ProxyLookup = systemLookup,
 ): Promise<ProxyResponse> {
   let url = req.url;
   let method = (req.method ?? "GET").toUpperCase();
@@ -59,7 +66,7 @@ export async function proxyFetch(
   const chain: ProxyResponse["redirectChain"] = [];
   const maxRedirects = Math.min(req.maxRedirects ?? 5, 10);
   for (let hop = 0; ; hop++) {
-    const res = await oneHop(mode(), policy, { ...req, url, method, body }, onAttempt);
+    const res = await oneHop(mode(), policy, { ...req, url, method, body }, onAttempt, lookup);
     const location = res.headers.location;
     if (req.followRedirects !== false && res.status >= 300 && res.status < 400 && location && hop < maxRedirects) {
       chain.push({ status: res.status, statusText: res.statusText, headers: res.headers });
@@ -74,7 +81,7 @@ export async function proxyFetch(
   }
 }
 
-async function oneHop(mode: NetworkMode, policy: PolicyModule, req: ProxyRequest & { method: string }, onAttempt: (a: NetAttempt) => void): Promise<ProxyResponse> {
+async function oneHop(mode: NetworkMode, policy: PolicyModule, req: ProxyRequest & { method: string }, onAttempt: (a: NetAttempt) => void, lookup: ProxyLookup): Promise<ProxyResponse> {
   const ts = Date.now();
   const base = { ts, method: req.method, url: req.url };
   let parsed: URL;
@@ -90,18 +97,21 @@ async function oneHop(mode: NetworkMode, policy: PolicyModule, req: ProxyRequest
     onAttempt({ ...attempt, decision: "deny", reason: `scheme ${parsed.protocol} not allowed` });
     throw new NetDenied(req.url, `scheme ${parsed.protocol} not allowed`);
   }
-  // Mode "off" never needs DNS: deny before resolving so no lookup leaves the machine.
-  let ips: string[] = [];
-  if (mode !== "off") {
-    if (isIP(host)) ips = [host];
-    else {
-      try {
-        ips = (await lookup(host, { all: true, verbatim: true })).map((a) => a.address);
-      } catch (err) {
-        const reason = `DNS lookup failed (${(err as NodeJS.ErrnoException).code ?? "error"})`;
-        onAttempt({ ...attempt, decision: "deny", reason });
-        throw new NetDenied(req.url, reason);
-      }
+  // Everything decidable without addresses (mode off, registries host list, internal names and literals,
+  // ports, methods) is decided before resolving, so a denied name never becomes a DNS query.
+  const pre = policy.checkRequest(mode, { method: req.method, url: req.url });
+  if (!pre.allow) {
+    onAttempt({ ...attempt, ...(isIP(host) ? { ip: host } : {}), decision: "deny", reason: pre.reason });
+    throw new NetDenied(req.url, pre.reason);
+  }
+  let ips: string[] = [host];
+  if (!isIP(host)) {
+    try {
+      ips = await lookup(host);
+    } catch (err) {
+      const reason = `DNS lookup failed (${(err as NodeJS.ErrnoException).code ?? "error"})`;
+      onAttempt({ ...attempt, decision: "deny", reason });
+      throw new NetDenied(req.url, reason);
     }
   }
   const verdict = policy.checkRequest(mode, { method: req.method, url: req.url, resolvedIps: ips });

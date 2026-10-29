@@ -130,3 +130,12 @@ test("WebSocket needs the token as a terrarium.<token> subprotocol and an allowe
   assert.deepEqual(got.filter((m) => m.type === "trace").map((m) => m.event.sessionId), ["s-sub"]);
   good.socket!.close();
 });
+
+test("a malformed percent-escape in a path parameter is a 400, not a crash (review 1, #8)", async () => {
+  for (const path of ["/api/envs/%E0%A4%A", "/api/envs/%", "/api/envs/%zz/start"]) {
+    const r = await req(path, { method: path.endsWith("start") ? "POST" : "GET", headers: auth });
+    assert.equal(r.status, 400, path);
+    assert.match(JSON.parse(r.body).error, /percent-escape/);
+  }
+  assert.equal((await req("/api/envs", { headers: auth })).status, 200, "the server is still up");
+});
