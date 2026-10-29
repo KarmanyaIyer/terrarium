@@ -562,9 +562,10 @@ export async function loadNet(envId: Id, limit = get().netLimit[envId] ?? NET_LI
   const b = get().backend;
   if (!b) return;
   try {
-    const entries = await b.getNet(envId, limit);
+    const ask = Math.min(limit + 1, NET_LIMIT_MAX);
+    const entries = await b.getNet(envId, ask);
     set((s) => {
-      const { rows, capped } = mergeNetPage(s.net[envId] ?? [], entries, limit);
+      const { rows, capped } = mergeNetPage(s.net[envId] ?? [], entries, limit, ask === limit);
       return {
         net: { ...s.net, [envId]: rows },
         netLimit: { ...s.netLimit, [envId]: limit },

@@ -479,12 +479,13 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
   const running = session.status === "running";
   const model = models.find((m) => m.id === session.modelId);
 
-  // Raising the cap helps only when the cap set the limit; the backend keeps it 1,024 under the window.
-  const nextCap = Math.min(cap * 2, window - 1024);
+  // Raising the cap helps only when the cap set the limit; at most half the window, so the prompt keeps the rest.
+  const nextCap = Math.min(cap * 2, Math.floor(window / 2));
   const canRaiseCap = !byWindow && nextCap > cap && nextCap > session.maxOutputTokens;
-  // When the window set it, a bigger window is the remedy (Continue also compacts older turns first).
+  // When the window set it, or the cap can't grow inside this window, a bigger window is the remedy (Continue also
+  // compacts older turns first).
   const nextWindow = CONTEXT_CHOICES.find((c) => c > window && (!model || c <= model.nativeContext));
-  const canRaiseWindow = byWindow && nextWindow != null && session.contextWindow <= window;
+  const canRaiseWindow = (byWindow || !canRaiseCap) && nextWindow != null && session.contextWindow <= window;
   const windowFit = canRaiseWindow && model && !model.loaded ? fitLabel(estimate(model, nextWindow, sample, memBudget, models), sample?.system.freeBytes) : null;
   const thinkingAte = session.thinking && reasoning != null && gen != null && gen > 0 && reasoning >= gen * 0.8;
 

@@ -19,9 +19,12 @@ export const latestAttempt = (e: NetEntry) => e.lastTs ?? e.ts;
  * but not in the page stays only when it is newer than the page's oldest row (it arrived during the fetch) or the page
  * holds every row; an older one would sit under a band of rows nobody fetched, a hole under the "latest N" chip. A
  * shown copy with a later attempt than the fetched one wins.
+ * `got` answers a request for limit + 1 rows: the extra row only says older rows exist. At the backend's cap (atCap)
+ * no extra row can be asked for, so a full page may have left rows out.
  */
-export function mergeNetPage(shown: NetEntry[], page: NetEntry[], limit: number): { rows: NetEntry[]; capped: boolean } {
-  const capped = page.length >= limit;
+export function mergeNetPage(shown: NetEntry[], got: NetEntry[], limit: number, atCap = false): { rows: NetEntry[]; capped: boolean } {
+  const capped = got.length > limit || (atCap && got.length >= limit);
+  const page = got.slice(0, limit);
   let oldest = Infinity;
   for (const x of page) oldest = Math.min(oldest, latestAttempt(x));
   const fetched = new Map(page.map((x) => [x.id, x]));

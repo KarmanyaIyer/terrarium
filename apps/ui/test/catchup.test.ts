@@ -14,14 +14,20 @@ const ids = (rows: NetEntry[]) => rows.map((r) => r.id);
 
 test("net log: more than the limit arrived while disconnected, so the old rows give way to the fetched latest N", () => {
   const shown = range(1, 10); // before the disconnect
-  const page = range(101, 150).reverse(); // newest 50 now (the backend sends newest first); rows 11..100 aren't fetched
+  const page = range(100, 150).reverse(); // newest 50 + 1 extra (the backend sends newest first); rows 11..99 aren't fetched
   const { rows, capped } = mergeNetPage(shown, page, 50);
   assert.equal(capped, true);
   assert.deepEqual(ids(rows), ids(range(101, 150)), "no rows 1-10 left above a missing 11-100 band");
 });
 
+test("net log: exactly `limit` rows back means that is every row; at the backend's cap a full page may not be", () => {
+  const all = range(1, 50).reverse();
+  assert.equal(mergeNetPage([], all, 50).capped, false);
+  assert.equal(mergeNetPage([], all, 50, true).capped, true);
+});
+
 test("net log: a row that arrived during the fetch stays, and an uncapped page keeps everything", () => {
-  const page = range(101, 150).reverse();
+  const page = range(100, 150).reverse();
   const during = row(151);
   assert.deepEqual(ids(mergeNetPage([...range(1, 10), during], page, 50).rows), ids([...range(101, 150), during]));
   const all = range(1, 20).reverse();
