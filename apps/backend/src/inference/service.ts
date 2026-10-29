@@ -21,7 +21,7 @@ export class InferenceService {
   private mutex = new KeyedMutex();
   private statusCache: { at: number; value: OmlxStatus } | null = null;
   /** max_context_window last pushed to oMLX per model. */
-  private pushedWindow = new Map<string, number>();
+  private pushedWindow = new Map<string, { window: number; maxOutput: number }>();
 
   constructor(opts: { store: Store; hub: Hub; modelsDir: string; venvDir: string; omlxDataDir: string }) {
     this.store = opts.store;
@@ -99,13 +99,14 @@ export class InferenceService {
     await this.omlx.stop();
   }
 
-  settingsFor(model: ModelInfo, window: number): OmlxModelSettings {
+  settingsFor(model: ModelInfo, window: number, maxOutput = 0): OmlxModelSettings {
     return {
       // Text-only loading is verified for Qwen3.5 (oMLX reports 2.3 GB vs 3.0 GB). Gemma 4 "unified" and the
       // Prism Bonsai packs only load correctly through oMLX's VLM path, so they keep auto-detection.
       ...(model.family === "qwen3.5" ? { model_type_override: "llm" as const } : {}),
       max_context_window: window,
-      max_tokens: Math.max(model.defaultMaxOutput, 8192),
+      // Server-side cap; each request still sends its own max_tokens (our budget), which must not exceed this.
+      max_tokens: Math.max(model.defaultMaxOutput, maxOutput, 8192),
       temperature: model.sampling.temperature,
       top_p: model.sampling.topP,
       top_k: model.sampling.topK,
@@ -114,15 +115,15 @@ export class InferenceService {
   }
 
   /** Starts oMLX if needed and makes sure the model accepts `window` tokens. oMLX loads on first request. */
-  async ensureModel(id: string, window: number): Promise<void> {
+  async ensureModel(id: string, window: number, maxOutput = 0): Promise<void> {
     await this.mutex.run(`model:${id}`, async () => {
       await this.omlx.ensureStarted();
-      const pushed = this.pushedWindow.get(id) ?? 0;
-      if (pushed >= window) return;
+      const pushed = this.pushedWindow.get(id);
+      if (pushed && pushed.window >= window && pushed.maxOutput >= maxOutput) return;
       const model = await this.model(id);
       if (!model) throw new Error(`model not found: ${id}`);
-      const target = Math.max(window, model.defaultContext);
-      await this.omlx.applySettings(id, this.settingsFor(model, target));
+      const target = { window: Math.max(window, pushed?.window ?? 0, model.defaultContext), maxOutput: Math.max(maxOutput, pushed?.maxOutput ?? 0) };
+      await this.omlx.applySettings(id, this.settingsFor(model, target.window, target.maxOutput));
       this.pushedWindow.set(id, target);
     });
   }
@@ -156,7 +157,7 @@ export class InferenceService {
     if (!model) throw new Error(`model not found: ${id}`);
     if (this.omlx.isReady()) {
       await this.omlx.applySettings(id, this.settingsFor(model, model.defaultContext)).catch((err) => log.warn("apply settings failed", err));
-      this.pushedWindow.set(id, model.defaultContext);
+      this.pushedWindow.set(id, { window: model.defaultContext, maxOutput: 0 });
     }
     await this.broadcastModels();
     return model;
