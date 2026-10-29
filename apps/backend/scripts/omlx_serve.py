@@ -60,6 +60,39 @@ class AllowlistMiddleware:
 server.app.add_middleware(AllowlistMiddleware)
 print(f"terrarium: oMLX allowlist active ({len(ALLOWED)} routes)", flush=True)
 
+
+def _exit_with_parent() -> None:
+    """The backend holds our stdin open and never writes to it. EOF, or being reparented, means it died without
+    stopping us: shut down (SIGTERM, then a hard exit) rather than keep a model loaded with nobody to stop it."""
+    import select
+    import signal
+    import threading
+    import time
+
+    parent = os.getppid()
+
+    def watch() -> None:
+        fd = sys.stdin.fileno()
+        while True:
+            ready, _, _ = select.select([fd], [], [], 2.0)
+            if ready and not os.read(fd, 4096):
+                break
+            if os.getppid() != parent:
+                break
+        try:
+            print("terrarium: backend is gone; stopping oMLX", flush=True)
+        except OSError:
+            pass  # stdout is a pipe to the backend too: usually broken by now
+        os.kill(os.getpid(), signal.SIGTERM)
+        time.sleep(10)
+        os._exit(1)
+
+    threading.Thread(target=watch, name="terrarium-parent-watch", daemon=True).start()
+
+
+if os.environ.get("TERRARIUM_PARENT_STDIN") == "1":
+    _exit_with_parent()
+
 if __name__ == "__main__":
     sys.argv = ["omlx", "serve", *sys.argv[1:]]
     main()

@@ -137,10 +137,13 @@ export class OmlxManager {
     ];
     this.setState({ status: "starting", detail: undefined, memoryCeilingBytes: budgetGb * 1e9 });
     const logFile = createWriteStream(join(this.opts.dataDir, "server.log"), { flags: "a" });
+    // stdin is a pipe we never write to: when this process dies, however it dies, oMLX reads EOF and exits
+    // (omlx_serve.py) instead of keeping a model loaded with nobody to stop it.
     const child = spawn(join(this.opts.venvDir, "bin", "python"), args, {
-      stdio: ["ignore", "pipe", "pipe"],
-      env: { PATH: "/usr/bin:/bin:/usr/sbin:/sbin", HOME: process.env.HOME ?? "", TMPDIR: process.env.TMPDIR ?? "/tmp", LANG: "en_US.UTF-8", OMLX_HEADLESS: "1", HF_HUB_OFFLINE: "1", HF_HUB_DISABLE_TELEMETRY: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { PATH: "/usr/bin:/bin:/usr/sbin:/sbin", HOME: process.env.HOME ?? "", TMPDIR: process.env.TMPDIR ?? "/tmp", LANG: "en_US.UTF-8", OMLX_HEADLESS: "1", HF_HUB_OFFLINE: "1", HF_HUB_DISABLE_TELEMETRY: "1", TERRARIUM_PARENT_STDIN: "1" },
     });
+    child.stdin?.on("error", () => {}); // EPIPE once oMLX is gone; nothing is ever written
     this.child = child;
     const onData = (buf: Buffer) => {
       logFile.write(buf);

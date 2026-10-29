@@ -2,6 +2,8 @@
 //
 // The backend prints exactly one stdout line, {"port":N}, once it listens on 127.0.0.1. It exits on
 // SIGTERM and on stdin EOF (TERRARIUM_PARENT_STDIN=1), so we keep its stdin open for its whole life.
+// It runs in its own process group with oMLX and the VM runners; whenever it exits, that group is killed,
+// so a crashed backend never leaves oMLX holding a model in memory.
 
 use std::collections::VecDeque;
 use std::fs::{self, File};
@@ -17,6 +19,8 @@ use serde::{Deserialize, Serialize};
 
 const STDERR_TAIL_LINES: usize = 200;
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(120);
+/** After an unexpected backend exit, its children get this long after SIGTERM before SIGKILL. */
+const ORPHAN_GRACE: Duration = Duration::from_secs(3);
 
 #[derive(Clone, Serialize)]
 pub struct BackendInfo {
@@ -104,7 +108,10 @@ fn random_token() -> std::io::Result<String> {
 
 struct Inner {
     status: Status,
+    /// The backend process, while it runs.
     pid: Option<i32>,
+    /// Its process group (oMLX, VM runners), until we have seen it empty. Outlives `pid`.
+    pgid: Option<i32>,
     stdin: Option<ChildStdin>,
     stopping: bool,
     generation: u64,
@@ -123,6 +130,7 @@ impl Backend {
             inner: Mutex::new(Inner {
                 status: Status::Starting,
                 pid: None,
+                pgid: None,
                 stdin: None,
                 stopping: false,
                 generation: 0,
@@ -226,6 +234,7 @@ impl Backend {
         {
             let mut g = self.inner.lock().unwrap();
             g.pid = Some(pid);
+            g.pgid = Some(pid);
             g.stdin = child.stdin.take();
         }
 
@@ -262,23 +271,21 @@ impl Backend {
         let tok = token.clone();
         thread::spawn(move || {
             let mut lines = BufReader::new(stdout).lines();
-            match lines.next() {
-                Some(Ok(line)) => {
-                    let port = serde_json::from_str::<serde_json::Value>(&line)
-                        .ok()
-                        .and_then(|v| v.get("port").and_then(|p| p.as_u64()));
-                    match port {
-                        Some(port) => {
-                            let mut g = me.inner.lock().unwrap();
-                            if g.generation == generation && matches!(g.status, Status::Starting) {
-                                g.status = Status::Ready(BackendInfo { url: format!("http://127.0.0.1:{port}"), token: tok });
-                                me.cv.notify_all();
-                            }
+            // EOF before the handshake: the exit watcher reports it with the stderr tail.
+            if let Some(Ok(line)) = lines.next() {
+                let port = serde_json::from_str::<serde_json::Value>(&line)
+                    .ok()
+                    .and_then(|v| v.get("port").and_then(|p| p.as_u64()));
+                match port {
+                    Some(port) => {
+                        let mut g = me.inner.lock().unwrap();
+                        if g.generation == generation && matches!(g.status, Status::Starting) {
+                            g.status = Status::Ready(BackendInfo { url: format!("http://127.0.0.1:{port}"), token: tok });
+                            me.cv.notify_all();
                         }
-                        None => me.fail(generation, format!("Unexpected handshake line: {line}")),
                     }
+                    None => me.fail(generation, format!("Unexpected handshake line: {line}")),
                 }
-                _ => {} // EOF before the handshake: the exit watcher reports it with the stderr tail.
             }
             for _ in lines {} // keep draining so the backend never blocks on a full pipe
         });
@@ -288,19 +295,25 @@ impl Backend {
             let status = child.wait();
             // Let the stderr reader catch the last lines before we build the tail.
             thread::sleep(Duration::from_millis(150));
-            {
+            let stopping = {
                 let mut g = me.inner.lock().unwrap();
                 if g.generation == generation {
                     g.pid = None;
                     g.stdin = None;
                 }
                 me.cv.notify_all();
-            }
+                g.stopping
+            };
             let why = match status {
                 Ok(s) => format!("Backend exited ({s})"),
                 Err(e) => format!("Backend wait failed: {e}"),
             };
             me.fail(generation, why);
+            // A crash (not our stop) leaves oMLX and VM runners behind: ask them to exit, then kill what remains.
+            // stop() reaps the group itself.
+            if !stopping {
+                me.reap_group(pid, ORPHAN_GRACE);
+            }
         });
 
         let me = self.clone();
@@ -318,35 +331,59 @@ impl Backend {
     }
 
     /// SIGTERM plus stdin EOF, wait up to `timeout` for a clean exit (VMs save, oMLX stops), then SIGKILL
-    /// the whole process group. Safe to call more than once.
+    /// the whole process group, also when the backend already exited on its own. Safe to call more than once.
     pub fn stop(&self, timeout: Duration) {
         let mut g = self.inner.lock().unwrap();
         g.stopping = true;
         g.stdin = None;
-        let Some(pid) = g.pid else { return };
-        unsafe { libc::kill(pid, libc::SIGTERM) };
-        let deadline = Instant::now() + timeout;
-        while g.pid == Some(pid) {
-            let now = Instant::now();
-            if now >= deadline {
-                break;
+        let pgid = g.pgid;
+        if let Some(pid) = g.pid {
+            unsafe { libc::kill(pid, libc::SIGTERM) };
+            let deadline = Instant::now() + timeout;
+            while g.pid == Some(pid) {
+                let now = Instant::now();
+                if now >= deadline {
+                    break;
+                }
+                g = self.cv.wait_timeout(g, deadline - now).unwrap().0;
             }
-            g = self.cv.wait_timeout(g, deadline - now).unwrap().0;
+            if g.pid == Some(pid) {
+                eprintln!("terrarium: backend did not exit within {} s; killing its process group", timeout.as_secs());
+            }
         }
-        let clean = g.pid != Some(pid);
         drop(g);
-        if !clean {
-            eprintln!("terrarium: backend did not exit within {} s; killing its process group", timeout.as_secs());
-        }
         // Anything left in the group (stuck backend, or children it failed to stop) gets SIGKILL.
-        unsafe {
-            if libc::kill(-pid, 0) == 0 {
-                libc::kill(-pid, libc::SIGKILL);
-            }
+        if let Some(pgid) = pgid {
+            self.reap_group(pgid, Duration::ZERO);
         }
-        if !clean {
-            let g = self.inner.lock().unwrap();
-            let _ = self.cv.wait_timeout_while(g, Duration::from_secs(2), |g| g.pid == Some(pid));
+        let g = self.inner.lock().unwrap();
+        let _ = self.cv.wait_timeout_while(g, Duration::from_secs(2), |g| g.pid.is_some() && g.pid == pgid);
+    }
+
+    /// Kill process group `pgid`: SIGTERM and up to `grace` to exit (skipped when zero), then SIGKILL, then wait
+    /// for it to be gone. Once it is, forget it, so a later stop can't signal a group that reused the id.
+    fn reap_group(&self, pgid: i32, grace: Duration) {
+        let alive = || unsafe { libc::kill(-pgid, 0) == 0 };
+        let wait_gone = |limit: Duration| {
+            let deadline = Instant::now() + limit;
+            while alive() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(50));
+            }
+        };
+        if alive() && !grace.is_zero() {
+            eprintln!("terrarium: backend exited; stopping what it left running (process group {pgid})");
+            unsafe { libc::kill(-pgid, libc::SIGTERM) };
+            wait_gone(grace);
+        }
+        if alive() {
+            unsafe { libc::kill(-pgid, libc::SIGKILL) };
+            wait_gone(Duration::from_secs(2));
+        }
+        if !alive() {
+            let mut g = self.inner.lock().unwrap();
+            if g.pgid == Some(pgid) {
+                g.pgid = None;
+            }
         }
     }
 }
