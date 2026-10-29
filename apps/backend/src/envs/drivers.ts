@@ -15,9 +15,15 @@ export async function loadDrivers(): Promise<Record<EnvType, EnvDriver | null>> 
   const url = new URL(`./vm/driver${SRC_EXT}`, import.meta.url);
   if (existsSync(fileURLToPath(url))) {
     try {
-      const mod = (await import(url.href)) as { vmDriver?: EnvDriver };
+      const mod = (await import(url.href)) as { vmDriver?: EnvDriver; reapOrphanVmms?: () => Promise<number> };
       vm = mod.vmDriver ?? null;
       if (!vm) log.warn("src/envs/vm/driver exists but does not export vmDriver");
+      // Before any VM boots: VMs a previous backend left running (it was SIGKILLed with the app shell) are stopped.
+      const reaped = await mod.reapOrphanVmms?.().catch((err) => {
+        log.warn("reaping VMs left by a previous backend failed", err);
+        return 0;
+      });
+      if (reaped) log.warn(`stopped ${reaped} VM(s) left running by a previous backend`);
     } catch (err) {
       log.warn("failed to load VM driver", err);
     }

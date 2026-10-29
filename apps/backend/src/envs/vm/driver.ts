@@ -26,6 +26,7 @@ import type {
 import {
   GONDOLIN_VERSION,
   type ImageInfo,
+  dataDir,
   ensurePrivateDir,
   gondolin,
   krunRunnerPresent,
@@ -37,8 +38,13 @@ import {
 import { REPO_DIR } from "../../config.ts";
 import type { LookupAll } from "../../policy/index.ts";
 import { SYNTHETIC_DNS_IPV4, VmNetwork } from "./net.ts";
+import { type VmmGuard, guardWhenSpawned, reapOrphanVmms as reapIn } from "./reaper.ts";
 
 const execFileP = promisify(execFile);
+const vmmRunDir = (): string => path.join(dataDir(), "run", "vmm");
+
+/** At backend startup: stop VMMs a backend that died without stopping its VMs left running. */
+export const reapOrphanVmms = (): Promise<number> => reapIn(vmmRunDir());
 
 const LIBEXEC = "/usr/local/libexec/terrarium";
 const RUN = `${LIBEXEC}/run`;
@@ -257,6 +263,8 @@ export class VmRuntime implements EnvRuntime {
   readonly outbox: MemoryProvider | null = null;
 
   private vm: VM | null = null;
+  /** Stops the VMM if this backend dies without stopping it (reaper.ts). */
+  private guard: Promise<VmmGuard | null> | null = null;
   private readonly net: VmNetwork;
   private meta: EnvMeta;
   private chain: Promise<unknown> = Promise.resolve();
@@ -365,9 +373,16 @@ export class VmRuntime implements EnvRuntime {
     };
   }
 
+  private async disarmGuard(): Promise<void> {
+    const guard = this.guard;
+    this.guard = null;
+    (await guard?.catch(() => null))?.disarm();
+  }
+
   private async boot(): Promise<void> {
     if (this.isRunning()) return;
     this.vm = null;
+    await this.disarmGuard(); // a VMM that exited by itself
     if (!fs.existsSync(this.diskPath)) throw new Error(`env ${this.id} has no disk (${this.diskPath})`);
     const image = this.image();
     const g = await gondolin();
@@ -383,7 +398,10 @@ export class VmRuntime implements EnvRuntime {
       try {
         vm = await g.VM.create(await this.vmOptions(backend, image));
         this.net.watchStack(vm);
-        await vm.start();
+        const created = vm;
+        const starting = vm.start();
+        this.guard = guardWhenSpawned(() => created.getHostPid(), starting, this.id, vmmRunDir());
+        await starting;
         await this.ensureHelpers(vm);
         this.vm = vm;
         this.lastCpu = null;
@@ -396,6 +414,7 @@ export class VmRuntime implements EnvRuntime {
       } catch (err) {
         fallbackError = err instanceof Error ? err.message : String(err);
         if (vm) await vm.close().catch(() => {});
+        await this.disarmGuard();
       }
     }
     throw new Error(`env ${this.id} failed to boot: ${fallbackError}`);
@@ -442,7 +461,11 @@ export class VmRuntime implements EnvRuntime {
         // best effort
       }
     }
-    await vm.close();
+    try {
+      await vm.close();
+    } finally {
+      await this.disarmGuard();
+    }
   }
 
   // ---------- exec ----------
