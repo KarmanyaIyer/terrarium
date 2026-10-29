@@ -80,7 +80,7 @@ test("override is sent verbatim, recorded once per change, and dropped on a harn
   const s = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
 
   assert.equal((await sessions.run(s.id, "one")).reason, "done");
-  assert.equal(fake.requests.at(-1).messages[0].content, TERRARIUM_PROMPT + SIM_NOTE);
+  assert.equal(fake.requests.at(-1)!.messages[0].content, TERRARIUM_PROMPT + SIM_NOTE);
   await sessions.run(s.id, "two");
   let recorded = promptEvents(s.id);
   assert.equal(recorded.length, 1, "an unchanged prompt is recorded once");
@@ -89,7 +89,7 @@ test("override is sent verbatim, recorded once per change, and dropped on a harn
   const updated = await sessions.update(s.id, { systemPrompt: "Custom prompt." });
   assert.equal(updated.customPrompt, true);
   await sessions.run(s.id, "three");
-  assert.equal(fake.requests.at(-1).messages[0].content, "Custom prompt.");
+  assert.equal(fake.requests.at(-1)!.messages[0].content, "Custom prompt.");
   recorded = promptEvents(s.id);
   assert.equal(recorded.length, 2);
   assert.ok(recorded[1].type === "system_prompt" && recorded[1].source === "session" && recorded[1].text === "Custom prompt.");
@@ -116,7 +116,7 @@ test("a saved profile default replaces the built-in prompt; the sim note is stil
     assert.equal(view.text, "Saved default." + SIM_NOTE);
     assert.equal(view.source, "profile");
     await sessions.run(s.id, "go");
-    assert.equal(fake.requests.at(-1).messages[0].content, "Saved default." + SIM_NOTE);
+    assert.equal(fake.requests.at(-1)!.messages[0].content, "Saved default." + SIM_NOTE);
   } finally {
     prompts = {};
   }
