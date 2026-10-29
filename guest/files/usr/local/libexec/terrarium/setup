@@ -1,0 +1,38 @@
+#!/bin/sh
+# Terrarium guest setup (root). Runs on every boot from rootfs-init-extra.sh, and from the host driver
+# after it updates the helpers of an env made from an older image. Idempotent; never exits non-zero.
+L=/usr/local/libexec/terrarium
+if ! grep -q '^agent:' /etc/passwd; then
+  addgroup -g 1000 agent
+  adduser -D -u 1000 -G agent -h /home/agent -s /bin/bash -g agent agent
+fi
+# Hidden-test runner: its own uid, so neither the agent nor candidate code can write its results.
+if ! grep -q '^grader:' /etc/passwd; then
+  addgroup -g 1001 grader
+  adduser -D -H -u 1001 -G grader -h /nonexistent -s /sbin/nologin -g grader grader
+fi
+# Locked root password: nothing in the guest can `su` to root.
+sed -i 's/^root:[^:]*:/root:*:/' /etc/shadow
+mkdir -p /workspace /home/agent
+chown agent:agent /workspace /home/agent
+chmod 0755 /workspace /home/agent
+mkdir -p /var/lib/terrarium /run/terrarium/exec /run/terrarium/xfer /var/lib/terrarium-grade
+chown root:root /var/lib/terrarium /run/terrarium /run/terrarium/exec /run/terrarium/xfer /var/lib/terrarium-grade
+chmod 0700 /var/lib/terrarium /run/terrarium /run/terrarium/exec /run/terrarium/xfer
+chmod 0711 /var/lib/terrarium-grade
+chown -R root:root "$L"
+chmod 0755 "$L"
+for f in run kill kill-user put setup; do chmod 0755 "$L/$f"; done
+chmod 0644 "$L"/*.py "$L/VERSION"
+# Per-exec cgroups let `kill` end everything an exec started, including setsid escapes.
+if ! grep -q ' /sys/fs/cgroup cgroup2 ' /proc/mounts; then
+  mkdir -p /sys/fs/cgroup
+  mount -t cgroup2 cgroup2 /sys/fs/cgroup
+fi
+mkdir -p /sys/fs/cgroup/terrarium
+# Write dirty pages within ~2 s, so a host crash or kill loses little of the root disk.
+echo 200 > /proc/sys/vm/dirty_expire_centisecs
+echo 100 > /proc/sys/vm/dirty_writeback_centisecs
+# pip as agent installs to ~/.local instead of failing on PEP 668.
+rm -f /usr/lib/python3*/EXTERNALLY-MANAGED
+exit 0

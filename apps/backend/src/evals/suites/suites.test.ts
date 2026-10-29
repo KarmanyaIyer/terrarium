@@ -54,7 +54,7 @@ describe("hand-written suites", async () => {
         assert.ok(c.title.length <= 40, `${c.id} title too long for a matrix row`);
         if (id === "speed") assert.equal(c.check.type, "speed");
         if (id === "coding") {
-          assert.equal(c.check.type, "command");
+          assert.deepEqual(c.check, { type: "tests", file: "/grader/test_hidden.py", timeoutSec: 120 });
           assert.ok(c.hiddenFiles?.length, `${c.id} needs hidden tests`);
           assert.ok(c.setupFiles?.some((f) => f.path.startsWith("/workspace/tests/")), `${c.id} needs visible tests`);
         }

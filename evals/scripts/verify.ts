@@ -3,9 +3,9 @@
 // sim:  fresh just-bash env with the case's setupFiles; the check must FAIL before the
 //       reference runs (file/command checks), then evals/reference/<suite>/<case>.sh runs and
 //       the check must PASS. For answer checks the script's stdout is graded as the reply.
-// vm:   setupFiles + hiddenFiles in evals/.scratch/vm/<case>/ on the host (python3), with
-//       /workspace and /grader rewritten to those dirs. The check must FAIL on the starter
-//       code and PASS after evals/reference/<suite>/<case>/ is copied over the workspace.
+// vm:   setupFiles + hiddenFiles in evals/.scratch/vm/<case>/ on the host, graded by the VM's test
+//       grader in --local mode (grade_local.ts). The check must FAIL on the starter code and on the
+//       os._exit(0) cheat, and PASS after evals/reference/<suite>/<case>/ is copied over the workspace.
 // none: answer cases are graded against evals/reference/<suite>.json (reference replies).
 //
 // Run: node evals/scripts/verify.ts [suiteId...]
@@ -15,6 +15,8 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { EvalCase, EvalCheck, EvalSuite } from "../../packages/shared/src/index.ts";
+import { finalChoice, finalNumber } from "../../apps/backend/src/evals/graders.ts";
+import { gradeLocal, hostPython } from "./grade_local.ts";
 
 const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = resolve(EVALS, "..");
@@ -30,13 +32,11 @@ function gradeAnswer(check: Extract<EvalCheck, { type: "answer" }>, reply: strin
     case "regex":
       return new RegExp(check.expected).test(text);
     case "number": {
-      const nums = text.replace(/(\d),(?=\d{3}\b)/g, "$1").match(/-?\d+(?:\.\d+)?/g);
-      if (!nums) return false;
-      const got = Number(nums[nums.length - 1]);
-      return Math.abs(got - Number(check.expected)) <= (check.tolerance ?? 1e-9);
+      const got = finalNumber(text);
+      return got !== null && Math.abs(got - Number(check.expected)) <= (check.tolerance ?? 1e-9);
     }
     case "choice":
-      return (text.match(/\b([A-D])\b/)?.[1] ?? "") === check.expected;
+      return finalChoice(text) === check.expected;
   }
   return false;
 }
@@ -65,7 +65,8 @@ async function runSim(suite: EvalSuite, c: EvalCase): Promise<Outcome> {
 }
 
 function runVm(suite: EvalSuite, c: EvalCase): Outcome {
-  if (c.check.type !== "command") return { ok: false, detail: "vm cases must use command checks" };
+  const check = c.check;
+  if (check.type !== "tests") return { ok: false, detail: "vm cases must use tests checks" };
   const base = join(EVALS, ".scratch", "vm", c.id);
   rmSync(base, { recursive: true, force: true });
   const ws = join(base, "workspace");
@@ -80,24 +81,29 @@ function runVm(suite: EvalSuite, c: EvalCase): Outcome {
   put(c.setupFiles);
   put(c.hiddenFiles);
   mkdirSync(ws, { recursive: true });
-  const cmd = c.check.command
-    .replaceAll("/workspace", ws)
-    .replaceAll("/grader/", `${gr}/`)
-    .replace(/\btimeout \d+ /g, "");
-  const run = () => spawnSync("sh", ["-c", cmd], { encoding: "utf8", timeout: 120_000 });
-  const before = run();
-  if (before.status === 0) return { ok: false, detail: "hidden tests pass on the starter code" };
+  const tests = check.file.replace(/^\/grader\//, `${gr}/`);
+  const before = gradeLocal(ws, tests, check.timeoutSec);
+  if (before.pass) return { ok: false, detail: "hidden tests pass on the starter code" };
   const ref = join(EVALS, "reference", suite.id, c.id);
   if (!existsSync(ref)) return { ok: false, detail: `missing reference dir ${ref}` };
   cpSync(ref, ws, { recursive: true });
-  const after = run();
-  if (after.status !== 0) return { ok: false, detail: `reference fails: ${(after.stdout + after.stderr).slice(-600)}` };
+  const after = gradeLocal(ws, tests, check.timeoutSec);
+  if (!after.pass) return { ok: false, detail: `reference fails: ${after.detail.slice(-600)}` };
+  // The grading-integrity cheat from review 1: exiting 0 at import must not pass.
+  const first = readdirSync(ref, { recursive: true, withFileTypes: true }).find((d) => d.isFile() && d.name.endsWith(".py"));
+  if (first) {
+    const target = join(ws, join(first.parentPath, first.name).slice(ref.length + 1));
+    writeFileSync(target, `import os\nos._exit(0)\n${readFileSync(target, "utf8")}`);
+    const cheat = gradeLocal(ws, tests, check.timeoutSec);
+    cpSync(ref, ws, { recursive: true });
+    if (cheat.pass) return { ok: false, detail: "os._exit(0) cheat passes" };
+  }
   if (existsSync(join(ws, "tests"))) {
     const env = { ...process.env, PYTHONDONTWRITEBYTECODE: "1" };
-    const visible = spawnSync("python3", ["-m", "unittest", "discover", "-s", "tests"], { cwd: ws, encoding: "utf8", env, timeout: 120_000 });
+    const visible = spawnSync(hostPython(), ["-m", "unittest", "discover", "-s", "tests"], { cwd: ws, encoding: "utf8", env, timeout: 120_000 });
     if (visible.status !== 0) return { ok: false, detail: `visible tests fail on reference: ${visible.stderr.slice(-400)}` };
   }
-  return { ok: true, detail: "" };
+  return { ok: true, detail: `${after.passed}/${after.expected}` };
 }
 
 function runNone(suite: EvalSuite, c: EvalCase): Outcome {

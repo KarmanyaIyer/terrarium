@@ -9,7 +9,7 @@ const NETWORK = new Set(["off", "registries", "web"]);
 const CHECKS_FOR: Record<string, Set<EvalCheck["type"]>> = {
   none: new Set(["answer", "speed"]),
   sim: new Set(["answer", "file", "command", "isolation"]),
-  vm: new Set(["answer", "file", "command", "isolation"]),
+  vm: new Set(["answer", "file", "command", "tests", "isolation"]),
 };
 
 function filePathProblems(files: { path: string; content: string }[] | undefined, root: string, label: string): string[] {
@@ -54,6 +54,12 @@ function checkProblems(c: EvalCase): string[] {
       for (const m of check.command.matchAll(/\/grader\/[\w./-]+/g)) {
         if (!hidden.has(m[0])) out.push(`command uses ${m[0]} but no hiddenFile provides it`);
       }
+      break;
+    }
+    case "tests": {
+      if (typeof check.file !== "string" || !check.file.startsWith("/grader/")) out.push("tests.file must be under /grader/");
+      else if (!(c.hiddenFiles ?? []).some((f) => f.path === check.file)) out.push(`tests uses ${check.file} but no hiddenFile provides it`);
+      if (check.timeoutSec !== undefined && !(check.timeoutSec > 0 && check.timeoutSec <= 1800)) out.push("tests.timeoutSec must be in (0, 1800]");
       break;
     }
     case "file":

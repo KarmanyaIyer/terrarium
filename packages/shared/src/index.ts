@@ -361,6 +361,9 @@ export interface ResourceSample {
 export type EvalCheck =
   | { type: "answer"; mode: "exact" | "regex" | "number" | "choice"; expected: string; tolerance?: number }
   | { type: "command"; command: string } // run in env as grader after agent finishes; pass on exit 0
+  // Hidden unittest file run by the VM's test grader: candidate code and tests in separate processes and
+  // uids; passes only when every counted test passed.
+  | { type: "tests"; file: string; timeoutSec?: number }
   | { type: "file"; path: string; equals?: string; contains?: string }
   | { type: "isolation"; probe: string } // pass when the probe's escape attempt is blocked
   | { type: "speed" };

@@ -6,7 +6,7 @@ import { after, before, test } from "node:test";
 import { policy } from "../envs/policy.ts";
 import type { EnvRuntime } from "../envs/types.ts";
 import { Store } from "../store/db.ts";
-import { gradeAnswer, gradeIsolation, gradeSpeed } from "./graders.ts";
+import { gradeAnswer, gradeIsolation, gradeSpeed, gradeTests } from "./graders.ts";
 
 let dir: string;
 let store: Store;
@@ -36,8 +36,61 @@ function runtimeWith(files: Record<string, string>): EnvRuntime {
   return {
     manifest: async () => ({ root: "/workspace", takenAt: 0, truncated: false, entries: Object.entries(files).map(([path, c]) => ({ path, type: "file", size: c.length, mode: 0o644, mtimeNs: "0", ino: 0, nlink: 1 })) }),
     readFile: async (p: string) => ({ data: new TextEncoder().encode(files[p]), size: files[p].length, truncated: false }),
+    readFiles: async (ps: string[]) => ps.map((p) => ({ data: new TextEncoder().encode(files[p]), size: files[p].length, truncated: false })),
   } as unknown as EnvRuntime;
 }
+
+test("answer parsing prefers an explicit answer over stray letters and numbers (review 1, #10)", () => {
+  const choice = (reply: string) => gradeAnswer({ type: "answer", mode: "choice", expected: "C" }, reply);
+  assert.equal(choice("A careful reading of the passage shows the answer is C").pass, true);
+  assert.equal(choice("B looks tempting, but A ignores the premise.\nAnswer: C").pass, true);
+  assert.equal(choice("The answer is a bit subtle.\n\n(C)").pass, true);
+  assert.equal(choice("**C**").pass, true);
+  assert.equal(choice("Answer: B").pass, false);
+  const num = (reply: string, expected = "348") => gradeAnswer({ type: "answer", mode: "number", expected }, reply);
+  assert.equal(num("348 units (computed over 2 files)").pass, true);
+  assert.equal(num("Step 1: 12 boxes of 29\nAnswer: 348\nchecked against 2 files").pass, true);
+  assert.equal(num("After 3 days she has 42", "42").pass, true);
+  assert.equal(num("so \\boxed{1,234}", "1234").pass, true);
+  assert.equal(num("Answer: $1,234.50", "1234.5").pass, true);
+});
+
+/** Fake VM runtime whose grade.py run prints `summary` and exits `code`; records every exec. */
+function gradingRuntime(summary: object, code: number) {
+  const calls: string[] = [];
+  const rt = {
+    type: "vm",
+    killAgentProcesses: async () => void calls.push("kill-agent"),
+    writeFile: async (p: string) => void calls.push(`write ${p}`),
+    exec: async (cmd: string) => {
+      calls.push(cmd);
+      return cmd.includes("grade.py") ? { exitCode: code, stdout: `${JSON.stringify(summary)}\n`, stderr: "", timedOut: false } : { exitCode: 0, stdout: "", stderr: "", timedOut: false };
+    },
+  } as unknown as EnvRuntime;
+  return { rt, calls };
+}
+
+test("tests checks pass only on full counts from the grader, after agent processes are killed (review 1, #1)", async () => {
+  const check = { type: "tests" as const, file: "/grader/test_hidden.py" };
+  const hidden = [{ path: "/grader/test_hidden.py", content: "x" }];
+  const ok = gradingRuntime({ pass: true, passed: 3, expected: 3, failures: [] }, 0);
+  const g = await gradeTests(ok.rt, check, hidden);
+  assert.equal(g.pass, true, g.detail);
+  assert.match(g.detail, /^3\/3 hidden tests passed/);
+  assert.equal(ok.calls[0], "kill-agent", "agent processes are killed before anything else");
+  assert.ok(ok.calls.some((c) => c.includes("chown root:1001")), "hidden files are root:grader");
+  for (const [summary, code] of [
+    [{ pass: true, passed: 2, expected: 3 }, 0],
+    [{ pass: true, passed: 0, expected: 0 }, 0],
+    [{ pass: true, passed: 3, expected: 3, error: "test runner exited 1" }, 0],
+    [{ pass: true, passed: 3, expected: 3 }, 1],
+  ] as const) {
+    const r = await gradeTests(gradingRuntime(summary, code).rt, check, hidden);
+    assert.equal(r.pass, false, JSON.stringify(summary));
+  }
+  const garbled = await gradeTests({ ...gradingRuntime({}, 0).rt, exec: async () => ({ exitCode: 0, stdout: "PASS\n", stderr: "", timedOut: false }) } as unknown as EnvRuntime, check, hidden);
+  assert.equal(garbled.pass, false);
+});
 
 function net(session: string, url: string, host: string, ip: string | null, decision: "allow" | "deny") {
   store.run("INSERT INTO net_log (id, env_id, session_id, ts, method, url, host, ip, decision, reason) VALUES (?, 'e', ?, ?, 'GET', ?, ?, ?, ?, 'x')", `${session}${url}${decision}`, session, Date.now(), url, host, ip, decision);

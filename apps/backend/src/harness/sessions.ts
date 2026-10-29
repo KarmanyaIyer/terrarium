@@ -673,7 +673,11 @@ export class SessionManager {
       } catch (err) {
         log.warn(`saving transcript failed for ${id}`, err);
       }
-      if (envId && runtime) this.envs.release(envId, id);
+      if (envId && runtime) {
+        // Nothing the agent started outlives its run (setsid daemons included).
+        await runtime.killAgentProcesses().catch((err) => log.warn(`killing agent processes after run failed for ${id}`, err));
+        this.envs.release(envId, id);
+      }
       tracer.emit({ type: "run_end", reason });
       this.setStatus(id, "idle");
     }

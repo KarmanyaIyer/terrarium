@@ -1,11 +1,21 @@
 #!/bin/sh
 # Terrarium exec killer (root). usage: kill <exec-id>
-# SIGKILLs the process group and session started by `run <exec-id>`, if that process is still the same one.
+# Kills the cgroup of `run <exec-id>` (every process it started, including ones that called setsid), then
+# its process group and session as a fallback for guests without cgroup2.
 set -u
 id="$1"
 case "$id" in
   "" | *[!A-Za-z0-9_-]*) exit 2 ;;
 esac
+for g in /sys/fs/cgroup/terrarium/*-"$id"; do
+  [ -d "$g" ] || continue
+  echo 1 2>/dev/null > "$g/cgroup.kill"
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    grep -q '^populated 0' "$g/cgroup.events" 2>/dev/null && break
+    sleep 0.1
+  done
+  rmdir "$g" 2>/dev/null
+done
 f="/run/terrarium/exec/$id"
 [ -f "$f" ] || exit 0
 read -r p st < "$f" || exit 0

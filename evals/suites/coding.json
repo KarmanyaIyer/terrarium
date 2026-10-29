@@ -1,7 +1,7 @@
 {
   "id": "coding",
   "title": "Coding with tests",
-  "description": "Fix bugs, implement to a spec, refactor; graded by hidden unittest files in the VM.",
+  "description": "Fix bugs, implement to a spec, refactor; graded by hidden unittest files in the VM (candidate code and tests in separate processes).",
   "envType": "vm",
   "cases": [
     {
@@ -26,8 +26,9 @@
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900
@@ -54,8 +55,9 @@
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900
@@ -82,8 +84,9 @@
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900
@@ -110,8 +113,9 @@
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900
@@ -138,8 +142,9 @@
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900
@@ -162,12 +167,13 @@
       "hiddenFiles": [
         {
           "path": "/grader/test_hidden.py",
-          "content": "import ast\nimport inspect\nimport os\nimport sys\nimport textwrap\nimport unittest\n\nsys.path.insert(0, os.getcwd())\nimport report  # noqa: E402\n\nROWS = [\n    {\"date\": \"2025-01-03\", \"region\": \"West\", \"product\": \"Widget\", \"units\": 3, \"price\": 4.25},\n    {\"date\": \"2025-01-09\", \"region\": \"East\", \"product\": \"Gadget\", \"units\": 1, \"price\": 7.8},\n    {\"date\": \"2025-02-11\", \"region\": \"West\", \"product\": \"Gadget\", \"units\": 2, \"price\": 7.8},\n    {\"date\": \"2025-02-12\", \"region\": \"South\", \"product\": \"Gizmo\", \"units\": 5, \"price\": 1.5},\n    {\"date\": \"2025-03-01\", \"region\": \"North\", \"product\": \"Gizmo\", \"units\": 5, \"price\": 1.5},\n    {\"date\": \"2025-03-02\", \"region\": \"East\", \"product\": \"Widget\", \"units\": 0, \"price\": 4.25},\n]\n\n\nclass Hidden(unittest.TestCase):\n    def test_behavior(self):\n        self.assertEqual(report.revenue_by_region(ROWS), [(\"West\", 28.35), (\"East\", 7.8), (\"North\", 7.5), (\"South\", 7.5)])\n        self.assertEqual(report.revenue_by_product(ROWS), [(\"Gadget\", 23.4), (\"Gizmo\", 15.0), (\"Widget\", 12.75)])\n        self.assertEqual(report.revenue_by_month(ROWS), [(\"2025-02\", 23.1), (\"2025-01\", 20.55), (\"2025-03\", 7.5)])\n        self.assertEqual(report.revenue_by_region([]), [])\n\n    def test_helper(self):\n        self.assertTrue(callable(getattr(report, \"_summarize\", None)), \"_summarize missing\")\n        got = report._summarize(ROWS, lambda r: \"big\" if r[\"units\"] > 2 else \"small\")\n        self.assertEqual(got, [(\"big\", 27.75), (\"small\", 23.4)])\n\n    def test_wrappers_use_helper(self):\n        for fn in (report.revenue_by_region, report.revenue_by_product, report.revenue_by_month):\n            tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))\n            nodes = list(ast.walk(tree))\n            calls = [n for n in nodes if isinstance(n, ast.Call) and getattr(n.func, \"id\", None) == \"_summarize\"]\n            loops = [n for n in nodes if isinstance(n, (ast.For, ast.While, ast.comprehension))]\n            self.assertTrue(calls, fn.__name__ + \" does not call _summarize\")\n            self.assertFalse(loops, fn.__name__ + \" still has its own loop\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          "content": "import ast\nimport os\nimport sys\nimport unittest\n\nsys.path.insert(0, os.getcwd())\nimport report  # noqa: E402\nimport terrarium_grading  # noqa: E402\n\nROWS = [\n    {\"date\": \"2025-01-03\", \"region\": \"West\", \"product\": \"Widget\", \"units\": 3, \"price\": 4.25},\n    {\"date\": \"2025-01-09\", \"region\": \"East\", \"product\": \"Gadget\", \"units\": 1, \"price\": 7.8},\n    {\"date\": \"2025-02-11\", \"region\": \"West\", \"product\": \"Gadget\", \"units\": 2, \"price\": 7.8},\n    {\"date\": \"2025-02-12\", \"region\": \"South\", \"product\": \"Gizmo\", \"units\": 5, \"price\": 1.5},\n    {\"date\": \"2025-03-01\", \"region\": \"North\", \"product\": \"Gizmo\", \"units\": 5, \"price\": 1.5},\n    {\"date\": \"2025-03-02\", \"region\": \"East\", \"product\": \"Widget\", \"units\": 0, \"price\": 4.25},\n]\n\n\nclass Hidden(unittest.TestCase):\n    def test_behavior(self):\n        self.assertEqual(report.revenue_by_region(ROWS), [(\"West\", 28.35), (\"East\", 7.8), (\"North\", 7.5), (\"South\", 7.5)])\n        self.assertEqual(report.revenue_by_product(ROWS), [(\"Gadget\", 23.4), (\"Gizmo\", 15.0), (\"Widget\", 12.75)])\n        self.assertEqual(report.revenue_by_month(ROWS), [(\"2025-02\", 23.1), (\"2025-01\", 20.55), (\"2025-03\", 7.5)])\n        self.assertEqual(report.revenue_by_region([]), [])\n\n    def test_helper(self):\n        self.assertTrue(callable(getattr(report, \"_summarize\", None)), \"_summarize missing\")\n        got = report._summarize(ROWS, lambda r: \"big\" if r[\"units\"] > 2 else \"small\")\n        self.assertEqual(got, [(\"big\", 27.75), (\"small\", 23.4)])\n\n    def test_wrappers_use_helper(self):\n        # The candidate's code runs in another process: read its source from the graded workspace copy.\n        with open(os.path.join(terrarium_grading.workspace, \"report.py\"), encoding=\"utf-8\") as f:\n            defs = {n.name: n for n in ast.walk(ast.parse(f.read())) if isinstance(n, ast.FunctionDef)}\n        for name in (\"revenue_by_region\", \"revenue_by_product\", \"revenue_by_month\"):\n            self.assertIn(name, defs, name + \" is not defined with def in report.py\")\n            nodes = list(ast.walk(defs[name]))\n            calls = [n for n in nodes if isinstance(n, ast.Call) and getattr(n.func, \"id\", None) == \"_summarize\"]\n            loops = [n for n in nodes if isinstance(n, (ast.For, ast.While, ast.comprehension))]\n            self.assertTrue(calls, name + \" does not call _summarize\")\n            self.assertFalse(loops, name + \" still has its own loop\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900
@@ -194,8 +200,9 @@
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900
@@ -230,8 +237,9 @@
         }
       ],
       "check": {
-        "type": "command",
-        "command": "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+        "type": "tests",
+        "file": "/grader/test_hidden.py",
+        "timeoutSec": 120
       },
       "maxTurns": 20,
       "timeoutSec": 900

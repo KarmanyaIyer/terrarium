@@ -1,8 +1,9 @@
 #!/bin/sh
-# Terrarium exec launcher (root). usage: run <exec-id> <agent|root> <cwd> <argv...>
-# Records "pid starttime" for the exec so `kill <exec-id>` can end its whole session, then becomes a new
-# session leader (same pid) and, for agent, drops to uid 1000 with no_new_privs and an empty capability
-# bounding set, so setuid binaries can't regain root.
+# Terrarium exec launcher (root). usage: run <exec-id> <agent|grader|root> <cwd> <argv...>
+# Puts the exec in its own cgroup (/sys/fs/cgroup/terrarium/<who>-<exec-id>) and records "pid starttime",
+# so `kill <exec-id>` can end it and everything it started, setsid escapes included. Then becomes a new
+# session leader (same pid) and, for agent (uid 1000) or grader (uid 1001), drops privileges with
+# no_new_privs and an empty capability bounding set, so setuid binaries can't regain root.
 set -u
 id="$1"
 who="$2"
@@ -12,7 +13,7 @@ case "$id" in
   "" | *[!A-Za-z0-9_-]*) echo "terrarium-run: bad exec id" >&2; exit 126 ;;
 esac
 case "$who" in
-  agent | root) ;;
+  agent | grader | root) ;;
   *) echo "terrarium-run: bad user $who" >&2; exit 126 ;;
 esac
 cd -- "$dir" 2>/dev/null || { echo "cd: $dir: No such directory" >&2; exit 127; }
@@ -33,9 +34,25 @@ for f in "$d"/*; do
   if [ -z "$p" ] || [ "$(starttime "$p")" != "$st" ]; then rm -f "$f"; fi
 done
 printf '%s %s\n' "$$" "$(starttime $$)" > "$d/$id"
-umask 022
-if [ "$who" = agent ]; then
-  exec /usr/bin/setsid /bin/setpriv --reuid=1000 --regid=1000 --init-groups --no-new-privs \
-    --inh-caps=-all --bounding-set=-all -- "$@"
+cg=/sys/fs/cgroup/terrarium
+if [ -d "$cg" ]; then
+  # Finished execs leave empty cgroups; rmdir only removes empty ones. A concurrent run may remove ours
+  # between mkdir and the move, so retry.
+  for g in "$cg"/*-*; do
+    [ -d "$g" ] && rmdir "$g" 2>/dev/null
+  done
+  for _ in 1 2 3; do
+    mkdir -p "$cg/$who-$id" 2>/dev/null
+    echo "$$" 2>/dev/null > "$cg/$who-$id/cgroup.procs" && break
+  done
 fi
+umask 022
+case "$who" in
+  agent)
+    exec /usr/bin/setsid /bin/setpriv --reuid=1000 --regid=1000 --init-groups --no-new-privs \
+      --inh-caps=-all --bounding-set=-all -- "$@" ;;
+  grader)
+    exec /usr/bin/setsid /bin/setpriv --reuid=1001 --regid=1001 --clear-groups --no-new-privs \
+      --inh-caps=-all --bounding-set=-all -- "$@" ;;
+esac
 exec /usr/bin/setsid "$@"

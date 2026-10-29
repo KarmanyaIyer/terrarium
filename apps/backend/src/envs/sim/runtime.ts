@@ -311,6 +311,15 @@ export class SimRuntime implements EnvRuntime {
     return { data: new Uint8Array(Buffer.from(r.data, "base64")), size: r.size, truncated: r.truncated };
   }
 
+  async readFiles(paths: string[], opts: { maxBytes?: number } = {}): Promise<(ReadResult | Error)[]> {
+    const out: (ReadResult | Error)[] = [];
+    for (const p of paths) out.push(await this.readFile(p, opts).catch((err: unknown) => (err instanceof Error ? err : new Error(String(err)))));
+    return out;
+  }
+
+  /** just-bash runs nothing in the background once an exec returns. */
+  async killAgentProcesses(): Promise<void> {}
+
   async writeFile(path: string, data: string | Uint8Array, opts: { as?: "agent" | "root"; mode?: number } = {}): Promise<void> {
     await this.start();
     const bytes = typeof data === "string" ? Buffer.from(data, "utf8") : Buffer.from(data);

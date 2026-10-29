@@ -14,6 +14,8 @@ import { isPublicIp } from "../../policy/index.ts";
 import type { EnvRuntime, NetAttempt } from "../types.ts";
 import { dataDir } from "./gondolin.ts";
 import { type VmRuntime, createVmDriver } from "./driver.ts";
+import { REPO_DIR } from "../../config.ts";
+import { gradeTests } from "../../evals/graders.ts";
 
 const enabled = process.env.TERRARIUM_VM_TESTS === "1";
 const driver = createVmDriver();
@@ -340,14 +342,122 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     }
   });
 
+  test("setsid escapes don't survive an exec timeout, an abort or the end of a run (review 1, #4)", async () => {
+    const liveAgent = async () => (await sh(a, "ps -e -o ruid=,stat=,args= | awk '$1 == 1000 && $2 !~ /^Z/' | grep -v 'ps -e' | wc -l", { as: "root" })).out;
+    const loop = "setsid sh -c 'while :; do sleep 1; done' > /dev/null 2>&1 < /dev/null &";
+    const t = await a.exec(`${loop} sleep 30`, { timeoutMs: 1500 });
+    assert.equal(t.timedOut, true);
+    await new Promise((r) => setTimeout(r, 300));
+    assert.equal(await liveAgent(), "0", "the setsid loop died with the timed-out exec");
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 800);
+    assert.equal((await a.exec(`${loop} sleep 30`, { signal: ac.signal })).exitCode, 130);
+    await new Promise((r) => setTimeout(r, 300));
+    assert.equal(await liveAgent(), "0", "the setsid loop died with the aborted exec");
+    // A daemon started by an exec that returned normally keeps running until the run ends.
+    assert.equal((await a.exec(loop)).exitCode, 0);
+    await new Promise((r) => setTimeout(r, 300));
+    assert.notEqual(await liveAgent(), "0");
+    await a.killAgentProcesses();
+    assert.equal(await liveAgent(), "0", "killAgentProcesses ends every uid 1000 process");
+    // A fork loop can't outrun it: the exec cgroup is killed as a whole.
+    await a.exec("setsid sh -c 'while :; do (sleep 5 &) ; done' > /dev/null 2>&1 < /dev/null &");
+    await new Promise((r) => setTimeout(r, 500));
+    await a.killAgentProcesses();
+    assert.equal(await liveAgent(), "0");
+  });
+
+  test("host reads never follow the agent into a FIFO, a device or a root-only path (review 1, #2)", async () => {
+    await sh(a, "cd /workspace && mkfifo fifo && ln -sfn /dev/zero zero && ln -sfn /etc etcdir && ln -sfn /grader-secret secret && echo ok > plain");
+    await sh(a, "mkdir -p /grader-secret && echo SECRET > /grader-secret/x && chmod 700 /grader-secret", { as: "root" });
+    const t0 = performance.now();
+    await assert.rejects(a.readFile("/workspace/fifo"), /not a regular file/);
+    await assert.rejects(a.readFile("/workspace/fifo", { as: "agent" }), /not a regular file/);
+    await assert.rejects(a.readFile("/workspace/zero"), /symlinks are not followed/);
+    await assert.rejects(a.readFile("/workspace/zero", { as: "agent" }), /not a regular file/);
+    await assert.rejects(a.readFile("/workspace/etcdir/passwd"), /symlinks are not followed|Not a directory/);
+    await assert.rejects(a.readFile("/workspace/secret/x"), /symlinks are not followed|Not a directory/);
+    await assert.rejects(a.readFile("/workspace/secret/x", { as: "agent" }), /Permission denied/);
+    assert.ok(performance.now() - t0 < 10_000, "no read blocked");
+    // Swapping a file for a FIFO or /dev/zero between the manifest and the read changes nothing.
+    await sh(a, "cd /workspace && rm plain && ln -s /dev/zero plain");
+    await assert.rejects(a.readFile("/workspace/plain"), /symlinks are not followed/);
+    const batch = await a.readFiles(["/workspace/fifo", "/workspace/nope", "/etc/hostname"]);
+    assert.ok(batch[0] instanceof Error && batch[1] instanceof Error && !(batch[2] instanceof Error));
+    const capped = await a.readFile("/etc/services", { maxBytes: 100 });
+    assert.equal(capped.data.length, 100);
+    assert.equal(capped.truncated, true);
+    await sh(a, "rm -rf /grader-secret", { as: "root" });
+    await sh(a, "cd /workspace && rm -f fifo zero etcdir secret plain");
+  });
+
+  test("grading: hidden tests run as grader, candidate as agent, cheats fail (review 1, #1)", async () => {
+    const caseDir = path.join(REPO_DIR, "evals/cases/coding/fix-pagination");
+    const starter = fs.readFileSync(path.join(caseDir, "workspace/pagination.py"), "utf8");
+    const reference = fs.readFileSync(path.join(REPO_DIR, "evals/reference/coding/fix-pagination/pagination.py"), "utf8");
+    const hidden = [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(caseDir, "grader/test_hidden.py"), "utf8") }];
+    const check = { type: "tests" as const, file: "/grader/test_hidden.py", timeoutSec: 60 };
+    const grade = async (solution: string, before = "") => {
+      await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+      await a.writeFile("/workspace/pagination.py", solution, { as: "agent" });
+      if (before) await a.exec(before);
+      return gradeTests(a, check, hidden);
+    };
+    const t0 = performance.now();
+    const ok = await grade(reference);
+    const gradeMs = Math.round(performance.now() - t0);
+    assert.equal(ok.pass, true, ok.detail);
+    assert.match(ok.detail, /^3\/3 hidden tests passed/);
+    assert.equal((await grade(starter)).pass, false);
+    // The trivial cheat from the review, and exiting from inside a test.
+    assert.equal((await grade(`import os\nos._exit(0)\n${starter}`)).pass, false);
+    assert.equal((await grade(`import sys\nsys.exit(0)\n${starter}`)).pass, false);
+    // Candidate code (uid 1000) can't read the hidden tests or write the runner's results.
+    const probe = [
+      "import glob, json, os",
+      "out = []",
+      "for p in ['/grader/test_hidden.py']:",
+      "    try: open(p).read(); out.append('READ ' + p)",
+      "    except OSError as e: out.append('denied ' + p)",
+      "for d in glob.glob('/var/lib/terrarium-grade/*/out'):",
+      "    try: open(os.path.join(d, 'results.json'), 'w').write(json.dumps({'expected': 3, 'passed': 3})); out.append('WROTE ' + d)",
+      "    except OSError: out.append('denied ' + d)",
+      "print(' | '.join(out) or 'no grade dirs visible')",
+      "",
+    ].join("\n");
+    const forged = await grade(probe + starter);
+    assert.equal(forged.pass, false, forged.detail);
+    assert.doesNotMatch(forged.detail, /READ |WROTE /);
+    // A daemon the agent left behind waits for grading to start (/grader appears), then swaps in the
+    // reference and forges results. It is killed before the hidden files go in, so neither happens.
+    const daemon = "setsid sh -c 'while [ ! -e /grader ]; do sleep 0.02; done; cp /tmp/.ref /workspace/pagination.py; for i in 1 2 3 4 5 6 7 8 9 10; do for d in /var/lib/terrarium-grade/*/out; do echo 3 > $d/results.json; done; sleep 0.1; done' > /dev/null 2>&1 < /dev/null &";
+    await a.writeFile("/tmp/.ref", reference, { as: "agent" });
+    const raced = await grade(starter, daemon);
+    assert.equal(raced.pass, false, raced.detail);
+    assert.equal((await sh(a, "stat -c '%U:%G %a' /grader /grader/test_hidden.py", { as: "root" })).out, "root:grader 750\nroot:grader 640");
+    assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
+    await sh(a, "rm -rf /workspace/* /workspace/.ref /grader", { as: "root" });
+    record("grading", { gradeMs });
+  });
+
+  test("an env from an older image gets the current helpers and grader user at boot", async () => {
+    await sh(a, "echo stale >> /usr/local/libexec/terrarium/run && rm -f /usr/local/libexec/terrarium/read.py && deluser grader", { as: "root" });
+    assert.notEqual((await sh(a, "id -u grader")).code, 0);
+    await a.stop();
+    await a.start();
+    assert.equal((await sh(a, "id -u grader")).out, "1001");
+    assert.equal((await sh(a, "test -f /usr/local/libexec/terrarium/read.py && echo has-read; grep -c stale /usr/local/libexec/terrarium/run")).out, "has-read\n0");
+    assert.equal((await sh(a, "test -d /sys/fs/cgroup/terrarium && echo cg", { as: "root" })).out, "cg");
+  });
+
   test("guest symlink to a Mac path can't make the host read the Mac file", async () => {
     const macFile = path.join(os.homedir(), ".zshrc");
     await sh(a, `ln -sfn ${macFile} /workspace/evil-abs && ln -sfn ../../../../../../../.. /workspace/evil-rel`);
-    await assert.rejects(a.readFile("/workspace/evil-abs"), /No such file|ENOENT|not found/i);
-    await assert.rejects(a.readFile("/workspace/evil-abs", { as: "agent" }));
+    await assert.rejects(a.readFile("/workspace/evil-abs"), /symlinks are not followed/i);
+    await assert.rejects(a.readFile("/workspace/evil-abs", { as: "agent" }), /No such file|ENOENT|not found/i);
     // Even if the guest creates that path itself, the host gets the guest's file, never the Mac's.
     await sh(a, `mkdir -p ${path.dirname(macFile)} && echo GUEST_FAKE > ${macFile}`, { as: "root" });
-    const viaLink = Buffer.from((await a.readFile("/workspace/evil-abs")).data).toString();
+    const viaLink = Buffer.from((await a.readFile("/workspace/evil-abs", { as: "agent" })).data).toString();
     assert.equal(viaLink, "GUEST_FAKE\n");
     if (fs.existsSync(macFile)) assert.notEqual(fs.readFileSync(macFile, "utf8"), viaLink);
     const m = await a.manifest();

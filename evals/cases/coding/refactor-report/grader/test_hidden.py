@@ -1,12 +1,11 @@
 import ast
-import inspect
 import os
 import sys
-import textwrap
 import unittest
 
 sys.path.insert(0, os.getcwd())
 import report  # noqa: E402
+import terrarium_grading  # noqa: E402
 
 ROWS = [
     {"date": "2025-01-03", "region": "West", "product": "Widget", "units": 3, "price": 4.25},
@@ -31,13 +30,16 @@ class Hidden(unittest.TestCase):
         self.assertEqual(got, [("big", 27.75), ("small", 23.4)])
 
     def test_wrappers_use_helper(self):
-        for fn in (report.revenue_by_region, report.revenue_by_product, report.revenue_by_month):
-            tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))
-            nodes = list(ast.walk(tree))
+        # The candidate's code runs in another process: read its source from the graded workspace copy.
+        with open(os.path.join(terrarium_grading.workspace, "report.py"), encoding="utf-8") as f:
+            defs = {n.name: n for n in ast.walk(ast.parse(f.read())) if isinstance(n, ast.FunctionDef)}
+        for name in ("revenue_by_region", "revenue_by_product", "revenue_by_month"):
+            self.assertIn(name, defs, name + " is not defined with def in report.py")
+            nodes = list(ast.walk(defs[name]))
             calls = [n for n in nodes if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "_summarize"]
             loops = [n for n in nodes if isinstance(n, (ast.For, ast.While, ast.comprehension))]
-            self.assertTrue(calls, fn.__name__ + " does not call _summarize")
-            self.assertFalse(loops, fn.__name__ + " still has its own loop")
+            self.assertTrue(calls, name + " does not call _summarize")
+            self.assertFalse(loops, name + " still has its own loop")
 
 
 if __name__ == "__main__":

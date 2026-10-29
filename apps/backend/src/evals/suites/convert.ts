@@ -12,7 +12,8 @@ export interface DatasetItem {
 }
 
 const HIDDEN_TEST = "/grader/test_hidden.py";
-const CODE_COMMAND = `cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 60 python3 ${HIDDEN_TEST}`;
+// The VM's test grader runs solution.py in its own process; the tests below see it through a proxy.
+const CODE_CHECK = { type: "tests", file: HIDDEN_TEST, timeoutSec: 60 } as const;
 
 function clip(text: string, max: number): string {
   const one = text.replace(/\s+/g, " ").trim();
@@ -22,16 +23,54 @@ function clip(text: string, max: number): string {
 // JSON string literals are valid Python string literals for everything JSON.stringify emits.
 const py = (s: string) => JSON.stringify(s);
 
-function harness(body: string): string {
+// Hidden test module for the grader (guest grade_runner.py). `import solution` resolves to the candidate's
+// module in another process. Dataset test code runs here, in the test process, in a namespace where a name the
+// test doesn't define falls back to the candidate's module (MBPP tests use helpers and data from the
+// reference code), except built-ins and standard-library modules, which always resolve locally.
+function harness(tests: string[], body: string): string {
   return [
-    "import os",
-    "import runpy",
+    "import builtins",
     "import sys",
+    "import unittest",
     "",
-    "sys.path.insert(0, os.getcwd())",
-    'ns = runpy.run_path(os.path.join(os.getcwd(), "solution.py"))',
+    "import solution",
+    "import terrarium_grading",
+    "",
+    "",
+    "class CandidateNames(dict):",
+    "    def __missing__(self, name):",
+    "        if hasattr(builtins, name):",
+    "            raise KeyError(name)",
+    "        if name in getattr(sys, 'stdlib_module_names', ()) or name in sys.builtin_module_names:",
+    "            self[name] = terrarium_grading.stdlib(name)",
+    "            return self[name]",
+    "        try:",
+    "            return getattr(solution, name)",
+    "        except AttributeError:",
+    "            raise KeyError(name)",
+    "",
+    "",
+    `TESTS = ${py(JSON.stringify(tests))}`,
+    "",
+    "",
+    "class Hidden(unittest.TestCase):",
+    "    pass",
+    "",
+    "",
+    "def _case(i, code):",
+    "    def test(self):",
     body,
-    'print("PASS")',
+    "    test.__name__ = 'test_%02d' % i",
+    "    return test",
+    "",
+    "",
+    "import json  # noqa: E402",
+    "",
+    "for _i, _code in enumerate(json.loads(TESTS)):",
+    "    setattr(Hidden, 'test_%02d' % _i, _case(_i, _code))",
+    "",
+    'if __name__ == "__main__":',
+    "    unittest.main()",
     "",
   ].join("\n");
 }
@@ -99,10 +138,21 @@ export function convertHumanEval(buf: Buffer): DatasetItem[] {
         hiddenFiles: [
           {
             path: HIDDEN_TEST,
-            content: harness(`TEST = ${py(rec.test)}\nexec(compile(TEST, "hidden_test.py", "exec"), ns)\nns["check"](ns[${py(rec.entry_point)}])`),
+            // The prompt (dataset code: imports and helpers such as encode_cyclic) runs locally, so the test's
+            // helpers are the dataset's, not the candidate's; only the entry point comes from solution.py.
+            content: harness(
+              [rec.test],
+              [
+                "        ns = {}",
+                `        exec(compile(${py(rec.prompt)}, "prompt.py", "exec"), ns)`,
+                `        ns[${py(rec.entry_point)}] = getattr(solution, ${py(rec.entry_point)})`,
+                '        exec(compile(code, "hidden_test.py", "exec"), ns)',
+                `        ns["check"](ns[${py(rec.entry_point)}])`,
+              ].join("\n"),
+            ),
           },
         ],
-        check: { type: "command", command: CODE_COMMAND },
+        check: CODE_CHECK,
         maxTurns: 15,
         timeoutSec: 600,
       },
@@ -129,7 +179,6 @@ export function convertMbpp(buf: Buffer): DatasetItem[] {
   const recs = JSON.parse(buf.toString("utf8")) as MbppRecord[];
   return recs.map((rec) => {
     const name = mbppEntryPoint(rec);
-    const tests = [...rec.test_imports, ...rec.test_list];
     return {
       reference: { path: "/workspace/solution.py", content: `${rec.code}\n` },
       case: {
@@ -141,10 +190,19 @@ export function convertMbpp(buf: Buffer): DatasetItem[] {
         hiddenFiles: [
           {
             path: HIDDEN_TEST,
-            content: harness(`TESTS = ${py(JSON.stringify(tests))}\nimport json\nfor t in json.loads(TESTS):\n    exec(compile(t, "hidden_test.py", "exec"), ns)`),
+            content: harness(
+              rec.test_list,
+              [
+                "        ns = CandidateNames()",
+                `        for imp in json.loads(${py(JSON.stringify(rec.test_imports))}):`,
+                '            exec(compile(imp, "hidden_test.py", "exec"), {}, ns)',
+                `        ns[${py(name)}] = getattr(solution, ${py(name)})`,
+                '        exec(compile(code, "hidden_test.py", "exec"), {"__builtins__": __builtins__}, ns)',
+              ].join("\n"),
+            ),
           },
         ],
-        check: { type: "command", command: CODE_COMMAND },
+        check: CODE_CHECK,
         maxTurns: 15,
         timeoutSec: 600,
       },

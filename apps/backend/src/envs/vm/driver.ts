@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { StringDecoder } from "node:string_decoder";
 import { promisify } from "node:util";
 import type { EnvFacts, NetworkMode, VmConfig } from "@terrarium/shared";
@@ -34,6 +34,7 @@ import {
   resolveImage,
   rootfsPath,
 } from "./gondolin.ts";
+import { REPO_DIR } from "../../config.ts";
 import type { LookupAll } from "../../policy/index.ts";
 import { SYNTHETIC_DNS_IPV4, VmNetwork } from "./net.ts";
 
@@ -42,9 +43,15 @@ const execFileP = promisify(execFile);
 const LIBEXEC = "/usr/local/libexec/terrarium";
 const RUN = `${LIBEXEC}/run`;
 const KILL = `${LIBEXEC}/kill`;
+const KILL_USER = `${LIBEXEC}/kill-user`;
 const PUT = `${LIBEXEC}/put`;
 const OBSERVER = `${LIBEXEC}/observer.py`;
+const READ = `${LIBEXEC}/read.py`;
 const XFER = "/run/terrarium/xfer";
+/** Host copy of the guest helpers. Envs made from older images get these pushed in at boot. */
+export const HOST_HELPERS_DIR = path.join(REPO_DIR, "guest", "files", "usr", "local", "libexec", "terrarium");
+const READ_TIMEOUT_MS = 30_000;
+const READ_BATCH_BYTES = 64 << 20;
 
 export const DEFAULT_VM_CONFIG: VmConfig = { cpus: 2, memoryMiB: 1024, diskMiB: 4096, backend: "krun" };
 
@@ -122,6 +129,51 @@ function writeJson(file: string, value: unknown): void {
   const tmp = `${file}.tmp-${process.pid}`;
   fs.writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
   fs.renameSync(tmp, file);
+}
+
+let helperCache: { hash: string; files: { name: string; data: Buffer }[] } | null = null;
+
+/** The helper set this backend expects in the guest: every file in the helpers dir, and their sha256 in name order. */
+function hostHelpers(): { hash: string; files: { name: string; data: Buffer }[] } {
+  if (!helperCache) {
+    const names = fs.readdirSync(HOST_HELPERS_DIR).filter((n) => /^[A-Za-z0-9_.-]+$/.test(n) && !n.startsWith(".")).sort();
+    const files = names.filter((n) => fs.statSync(path.join(HOST_HELPERS_DIR, n)).isFile()).map((name) => ({ name, data: fs.readFileSync(path.join(HOST_HELPERS_DIR, name)) }));
+    if (!files.some((f) => f.name === "setup")) throw new Error(`no setup helper in ${HOST_HELPERS_DIR}`);
+    const h = createHash("sha256");
+    for (const f of files) h.update(f.data);
+    helperCache = { hash: h.digest("hex"), files };
+  }
+  return helperCache;
+}
+
+/** Parses read.py output: per path "ok <size> <n>\n<n bytes>" or "err <json>\n". */
+export function parseReadOutput(buf: Buffer, paths: string[]): (ReadResult | Error)[] {
+  const out: (ReadResult | Error)[] = [];
+  let at = 0;
+  for (const p of paths) {
+    const nl = buf.indexOf(10, at);
+    if (nl < 0) {
+      out.push(new Error(`read ${p}: no reply from the guest reader`));
+      continue;
+    }
+    const head = buf.subarray(at, nl).toString("utf8");
+    at = nl + 1;
+    const ok = /^ok (\d+) (\d+)$/.exec(head);
+    if (ok) {
+      const size = Number(ok[1]);
+      const n = Number(ok[2]);
+      const data = new Uint8Array(buf.subarray(at, at + n));
+      at += n;
+      out.push({ data, size, truncated: size > data.length });
+      continue;
+    }
+    let msg = head.replace(/^err /, "");
+    try {
+      msg = String(JSON.parse(msg));
+    } catch {}
+    out.push(new Error(`read ${p}: ${msg}`));
+  }
+  return out;
 }
 
 function cloneFile(src: string, dst: string): void {
@@ -332,8 +384,7 @@ export class VmRuntime implements EnvRuntime {
         vm = await g.VM.create(await this.vmOptions(backend, image));
         this.net.watchStack(vm);
         await vm.start();
-        const probe = await vm.exec(["/usr/bin/id", "-u", "agent"], { env: ROOT_ENV });
-        if (probe.stdout.trim() !== "1000") throw new Error("guest image has no agent user (uid 1000); rebuild with guest/build.sh");
+        await this.ensureHelpers(vm);
         this.vm = vm;
         this.lastCpu = null;
         this.lastBoot = {
@@ -348,6 +399,35 @@ export class VmRuntime implements EnvRuntime {
       }
     }
     throw new Error(`env ${this.id} failed to boot: ${fallbackError}`);
+  }
+
+  /**
+   * Envs keep booting the image they were made from, so an older image can lack helpers, the grader user
+   * or the exec cgroups. Push the host's helper set when the guest's copy hashes differently, then rerun
+   * the guest setup.
+   */
+  private async ensureHelpers(vm: VM): Promise<void> {
+    const want = hostHelpers();
+    const names = want.files.map((f) => f.name).join(" ");
+    const probeScript = `id -u agent; id -u grader; (cd ${LIBEXEC} && cat ${names}) | sha256sum | cut -d" " -f1; [ -d /sys/fs/cgroup/terrarium ] && echo cgroups`;
+    const probe = async () => {
+      const r = await vm.exec(["/bin/sh", "-c", `{ ${probeScript}; } 2>/dev/null; true`], { env: ROOT_ENV, signal: AbortSignal.timeout(15_000) });
+      const lines = r.stdout.split("\n").map((l) => l.trim());
+      return { agent: lines[0] ?? "", grader: lines[1] ?? "", hash: lines[2] ?? "", cgroups: lines.includes("cgroups") };
+    };
+    let got = await probe();
+    if (got.hash !== want.hash) {
+      for (const f of want.files) await vm.fs.writeFile(`${XFER}/helper-${f.name}`, f.data);
+      const install = want.files.map((f) => `mv -f ${XFER}/helper-${f.name} ${LIBEXEC}/${f.name}`).join(" && ");
+      const r = await vm.exec(["/bin/sh", "-c", `mkdir -p ${LIBEXEC} && ${install} && /bin/sh ${LIBEXEC}/setup`], { env: ROOT_ENV, signal: AbortSignal.timeout(30_000) });
+      if (r.exitCode !== 0) throw new Error(`updating guest helpers failed: ${r.stderr.trim() || `exit ${r.exitCode}`}`);
+      got = await probe();
+    } else if (got.grader !== "1001" || !got.cgroups) {
+      await vm.exec(["/bin/sh", `${LIBEXEC}/setup`], { env: ROOT_ENV, signal: AbortSignal.timeout(30_000) });
+      got = await probe();
+    }
+    if (got.agent !== "1000") throw new Error("guest image has no agent user (uid 1000); rebuild with guest/build.sh");
+    if (got.grader !== "1001" || got.hash !== want.hash || !got.cgroups) throw new Error("guest helpers could not be updated (grader user, helpers or exec cgroups missing)");
   }
 
   private async shutdown(): Promise<void> {
@@ -447,37 +527,36 @@ export class VmRuntime implements EnvRuntime {
   // ---------- files ----------
 
   async readFile(p: string, opts: { maxBytes?: number; as?: "agent" | "root" } = {}): Promise<ReadResult> {
+    const [r] = await this.readFiles([p], { ...opts, totalBytes: opts.maxBytes ?? DEFAULT_READ_MAX });
+    if (r instanceof Error) throw r;
+    return r!;
+  }
+
+  /**
+   * Reads through the guest's read.py: as root no symlink in the path is followed, and as either user the
+   * final open is non-blocking and must be a regular file, so a FIFO or device can't stall or flood the host.
+   * Output is capped per file and per batch, and the exec has a deadline.
+   */
+  async readFiles(paths: string[], opts: { maxBytes?: number; as?: "agent" | "root"; totalBytes?: number } = {}): Promise<(ReadResult | Error)[]> {
     const vm = this.requireVm();
+    if (!paths.length) return [];
+    const abs = paths.map((p) => (path.posix.isAbsolute(p) ? p : path.posix.join("/workspace", p)));
     const max = opts.maxBytes ?? DEFAULT_READ_MAX;
-    if (!path.posix.isAbsolute(p)) p = path.posix.join("/workspace", p);
-    if ((opts.as ?? "root") === "agent") {
-      const r = await vm.exec(
-        [RUN, randomBytes(8).toString("hex"), "agent", "/", "/bin/sh", "-c", 'stat -L -c %s -- "$1" && [ -f "$1" ] && exec head -c "$2" -- "$1"', "sh", p, String(max)],
-        { env: AGENT_ENV },
-      );
-      if (r.exitCode !== 0) throw new Error(`read ${p}: ${r.stderr.trim() || (r.stdout.trim() ? "not a regular file" : `exit ${r.exitCode}`)}`);
-      const buf = r.stdoutBuffer;
-      const nl = buf.indexOf(10);
-      const size = Number(buf.subarray(0, nl).toString());
-      const data = new Uint8Array(buf.subarray(nl + 1));
-      return { data, size, truncated: size > data.length };
-    }
-    const st = await vm.fs.stat(p);
-    if (!st.isFile()) throw new Error(`read ${p}: not a regular file`);
-    if (st.size <= max) {
-      const data = new Uint8Array(await vm.fs.readFile(p));
-      return { data, size: st.size, truncated: data.length < st.size };
-    }
-    const stream = await vm.fs.readFileStream(p);
-    const parts: Buffer[] = [];
-    let n = 0;
-    for await (const chunk of stream as AsyncIterable<Buffer>) {
-      parts.push(chunk);
-      n += chunk.length;
-      if (n >= max) break;
-    }
-    stream.destroy();
-    return { data: new Uint8Array(Buffer.concat(parts).subarray(0, max)), size: st.size, truncated: true };
+    const req = JSON.stringify({ max, total: opts.totalBytes ?? READ_BATCH_BYTES, paths: abs });
+    const agent = (opts.as ?? "root") === "agent";
+    const argv = agent
+      ? [RUN, randomBytes(8).toString("hex"), "agent", "/", "/usr/bin/python3", "-I", "-S", READ, "--follow"]
+      : ["/usr/bin/python3", "-I", "-S", READ];
+    const r = await vm.exec(argv, { env: agent ? AGENT_ENV : ROOT_ENV, stdin: req, signal: AbortSignal.timeout(READ_TIMEOUT_MS) });
+    if (r.exitCode !== 0) throw new Error(`read ${abs.length === 1 ? abs[0] : `${abs.length} files`}: ${r.stderr.trim().split("\n").pop() || `exit ${r.exitCode}`}`);
+    return parseReadOutput(r.stdoutBuffer, abs);
+  }
+
+  /** SIGKILLs every agent (uid 1000) process: the exec cgroups first, then anything left with that uid. */
+  async killAgentProcesses(): Promise<void> {
+    if (!this.isRunning()) return;
+    const r = await this.requireVm().exec([KILL_USER, "agent"], { env: ROOT_ENV, signal: AbortSignal.timeout(20_000) });
+    if (r.exitCode !== 0) throw new Error(`killing agent processes failed: ${r.stderr.trim() || `exit ${r.exitCode}`}`);
   }
 
   async writeFile(p: string, data: string | Uint8Array, opts: { as?: "agent" | "root"; mode?: number } = {}): Promise<void> {

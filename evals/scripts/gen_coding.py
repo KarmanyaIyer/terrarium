@@ -16,7 +16,9 @@ ORDER = [
     "fix-pagination", "fix-roman", "implement-slugify", "implement-lru",
     "parse-duration", "refactor-report", "fix-csv-export", "fix-inventory",
 ]
-COMMAND = "cd /workspace && PYTHONDONTWRITEBYTECODE=1 timeout 120 python3 /grader/test_hidden.py"
+# Graded by the VM's test grader (guest/files/usr/local/libexec/terrarium/grade.py): candidate code and the
+# hidden tests run in separate processes and uids, and the case passes only when every counted test passed.
+CHECK = {"type": "tests", "file": "/grader/test_hidden.py", "timeoutSec": 120}
 
 
 def tree(base, mount):
@@ -44,14 +46,14 @@ def main():
             "envType": "vm",
             "setupFiles": tree(os.path.join(d, "workspace"), "/workspace"),
             "hiddenFiles": tree(os.path.join(d, "grader"), "/grader"),
-            "check": {"type": "command", "command": COMMAND},
+            "check": dict(CHECK),
             "maxTurns": meta.get("maxTurns", 20),
             "timeoutSec": meta.get("timeoutSec", 900),
         })
     suite = {
         "id": "coding",
         "title": "Coding with tests",
-        "description": "Fix bugs, implement to a spec, refactor; graded by hidden unittest files in the VM.",
+        "description": "Fix bugs, implement to a spec, refactor; graded by hidden unittest files in the VM (candidate code and tests in separate processes).",
         "envType": "vm",
         "cases": cases,
     }

@@ -130,6 +130,8 @@ function checkSummary(c: EvalCheck): string {
       return `${c.mode} ${c.expected}${c.tolerance != null ? ` ±${c.tolerance}` : ""}`;
     case "command":
       return c.command;
+    case "tests":
+      return `hidden tests ${c.file}`;
     case "file":
       return `${c.path}${c.equals != null ? " equals" : c.contains != null ? ` contains "${c.contains}"` : " exists"}`;
     case "isolation":
@@ -452,6 +454,19 @@ function CheckFields({ c }: { c: EvalCheck }) {
         <>
           <dt title="Run in the env after the agent finishes; passes on exit 0">Command</dt>
           <dd className="mono">{c.command}</dd>
+        </>
+      );
+    case "tests":
+      return (
+        <>
+          <dt title="Candidate code and the hidden tests run in separate processes and users; passes only when every test passed">Hidden tests</dt>
+          <dd className="mono">{c.file}</dd>
+          {c.timeoutSec != null && (
+            <>
+              <dt>Timeout</dt>
+              <dd className="num">{c.timeoutSec}s</dd>
+            </>
+          )}
         </>
       );
     case "file":

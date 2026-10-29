@@ -1,7 +1,8 @@
 // Download every dataset through the backend loader (sha256-checked), then check each
 // converted case: answer cases have a well-formed expected value; code cases fail with the
-// starter file and pass with the dataset's reference solution (host python3, /workspace and
-// /grader rewritten to a scratch dir). Also checks that sampling is deterministic.
+// starter file and on an os._exit(0) cheat, and pass with the dataset's reference solution (the VM's test
+// grader in --local mode, /workspace and /grader rewritten to a scratch dir). Also checks that sampling is
+// deterministic.
 //
 // Run: node evals/scripts/verify_datasets.ts [datasetId...]
 
@@ -11,13 +12,14 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { EvalCase } from "../../packages/shared/src/index.ts";
 import { datasetItems, materializeSuite, type DatasetItem } from "../../apps/backend/src/evals/suites/index.ts";
+import { GRADE_PY, hostPython } from "./grade_local.ts";
 
 const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRATCH = join(EVALS, ".scratch", "datasets");
 
-function run(cmd: string): Promise<number> {
+function run(ws: string, tests: string): Promise<number> {
   return new Promise((done) => {
-    const p = spawn("sh", ["-c", cmd], { stdio: "ignore" });
+    const p = spawn(hostPython(), ["-I", "-S", GRADE_PY, "--local", "--tests", tests, "--workspace", ws, "--timeout", "50"], { stdio: "ignore" });
     const t = setTimeout(() => p.kill("SIGKILL"), 60_000);
     p.on("exit", (code) => {
       clearTimeout(t);
@@ -28,7 +30,7 @@ function run(cmd: string): Promise<number> {
 
 async function checkCode(it: DatasetItem): Promise<string | null> {
   const c = it.case;
-  if (c.check.type !== "command" || !it.reference) return "not a command case with a reference";
+  if (c.check.type !== "tests" || !it.reference) return "not a tests case with a reference";
   const base = join(SCRATCH, c.id);
   rmSync(base, { recursive: true, force: true });
   const ws = join(base, "workspace");
@@ -41,10 +43,12 @@ async function checkCode(it: DatasetItem): Promise<string | null> {
     }
   };
   put([...(c.setupFiles ?? []), ...(c.hiddenFiles ?? [])]);
-  const cmd = c.check.command.replaceAll("/workspace", ws).replaceAll("/grader/", `${gr}/`).replace(/\btimeout \d+ /g, "");
-  if ((await run(cmd)) === 0) return "passes with the starter file";
+  const tests = c.check.file.replace(/^\/grader\//, `${gr}/`);
+  if ((await run(ws, tests)) === 0) return "passes with the starter file";
+  put([{ path: it.reference.path, content: `import os\nos._exit(0)\n${it.reference.content}` }]);
+  if ((await run(ws, tests)) === 0) return "passes with the os._exit(0) cheat";
   put([it.reference]);
-  if ((await run(cmd)) !== 0) return "reference solution fails";
+  if ((await run(ws, tests)) !== 0) return "reference solution fails";
   rmSync(base, { recursive: true, force: true });
   return null;
 }

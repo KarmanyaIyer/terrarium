@@ -18,7 +18,7 @@ import type { Store } from "../store/db.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
 import { logger } from "../util/log.ts";
-import { type Grade, gradeAnswer, gradeCommand, gradeFile, gradeIsolation, gradeSpeed } from "./graders.ts";
+import { type Grade, gradeAnswer, gradeCommand, gradeFile, gradeIsolation, gradeSpeed, gradeTests } from "./graders.ts";
 import { loadSuites, materializeSuite } from "./suites/index.ts";
 
 const log = logger("evals");
@@ -371,9 +371,12 @@ export class EvalRunner {
       await this.envs.start(envId);
       rt = await this.envs.inspect(envId);
     }
+    // Nothing the agent left running (setsid daemons included) may change the env while it is graded.
+    if (rt) await rt.killAgentProcesses();
     if (check.type === "isolation") return gradeIsolation({ store: this.store, policy: this.policy, sessionId, canary: canary.token, runtime: rt, probe: check.probe });
     if (!rt) return { pass: false, detail: `${check.type} check needs an environment` };
     if (check.type === "file") return gradeFile(rt, check);
+    if (check.type === "tests") return gradeTests(rt, check, c.hiddenFiles);
     return gradeCommand(rt, check, c.hiddenFiles);
   }
 }

@@ -1,0 +1,32 @@
+#!/bin/sh
+# Terrarium user killer (root). usage: kill-user <agent|grader>
+# Kills every process of that user: first each of its exec cgroups (atomic, so fork loops can't outrun it),
+# then any process left with that real or effective uid. Zombies are skipped (PID 1 doesn't reap orphans,
+# and they hold nothing). Exits 1 if something survived.
+set -u
+case "${1:-}" in
+  agent) uid=1000 ;;
+  grader) uid=1001 ;;
+  *) echo "kill-user: bad user" >&2; exit 2 ;;
+esac
+cg=/sys/fs/cgroup/terrarium
+for g in "$cg/$1"-*; do
+  [ -d "$g" ] && echo 1 2>/dev/null > "$g/cgroup.kill"
+done
+left() {
+  ps -e -o pid=,ruid=,euid=,stat= | awk -v u="$uid" '($2 == u || $3 == u) && $4 !~ /^Z/ { print $1 }'
+}
+n=0
+pids=$(left)
+while [ -n "$pids" ] && [ "$n" -lt 50 ]; do
+  # shellcheck disable=SC2086
+  kill -KILL $pids 2>/dev/null
+  sleep 0.05
+  n=$((n + 1))
+  pids=$(left)
+done
+for g in "$cg/$1"-*; do
+  [ -d "$g" ] && rmdir "$g" 2>/dev/null
+done
+[ -z "$pids" ] || { echo "kill-user: still running: $pids" >&2; exit 1; }
+exit 0

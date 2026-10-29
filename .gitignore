@@ -8,3 +8,4 @@ research/scratch/
 src-tauri/binaries/
 *.log
 .DS_Store
+__pycache__/

@@ -62,11 +62,15 @@ export interface EnvRuntime {
   /** Persist state and release resources. Idempotent. */
   stop(): Promise<void>;
   isRunning(): boolean;
+  /** Kill every process the agent left running (VM: all uid 1000 processes). No-op where nothing outlives an exec. */
+  killAgentProcesses(): Promise<void>;
 
   exec(command: string, opts?: ExecOptions): Promise<ExecOutcome>;
   /** Paths resolve inside the env (guest-side symlink resolution only). Never touches host paths. */
   /** VM: `as` defaults to root (observer/diff capture); pass "agent" for model tools so uid 1000 permissions apply. */
   readFile(path: string, opts?: { maxBytes?: number; as?: "agent" | "root" }): Promise<ReadResult>;
+  /** Several reads in one round trip; failures come back per path. `totalBytes` caps the whole batch. */
+  readFiles(paths: string[], opts?: { maxBytes?: number; as?: "agent" | "root"; totalBytes?: number }): Promise<(ReadResult | Error)[]>;
   writeFile(path: string, data: string | Uint8Array, opts?: { as?: "agent" | "root"; mode?: number }): Promise<void>;
   /** Trustworthy listing of `root` (default /workspace) with sha256 of changed or all regular files. */
   manifest(root?: string, opts?: { previous?: Manifest }): Promise<Manifest>;
