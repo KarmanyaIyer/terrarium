@@ -326,6 +326,8 @@ export class SessionManager {
   async update(id: string, patch: UpdateSessionRequest): Promise<SessionSummary> {
     const r = this.row(id);
     const onlyTitle = Object.keys(patch).every((k) => k === "title");
+    // An eval case keeps the model and settings it was graded with.
+    if (!onlyTitle) this.assertNotEval(id);
     if (this.isRunning(id) && !onlyTitle) throw new HttpError(409, "session is running; stop it before changing model or settings");
     if (patch.harness !== undefined && !HARNESSES.includes(patch.harness)) throw new HttpError(400, `harness must be one of ${HARNESSES.join(", ")}`);
     if (patch.harness && patch.harness !== "chat" && !r.env_id) throw new HttpError(400, `harness ${patch.harness} needs an environment`);
@@ -543,11 +545,23 @@ export class SessionManager {
           }
         }
         if (res.finishReason === "length") {
+          const prompt = u?.promptTokens ?? info.estimate;
+          // The call's budget is the session's output cap unless the prompt left less room than that in the window.
+          const byWindow = info.maxTokens < maxOutput;
           tracer.emit({
             type: "warning",
             code: "output_truncated",
-            message: `Output stopped at the ${info.maxTokens}-token cap (context window ${window}, prompt ${u?.promptTokens ?? info.estimate} tokens). Continue to resume.`,
-            data: { contextWindow: window, promptTokens: u?.promptTokens ?? info.estimate, maxTokens: info.maxTokens, completionTokens: u?.completionTokens ?? 0 },
+            message: byWindow
+              ? `Output stopped at ${info.maxTokens} tokens: that was all the room the ${prompt}-token prompt left in the ${window}-token context window.`
+              : `Output stopped at the ${info.maxTokens}-token output cap (context window ${window}, prompt ${prompt} tokens).`,
+            data: {
+              contextWindow: window,
+              promptTokens: prompt,
+              maxTokens: info.maxTokens,
+              maxOutputTokens: maxOutput,
+              completionTokens: u?.completionTokens ?? 0,
+              ...(u?.reasoningTokens !== undefined ? { reasoningTokens: u.reasoningTokens } : {}),
+            },
           });
         }
       };

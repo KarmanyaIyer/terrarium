@@ -178,6 +178,37 @@ test("busy env and running session are rejected; stop works", async () => {
   assert.equal(sessions.get(b.id).title, "hi");
 });
 
+test("truncation warning names the call's budget and whether the window or the cap set it (review 2, #9)", async () => {
+  const truncated = async (s: { id: string }, text: string) => {
+    script[fake.requests.length] = { text: "x".repeat(400), finish: "length" };
+    const out = await sessions.run(s.id, text);
+    assert.equal(out.reason, "length");
+    const w = store.events(s.id).find((e) => e.type === "warning" && e.code === "output_truncated");
+    assert.ok(w?.type === "warning");
+    return w.data!;
+  };
+  const byCap = await truncated(await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat" }), "Write a long story.");
+  assert.equal(byCap.maxTokens, 2048);
+  assert.equal(byCap.maxOutputTokens, 2048);
+  assert.equal(fake.requests.at(-1)!.max_tokens, 2048);
+
+  // A 2K window with a ~1,600-token prompt leaves less than the 512-token cap for the reply.
+  const small = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat", contextWindow: 2048 });
+  const byWindow = await truncated(small, "word ".repeat(1300));
+  assert.equal(byWindow.maxOutputTokens, 512);
+  assert.ok((byWindow.maxTokens as number) < 512, `budget ${byWindow.maxTokens}`);
+  assert.equal(fake.requests.at(-1)!.max_tokens, byWindow.maxTokens);
+});
+
+test("eval case sessions take no messages and keep their model and settings (review 2, #8)", async () => {
+  const s = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat" }, { evalRunId: "run_test", evalCaseId: "c1", ephemeral: true });
+  assert.throws(() => sessions.sendMessage(s.id, "hi"), /read-only/);
+  assert.throws(() => sessions.continue(s.id), /read-only/);
+  await assert.rejects(sessions.update(s.id, { maxOutputTokens: 4096 }), /read-only/);
+  await assert.rejects(sessions.update(s.id, { thinking: true }), /read-only/);
+  assert.equal((await sessions.update(s.id, { title: "renamed" })).title, "renamed");
+});
+
 test("titleFrom: first line, collapsed, cut at a word", () => {
   assert.equal(titleFrom("  Fix   the tests\nthen run them"), "Fix the tests");
   assert.equal(titleFrom("In /workspace do these steps one at a time: 1) create notes/todo.txt with three lines"), "In /workspace do these steps one at a time: 1) create…");
