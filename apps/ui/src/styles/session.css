@@ -1096,6 +1096,12 @@
   margin-top: 11px;
   flex-wrap: wrap;
 }
+.warn-blocked,
+.run-end-blocked {
+  align-self: center;
+  font-size: var(--fs-sm);
+  min-width: 0;
+}
 
 /* ---------- composer ---------- */
 
@@ -1258,6 +1264,12 @@
 .composer-fit {
   font-size: var(--fs-sm);
   white-space: nowrap;
+}
+.composer-blocked {
+  align-self: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* open timeline: the toggle shrinks to a chevron under the lane labels, clear of the axis ticks */

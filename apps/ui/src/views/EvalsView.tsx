@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
-import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, StartEvalRunRequest } from "@terrarium/shared";
+import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, ModelInfo, StartEvalRunRequest } from "@terrarium/shared";
 import { act, loadEvalRun, loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { fmtCtx, fmtInt, fmtMs, fmtPct, plural } from "../lib/format";
@@ -124,6 +124,11 @@ function CellGlyph({ s }: { s: EvalCellStatus }) {
   return null;
 }
 
+/** Run models whose native context is below the run's: the backend runs their cases at their own maximum. */
+function cappedAt(models: ModelInfo[], ids: string[], ctx: number): ModelInfo[] {
+  return models.filter((m) => ids.includes(m.id) && m.nativeContext < ctx);
+}
+
 function checkSummary(c: EvalCheck): string {
   switch (c.type) {
     case "answer":
@@ -212,6 +217,11 @@ function RunView({ runId }: { runId: string }) {
         {cfg.contextWindow ? (
           <span>
             <span className="dim">Context</span> {fmtCtx(cfg.contextWindow)}
+            {cappedAt(models, cfg.modelIds, cfg.contextWindow).map((m) => (
+              <span key={m.id} className="dim" title={`${m.name} supports at most ${fmtCtx(m.nativeContext)}; its cases ran at that`}>
+                , {m.name} at {fmtCtx(m.nativeContext)}
+              </span>
+            ))}
           </span>
         ) : null}
         {cfg.sampleSize ? (
@@ -583,14 +593,23 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
           <div className="ev-models">
             {models.map((m) => {
               const on = picked.includes(m.id);
-              const e = estimate(m, ctx, sample, budget, models);
+              // the backend runs a model at most at its native context
+              const e = estimate(m, Math.min(ctx, m.nativeContext), sample, budget, models);
               const fit = fitLabel(e, sample?.system.freeBytes);
               return (
                 <label key={m.id} className={`ev-model${on ? " on" : ""}`}>
                   <input type="checkbox" checked={on} onChange={() => setPicked((p) => (on ? p.filter((x) => x !== m.id) : [...p, m.id]))} />
                   <span className={`dot ${m.loaded ? "ready" : ""}`} title={m.loaded ? "Loaded" : "Not loaded; loads when its first case starts"} />
                   <span className="truncate">{m.name}</span>
-                  <span className="dim num">{m.params}</span>
+                  <span className="dim num">
+                    {m.params}
+                    {ctx > m.nativeContext && (
+                      <span className="warn-text" title={`${m.name} supports at most ${fmtCtx(m.nativeContext)}; its cases run at that`}>
+                        {" "}
+                        runs at {fmtCtx(m.nativeContext)}
+                      </span>
+                    )}
+                  </span>
                   <span className={`fit ${m.loaded ? "ok" : fit.cls}`}>{m.loaded ? "loaded" : fit.text}</span>
                 </label>
               );
@@ -611,7 +630,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
               small
               value={String(ctx)}
               onChange={(v) => setCtx(Number(v))}
-              options={CONTEXT_CHOICES.slice(0, 5).map((c) => ({ value: String(c), label: fmtCtx(c) }))}
+              options={CONTEXT_CHOICES.map((c) => ({ value: String(c), label: fmtCtx(c) }))}
             />
             {sampleable && (
               <>

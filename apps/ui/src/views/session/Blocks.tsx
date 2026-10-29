@@ -6,6 +6,7 @@ import { argsObj, changeCounts, toolFailed, toolKind, toolLabel } from "../../li
 import { act, select, showFilesFor, useStore } from "../../state/store";
 import { exactTime, fmtBytes, fmtCtx, fmtInt, fmtMs, fmtTok, fmtTps, offsetTime } from "../../lib/format";
 import { CONTEXT_CHOICES, estimate } from "../../lib/memory";
+import { runBlocked } from "../../lib/envuse";
 import { Markdown } from "../../components/Markdown";
 import { partialFields } from "../../lib/partialJson";
 import { ansiSpans, stripAnsi } from "../../components/Ansi";
@@ -447,6 +448,7 @@ function patchSession(label: string, id: string, p: UpdateSessionRequest) {
 
 function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSummary; d: Derived }) {
   const models = useStore((s) => s.models);
+  const blocked = useStore((s) => runBlocked(session.envId ? s.envs[session.envId] : undefined, session));
   const sample = useStore((s) => s.samples[s.samples.length - 1]);
   const memBudget = useStore((s) => s.budget);
   if (it.event.type !== "warning") return null;
@@ -515,9 +517,10 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
       </div>
       {isLast && !session.evalRunId && (
         <div className="warn-actions">
-          <button className="btn primary" disabled={running} onClick={() => void act("Continue", (b) => b.continueSession(session.id))}>
+          <button className="btn primary" disabled={running || !!blocked} title={blocked ? `Can't continue: ${blocked}` : undefined} onClick={() => void act("Continue", (b) => b.continueSession(session.id))}>
             <Play /> Continue
           </button>
+          {blocked && !running && <span className="warn-text warn-blocked">{blocked}</span>}
           {canRaiseCap && (
             <button className="btn" disabled={running} onClick={() => patchSession("Raise output cap", session.id, { maxOutputTokens: nextCap })}>
               Raise output cap to {fmtInt(nextCap)}
@@ -547,6 +550,7 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
 
 export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: RowItem; t0: number; session: SessionSummary; d: Derived }) {
   const ev = it.event;
+  const blocked = useStore((s) => (ev.type === "run_end" ? runBlocked(session.envId ? s.envs[session.envId] : undefined, session) : undefined));
   switch (ev.type) {
     case "compaction":
       return (
@@ -618,10 +622,11 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
             {turns} turn{turns === 1 ? "" : "s"}  {fmtMs(it.ts - startTs)}  {fmtInt(tokens)} tokens out
           </span>
           {resumable && (
-            <button className="btn sm" onClick={() => void act("Continue", (b) => b.continueSession(session.id))}>
+            <button className="btn sm" disabled={!!blocked} title={blocked ? `Can't continue: ${blocked}` : undefined} onClick={() => void act("Continue", (b) => b.continueSession(session.id))}>
               <Play /> Continue
             </button>
           )}
+          {resumable && blocked && <span className="warn-text truncate run-end-blocked">{blocked}</span>}
           <span className="run-end-line" />
         </div>
       );

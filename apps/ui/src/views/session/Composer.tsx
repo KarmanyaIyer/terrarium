@@ -6,6 +6,7 @@ import { fmtCtx, fmtInt, fmtTok } from "../../lib/format";
 import { tokensOf } from "../../lib/tokens";
 import { fitLabel, modelName } from "../../components/ModelPicker";
 import { estimate } from "../../lib/memory";
+import { runBlocked } from "../../lib/envuse";
 
 function baseUsage(s: SessionSummary, last?: ContextUsage): ContextUsage {
   if (s.context) return s.context;
@@ -92,6 +93,7 @@ export function Composer({ session }: { session: SessionSummary }) {
   const budget = useStore((s) => s.budget);
   const model = models.find((m) => m.id === session.modelId);
   const env = useStore((s) => (session.envId ? s.envs[session.envId] : undefined));
+  const blocked = runBlocked(env, session);
   const sample = samples[samples.length - 1];
   // the model loads on send; say so up front when it will not fit
   const fit = model && !model.loaded ? fitLabel(estimate(model, session.contextWindow, sample, budget, models), sample?.system.freeBytes) : null;
@@ -123,7 +125,7 @@ export function Composer({ session }: { session: SessionSummary }) {
 
   const send = async () => {
     const t = text.trim();
-    if (!t || running) return;
+    if (!t || running || blocked) return;
     setText("");
     const ok = await act("Send", (b) => b.sendMessage(session.id, t).then(() => true));
     if (!ok) setText(t);
@@ -146,7 +148,12 @@ export function Composer({ session }: { session: SessionSummary }) {
           }}
         />
         <div className="composer-actions">
-          {fit && fit.cls !== "ok" && !running && (
+          {blocked && !running && (
+            <span className="composer-fit composer-blocked warn-text" title={blocked}>
+              {blocked}
+            </span>
+          )}
+          {fit && fit.cls !== "ok" && !running && !blocked && (
             <span className={`composer-fit ${fit.cls}-text`} title={`${model?.name} is not loaded; sending loads it at ${fmtTok(session.contextWindow)} context`}>
               {fit.cls === "err" ? `Won't fit: ${fit.text}` : "Over budget once loaded"}
             </span>
@@ -156,7 +163,7 @@ export function Composer({ session }: { session: SessionSummary }) {
               <Square /> Stop <kbd>esc</kbd>
             </button>
           ) : (
-            <button className="btn primary" disabled={!text.trim()} onClick={() => void send()} title="Send (⌘↵)">
+            <button className="btn primary" disabled={!text.trim() || !!blocked} onClick={() => void send()} title={blocked ? `Can't send: ${blocked}` : "Send (⌘↵)"}>
               <ArrowUp /> Send <kbd>⌘↵</kbd>
             </button>
           )}
