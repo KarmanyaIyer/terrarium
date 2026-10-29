@@ -1,6 +1,7 @@
 // Deterministic compaction (no model call): research/harness.md "Compaction for 8-12K windows".
 // 1) truncate old tool outputs to head + tail lines; 2) drop the oldest whole turns, keeping the system
-// messages, the task message and the newest turns, and note what was removed in the task message.
+// messages, the current instruction (latest user message) and the newest step, and note what was removed
+// on that instruction.
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 
@@ -66,29 +67,45 @@ export function compact(messages: AgentMessage[], opts: CompactionOptions): Comp
     return { messages: working, beforeTokens, afterTokens: tokens, removedTurns: 0, truncatedResults, note };
   }
 
-  // Step 2: drop oldest turns. Head = leading system messages + first user message (the task).
+  // Step 2: drop oldest turns. Protected: leading system messages and the current instruction (the latest
+  // user message). Earlier exchanges go first, oldest first, then the oldest steps of the current one; the
+  // newest step always stays.
   let headEnd = 0;
   while (headEnd < working.length && working[headEnd].role === "system") headEnd++;
-  const taskIdx = working.findIndex((m, i) => i >= headEnd && m.role === "user");
-  if (taskIdx < 0) return { ...unchanged, messages: working, afterTokens: tokens, truncatedResults };
-  const head = working.slice(0, taskIdx + 1);
-  const groups: AgentMessage[][] = [];
-  for (const m of working.slice(taskIdx + 1)) {
-    if (m.role === "toolResult" && groups.length) groups[groups.length - 1].push(m);
-    else if (m.role === "system" && groups.length) groups[groups.length - 1].push(m);
-    else groups.push([m]);
+  let taskIdx = -1;
+  for (let i = working.length - 1; i >= headEnd; i--) {
+    if (working[i].role === "user") {
+      taskIdx = i;
+      break;
+    }
   }
+  if (taskIdx < 0) return { ...unchanged, messages: working, afterTokens: tokens, truncatedResults };
+  const toGroups = (msgs: AgentMessage[]): AgentMessage[][] => {
+    const groups: AgentMessage[][] = [];
+    for (const m of msgs) {
+      if ((m.role === "toolResult" || m.role === "system") && groups.length) groups[groups.length - 1].push(m);
+      else groups.push([m]);
+    }
+    return groups;
+  };
+  const head = working.slice(0, headEnd);
+  const older = toGroups(working.slice(headEnd, taskIdx));
+  const current = toGroups(working.slice(taskIdx + 1));
+  const groups = [...older, ...current];
+  const maxRemove = older.length + Math.max(0, current.length - 1);
   let removedTurns = 0;
   const removedSystem: AgentMessage[] = [];
-  // A previous compaction left a note on the task message: replace it and keep counting from its total.
-  const task = head[head.length - 1] as any;
+  // A previous compaction left a note on this message: replace it and keep counting from its total.
+  const task = working[taskIdx] as any;
   const taskTextRaw = textOf(task.content);
   const prior = taskTextRaw.match(NOTE_RE);
   const priorRemoved = prior ? Number(prior[1]) : 0;
   const taskText = taskTextRaw.replace(NOTE_RE, "");
   const build = (note: string): AgentMessage[] => {
     const noted = note ? { ...task, content: [{ type: "text", text: `${taskText}\n\n${note}` }] } : task;
-    return [...head.slice(0, -1), ...removedSystem, noted, ...groups.slice(removedTurns).flat()];
+    const keptOlder = older.slice(Math.min(removedTurns, older.length));
+    const keptCurrent = current.slice(Math.max(0, removedTurns - older.length));
+    return [...head, ...removedSystem, ...keptOlder.flat(), noted, ...keptCurrent.flat()];
   };
   const noteFor = (n: number) => {
     const total = n + priorRemoved;
@@ -96,7 +113,7 @@ export function compact(messages: AgentMessage[], opts: CompactionOptions): Comp
     const fileList = files.length ? `; files changed so far: ${files.slice(0, 12).join(", ")}${files.length > 12 ? ` (+${files.length - 12} more)` : ""}` : "";
     return `[harness: ${total} earlier step${total === 1 ? "" : "s"} removed to fit the context window${fileList}]`;
   };
-  while (removedTurns < groups.length - 1) {
+  while (removedTurns < maxRemove) {
     // Keep tool-declaration system messages from dropped turns so the tool set stays valid.
     for (const m of groups[removedTurns]) if (m.role === "system") removedSystem.push(m);
     removedTurns++;

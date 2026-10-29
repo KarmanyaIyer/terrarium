@@ -68,6 +68,21 @@ test("step 2: oldest turns dropped, task kept with a cumulative note, fits the w
   assert.match(text2, new RegExp(`\\[harness: ${r.removedTurns + r2.removedTurns} earlier steps`));
 });
 
+test("multi-run session: earlier exchanges go first, the current instruction and newest step stay", () => {
+  const m: AgentMessage[] = [...transcript(6, 60), user("Now add tests."), call("n0", "new 0"), result("n0", lines(60, "n0")), call("n1", "new 1"), result("n1", lines(60, "n1"))];
+  const r = compact(m, { window: 4096, outputBudget: 1024, estimate: rawEstimate });
+  assert.ok(r.removedTurns > 0);
+  const texts = r.messages.map((x: any) => (typeof x.content === "string" ? x.content : (x.content?.[0]?.text ?? x.content?.[0]?.id ?? "")));
+  const cur = r.messages.findIndex((x: any) => x.role === "user" && JSON.stringify(x.content).includes("Now add tests."));
+  assert.ok(cur > 0, "current instruction kept");
+  assert.match(texts[cur], /\[harness: \d+ earlier steps? removed/);
+  assert.equal((r.messages.at(-1) as any).toolCallId, "n1", "newest step kept");
+  // The old run is dropped before any step of the current run.
+  const keptNew = r.messages.filter((x: any) => x.role === "toolResult" && x.toolCallId.startsWith("n")).length;
+  const keptOld = r.messages.filter((x: any) => x.role === "toolResult" && x.toolCallId.startsWith("c")).length;
+  assert.ok(keptOld === 0 || keptNew === 2, `old ${keptOld}, new ${keptNew}`);
+});
+
 test("deterministic: same input, same output", () => {
   const m = transcript(10, 80);
   const a = compact(m, { window: 4096, outputBudget: 1024, estimate: rawEstimate });

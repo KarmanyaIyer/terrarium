@@ -36,8 +36,8 @@ export class FsObserver {
   private tracer: Tracer;
   private current: Manifest | null = null;
   private seenVersion = -1;
-  /** Paths changed since session start, for compaction notes. */
-  readonly changedPaths = new Set<string>();
+  /** Paths changed since session start (across runs), for compaction notes. */
+  readonly changedPaths: Set<string>;
 
   constructor(opts: { store: Store; envs: EnvManager; envId: string; sessionId: string; runtime: EnvRuntime; tracer: Tracer }) {
     this.store = opts.store;
@@ -46,6 +46,10 @@ export class FsObserver {
     this.sessionId = opts.sessionId;
     this.runtime = opts.runtime;
     this.tracer = opts.tracer;
+    this.changedPaths = new Set();
+    for (const r of this.store.all<{ payload_json: string }>("SELECT payload_json FROM events WHERE session_id = ? AND type = 'fs_change' ORDER BY seq", this.sessionId)) {
+      for (const c of (JSON.parse(r.payload_json) as { changes?: FileChange[] }).changes ?? []) this.changedPaths.add(c.path);
+    }
   }
 
   /** Session baseline: the first manifest stored for this session, with file contents captured. */
