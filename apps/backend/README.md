@@ -6,7 +6,7 @@ store, eval runner. Contract with the UI: `packages/shared/src/index.ts`. Design
 ## Run
 
 ```
-pnpm --filter @terrarium/backend dev        # node --watch src/main.ts, port 8787, token printed
+pnpm --filter @terrarium/backend dev        # node --watch src/main.ts, port 8797, token printed
 pnpm --filter @terrarium/backend test       # node --test (unit + integration; no model needed)
 pnpm --filter @terrarium/backend test:e2e   # real oMLX + Qwen3.5-4B in a sim env (~10-20 min on a busy Mac)
 pnpm --filter @terrarium/backend typecheck
@@ -17,7 +17,7 @@ Environment:
 
 | Var | Default | Meaning |
 |---|---|---|
-| `TERRARIUM_PORT` | `0` (random); `8787` in `dev` | listen port on 127.0.0.1 |
+| `TERRARIUM_PORT` | `0` (random); `8797` in `dev` (8787 is Job Scraper) | listen port on 127.0.0.1 |
 | `TERRARIUM_TOKEN` | generated, printed to stderr in dev | bearer token for HTTP and WS |
 | `TERRARIUM_DATA` | `<repo>/data` | sqlite, blobs, env storage, snapshots, oMLX state |
 | `TERRARIUM_MODELS` | `<repo>/models` | MLX model dirs |

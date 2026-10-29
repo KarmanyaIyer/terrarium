@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "TERRARIUM_DEV=1 TERRARIUM_PORT=${TERRARIUM_PORT:-8787} node --watch src/main.ts",
+    "dev": "TERRARIUM_DEV=1 TERRARIUM_PORT=${TERRARIUM_PORT:-8797} node --watch src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.build.json && mkdir -p dist/store/migrations && cp src/store/migrations/*.sql dist/store/migrations/",
     "test": "node --test --test-concurrency=1 'src/**/*.test.ts'",
