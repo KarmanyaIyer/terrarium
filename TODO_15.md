@@ -21,8 +21,13 @@ and VM tests) and a regression test.
 - [x] 1 (found while profiling): files the candidate's code changes in its copy of the workspace. The tests run in a
       sealed copy, so a candidate writing `out.csv` on a dry run passed `assertFalse(os.path.exists("out.csv"))`
       (fs_write_lenient). Now Inexact when the tests look at a changed path (4d62933, a09421b)
-- [x] Per-call cost back to the pre-session level (it had risen about 60%)
-- [ ] Verification, timings, commits
+- [x] Per-call cost back to the pre-session level (it had risen about 60%) (31edaa1)
+- [x] Found in verification: the MBPP 596 reference (`sys.getsizeof` of a tuple the tests pass) failed: b9bcd0b made
+      the candidate's getsizeof of any shared object Inexact. Now only where a copy's size can differ (6d526bf)
+- [x] Found in review: a grading error caught by a bare `except:` let a run pass (caught_inexact_lenient,
+      caught_cand_lenient passed the old isolated run and a forged plain one) (6d526bf)
+- [x] perf_held6k syncs 24% more containers in its cap than before the session: short lists compared in Python (6d526bf)
+- [x] Verification, timings, commits
 
 ## Baseline
 - VM (vm.test.ts, whole file, before any change): 21/21. Coding references (ms): fix-csv-export 1161,
@@ -71,6 +76,18 @@ and VM tests) and a regression test.
   getstate() as before) and getstate() runs only when that changed; empty dicts skip the item compare. fix-roman
   0.56 s.
 
+- getsizeof from candidate code: a copy that crossed has the original's size when the size follows from the value
+  (tuple, int, bool, float, complex, bytes, None, ASCII str). Lists, dicts and sets depend on how they grew, a
+  non-ASCII str on whether its UTF-8 form was cached: those stay Inexact (sizeof_list).
+- Caught grading errors: `GraderError.__init__` counts every one made in the process (grade_rpc.RAISED). Tests' side:
+  the runner writes the last one, and grade.py turns an all-passed isolated run that made one into an error.
+  Candidate side: a request whose handling made one and then returned normally, or raised something else,
+  poisons the run (the candidate's code caught it). Grader-internal catches all re-raise, poison, or turn into an
+  error the tests see, so nothing passing before changes (all suites below).
+- Linked lists: changed() compared every list through ctypes (memcmp on the item array): about 0.4 us fixed, 0.6 to
+  1 us with this session's audit hooks, since id(), from_address and the foreign call each raise an audit event.
+  Lists of up to 64 elements are now compared in Python (75 to 130 ns); longer ones as before.
+
 ## Hurdles
 - `hasattr(FunctionType, "__annotate__")` is False on 3.14+ (class-level lookup raises): annotations were read
   through `__annotations__`, calling the stand-in's `__annotate__` RPC from inside message building; recursion only
@@ -79,3 +96,46 @@ and VM tests) and a regression test.
 - tz_ok used `EST5EDT`, which musl (Alpine VM) reports as ('EDT', 'EDT'): plain Python failed it in the VM. Now a
   DST-free zone.
 - dcg blocks heredocs with destructive-looking text and `rm -r`: edits go through script files in /tmp/terr-scratch/gen.
+
+## Verification (final: 6d526bf)
+- qa/review5-cases (run.py, plain unittest beside the isolated verdict): 88 of 88 as expected on Python 3.12.15 and
+  3.15.0. On the pre-session grader, 5 of the first 34 were.
+- qa/review4-probes: 39 of 39 on both. qa/review3-probes: 16 of 17 match plain on both; perf_held6k is a grader
+  error at the 30 s probe timeout (sync cap), the same on the pre-session grader.
+- Grading node tests (grade-probes, grade-local, grade-rpc): 39 of 39. Full backend `node --test`: 206 tests, 204
+  pass, 2 skipped (VM-gated), 0 fail. tsc --noEmit: clean.
+- evals/scripts/verify.ts: all passed (41 cases: every reference passes, starter and os._exit(0) cheat fail).
+- verify_datasets: HumanEval 164/164, MBPP 427/427 (Python 3.12 and 3.15), GSM8K 1319 and MMLU 2524 items, 0
+  failures. Before 6d526bf, MBPP 596's reference failed.
+- VM, whole vm.test.ts: 22/22 three times (31edaa1 via guest/verify.sh with policy 16/16; 6d526bf via
+  guest/verify.sh with policy 16/16; 6d526bf alone).
+- randcheck (RandomState reader against getstate): ok on 3.12.15 and 3.15.0.
+
+## Timings
+VM, coding references, ms. Baseline = before the session. The 31edaa1 run was at normal load; both 6d526bf runs
+had another session's Xcode build and iOS simulator on the Mac (load average about 55 to 67), so they read high
+and aren't comparable to the baseline. No timeouts were tuned around them.
+
+| case | baseline | 31edaa1 | 6d526bf run 1 (load ~60) | 6d526bf run 2 (load ~60-67) |
+|---|---|---|---|---|
+| fix-csv-export | 1161 | 1138 | 1150 | 1208 |
+| fix-inventory | 1142 | 1208 | 1117 | 1218 |
+| fix-pagination | 1223 | 1081 | 1190 | 1197 |
+| fix-roman | 1785 | 1898 | 1868 | 2148 |
+| implement-lru | 1250 | 1234 | 1127 | 1337 |
+| implement-slugify | 1197 | 1144 | 1167 | 1188 |
+| parse-duration | 1272 | 1127 | 1123 | 1312 |
+| refactor-report | 1205 | 1132 | 1092 | 1285 |
+| gradeMs (fix-pagination via gradeTests) | 1391 | 1359 | 1612 | 1997 |
+
+VM perf probes, ms (31edaa1 / 6d526bf run 1 / run 2): perf_records 1941 / 2182 / 15852, perf_records6k 2779 / 2994 /
+13817, perf_held6k 6525 / 7105 / 13740, perf_bsearch 3762 / 4055 / 4065, perf_returns 2283 / 2765 / 2933. Run 2's
+perf numbers swing 2x to 7x with the load; pre-session (TODO_13): 2041 / 3250 / 7081 / 4429 / 2757.
+
+Local (Mac, Python 3.12, isolated wallSeconds, 3 runs; pre-session grader vs 6d526bf, same sitting):
+bench15k (15,000 calls in 3 tests) 1.86-2.10 vs 2.06-2.14; held8k 0.61-0.66 vs 0.59-0.61; access8k (`m.g(i)` looked
+up per call) 1.21-1.26 vs 1.39-1.47; fix-roman 0.66-0.67 vs 0.59-0.66. perf_held6k containers synced in its 7 s
+cap: 3,846-3,874 before the session, 3,415-3,435 at 31edaa1, 4,779-4,785 at 6d526bf.
+
+## Commits
+085dfe2, 338f944, b9bcd0b, 2dd3a2c, 9b90cea, 3df1d9a, 4d62933, a09421b, 31edaa1, 6d526bf.
