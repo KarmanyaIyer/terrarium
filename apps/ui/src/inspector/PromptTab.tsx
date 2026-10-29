@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Loader2 } from "lucide-react";
 import type { SessionPrompt, SessionSummary } from "@terrarium/shared";
 import { act, useStore } from "../state/store";
@@ -21,12 +21,17 @@ export function PromptTab({ session }: { session: SessionSummary }) {
   const [busy, setBusy] = useState(false);
   const [n, setN] = useState(0);
 
+  // The prompt the textarea was last synced to; a refetch (model loaded, settings broadcast) keeps unsaved edits.
+  const synced = useRef<{ id: string; text: string } | null>(null);
+
   useEffect(() => {
     let gone = false;
     void act("System prompt", (b) => b.getSessionPrompt(session.id)).then((r) => {
       if (gone || !r) return;
+      const prev = synced.current;
+      synced.current = { id: session.id, text: r.text };
       setP(r);
-      setText(r.text);
+      setText((cur) => (prev?.id === session.id && cur !== prev.text ? cur : r.text));
     });
     return () => {
       gone = true;

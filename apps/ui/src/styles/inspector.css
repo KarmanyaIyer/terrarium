@@ -999,6 +999,7 @@
 }
 .pt-text {
   width: 100%;
+  height: auto; /* .input's fixed height would ignore rows */
   resize: vertical;
   font-size: var(--fs-sm);
   line-height: 1.5;

@@ -302,8 +302,8 @@ function handleMessage(msg: WsMessage) {
       set({ inference: msg.inference });
       break;
     case "settings":
-      // saved prompts feed the harness cards
-      set({ settings: msg.settings, harness: null });
+      // saved prompts feed the harness cards; the memory ceiling feeds every budget bar
+      set((s) => ({ settings: msg.settings, harness: null, budget: { ...s.budget, budgetBytes: msg.settings.memoryBudgetBytes } }));
       break;
     case "model_download":
       set((s) => ({ downloads: { ...s.downloads, [msg.download.id]: msg.download } }));
