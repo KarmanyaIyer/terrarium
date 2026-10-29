@@ -584,7 +584,7 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     // Replaces unittest's TestCase.run in the plain run (candidate code shares that process): the plain run
     // then passes everything, and only the isolated run stands between the candidate and a pass.
     const forge = ["import sys as _s, unittest as _u", "if 'test_hidden' in _s.modules:", "    def _run(self, result=None):", "        result.startTest(self); result.addSuccess(self); result.stopTest(self)", "        return result", "    _u.TestCase.run = _run", ""].join("\n");
-    const bad = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet", "ne_lie"];
+    const bad = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet", "weak_cache", "ne_lie"];
     const check = { type: "tests" as const, file: "/grader/test_hidden.py", timeoutSec: 60 };
     const grade = async (name: string, forged: boolean) => {
       await sh(a, "rm -rf /workspace/* /grader", { as: "root" });

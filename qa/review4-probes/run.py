@@ -8,8 +8,8 @@ import json, os, shutil, subprocess, sys, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GRADE = os.environ.get("GRADE") or os.path.join(HERE, "../../guest/files/usr/local/libexec/terrarium/grade.py")
-LENIENT = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet"]
-CORRECT = ["hash_seed", "ctx", "mock_patch", "bigint", "exc_attrs", "nested_tuples", "copy_hy", "type_is", "threads", "stdout_capture", "nest_reheld", "warn_ok"]
+LENIENT = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet", "weak_cache"]
+CORRECT = ["hash_seed", "ctx", "mock_patch", "bigint", "exc_attrs", "nested_tuples", "copy_hy", "type_is", "threads", "stdout_capture", "nest_reheld", "warn_ok", "weak_ok"]
 PERF = ["perf_bsearch", "perf_returns"]
 # Cheats that pass in one process too: the isolated run must not pass them.
 CHEAT = ["ne_lie"]

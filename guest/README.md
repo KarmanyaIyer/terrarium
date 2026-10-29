@@ -145,15 +145,22 @@ Results go to `data/vm-verify/latest.json`.
       standard-library class the grader can't mirror; a candidate comparison that disagrees with the
       data; tests that keep more linked containers than the sync limit allows (12,000 containers held by
       both sides through 6,000 calls); candidate threads as above; `assertLogs`/`assertNoLogs`; candidate
-      code replacing `warnings.showwarning`.
+      code replacing `warnings.showwarning`; a weak reference the tests hold to a candidate object when
+      the tests drop their last strong reference while the candidate still holds the object (the test
+      side's stand-in dies first; checked in the order the tests dropped them, so an object the
+      candidate had already let go of works).
     - Known gaps (wrong answers, not errors; each needs a test asserting something unusual):
       `type(x)` of a candidate function, generator, module or other built-in non-data object is the
       grader's stand-in class, so `type(m.f) is types.FunctionType` is False (`isinstance` is right);
       logging configuration and handlers are per process (a handler the tests add to the candidate's
       logger sees nothing); standard-library state changed without `mock.patch` (assigning
       `json.dumps = ...`, `mock.patch.dict(sys.modules, ...)`, `locale.setlocale`, `time.tzset`) stays in
-      the process that changed it. A test asserting the opposite of what one process does there could
-      pass the isolated run where Python fails it.
+      the process that changed it; the traceback of an exception from candidate code holds the test
+      side's frames, not the candidate's; `weakref.ref` of a candidate object whose class has
+      `__slots__` without `__weakref__` works while the tests hold the object (one process raises
+      `TypeError`; once the tests drop it, it is a grader error); `id()` of a candidate object the tests
+      dropped and got back can differ (its stand-in is new). A test asserting the opposite of what
+      one process does there could pass the isolated run where Python fails it.
     - Cost: about 70 us per call on an M-series Mac (one round trip; the plain run's call is about 0.1
       us). 5,000 calls returning a list each grade in 1 s; 6,000 records kept by the candidate in 1.5 s; a
       binary search over a 1M-element list, 300 calls, in 0.8 s.

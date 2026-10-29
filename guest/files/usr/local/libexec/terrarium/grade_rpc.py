@@ -36,9 +36,10 @@ in its stack as one process would ("ng": the requester's code frames), so recurs
 Wire format: 4-byte big-endian length, then ASCII JSON. Every message is {"req": {...}} or {"rep": {...}}; values go
 under "v" (decoded first), then "sync" (new contents of linked containers) is applied. Both sides: "held"/"loose"
 (links its code started or stopped holding), "unlink" (links neither side holds). Test side: "st" (process state),
-"release" (proxies it dropped). Candidate side: "out", "stdin", "random", "rlimit", "decimal", "warnings" (state its
-code changed), "busy" (seconds it spent on sync), "fatal". Calls nest: while either side waits for a reply it serves
-the other side's requests (callbacks)."""
+"release" (proxies it dropped, in that order), "weak" (those of them the tests held weak references to). Candidate
+side: "out", "stdin", "random", "rlimit", "decimal", "warnings" (state its code changed), "weakalive" (weakly held
+objects released while the candidate still had them: a grader error), "busy" (seconds it spent on sync), "fatal".
+Calls nest: while either side waits for a reply it serves the other side's requests (callbacks)."""
 
 import base64
 import builtins
@@ -1454,6 +1455,7 @@ META_FORWARDABLE = frozenset(META_DUNDERS) | frozenset(("__instancecheck__", "__
 _NO_IMPORT = frozenset(("antigravity", "this", "idlelib", "tkinter", "turtle", "turtledemo", "__main__"))
 _BASE_SET = {n: d.__set__ for n, d in vars(BaseException).items() if n in ("args", "__cause__", "__context__", "__suppress_context__")}
 _PLAIN = frozenset(BUILTIN_TYPES.values()) | LINK_TYPES
+_WEAK_ERR = "a weak reference the tests held to a candidate object died while the candidate still had the object"
 
 
 class Client(Side):
@@ -1473,7 +1475,9 @@ class Client(Side):
         self.inst = {}  # class rid -> the proxy class for its instances
         self.proxies = {}  # rid -> proxy (a weak reference where the type allows)
         self.ids = {}  # id(proxy) -> rid
-        self.release = set()  # rids of proxies that died, to release
+        self.release = {}  # rids of proxies that died, to release, in the order they died
+        self.weak = set()  # rids of those the tests held weak references to
+        self.weak_err = None  # a weak reference that died before one process's would have, raised at the next reply
         self.ntuples = {}
         self.thrown = {}
         self.candidate_secs = 0.0
@@ -1495,6 +1499,13 @@ class Client(Side):
 
         _Probe()
         self.del_base = out[0] if out else 0
+        class _Ref:
+            pass
+
+        obj = _Ref()
+        probe = {0: weakref.ref(obj)}
+        raw = probe[0]
+        self.ref_base = self._ref_users(raw)  # references to a registry weakref held only by the registry and raw
 
     # proxies
 
@@ -1509,19 +1520,28 @@ class Client(Side):
             rid = self.ids.get(id(p))
             if rid is None:
                 return
-            cur = self.proxies.get(rid)
-            cur = cur() if type(cur) is weakref.ref else cur
+            raw = self.proxies.get(rid)
+            cur = raw() if type(raw) is weakref.ref else raw
             if cur is not p and cur is not None:
                 return
             if n > self.del_base:
                 # Brought back while it was being finalized: it stays, for good.
                 self.proxies[rid] = p
                 return
+            # The tests' weak references to p (weakref.ref(p) without a callback is the registry's own one, shared)
+            # see the object die now: the candidate says whether one process's would have.
+            own = type(raw) is weakref.ref
+            if weakref.getweakrefcount(p) > own or (own and self._ref_users(raw) > self.ref_base):
+                self.weak.add(rid)
             del self.ids[id(p)]
             del self.proxies[rid]
-            self.release.add(rid)
+            self.release[rid] = None
         finally:
             self.lock.release()
+
+    @staticmethod
+    def _ref_users(ref):
+        return sys.getrefcount(ref)
 
     def _register(self, rid, obj):
         try:
@@ -1530,7 +1550,10 @@ class Client(Side):
             ref = obj
         self.proxies[rid] = ref
         self.ids[id(obj)] = rid
-        self.release.discard(rid)
+        self.release.pop(rid, None)
+        if rid in self.weak:
+            self.weak.discard(rid)
+            self.weak_err = _WEAK_ERR
         return obj
 
     def _known(self, rid):
@@ -1703,12 +1726,12 @@ class Client(Side):
             if "member" in x:
                 m = getattr(real, "__members__", None)
                 if isinstance(m, collections.abc.Mapping) and x["member"] in m:
-                    self.release.add(rid)
+                    self.release[rid] = None
                     return m[x["member"]]
             if "single" in x:
                 s = resolve_std(x["single"])
                 if s is not None and type(s) is real:
-                    self.release.add(rid)
+                    self.release[rid] = None
                     return s
             if "x" in x:
                 return self._exception(rid, real, x, dec, depth, copy_of=True)
@@ -1753,7 +1776,7 @@ class Client(Side):
         if copy_of:
             if not issubclass(cls, Exception) and cls is not SystemExit:
                 raise Inexact("the candidate's code raised %s" % cls.__name__)
-            self.release.add(rid)
+            self.release[rid] = None
             try:
                 e = cls(*args) if cls in BUILTIN_EXCEPTIONS else BaseException.__new__(cls, *args)
             except Exception:
@@ -2002,6 +2025,8 @@ class Client(Side):
         if msg.get("warnings") is not None:
             warnings_set(warnings_in(dec, msg["warnings"]))
             self.state["warnings"] = warnings_state()
+        if msg.get("weakalive"):
+            self.weak_err = _WEAK_ERR
 
     # calls
 
@@ -2036,8 +2061,11 @@ class Client(Side):
         if st:
             msg["st"] = st
         if self.release:
-            rel, self.release = self.release, set()
-            msg["release"] = sorted(rel)
+            rel, self.release = self.release, {}
+            msg["release"] = list(rel)
+            if not self.weak.isdisjoint(rel):
+                msg["weak"] = sorted(self.weak.intersection(rel))
+                self.weak.difference_update(rel)
         try:
             self._outgoing(enc, msg)
             self.chan.send(msg)
@@ -2093,7 +2121,11 @@ class Client(Side):
                 while True:
                     msg, got = self._receive()
                     if "rep" in msg:
-                        return self._reply(msg["rep"], got)
+                        r = self._reply(msg["rep"], got)
+                        if self.weak_err is not None:
+                            err, self.weak_err = self.weak_err, None
+                            raise Inexact(err)
+                        return r
                     self._serve(msg.get("req"), got)
             finally:
                 self.depth -= 1
@@ -2340,6 +2372,7 @@ class Server(Side):
     def __init__(self, sock):
         Side.__init__(self, sock, -1)
         self.objs = {}  # rid -> candidate object the test side has a proxy for
+        self.weak_alive = []  # released rids whose object outlived the tests' weak references to it
         self.ids = {}  # id(object) -> rid
         self.next_rid = 1
         self.tobjs = {}  # k -> TestObject or test exception
@@ -2748,6 +2781,8 @@ class Server(Side):
         """Output, stdin use and process state the candidate's code changed, for the tests' side."""
         if self.out:
             msg["out"], self.out = self.out, []
+        if self.weak_alive:
+            msg["weakalive"], self.weak_alive = self.weak_alive, []
         if self.stdin is not None and sys.stdin is self.stdin and not self.stdin.closed:
             pos = self.stdin.tell()
             if pos != self.stdin_pos:
@@ -2829,6 +2864,8 @@ class Server(Side):
                         raise ProtocolError("bad warnings state")
                     st["warnings"] = (warnings_in(dec, ws[0]), None if ws[1] is None else dec.dec(ws[1]), None if ws[2] is None else dec.dec(ws[2]))
             self._incoming(dec, msg)
+            weak = msg.get("weak") or ()
+            # In the order the tests dropped them: an object the tests held weakly must die as its proxy did.
             for rid in msg.get("release") or ():
                 obj = self.objs.pop(rid, None)
                 if obj is not None and self.ids.get(id(obj)) == rid:
@@ -2836,6 +2873,14 @@ class Server(Side):
                     n = self.link_of.get(id(obj))
                     if n is not None and self.links.get(n) is obj and n in self.extra:
                         del self.extra[n]  # objs no longer refers to it
+                if obj is not None and rid in weak:
+                    try:
+                        w = weakref.ref(obj)
+                    except TypeError:
+                        w = None  # one process couldn't have made the tests' weak reference
+                    obj = None
+                    if w is None or w() is not None:
+                        self.weak_alive.append(rid)
             obj = None
             self._apply_state(st)
             return msg, got
@@ -2847,6 +2892,7 @@ class Server(Side):
             except (EOFError, OSError):
                 return
             self._handle(msg, got)
+            msg = got = None  # a request's values live no longer than the call, as in one process
 
     def _handle(self, msg, got):
         req = msg.get("req")

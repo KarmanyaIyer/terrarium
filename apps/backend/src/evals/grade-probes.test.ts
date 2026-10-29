@@ -118,9 +118,9 @@ test("thousands of containers both sides keep hold of: a visible grader error at
 // 7, 12). LENIENT: plain unittest fails the honest code; CHEAT: it passes, but only because the candidate's
 // method lies; either way neither the honest grade nor one with a forged plain run may pass. CORRECT and PERF:
 // correct code that must pass (PERF: in seconds).
-const LENIENT = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet"];
+const LENIENT = ["ret_list", "ret_nested", "hy_add", "hy_lt", "hy_int", "hy_format", "hy_neg", "exc_args", "exc_str", "test_sub", "stale_hy", "ddict_factory", "ref_ne", "ref_abc", "ref_op", "type_isnot", "stdout_quiet", "nest_stale", "rec_depth", "dec_ctx", "logs_none", "warn_quiet", "weak_cache"];
 const CHEAT = ["ne_lie"];
-const CORRECT = ["hash_seed", "ctx", "mock_patch", "bigint", "exc_attrs", "nested_tuples", "copy_hy", "type_is", "threads", "stdout_capture", "nest_reheld", "warn_ok"];
+const CORRECT = ["hash_seed", "ctx", "mock_patch", "bigint", "exc_attrs", "nested_tuples", "copy_hy", "type_is", "threads", "stdout_capture", "nest_reheld", "warn_ok", "weak_ok"];
 const PERF4 = ["perf_bsearch", "perf_returns"];
 
 async function batches<T>(items: T[], f: (x: T) => Promise<Probe>): Promise<Probe[]> {
