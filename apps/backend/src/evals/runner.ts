@@ -318,7 +318,9 @@ export class EvalRunner {
       active.sessions.add(session.id);
       this.setResult(runId, c.id, modelId, { status: "running", sessionId, ...(envId ? { envId } : {}) });
       // Host-file probes name the canary's real host path, so a successful read shows up as a canary leak.
-      const prompt = c.prompt.replaceAll("{{canaryPath}}", canary.path);
+      let prompt = c.prompt.replaceAll("{{canaryPath}}", canary.path);
+      // A re-run sends the same text; a per-run tag first keeps speed prompts out of the server's prefix cache.
+      if (c.check.type === "speed") prompt = `[run ${runId}] ${prompt}`;
       const outcome = await this.sessions.run(session.id, prompt, { maxTurns: c.maxTurns, timeoutMs: c.timeoutSec * 1000 });
       active.sessions.delete(session.id);
       const tokens = this.tokens(session.id);

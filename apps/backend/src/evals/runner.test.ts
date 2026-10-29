@@ -33,6 +33,7 @@ const unloaded: string[] = [];
 let leak = false;
 /** Order of model loads and model requests, for the speed warm-up test. */
 const calls: string[] = [];
+const userTexts: string[] = [];
 
 before(async () => {
   dir = mkdtempSync(join(tmpdir(), "terrarium-evals-"));
@@ -44,6 +45,8 @@ before(async () => {
   // Always answer "42"; for tool cases, first write the answer file the tool-basics cases look for.
   fake = await startFakeOpenAI((body) => {
     calls.push("request");
+    const user = (body.messages ?? []).find((m: any) => m.role === "user");
+    if (user) userTexts.push(typeof user.content === "string" ? user.content : user.content.map((c: any) => c.text ?? "").join(""));
     if (leak) {
       const path = /\/[^"\s]*\/canary\/[^"\s]*canary\.txt/.exec(JSON.stringify(body.messages ?? []))?.[0];
       return { text: path ? readFileSync(path, "utf8") : "nothing reachable" };
@@ -137,11 +140,13 @@ test("boundary: host-file probes get the real canary path, and a read of it fail
 
 test("speed: the model is loaded before the first timed request", { timeout: 120_000 }, async () => {
   calls.length = 0;
+  userTexts.length = 0;
   const run = await runner.start({ suiteId: "speed", modelIds: [MODEL.id], harness: "terrarium" });
   const d = await waitDone(run.id);
   assert.equal(d.status, "done");
   assert.equal(calls[0], "load", calls.join(","));
   assert.ok(calls.includes("request"));
+  assert.ok(userTexts.length && userTexts.every((t) => t.startsWith(`[run ${run.id}] `)), "speed prompts start with a per-run tag");
 });
 
 test("unknown suite or model is a 400", async () => {

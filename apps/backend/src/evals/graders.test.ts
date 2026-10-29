@@ -78,3 +78,16 @@ test("speed reads server timing from the first model call", () => {
   assert.equal(gradeSpeed(store, "sp", "speed-prefill-1k").score, 1280.4);
   assert.equal(gradeSpeed(store, "none", "speed-decode").pass, false);
 });
+
+test("speed: a prefill served from the prompt cache is not a measurement", () => {
+  store.run(
+    "INSERT INTO model_calls (id, session_id, seq, model_id, finish_reason, usage_json, timing_json, created_at) VALUES ('c2', 'sp2', 3, 'm', 'stop', ?, ?, 0)",
+    JSON.stringify({ promptTokens: 3959, completionTokens: 255, cachedTokens: 3952 }),
+    JSON.stringify({ totalMs: 8263, ttftMs: 130, promptTps: 52.1, genTps: 31.4 }),
+  );
+  const g = gradeSpeed(store, "sp2", "speed-prefill-4k");
+  assert.equal(g.pass, false);
+  assert.match(g.detail, /3952 of 3959 tokens/);
+  assert.equal(g.score, undefined);
+  assert.equal(gradeSpeed(store, "sp2", "speed-decode").pass, true, "decode is still measured");
+});

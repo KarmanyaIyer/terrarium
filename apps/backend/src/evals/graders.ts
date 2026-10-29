@@ -150,6 +150,9 @@ export function gradeSpeed(store: Store, sessionId: string, caseId: string): Gra
   const timing = row.timing_json ? (JSON.parse(row.timing_json) as ModelCallTiming) : undefined;
   if (row.finish_reason === "error" || row.finish_reason === "aborted" || !usage || !timing) return { pass: false, detail: `call ended: ${row.finish_reason}` };
   const prefill = caseId.includes("prefill");
+  // A prompt served from the server's prefix cache measures a lookup, not prefill.
+  const cached = usage.cachedTokens ?? 0;
+  if (prefill && cached > usage.promptTokens * 0.1) return { pass: false, detail: `prompt served from the server's cache (${cached} of ${usage.promptTokens} tokens); prefill not measured` };
   const score = prefill ? timing.promptTps : timing.genTps;
   const fmt = (n?: number) => (n === undefined ? "n/a" : n.toFixed(1));
   const detail = `prompt ${usage.promptTokens} tok at ${fmt(timing.promptTps)} tok/s, TTFT ${timing.ttftMs !== undefined ? `${Math.round(timing.ttftMs)} ms` : "n/a"}; output ${usage.completionTokens} tok at ${fmt(timing.genTps)} tok/s`;
