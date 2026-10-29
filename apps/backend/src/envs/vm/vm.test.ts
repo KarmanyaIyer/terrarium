@@ -655,7 +655,15 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
   test("stop/start persistence", async () => {
     await sh(a, "echo persist > /workspace/persist.txt && sync");
     await a.writeFile("/workspace/seeded/hello.txt", "from host\n", { mode: 0o640 });
-    await a.stop();
+    // Unusable at once, but the VMM keeps its slot (holdsVmm) until it has really exited (review 3, #6).
+    const vmm = a.hostPid()!;
+    const stopping = a.stop();
+    while (a.isRunning()) await new Promise((r) => setImmediate(r));
+    assert.equal(a.holdsVmm(), true);
+    assert.equal(process.kill(vmm, 0), true, "VMM still running while the guest syncs");
+    await stopping;
+    assert.equal(a.holdsVmm(), false);
+    assert.throws(() => process.kill(vmm, 0), /ESRCH/, "VMM process gone once holdsVmm() is false");
     assert.equal(a.isRunning(), false);
     await assert.rejects(a.exec("true"), /not running/);
     const reopened = (await driver.open({ id: "a", dir: a.dir, network: "off" })) as VmRuntime;
