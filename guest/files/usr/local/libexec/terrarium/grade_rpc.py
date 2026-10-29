@@ -1601,6 +1601,252 @@ def type_path(t):
         return "?:?"
 
 
+def std_module_name(v):
+    """The name of a standard-library module object as sys.modules has it (sent by name: each process's own), else None."""
+    if type(v) is not types.ModuleType:
+        return None
+    name = vars(v).get("__name__")
+    if isinstance(name, str) and std_module(name) and sys.modules.get(name) is v:
+        return name
+    return None
+
+
+def import_std(name):
+    """A standard-library module by name, imported if need be; None if it isn't one or can't be imported here."""
+    m = sys.modules.get(name)
+    if m is None and std_module(name) and name.partition(".")[0] not in _NO_IMPORT:
+        try:
+            __import__(name)
+        except Exception:
+            return None
+        m = sys.modules.get(name)
+    return m if isinstance(m, types.ModuleType) else None
+
+
+# Standard-library attributes that aren't raw assignments for StdWatch: process state mirrored on its own
+# (Client._state, Server._cst) or the interpreter's.
+_STD_OWN = {
+    "sys": frozenset(("stdout", "stderr", "stdin", "argv", "path", "last_type", "last_value", "last_traceback", "last_exc", "ps1", "ps2")),
+    "builtins": frozenset(("print", "input", "_")),
+    "time": frozenset(("tzname", "timezone", "altzone", "daylight")),
+    "warnings": frozenset(("filters", "showwarning", "_showwarnmsg_impl", "_filters_version")),
+}
+# ... and those the other process can't be given (its import system's own).
+_STD_UNSHARED = {"sys": frozenset(("modules", "meta_path", "path_hooks", "path_importer_cache"))}
+# The import system: its binding of modules and their names isn't a change anyone made.
+_IMPORTING = frozenset(("importlib", "importlib._bootstrap", "importlib._bootstrap_external", "_frozen_importlib", "_frozen_importlib_external", "importlib.util"))
+# A class's own caches (abc's).
+_CLASS_CACHES = frozenset(("__abstractmethods__", "_abc_impl", "_abc_registry", "_abc_cache", "_abc_negative_cache", "_abc_negative_cache_version"))
+_IMMUTABLE_TYPE = 1 << 8
+_LAZY_IMPORT = getattr(types, "LazyImportType", _NO)
+
+
+class _Quiet:
+    """The grader's own changes to the standard library, not reported by watch (a StdWatch or None)."""
+
+    def __init__(self, watch):
+        self.watch = watch
+
+    def __enter__(self):
+        if self.watch is not None:
+            self.watch.flush()
+            self.watch.quiet += 1
+
+    def __exit__(self, *exc):
+        if self.watch is not None:
+            self.watch.flush()
+            self.watch.quiet -= 1
+
+
+def std_watch_available():
+    return sys.version_info >= (3, 12) and sys.implementation.name == "cpython"
+
+
+class StdWatch:
+    """Raw changes to standard-library module and class attributes (`time.sleep = fake`, a mock.patch of one), seen
+    through CPython's dict and type watchers (3.12+; elsewhere `ok` stays False and nothing is seen). Not reported:
+    a module's own code changing its globals or its classes (its caches, and its setters), the import system's
+    bindings, submodules, dunder names of modules, abc's caches, and _STD_OWN; nor anything while `quiet`.
+
+    changed(where, path, name, old) is called for each change: where is the module's dict or the class, path
+    "module:" or the class's type_path, old the value before the change (_NO: none). A standard-library module
+    replaced or removed in sys.modules outside the import system calls changed(None, name, None, old). A class's
+    changes are found by comparing its namespace with a copy: at its watcher's event where that comes after the
+    change (3.12), else at the next event or flush(). If a watcher callback fails, `broken` is set: what the
+    tests and the candidate see may differ from then on."""
+
+    def __init__(self, changed):
+        self.changed = changed
+        self.quiet = 0
+        self.ok = False
+        self.broken = None
+        self.mods = {}  # id(module dict) -> (dict, module name)
+        self.types = {}  # id(class) -> [class, path, module dict, copy of its namespace]
+        self.pending = {}  # id(class) -> counted, for watchers called before the change
+        self._probe = None
+        if not std_watch_available():
+            return
+        try:
+            import ctypes
+
+            api = ctypes.pythonapi
+            dict_cb = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+            type_cb = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p)
+            api.PyDict_AddWatcher.argtypes, api.PyDict_AddWatcher.restype = [dict_cb], ctypes.c_int
+            api.PyType_AddWatcher.argtypes, api.PyType_AddWatcher.restype = [type_cb], ctypes.c_int
+            for f in (api.PyDict_Watch, api.PyType_Watch):
+                f.argtypes, f.restype = [ctypes.c_int, ctypes.py_object], ctypes.c_int
+            for f in (api.PyDict_ClearWatcher, api.PyType_ClearWatcher):
+                f.argtypes, f.restype = [ctypes.c_int], ctypes.c_int
+        except (ImportError, AttributeError):
+            return
+        cast, obj = ctypes.cast, ctypes.py_object
+        self._obj = lambda p: cast(p, obj).value
+
+        def on_dict(ev, d, k, v):
+            if ev <= 2 and self.broken is None:
+                try:
+                    self._dict_event(ev, d, k, v, _getframe(1))
+                except BaseException as e:  # noqa: B036 - nothing may be raised into the interpreter here
+                    self.broken = "%s: %s" % (type(e).__name__, clip(_safe_str(e), 200))
+            return 0
+
+        def on_type(t):
+            if self.broken is None:
+                try:
+                    self._type_event(t, _getframe(1))
+                except BaseException as e:  # noqa: B036
+                    self.broken = "%s: %s" % (type(e).__name__, clip(_safe_str(e), 200))
+            return 0
+
+        self._cbs = (dict_cb(on_dict), type_cb(on_type))  # kept alive as long as the watchers
+        self._dw = api.PyDict_AddWatcher(self._cbs[0])
+        self._tw = api.PyType_AddWatcher(self._cbs[1])
+        self._watch_dict = lambda d: api.PyDict_Watch(self._dw, d)
+        self._watch_type = lambda t: api.PyType_Watch(self._tw, t)
+
+        def clear():
+            # Before the interpreter tears down: a watcher called during teardown would crash it.
+            api.PyDict_ClearWatcher(self._dw)
+            api.PyType_ClearWatcher(self._tw)
+
+        _std("atexit").register(clear)
+        # Where the type watcher runs relative to the change (after it on 3.12).
+        probe = type("probe", (), {})
+        seen = []
+        self._probe = lambda t: seen.append("x" in _DICT(probe))
+        self._watch_type(probe)
+        probe.x = 1
+        self._probe = None
+        self.after = seen == [True]
+        self.sysmods = id(sys.modules)
+        self._watch_dict(sys.modules)
+        for name, m in list(sys.modules.items()):
+            if std_module(name) and isinstance(m, types.ModuleType):
+                self._watch_module(name, m)
+        self.ok = True
+
+    def _watch_module(self, name, m):
+        d = vars(m)
+        if id(d) in self.mods:
+            return
+        self.mods[id(d)] = (d, name)
+        self._watch_dict(d)
+        for key, v in list(d.items()):
+            if issubclass(type(v), type):
+                self._watch_class(name, d, key, v)
+
+    def _watch_class(self, name, d, key, cls):
+        """A class defined at the top of a standard-library module, as it's bound there (its path resolves to it)."""
+        if id(cls) in self.types or type.__dict__["__flags__"].__get__(cls) & _IMMUTABLE_TYPE:
+            return
+        get = type.__dict__
+        if get["__module__"].__get__(cls) != name or get["__qualname__"].__get__(cls) != key:
+            return
+        self.types[id(cls)] = [cls, "%s:%s" % (name, key), d, dict(_DICT(cls))]
+        self._watch_type(cls)
+
+    def _counted(self, f, own):
+        """Whether code in frame f changing something of module dict own is someone else's: not the module's own
+        code, the import system's, or a standard-library module's setting itself up (enum's _convert_ adds signal's
+        names); the first frame out of the standard library decides."""
+        if self.quiet or f is None or f.f_globals is own:
+            return False
+        while f is not None:
+            g = f.f_globals
+            name = g.get("__name__")
+            if name in _IMPORTING:
+                return False
+            if not std_module(name):
+                return True
+            if getattr(g.get("__spec__"), "_initializing", False) is True:
+                return False
+            f = f.f_back
+        return True
+
+    def _dict_event(self, ev, dp, kp, vp, f):
+        key = self._obj(kp)
+        new = self._obj(vp) if vp else _NO
+        if dp == self.sysmods:
+            if not isinstance(key, str) or not std_module(key):
+                return
+            if issubclass(type(new), types.ModuleType):
+                self._watch_module(key, new)
+            old = sys.modules.get(key, _NO)
+            if ev != 0 and new is not old and self._counted(f, None):
+                self.changed(None, key, None, old)
+            return
+        hit = self.mods.get(dp)
+        if hit is None or not isinstance(key, str):
+            return
+        d, name = hit
+        # By their types alone: an isinstance() check would read a test object's __class__.
+        if ev != 2 and issubclass(type(new), type):
+            self._watch_class(name, d, key, new)
+        if key[:2] == "__" == key[-2:] or key in _STD_OWN.get(name, ()):
+            return
+        old = d.get(key, _NO)
+        if issubclass(type(new), types.ModuleType) or issubclass(type(old), types.ModuleType) or new is old or type(old) is _LAZY_IMPORT:
+            return  # a submodule, or a lazy import (3.15) taking its value
+        if self._counted(f, d):
+            self.changed(d, name + ":", key, old)
+
+    def _type_event(self, tp, f):
+        if self._probe is not None:
+            return self._probe(tp)
+        rec = self.types.get(tp)
+        if rec is None:
+            return
+        counted = self._counted(f, rec[2])
+        if self.after:
+            self._diff(rec, counted)
+        else:
+            self.flush()
+            self.pending[tp] = counted or self.pending.get(tp, False)
+
+    def _diff(self, rec, counted):
+        cls, path, own, snap = rec
+        cur = _DICT(cls)
+        for key in set(snap).union(cur):
+            old, new = snap.get(key, _NO), cur.get(key, _NO)
+            if old is new or key in _CLASS_CACHES:
+                continue
+            if new is _NO:
+                del snap[key]
+            else:
+                snap[key] = new
+            if counted:
+                self.changed(cls, path, key, old)
+
+    def flush(self):
+        """Report the class changes still waiting on their watcher's next event."""
+        while self.pending:
+            tp, counted = self.pending.popitem()
+            rec = self.types.get(tp)
+            if rec is not None:
+                self._diff(rec, counted)
+
+
 
 # Comparison names, and what the identity fallback gives when neither side's method answers.
 CMP = ("__eq__", "__ne__", "__lt__", "__le__", "__gt__", "__ge__")
@@ -1901,6 +2147,8 @@ class Client(Side):
         self.umask0 = umask_now(0o022)
         self.locale0 = locale_now()
         self.tz0 = tz_now()
+        self.watch = None  # the tests' raw changes to standard-library modules and classes (install_guards)
+        self.std_orig = {}  # (path, name) -> (module dict or class, value before the tests' first change)
         import warnings
 
         self.warn_orig = (warnings.showwarning, warnings._showwarnmsg_impl)
@@ -2245,6 +2493,10 @@ class Client(Side):
         if t is types.TracebackType:
             # A real traceback there (`__exit__`'s third argument), the test's own one when it comes back.
             return {"t": "ttb", "id": self._callback_id(v)}
+        if t is types.ModuleType:
+            name = std_module_name(v)
+            if name is not None:
+                return {"t": "smod", "n": name}
         fields = ntuple_fields(t)
         if fields is not None and t is not tuple and _plain_ntuple(t):
             self.ntuples[(t.__name__, fields)] = t
@@ -2348,6 +2600,11 @@ class Client(Side):
             if not isinstance(m, collections.abc.Mapping) or x.get("n") not in m:
                 raise ProtocolError("unknown enum member")
             return m[x.get("n")]
+        if t == "smod":
+            m = import_std(x.get("n"))
+            if m is None:
+                raise Inexact("the candidate's code handed over the standard-library module %s, which the tests' process can't import" % clip(x.get("n"), 100))
+            return m
         raise ProtocolError("unknown tag %r" % clip(t, 40))
 
     # process state the candidate's code shares with the tests in one process
@@ -2441,7 +2698,49 @@ class Client(Side):
         if ws is not None and not same_warnings(ws, s.get("warnings")):
             st["warnings"] = [warnings_out(enc, ws[0]), None if ws[1] is self.warn_orig[0] else enc.enc(ws[1]), None if ws[2] is self.warn_orig[1] else enc.enc(ws[2])]
             s["warnings"] = ws
+        w = self.watch
+        if w is not None:
+            if w.broken is not None:
+                raise Inexact("watching the tests' changes to the standard library failed (%s)" % w.broken)
+            w.flush()
+            if self.std_orig:
+                self._std_state(enc, st, s)
         return st
+
+    def _std_changed(self, where, path, name, old):
+        """StdWatch: the tests changed a standard-library module's or class's attribute (sent with the next call)."""
+        if where is None:
+            self._end("the tests replaced or removed the standard-library module %s in sys.modules, which the candidate's process can't share" % path)
+        elif name in _STD_UNSHARED.get(path[:-1], ()):
+            self._end("the tests set %s%s, which the candidate's process can't share" % (path[:-1] + ".", name))
+        else:
+            self.std_orig.setdefault((path, name), (where, old))
+
+    def _std_state(self, enc, st, s):
+        """The standard-library attributes the tests changed since the candidate last had them: [path, name, "orig"]
+        (back to the candidate's own), [path, name, "del"] or [path, name, "set", value]."""
+        last = s.get("std") or {}
+        new, out = None, []
+        for key, (where, orig) in self.std_orig.items():
+            cur = (where if type(where) is dict else _DICT(where)).get(key[1], _NO)
+            if cur is last.get(key, orig):
+                continue
+            if new is None:
+                new = dict(last)
+            new[key] = cur
+            if cur is orig:
+                out.append([key[0], key[1], "orig"])
+            elif cur is _NO:
+                out.append([key[0], key[1], "del"])
+            else:
+                if type(where) is not dict and proxy_rid(cur) is None and type(cur) is not types.FunctionType and owner(type(cur), "__get__") is not None:
+                    # A descriptor on a class (other than a function, whose stand-in binds as one) acts there; a test
+                    # object standing for it wouldn't.
+                    raise Inexact("the tests set %s.%s to %s, which the candidate's process would have to bind as one process does" % (key[0], key[1], clip(type(cur).__name__, 100)))
+                out.append([key[0], key[1], "set", enc.enc(cur)])
+        if new is not None:
+            s["std"] = new
+            st["std"] = out
 
     def _path_state(self):
         """sys.path as the tests changed it, for the candidate's imports: [list number, entries, j, e, base]. The
@@ -2815,6 +3114,9 @@ class Client(Side):
         both.__doc__ = collect.__doc__
         gc.collect = both
         builtins.id = self.candidate_id
+        # Last: the guards above aren't the tests' changes.
+        w = StdWatch(self._std_changed)
+        self.watch = w if w.ok else None
 
     def _linked(self, x):
         n = self.link_of.get(id(x))
@@ -3079,6 +3381,8 @@ class Server(Side):
         self.stdin_pos = 0
         self.random = None  # random state last exchanged
         self.patches = []  # the tests' mock.patch of standard-library objects: (path, attr, target, old value)
+        self.std_saved = {}  # (path, name) -> this process's own value of a standard-library attribute the tests changed
+        self.watch = None
         self.rlimit = sys.getrecursionlimit()  # recursion limit last exchanged
         import warnings
 
@@ -3094,6 +3398,8 @@ class Server(Side):
         guard_frames(self.files, self.files, self._poison, False)
         self.raises = _watch_raises(self)
         self._install_guards()
+        w = StdWatch(self._std_changed)
+        self.watch = w if w.ok else None
 
     def _crossed(self, x):
         """Whether x is shared with the tests' process: an object they hold, a linked container, a by-value object
@@ -3192,6 +3498,10 @@ class Server(Side):
             return self._class_tag(enc, v, depth)
         if isinstance(v, BaseException):
             return enc.aliased(v, lambda: self._object(enc, v, depth))
+        if t is types.ModuleType:
+            name = std_module_name(v)
+            if name is not None:
+                return {"t": "smod", "n": name}
         return self._object(enc, v, depth)
 
     def _objref(self, enc, v, depth, key):
@@ -3406,6 +3716,11 @@ class Server(Side):
             if not isinstance(m, collections.abc.Mapping) or x.get("n") not in m:
                 raise ProtocolError("unknown enum member")
             return m[x.get("n")]
+        if t == "smod":
+            m = import_std(x.get("n"))
+            if m is None:
+                raise self._poison("the tests handed over the standard-library module %s, which the candidate's process can't import" % clip(x.get("n"), 100))
+            return m
         raise ProtocolError("unknown tag %r" % clip(t, 40))
 
     def _test_exception(self, dec, k, x, d):
@@ -3559,6 +3874,39 @@ class Server(Side):
             warnings.showwarning = self.warn_orig[0] if show is None else show
             warnings._showwarnmsg_impl = self.warn_orig[1] if impl is None else impl
             self.warn = warnings_state()
+        for path, name, how, value in st.get("std") or ():
+            self._std_apply(path, name, how, value)
+
+    def _std_apply(self, path, name, how, value):
+        """A standard-library module's or class's attribute as the tests changed it."""
+        mod, _, qual = path.partition(":")
+        t = import_std(mod)
+        if t is not None and qual:
+            t = resolve_std(path)
+        if t is None:
+            self._poison("the tests changed %s.%s, which the candidate's process doesn't have" % (clip(path, 200), clip(name, 100)))
+            return
+        key = (path, name)
+        try:
+            with _Quiet(self.watch):
+                if key not in self.std_saved:
+                    self.std_saved[key] = vars(t).get(name, _NO)
+                if how == "orig":
+                    value = self.std_saved[key]
+                if how == "del" or value is _NO:
+                    if name in vars(t):
+                        delattr(t, name)
+                else:
+                    setattr(t, name, value)
+        except Exception as e:
+            self._poison("the tests changed %s.%s, which the candidate's process can't change the same way (%s)" % (clip(path, 200), clip(name, 100), clip(_safe_str(e), 200)))
+
+    def _std_changed(self, where, path, name, old):
+        """StdWatch: the candidate's code changed the standard library, which the tests' process can't see."""
+        if where is None:
+            self._poison("the candidate's code replaced or removed the standard-library module %s in sys.modules, which the tests' process can't share" % path)
+        else:
+            self._poison("the candidate's code set %s%s, a standard-library attribute the tests' process can't share" % (path[:-1] + "." if path.endswith(":") else path + ".", name))
 
     def _slot(self, enc, cur):
         """How the tests' side takes the candidate's sys.stdout (or stdin, print, ...) cur: its own original, the
@@ -3572,6 +3920,11 @@ class Server(Side):
         """Process state the candidate's code changed since the tests last had it; what the tests' process can't
         share ends the run."""
         cst = {}
+        w = self.watch
+        if w is not None:
+            if w.broken is not None:
+                self._poison("watching the candidate's changes to the standard library failed (%s)" % w.broken)
+            w.flush()
         for mod, name in ((sys, "stdout"), (sys, "stderr"), (sys, "stdin"), (builtins, "print"), (builtins, "input")):
             cur = getattr(mod, name)
             if cur is not self.seen[name]:
@@ -3708,6 +4061,16 @@ class Server(Side):
                     if not (isinstance(ws, list) and len(ws) == 3):
                         raise ProtocolError("bad warnings state")
                     st["warnings"] = (warnings_in(dec, ws[0]), None if ws[1] is None else dec.dec(ws[1]), None if ws[2] is None else dec.dec(ws[2]))
+                sv = st.get("std")
+                if sv is not None:
+                    if not isinstance(sv, list):
+                        raise ProtocolError("bad standard-library state")
+                    out = []
+                    for e in sv:
+                        if not (isinstance(e, list) and len(e) in (3, 4) and isinstance(e[0], str) and isinstance(e[1], str) and e[2] in ("orig", "del", "set") and (len(e) == 4) == (e[2] == "set")):
+                            raise ProtocolError("bad standard-library state")
+                        out.append((e[0], e[1], e[2], dec.dec(e[3]) if len(e) == 4 else None))
+                    st["std"] = out
             self._incoming(dec, msg)
             weak = msg.get("weak") or ()
             # In the order the tests dropped them: an object the tests held weakly must die as its proxy did.
@@ -3834,7 +4197,8 @@ class Server(Side):
         t = self._patch_target(path)
         attr = str(attr)
         old = vars(t).get(attr, _NO)
-        setattr(t, attr, value)
+        with _Quiet(self.watch):
+            setattr(t, attr, value)
         self.patches.append((path, attr, t, old))
 
     def _unpatch(self, path, attr):
@@ -3842,10 +4206,11 @@ class Server(Side):
             p, a, t, old = self.patches[i]
             if p == path and a == attr:
                 del self.patches[i]
-                if old is _NO:
-                    delattr(t, a)
-                else:
-                    setattr(t, a, old)
+                with _Quiet(self.watch):
+                    if old is _NO:
+                        delattr(t, a)
+                    else:
+                        setattr(t, a, old)
                 return None
         raise ProtocolError("unpatch without a patch")
 

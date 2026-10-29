@@ -298,9 +298,11 @@ def main():
     global CLIENT
     client = CLIENT = Client(socket.socket(fileno=int(opt("--fd"))), timeout=timeout, deadline=deadline)
     sys.meta_path.insert(0, CandidateFinder(client, [m for m in (opt("--modules") or "").split(",") if m]))
-    mirror_patches(client)
     refuse_log_asserts()
     client.install_guards()
+    if client.watch is None:
+        # Without CPython's watchers (before 3.12) only mock.patch reaches the candidate's process.
+        mirror_patches(client)
     # Test code reading the grader's frames (a traceback through candidate code, a stack in a callback) can't see
     # what one process would show: a grader error. The runner and unittest's own reporting may read them.
     guard_frames(GRADER_CODE | {id(globals())}, GRADER_CODE, Inexact, True)
