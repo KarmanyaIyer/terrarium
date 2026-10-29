@@ -381,13 +381,20 @@ export class SessionManager {
   /** Start a run in the background (REST). Throws 409 when the session or its env is busy. */
   sendMessage(id: string, text: string): SessionSummary {
     if (typeof text !== "string" || !text.trim()) throw new HttpError(400, "text is required");
+    this.assertNotEval(id);
     this.startRun(id, text, {});
     return this.get(id);
   }
 
   continue(id: string): SessionSummary {
+    this.assertNotEval(id);
     this.startRun(id, CONTINUE_TEXT, {});
     return this.get(id);
+  }
+
+  /** Eval case sessions are driven by their run (sessions.run), never by user messages. */
+  private assertNotEval(id: string): void {
+    if (this.row(id).eval_run_id) throw new HttpError(409, "eval case sessions are read-only: the run drives them and their env is discarded afterwards");
   }
 
   /** Run to completion (evals). */

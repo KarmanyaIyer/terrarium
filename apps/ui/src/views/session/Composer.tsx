@@ -102,6 +102,23 @@ export function Composer({ session }: { session: SessionSummary }) {
     el.style.height = `${Math.min(240, Math.max(38, el.scrollHeight))}px`;
   }, [text]);
 
+  // Eval case sessions belong to their run: the runner sends the prompt, and the env is discarded afterwards.
+  if (session.evalRunId) {
+    return (
+      <div className="composer">
+        <div className="composer-readonly">
+          <span className="chip">eval case</span>
+          <span className="dim">{running ? "The eval run is driving this session; it takes no messages." : "Eval case, env discarded. The trace and file history stay viewable; it takes no messages."}</span>
+          {running && (
+            <button className="btn sm stop" onClick={() => void act("Stop", (b) => b.stopSession(session.id))} title="Stop this case (it is recorded as stopped)">
+              <Square /> Stop
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const send = async () => {
     const t = text.trim();
     if (!t || running) return;

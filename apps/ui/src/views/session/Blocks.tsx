@@ -197,21 +197,29 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
 
 // ---------- tool ----------
 
+/** Blob text, or the load error with a way to try again (a failed fetch is not "still loading"). */
 function useBlob(sha: string | undefined) {
   const backend = useStore((s) => s.backend);
   const [text, setText] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!sha || !backend) return;
     let alive = true;
+    setError(null);
     backend
       .getBlob(sha)
       .then((t) => alive && setText(t))
-      .catch(() => alive && setText(null));
+      .catch((err: unknown) => {
+        if (!alive) return;
+        setText(null);
+        setError(err instanceof Error ? err.message : String(err));
+      });
     return () => {
       alive = false;
     };
-  }, [sha, backend]);
-  return text;
+  }, [sha, backend, attempt]);
+  return { text, error, retry: () => setAttempt((n) => n + 1) };
 }
 
 function ToolDiffs({ t }: { t: ToolItem }) {
@@ -230,7 +238,7 @@ function ToolDiffs({ t }: { t: ToolItem }) {
 }
 
 function ToolDiff({ path, sha, kind }: { path: string; sha?: string; kind: string }) {
-  const text = useBlob(sha);
+  const { text, error, retry } = useBlob(sha);
   return (
     <div className="tool-diff">
       <div className="tool-diff-head mono">
@@ -241,6 +249,13 @@ function ToolDiff({ path, sha, kind }: { path: string; sha?: string; kind: strin
         <Expander lines={text.split("\n").length} limit={16}>
           {() => <DiffView text={text} compact />}
         </Expander>
+      ) : error ? (
+        <div className="tool-diff-wait tool-diff-err">
+          <span className="err-text">Diff did not load: {error}</span>
+          <button className="btn sm ghost" onClick={retry}>
+            Retry
+          </button>
+        </div>
       ) : (
         <div className="dim tool-diff-wait">{sha ? "Loading diff" : "No diff stored"}</div>
       )}

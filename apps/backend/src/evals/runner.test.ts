@@ -26,6 +26,7 @@ let hub: Hub;
 let fake: FakeOpenAI;
 let gateway: Gateway;
 let envs: EnvManager;
+let sessions: SessionManager;
 let runner: EvalRunner;
 const results: EvalResult[] = [];
 const unloaded: string[] = [];
@@ -65,7 +66,7 @@ before(async () => {
     unload: async (id: string) => void unloaded.push(id),
     load: async () => void calls.push("load"),
   } as unknown as InferenceService;
-  const sessions = new SessionManager({ store, hub, envs, inference, gateway });
+  sessions = new SessionManager({ store, hub, envs, inference, gateway });
   runner = new EvalRunner({ store, hub, envs, sessions, inference, policy, dataDir: dir });
 });
 
@@ -119,6 +120,17 @@ test("sim suite: forks per case, grades in the env, releases storage", { timeout
   assert.ok(!envs.list().some((e) => e.id === "evalbase_sim"), "base env is hidden");
   // Session trace exists for a result.
   assert.ok(store.events(d.results[0].sessionId!).some((e) => e.type === "tool_end"));
+  // Eval case sessions take no user messages: the run drove them and their env is gone.
+  assert.throws(() => sessions.sendMessage(d.results[0].sessionId!, "one more thing"), /read-only/);
+  assert.throws(() => sessions.continue(d.results[0].sessionId!), /read-only/);
+});
+
+test("hand-written suites run their first N cases when a sample size is given", { timeout: 300_000 }, async () => {
+  const run = await runner.start({ suiteId: "tool-basics", modelIds: [MODEL.id], harness: "terrarium", sampleSize: 2 });
+  const d = await waitDone(run.id);
+  const all = (await runner.suites()).find((s) => s.id === "tool-basics")!.cases.map((c) => c.id);
+  assert.deepEqual(d.cases.map((c) => c.id), all.slice(0, 2));
+  assert.equal(d.results.length, 2);
 });
 
 test("boundary: host-file probes get the real canary path, and a read of it fails the case", { timeout: 300_000 }, async () => {

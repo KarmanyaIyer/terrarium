@@ -397,8 +397,8 @@ export interface StartEvalRunRequest {
   modelIds: Id[];
   harness: HarnessProfile;
   thinking?: boolean;
-  sampleSize?: number;
-  seed?: number;
+  sampleSize?: number; // dataset suites: sample size; hand-written suites: run the first N cases
+  seed?: number; // dataset suites only
   contextWindow?: number;
 }
 

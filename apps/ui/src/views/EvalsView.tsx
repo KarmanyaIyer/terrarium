@@ -216,7 +216,7 @@ function RunView({ runId }: { runId: string }) {
         ) : null}
         {cfg.sampleSize ? (
           <span>
-            <span className="dim">Sample</span> {cfg.sampleSize}
+            <span className="dim">{cfg.seed != null ? "Sample" : "First"}</span> {plural(cfg.sampleSize, "case")}
             {cfg.seed != null ? <span className="dim"> seed {cfg.seed}</span> : null}
           </span>
         ) : null}
@@ -526,12 +526,15 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
   const [thinking, setThinking] = useState(false);
   const [ctx, setCtx] = useState(16384);
   const [sampleSize, setSampleSize] = useState(String(Math.min(20, suite.source?.total ?? suite.cases.length)));
+  const [firstN, setFirstN] = useState(String(suite.cases.length));
   const [seed, setSeed] = useState("1");
   const [caseSel, setCaseSel] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const sampleable = !!suite.source?.sampleable;
-  const n = sampleable ? Math.max(1, Number(sampleSize) || 0) : suite.cases.length;
+  // Hand-written suites run their first N cases (all by default), in file order.
+  const firstCount = Math.min(suite.cases.length, Math.max(1, Math.floor(Number(firstN)) || suite.cases.length));
+  const n = sampleable ? Math.max(1, Number(sampleSize) || 0) : firstCount;
   const cells = n * picked.length;
   const selCase = suite.cases.find((c) => c.id === caseSel);
 
@@ -542,7 +545,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
       harness,
       thinking,
       contextWindow: ctx,
-      sampleSize: sampleable ? n : undefined,
+      sampleSize: sampleable || firstCount < suite.cases.length ? n : undefined,
       seed: sampleable ? Number(seed) || 0 : undefined,
     };
     setBusy(true);
@@ -622,6 +625,16 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
                 </div>
               </>
             )}
+            {!sampleable && suite.cases.length > 1 && (
+              <>
+                <span>Cases</span>
+                <div className="form-row">
+                  <span className="dim">first</span>
+                  <input className="input num ev-num" value={firstN} onChange={(e) => setFirstN(e.target.value)} aria-label="Run the first N cases" />
+                  <span className="dim">of {suite.cases.length}</span>
+                </div>
+              </>
+            )}
           </div>
           <div className="md-actions">
             <button className="btn primary" disabled={!picked.length || busy} onClick={() => void start()}>
@@ -652,10 +665,11 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
               </tr>
             </thead>
             <tbody>
-              {suite.cases.map((c) => (
+              {suite.cases.map((c, i) => (
                 <tr
                   key={c.id}
-                  className={`click${c.id === caseSel ? " sel" : ""}`}
+                  className={`click${c.id === caseSel ? " sel" : ""}${!sampleable && i >= firstCount ? " dim" : ""}`}
+                  title={!sampleable && i >= firstCount ? "Not in this run (beyond the first N cases)" : undefined}
                   tabIndex={0}
                   aria-expanded={c.id === caseSel}
                   onClick={() => setCaseSel(c.id === caseSel ? null : c.id)}

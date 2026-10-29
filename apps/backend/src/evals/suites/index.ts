@@ -22,7 +22,7 @@ export interface SuiteOptions {
 }
 
 export interface MaterializeOptions extends SuiteOptions {
-  sampleSize?: number; // dataset suites only; default the dataset's defaultSampleSize
+  sampleSize?: number; // dataset suites: random sample (default defaultSampleSize); hand-written suites: the first N cases
   seed?: number; // default DEFAULT_SEED
 }
 
@@ -113,7 +113,8 @@ export async function loadSuites(opts: SuiteOptions = {}): Promise<EvalSuite[]> 
 }
 
 // One suite with its cases ready to run. Dataset suites are downloaded on first use and
-// sampled deterministically from (sampleSize, seed); hand-written suites return all cases.
+// sampled deterministically from (sampleSize, seed); hand-written suites return their first sampleSize cases
+// in file order (all of them by default).
 export async function materializeSuite(id: string, opts: MaterializeOptions = {}): Promise<EvalSuite> {
   const { evals, data } = paths(opts);
   const meta = (await readDatasetMetas(evals)).find((m) => m.id === id);
@@ -124,5 +125,6 @@ export async function materializeSuite(id: string, opts: MaterializeOptions = {}
   }
   const suite = (await loadJsonSuites(opts)).find((s) => s.id === id);
   if (!suite) throw new Error(`unknown suite ${id}`);
+  if (opts.sampleSize && opts.sampleSize < suite.cases.length) return { ...suite, cases: suite.cases.slice(0, Math.max(1, Math.floor(opts.sampleSize))) };
   return suite;
 }
