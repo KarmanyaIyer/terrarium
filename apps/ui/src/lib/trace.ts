@@ -21,7 +21,7 @@ export interface CallItem {
   end?: Ev<"model_call_end">;
   msg?: Ev<"assistant_message">;
   live?: LiveCall;
-  livePartial?: boolean; // opened mid-stream: the live text lacks what streamed before
+  livePartial?: boolean; // the live text missed chunks (opened mid-stream, or dropped for a slow socket)
   repair?: Ev<"harness_repair">;
   toolIds: string[];
 }

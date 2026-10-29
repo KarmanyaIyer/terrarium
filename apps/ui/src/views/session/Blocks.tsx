@@ -147,7 +147,7 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
               <span>{fmtInt(it.start.promptTokensEst)} →</span>
               <span className="live-count">{pending ? "prefill" : `${fmtInt(liveTok)} tok`}</span>
               {it.livePartial && (
-                <span className="chip warn" title="Opened mid-reply: what streamed before is not shown until the reply ends">
+                <span className="chip warn" title="Missed part of the reply (opened mid-reply, or dropped while the connection was slow); the whole reply shows when it ends">
                   partial
                 </span>
               )}
@@ -346,7 +346,7 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
         {live ? (
           <span className="tool-status num">
             {it.livePartial && (
-              <span className="chip warn" title="Opened mid-run: output from before is not shown until the call ends">
+              <span className="chip warn" title="Missed part of the output (opened mid-run, or dropped while the connection was slow); all of it shows when the call ends">
                 partial
               </span>
             )}
