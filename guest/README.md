@@ -97,8 +97,12 @@ Results go to `data/vm-verify/latest.json`.
     - Values: None, bools, ints of any size, floats, strings, bytes, complex, Decimal, Fraction, datetime
       types, ranges and slices cross by value; tuples, frozensets and namedtuples by value with their
       sharing (one object met twice in a message arrives as one, so `[[0] * 3] * 2` keeps its shared rows
-      and one NaN stays one NaN). Everything else crosses as a reference: a candidate object is a proxy on
-      the test side, a test object a handle on the candidate side (using it calls back into the tests).
+      and one NaN stays one NaN). A by-value object also keeps its identity across messages while either
+      side holds it (an `lru_cache`d tuple comes back as the same tuple). Two kinds arrive as a new object
+      each time: a tuple or frozenset holding more than plain data, and a number in a container's
+      contents; `assertIs`/`assertIsNot` on one of those is a grader error (unless the two are of different
+      types or values). Everything else crosses as a reference: a candidate object is a proxy on the test
+      side, a test object a handle on the candidate side (using it calls back into the tests).
     - Containers: lists, dicts (OrderedDict, defaultdict with its factory, Counter), sets and bytearrays
       are linked both ways, whichever side made them, returned ones too (`store.get().append(9)` changes
       the candidate's own list). Before each message a side sends the new contents of every link its code
@@ -111,24 +115,92 @@ Results go to `data/vm-verify/latest.json`.
       with `register()` answer as in one process. Special methods the class defines run in the candidate
       (`with m.Timer() as t` works). An object built on a data type (list, dict, str, int, tuple
       subclasses, IntEnum members) is a hybrid: its data is local (linked when mutable), the class's own
-      methods run in the candidate. Module attributes set or deleted on a candidate module reach the
-      candidate's module (`mock.patch.object(m, ...)`); `mock.patch` of a standard-library module or class
-      is applied in the candidate process too.
+      methods run in the candidate. A class with `__slots__` and no `__weakref__` gets a stand-in without
+      weak reference support (`weakref.ref` raises `TypeError` as in one process).
+    - Candidate functions, generators and modules are real ones on the test side. A function's stand-in
+      has the candidate's name, qualname, module, doc, defaults, annotations, signature, file and first
+      line (`type(m.f) is types.FunctionType`; inspect's signature, source and kind checks work); calling
+      it calls the candidate's function. Its `__dict__` is linked, and its other attributes are kept the
+      same both ways: what either side's code sets (`f.__name__`, `__doc__`, `__defaults__`, annotations)
+      reaches the other side before that side's code runs. A generator function's stand-in returns, at the
+      call, the stand-in for the candidate's generator: `next`, `send`, `throw` and `close` are the
+      candidate generator's, handing it back gives the candidate its own generator, and when the tests drop
+      it the candidate's generator lives on as long as the candidate holds it. A candidate module's
+      attributes set or deleted reach the candidate's module (`mock.patch.object(m, ...)`), `from m import
+      *` imports its public names, `importlib.reload(m)` runs it again in the candidate, and so does
+      importing it after `del sys.modules["m"]` (on 3.12+ the deletion reaches the candidate's
+      `sys.modules` with the next message, so candidate code importing it runs it again too). A
+      standard-library module crosses by name (the other side's own module).
     - Comparisons: two candidate objects are compared by the candidate. Between a candidate object and a
       test value, the candidate's `__eq__`, `__ne__` or ordering method counts only when its answer is the
       one comparing the data gives (no data: the identity fallback, `==` False, `!=` True); otherwise
       `Inexact`. Hashes are the candidate's, computed with the shared hash seed.
     - Exceptions: built-in and standard-library exception classes arrive as real exceptions (args,
       attributes, cause and context); candidate exception classes as stand-ins of the candidate's object
-      (`cm.exception.code` reads the candidate's attribute).
-    - Process state is mirrored where candidate code could see or change it: `sys.stdout`/`stderr` (the
-      original, a `StringIO` capture such as `redirect_stdout`, or `print`/`input` replaced), `sys.stdin`
-      text, `sys.argv`, the environment, the working directory, the `random` module's state, the `decimal`
-      context (precision, rounding, flags, traps), the recursion limit, and the `warnings` filters both
-      ways plus the tests' `showwarning` hooks (`assertWarns`, `catch_warnings(record=True)` and
-      `simplefilter("error")` see the candidate's warnings). A stream the grader can't mirror (some other
-      object) is a grader error when candidate code uses it. `assertLogs`/`assertNoLogs` are a grader
-      error: logging isn't mirrored.
+      (`cm.exception.code` reads the candidate's attribute). A candidate context manager's `__exit__` or
+      `__aexit__` gets a real traceback for an exception in the `with` body (`reraise_as`-style managers
+      that check `tb is not None` work), its frame the grader's (see frames below).
+    - Process state, mirrored both ways (each side sends what its code changed before the other side's
+      code runs): `sys.stdout`/`stderr` (the original, a `StringIO` capture such as `redirect_stdout`, a
+      candidate object, or `print`/`input` replaced), `sys.stdin` text and how far the candidate read it,
+      `sys.argv` (a linked list), the environment, the working directory (the candidate's workspace and
+      the tests' copy of it stand for each other), the umask, the locale, the time zone after
+      `time.tzset()`, logger levels, `propagate`, `disabled` and `logging.disable`, the `random` module's
+      state, the `decimal` context, the recursion limit, the `warnings` filters, and settings CPython keeps
+      in C (`gc.enable`/`disable`/`set_threshold`/`set_debug`, `sys.setswitchinterval`,
+      `sys.set_int_max_str_digits`, `socket.setdefaulttimeout`, `threading.stack_size`: each call is made
+      again in the other process, in order). From the tests only:
+      their `showwarning` hooks (`assertWarns`, `catch_warnings(record=True)` and `simplefilter("error")`
+      see the candidate's warnings); `sys.path` (their entries around the candidate interpreter's own,
+      its workspace first, as `python3 -m unittest` has it); attributes they set, delete or restore on
+      standard-library modules and classes, `mock.patch` or plain assignment (`json.dumps = ...`;
+      Python 3.12+, seen through CPython's dict and type watchers; before 3.12 only `mock.patch`).
+    - Process state the other side can't take is a grader error for the call that needs it and every
+      later one: candidate code changing `sys.path`, a standard-library module or class attribute, a
+      standard-library entry of `sys.modules`, `warnings.showwarning`, `logging.setLoggerClass` or
+      `setLogRecordFactory`, or setting a locale, time zone, environment variable or directory the tests'
+      process can't set the same way (and the same for the tests' changes); one side using signal handlers
+      or timers, resource limits, the process priority, trace or profile functions or `faulthandler` after
+      the other side's code changed that group (`signal.getsignal` after the candidate installed a
+      handler); the tests replacing a
+      standard-library module in `sys.modules` (`mock.patch.dict(sys.modules, ...)`), setting
+      `sys.meta_path`, `sys.path_hooks` or `sys.path_importer_cache`, a descriptor (other than a function)
+      on a standard-library class, or a `sys.path` without the interpreter's own entries in order. Logging
+      records stay in the process that logs them: a handler or filter the tests add (other than a
+      `NullHandler`, or a plain `StreamHandler` to the original stdout or stderr) ends the run, using a
+      logger's handlers on the test side after candidate code added one is a grader error, and so are
+      `assertLogs`/`assertNoLogs`. A stream the grader can't mirror (some other object) is a grader error
+      when candidate code uses it. Each process has its own copy of the workspace (`ws`, and the tests'
+      sealed `src`): the tests looking at a path in theirs (open, listing, `os.stat`, `os.path.exists`,
+      pathlib) that candidate code created, wrote, removed, renamed or changed the mode of in its copy, a
+      directory holding one, or anything after candidate code started a process or called native code
+      through ctypes, is a grader error; so is the tests changing their copy. Paths outside the workspace
+      (`tempfile`, `/tmp`) are the same file for both.
+    - Process introspection that can't see the other half is a grader error: `sys.getrefcount`,
+      `gc.get_referrers`, `weakref.getweakrefcount` or `getweakrefs` of an object both processes share (a
+      proxy, a linked container, a by-value object that crossed, a test object the candidate holds) on
+      either side; `gc.get_referents` or `sys.getsizeof` of a proxy or a linked container; once candidate
+      code has run, the tests' process-wide counts (`gc.get_objects`, `get_stats`, `get_count`, `freeze`,
+      `sys.getallocatedblocks`, `time.process_time` and `thread_time`, `os.times`, `resource.getrusage`,
+      `tracemalloc` statistics, `threading.active_count` and `enumerate`); candidate code calling
+      `gc.get_objects`. `gc.collect()` in the tests collects in both processes (a cycle the tests let go of
+      dies as in one process) and counts both. `id()` of a candidate object (or a value it sent) is its id
+      in the candidate process with bit 62 set: the same while the object lives, as in one process.
+    - Frames and code: a traceback through the other side holds the grader's frames, and a stand-in
+      function's or generator's code and frames are the grader's. Reading a frame of the grader's code
+      (`tb_frame`, `f_code`, `gi_frame`; frame names in such a traceback, `inspect.stack()` in a callback)
+      is a grader error on either side (unittest's own failure reports may), as are reading `__code__`,
+      `gi_code` or `gi_frame` of a stand-in (except inspect's signature, source and kind checks), setting
+      its `__code__`, `__defaults__` or `__kwdefaults__`, candidate code replacing `__code__` or
+      `__annotate__` of a function the tests have, `typing.get_type_hints` and `get_annotations(eval_str=
+      True)` of a stand-in with string annotations, and tests whose source mentions `__closure__`,
+      `__globals__`, `cell_contents` or `getclosurevars` (a stand-in's closure and globals are the
+      grader's) or compares a `type()` with `types.ModuleType` (a candidate module is a module subclass
+      there). `vars(m)` or `m.__dict__` of a candidate module is a grader error except for `from m import
+      *` and `mock`.
+    - Test handles: candidate code using a test object where Python takes built-in data
+      (`os.path.join(handle)`, `",".join(handles)`, `isinstance` checks of one) is a grader error: in one
+      process it would be the test's own str, list or number.
     - Stack depth: each side runs the other's requests padded to the depth one process would have them at
       (the other side's code frames stand in for the grader's), so a recursion runs out of stack where it
       would in one process. Through callback chains (candidate code calling a test callback that calls the
@@ -139,28 +211,28 @@ Results go to `data/vm-verify/latest.json`.
     - One candidate call may use the whole `--timeout`; a call still running near the end fails, and the
       counts are still written. Syncing may use a quarter of the budget (5-30 s); past that the candidate
       counts as gone.
-    - Visible grader errors that remain (never passes): pickling a candidate object; deep-copying a
-      structure that holds candidate objects (the object alone works); a test class deriving from a
-      candidate class; `isinstance` or `__class__` of an object whose class derives from a
-      standard-library class the grader can't mirror; a candidate comparison that disagrees with the
-      data; tests that keep more linked containers than the sync limit allows (12,000 containers held by
-      both sides through 6,000 calls); candidate threads as above; `assertLogs`/`assertNoLogs`; candidate
-      code replacing `warnings.showwarning`; a weak reference the tests hold to a candidate object when
-      the tests drop their last strong reference while the candidate still holds the object (the test
-      side's stand-in dies first; checked in the order the tests dropped them, so an object the
-      candidate had already let go of works).
-    - Known gaps (wrong answers, not errors; each needs a test asserting something unusual):
-      `type(x)` of a candidate function, generator, module or other built-in non-data object is the
-      grader's stand-in class, so `type(m.f) is types.FunctionType` is False (`isinstance` is right);
-      logging configuration and handlers are per process (a handler the tests add to the candidate's
-      logger sees nothing); standard-library state changed without `mock.patch` (assigning
-      `json.dumps = ...`, `mock.patch.dict(sys.modules, ...)`, `locale.setlocale`, `time.tzset`) stays in
-      the process that changed it; the traceback of an exception from candidate code holds the test
-      side's frames, not the candidate's; `weakref.ref` of a candidate object whose class has
-      `__slots__` without `__weakref__` works while the tests hold the object (one process raises
-      `TypeError`; once the tests drop it, it is a grader error); `id()` of a candidate object the tests
-      dropped and got back can differ (its stand-in is new). A test asserting the opposite of what
-      one process does there could pass the isolated run where Python fails it.
+    - Other visible grader errors (never passes): pickling a candidate object; deep-copying a structure
+      that holds candidate objects (the object alone works); a test class deriving from a candidate
+      class; `isinstance` or `__class__` of an object whose class derives from a standard-library class
+      the grader can't mirror; a candidate comparison that disagrees with the data; tests that keep more
+      linked containers than the sync limit allows (12,000 containers held by both sides through 6,000
+      calls); candidate threads as above; using a candidate async generator from the tests; a weak
+      reference the tests hold to a candidate object when the tests drop their last strong reference
+      while the candidate still holds the object (the test side's stand-in dies first; checked in the
+      order the tests dropped them, so an object the candidate had already let go of works).
+    - Remaining differences from one process. Each fails a test one process passes (a stricter answer);
+      a pass would need a test asserting something one process doesn't do:
+      - library code reading a stand-in function's `__globals__` or `__closure__` without the tests'
+        source naming them (a decorator walking `f.__globals__`) sees the grader's module, so names the
+        candidate's module defines are missing;
+      - a warning candidate code raises with a `stacklevel` past its own frames points into the grader's
+        code (`cm.filename == __file__` fails), and the "default"/"module" actions' once-per-location
+        registries are per process;
+      - each process has its own working directory, `__file__` paths and `sys.path` entries (the
+        candidate's workspace, the tests' sealed copy of it): paths crossing as process state are mapped,
+        a path the candidate returns as a string isn't (`m.where() == os.getcwd()` fails);
+      - a module candidate code writes into its workspace during the run can't be imported by the tests
+        (the workspace's modules are fixed when the run starts).
     - Cost: about 70 us per call on an M-series Mac (one round trip; the plain run's call is about 0.1
       us). 5,000 calls returning a list each grade in 1 s; 6,000 records kept by the candidate in 1.5 s; a
       binary search over a 1M-element list, 300 calls, in 0.8 s.

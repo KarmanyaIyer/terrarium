@@ -164,9 +164,13 @@ from a root-owned copy without symlinks, taken before candidate code runs; pass 
 every counted test; runs that disagree are a grader error, shown with both runs' results). Candidate code can
 forge the plain run, so the isolated run must be sound: it never reports a pass the same tests would not give
 the same code in one process. It answers where it reproduces Python exactly (containers linked both ways,
-stand-in classes with the candidate's MRO, mirrored process state) and raises a grader error where it can't;
-a forged plain run can then only turn a fail into a disagreement. Remaining limits are listed in
-guest/README.md. Every case runs as a
+by-value objects keeping their identity across calls, stand-in classes with the candidate's MRO, real
+functions, generators and modules standing for the candidate's and kept in sync both ways, process state
+mirrored both ways: streams, argv, environment, working directory, umask, locale, time zone, logger levels,
+random, decimal, warnings, the tests' `sys.path` and standard-library assignments, settings CPython keeps in
+C) and raises a grader error where it can't (state one process can't share, introspection of the other
+half: refcounts, referrers, frames); a forged plain run can then only turn a fail into a disagreement. The
+remaining differences only make it stricter; they are listed in guest/README.md. Every case runs as a
 normal session in a disposable fork, so clicking any result opens the full transcript, files and raw
 requests. One click runs a suite across selected models. Built-in suites: tool basics (sim), shell data
 tasks (sim), coding with tests (vm), chat reasoning/knowledge sample (none), isolation probes (vm+sim,

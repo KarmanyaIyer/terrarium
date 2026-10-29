@@ -15,7 +15,18 @@
     "syspath_order": [true, "pass"],
     "umask_ok": [true, "pass"],
     "tz_ok": [true, "pass"],
-    "locale_ok": [true, "pass"]
+    "locale_ok": [true, "pass"],
+    "proc_mirror": [true, "pass"],
+    "proc_gc_leak": [false, "fail"],
+    "proc_signal_leak": [false, "inexact"],
+    "proc_signal_ok": [true, "pass"],
+    "fs_write_lenient": [false, "inexact"],
+    "fs_subprocess_lenient": [false, "inexact"],
+    "fs_listdir": [true, "inexact"],
+    "fs_tests_write": [true, "inexact"],
+    "fs_roundtrip_ok": [true, "pass"],
+    "fs_tmp_ok": [true, "pass"],
+    "fs_unrelated_ok": [true, "pass"]
   },
   "2: context managers with an exception in the with body; test handles where built-in data is needed": {
     "ctx_cwd": [true, "pass"],
@@ -57,7 +68,8 @@
     "hints_str": [true, "inexact"],
     "hints_ok": [true, "pass"],
     "module_reimport": [true, "pass"],
-    "module_reimport_lenient": [false, "fail"]
+    "module_reimport_lenient": [false, "fail"],
+    "module_unimport": [true, "pass"]
   },
   "4: refcounts, referrers and process-wide counts of shared objects": {
     "refcount_leak": [false, "inexact"],

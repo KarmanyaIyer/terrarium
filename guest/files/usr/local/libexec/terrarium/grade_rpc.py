@@ -7,7 +7,8 @@ raises GraderError (a BaseException, so assertRaises can't catch it) and the tes
 
 Values. Immutable plain data (None, bool, int, float, complex, str, bytes, tuple, frozenset, slice, range, Decimal,
 Fraction, datetime values with no or a fixed-offset timezone, namedtuples the test made, built-in classes and
-functions by name) crosses by value; a tuple or frozenset met twice in one message arrives as one object. Mutable
+functions by name) crosses by value; a tuple or frozenset met twice in one message arrives as one object, and a
+by-value object keeps its identity across messages while either side holds it (Encoder). Mutable
 containers (list, dict, OrderedDict, defaultdict with its factory, Counter, set, bytearray) are linked, whichever
 side made them: each side holds its own copy and, before it hands control to the other side, sends the new contents
 of every linked container its code changed that the other side can reach; the other side writes them into its copy
@@ -27,18 +28,28 @@ in the candidate. Comparing with a test value, the candidate's ==, != or orderin
 must be the one comparing the data gives (no data: the identity fallback), else GraderError, so a candidate can't
 claim a match. Exceptions arrive as instances of their class with
 their args, attributes, str, repr, cause and context; other attributes go to the candidate's exception object.
+Candidate functions, generators and modules arrive as real ones standing for the candidate's (_make_forwarder,
+_gen_wrap, grade_runner's ProxyModule); the attributes a function's stand-in copies are kept the same both ways.
 
-Process state. Mirrored with every message, where candidate code could see or change it: sys.stdout/stderr/stdin,
-print/input, argv, os.environ, the working directory, the random module's state, the decimal context, the recursion
-limit and the warnings filters (both ways), and the tests' warnings hooks. Each side runs the other's requests as deep
-in its stack as one process would ("ng": the requester's code frames), so recursion runs out at the same depth.
+Process state. Mirrored with every message, where code on either side could see or change it: sys.stdout/stderr/
+stdin, print/input, argv, os.environ, the working directory, the umask, the locale, the time zone, logger levels,
+the random module's state, the decimal context, the recursion limit, the warnings filters and the settings in
+_PROC_MIRROR (both ways); the tests' warnings hooks, sys.path and standard-library attributes (StdWatch). What the
+other process can't take the same way ends the run (Client._end, Server._poison). Each process has its own copy of
+the workspace: the tests looking at a path the candidate's code changed in its copy, or changing their own, is a
+grader error (_FS_CHANGE). Each side runs the other's
+requests as deep in its stack as one process would ("ng": the requester's code frames), so recursion runs out at
+the same depth.
 
 Wire format: 4-byte big-endian length, then ASCII JSON. Every message is {"req": {...}} or {"rep": {...}}; values go
 under "v" (decoded first), then "sync" (new contents of linked containers) is applied. Both sides: "held"/"loose"
 (links its code started or stopped holding), "unlink" (links neither side holds). Test side: "st" (process state),
 "release" (proxies it dropped, in that order), "weak" (those of them the tests held weak references to). Candidate
-side: "out", "stdin", "random", "rlimit", "decimal", "warnings" (state its code changed), "weakalive" (weakly held
-objects released while the candidate still had them: a grader error), "busy" (seconds it spent on sync), "fatal".
+side: "out", "stdin", "random", "rlimit", "decimal", "warnings", "cst" (state its code changed), "weakalive" (weakly
+held objects released while the candidate still had them: a grader error), "busy" (seconds it spent on sync),
+"fatal". "st" and "cst" carry the process state and "fn" (attributes set on functions or generators the other side
+has), "proc"/"procdirty" (ProcSettings); "st" also "std" (standard-library attributes) and "unimport", "cst" also
+"fs" (workspace paths the candidate's code changed).
 Calls nest: while either side waits for a reply it serves the other side's requests (callbacks)."""
 
 import base64
@@ -75,6 +86,7 @@ time, json, struct, base64, datetime, decimal, fractions, io, weakref, threading
 id = builtins.id  # the tests' side may give candidate objects their candidate id (see Client.install_guards)
 _getrefcount = sys.getrefcount
 _getframe = sys._getframe
+_get_ident = threading.get_ident
 _intern = sys.intern
 _path_join, _normpath, _isabs = os.path.join, os.path.normpath, os.path.isabs
 
@@ -393,6 +405,7 @@ META_DUNDERS = ("__getitem__", "__iter__", "__len__", "__contains__", "__reverse
 
 # The grader's code, by its module globals (frames are told apart by f_globals, which reading doesn't audit).
 GRADER_CODE = frozenset((id(globals()),))
+_GRADER_GLOBALS = globals()
 
 
 def grader_frames(code):
@@ -719,6 +732,103 @@ for _n in ("__iter__", "__len__", "__getitem__", "__setitem__", "__delitem__", "
     setattr(_CandidateHandlers, _n, _refuse_handlers(_n))
 
 
+# Process-wide settings CPython keeps in C, where no module attribute changes for the watchers to see. Mirrored: a
+# call to one of these setters on either side is made again in the other process before that one's code runs.
+_PROC_MIRROR = (("gc", ("enable", "disable", "set_threshold", "set_debug")), ("sys", ("setswitchinterval", "set_int_max_str_digits")), ("socket", ("setdefaulttimeout",)), ("threading", ("stack_size",)))
+# Not mirrored (handlers and trace functions are code; timers, limits and the priority act on the process that set
+# them): once one side's code has called a function of a group that changes it, the other side calling any function
+# of that group is a grader error.
+_PROC_GROUPS = {
+    "signal handlers and timers": (("signal", ("signal", "getsignal", "setitimer", "getitimer", "alarm", "siginterrupt", "pthread_sigmask", "set_wakeup_fd")),),
+    "resource limits": (("resource", ("setrlimit", "getrlimit", "prlimit")),),
+    "the process priority": (("os", ("nice", "setpriority", "getpriority")),),
+    "trace and profile functions": (("sys", ("settrace", "setprofile", "gettrace", "getprofile")), ("threading", ("settrace", "setprofile", "gettrace", "getprofile", "settrace_all_threads", "setprofile_all_threads"))),
+    "faulthandler": (("faulthandler", ("enable", "disable", "is_enabled", "register", "unregister", "dump_traceback_later", "cancel_dump_traceback_later")),),
+}
+_PROC_ARGS = (int, float, bool, type(None))
+
+
+class ProcSettings:
+    """Both sides: the settings above, as this side's code changes them and the other side's code did."""
+
+    def __init__(self, end, error):
+        self.end = end  # end(why): this process can't take the other's change; the run ends
+        self.error = error  # error(why): the exception to raise
+        self.calls = []  # mirrored setter calls this side's code made, not sent yet: [module, name, args, kwargs]
+        self.mine = set()  # groups this side's code changed
+        self.sent = set()
+        self.theirs = set()  # groups the other side's code changed
+        self.real = {}
+        for mod_name, names in _PROC_MIRROR:
+            mod = _std(mod_name)
+            for name in names:
+                f = getattr(mod, name, None) if mod is not None else None
+                if f is not None:
+                    self.real[(mod_name, name)] = f
+                    setattr(mod, name, self._mirrored(mod_name, name, f))
+        for group, funcs in _PROC_GROUPS.items():
+            for mod_name, names in funcs:
+                mod = _std(mod_name)
+                for name in names:
+                    f = getattr(mod, name, None) if mod is not None else None
+                    if f is not None:
+                        setattr(mod, name, self._grouped(group, mod_name, name, f))
+
+    def _mirrored(self, mod_name, name, real):
+        def guarded(*args, **kwargs):
+            r = real(*args, **kwargs)
+            if args or kwargs or name != "stack_size":
+                if not all(type(a) in _PROC_ARGS for a in args) or not all(type(v) in _PROC_ARGS for v in kwargs.values()):
+                    self.end("%s.%s() was called with values the other process can't be given" % (mod_name, name))
+                self.calls.append([mod_name, name, list(args), kwargs])
+            return r
+
+        guarded.__name__ = guarded.__qualname__ = real.__name__
+        guarded.__doc__ = real.__doc__
+        return guarded
+
+    def _grouped(self, group, mod_name, name, real):
+        reads = name.startswith("get") or name == "is_enabled"
+
+        def guarded(*args, **kwargs):
+            if group in self.theirs:
+                raise self.error("%s.%s(): the other process's code changed %s, which this process doesn't share" % (mod_name, name, group))
+            r = real(*args, **kwargs)
+            if not reads and not (name == "nice" and args == (0,)):
+                self.mine.add(group)
+            return r
+
+        guarded.__name__ = guarded.__qualname__ = real.__name__
+        guarded.__doc__ = real.__doc__
+        return guarded
+
+    def out(self, st):
+        """Put this side's changes since it last sent them into st."""
+        if self.calls:
+            st["proc"], self.calls = self.calls, []
+        new = self.mine - self.sent
+        if new:
+            st["procdirty"] = sorted(new)
+            self.sent |= new
+
+    def apply(self, st):
+        """The other side's changes: its mirrored calls made here, in order."""
+        for e in st.get("proc") or ():
+            if not (isinstance(e, list) and len(e) == 4 and isinstance(e[2], list) and isinstance(e[3], dict) and all(type(a) in _PROC_ARGS for a in e[2]) and all(type(k) is str and type(v) in _PROC_ARGS for k, v in e[3].items())):
+                raise ProtocolError("bad process setting")
+            f = self.real.get((e[0], e[1])) if type(e[0]) is str and type(e[1]) is str else None
+            if f is None:
+                raise ProtocolError("bad process setting")
+            try:
+                f(*e[2], **e[3])
+            except Exception as x:
+                self.end("%s.%s() as the other process's code called it fails here (%s)" % (e[0], e[1], clip(_safe_str(x), 200)))
+        for g in st.get("procdirty") or ():
+            if g not in _PROC_GROUPS:
+                raise ProtocolError("bad process setting")
+            self.theirs.add(g)
+
+
 def env_raw():
     """os.environ's encoded storage (CPython): comparing it is cheaper than decoding the environment."""
     raw = getattr(os.environ, "_data", None)
@@ -789,6 +899,126 @@ def path_compose(own, base, entries, j, e):
         if own[k : k + n] == base:
             return entries[:j] + own[:k] + entries[j:e] + own[k + n :] + entries[e:]
     return None
+
+
+# The workspace's files: each process has its own copy (the candidate's, and the tests' sealed one), so what the
+# candidate's code changes in its copy the tests' copy doesn't have. The candidate's side reports the paths its code
+# changed (audit events; "*" once another process or native code could have changed any) and the tests' side raises
+# Inexact when the tests look at one of them, or change their own copy.
+# Audit event -> ((path argument, its dir_fd argument or None), ...): changes ("open" only with a write flag), looks.
+_FS_CHANGE = {
+    "open": ((0, None),),
+    "os.remove": ((0, 1),),
+    "os.rmdir": ((0, 1),),
+    "os.mkdir": ((0, 2),),
+    "os.mkfifo": ((0, 2),),
+    "os.mknod": ((0, 3),),
+    "os.rename": ((0, 2), (1, 3)),
+    "os.link": ((0, 2), (1, 3)),
+    "os.symlink": ((1, 2),),
+    "os.chmod": ((0, 2),),
+    "os.chown": ((0, 3),),
+    "os.utime": ((0, 3),),
+    "os.truncate": ((0, None),),
+    "os.chflags": ((0, None),),
+    "os.setxattr": ((0, None),),
+    "os.removexattr": ((0, None),),
+    "shutil.rmtree": ((0, 1),),
+    "sqlite3.connect": ((0, None),),
+}
+_FS_LOOK = {"open": ((0, None),), "os.listdir": ((0, None),), "os.scandir": ((0, None),), "os.listxattr": ((0, None),), "os.getxattr": ((0, None),), "sqlite3.connect": ((0, None),)}
+_FS_EVENTS = frozenset(_FS_CHANGE) | frozenset(_FS_LOOK)
+# After these anything in the workspace may have changed: another process, or native code.
+_FS_ANY = frozenset(("subprocess.Popen", "os.system", "os.exec", "os.posix_spawn", "os.spawn", "os.fork", "os.forkpty", "ctypes.dlopen", "ctypes.dlsym", "ctypes.call_function"))
+_O_WRITE = os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND
+# Calls on the tests' side that look at files without an audit event (os.path's checks and pathlib go through them).
+_FS_CALLS = ("stat", "lstat", "access", "readlink")
+_FS_SQLITE = ("-journal", "-wal", "-shm")
+# Where a file operation from these (or the grader) isn't the code under test's: see fs_owner().
+_FS_OWNERS = frozenset(("unittest", "importlib", "_frozen_importlib", "_frozen_importlib_external", "zipimport"))
+
+
+def fd_path(fd):
+    """The path an open file descriptor names, or None."""
+    try:
+        if sys.platform == "darwin":
+            import fcntl
+
+            return os.fsdecode(fcntl.fcntl(fd, 50, bytes(1024)).split(b"\0", 1)[0]) or None  # F_GETPATH
+        return os.readlink("/proc/self/fd/%d" % fd)
+    except Exception:
+        return None
+
+
+def fs_where(p, dir_fd):
+    """The absolute, normalized path an audit event's (or os call's) path argument names, relative to dir_fd where
+    that's set (>= 0); None where it can't be told."""
+    if p is None:
+        p = "."
+    elif type(p) is int:
+        p = fd_path(p)
+        if p is None:
+            return None
+    elif type(p) is not str:
+        try:
+            p = os.fsdecode(os.fspath(p))
+        except Exception:
+            return None
+    if not _isabs(p):
+        if type(dir_fd) is int and dir_fd >= 0:
+            base = fd_path(dir_fd)
+        else:
+            try:
+                base = _getcwd()
+            except OSError:
+                base = None
+        if base is None:
+            return None
+        p = _path_join(base, p)
+    return _normpath(p)
+
+
+def fs_rel(path, roots):
+    """path ("/"-separated, "." for the root) relative to the first of roots (normalized) that holds it, else None."""
+    for r in roots:
+        if path == r:
+            return "."
+        if path.startswith(r) and path[len(r) : len(r) + 1] == os.sep:
+            return path[len(r) + 1 :].replace(os.sep, "/")
+    return None
+
+
+def fs_hit(rel, changed):
+    """Whether looking at rel can see a change at one of the changed paths: the same path, one inside it (a
+    directory's listing), or one holding it."""
+    if rel == "." and changed:
+        return True
+    for c in changed:
+        if c == rel or c == "." or c.startswith(rel + "/") or rel.startswith(c + "/"):
+            return True
+    return False
+
+
+def fs_roots(root):
+    """A workspace copy's root as file operations may name it: as given and with symlinks resolved."""
+    return tuple(dict.fromkeys((_normpath(root), _normpath(os.path.realpath(root)))))
+
+
+def fs_owner(f, own):
+    """Whether the file operation frame f made is the code under test's: past standard-library frames, the first
+    frame isn't the grader's (own: its module globals; or __main__), unittest's or the import system's."""
+    while f is not None:
+        g = f.f_globals
+        if g is own:
+            return False
+        name = g.get("__name__")
+        if type(name) is str:
+            if name == "__main__" or name.partition(".")[0] in _FS_OWNERS:
+                return False
+            if not std_module(name):
+                return True
+        f = f.f_back
+    return False
 
 
 _INF = float("inf")
@@ -1738,10 +1968,12 @@ class StdWatch:
     replaced or removed in sys.modules outside the import system calls changed(None, name, None, old). A class's
     changes are found by comparing its namespace with a copy: at its watcher's event where that comes after the
     change (3.12), else at the next event or flush(). If a watcher callback fails, `broken` is set: what the
-    tests and the candidate see may differ from then on."""
+    tests and the candidate see may differ from then on. other(name, deleted), if given, is called for any other
+    module removed (or replaced) in sys.modules outside the import system."""
 
-    def __init__(self, changed):
+    def __init__(self, changed, other=None):
         self.changed = changed
+        self.other = other
         self.quiet = 0
         self.ok = False
         self.broken = None
@@ -1853,7 +2085,11 @@ class StdWatch:
         key = self._obj(kp)
         new = self._obj(vp) if vp else _NO
         if dp == self.sysmods:
-            if not isinstance(key, str) or not std_module(key):
+            if not isinstance(key, str):
+                return
+            if not std_module(key):
+                if ev != 0 and self.other is not None and new is not sys.modules.get(key, _NO) and self._counted(f, None):
+                    self.other(key, ev == 2)
                 return
             if issubclass(type(new), types.ModuleType):
                 self._watch_module(key, new)
@@ -2225,6 +2461,9 @@ def fn_change_in(dec, raw):
     return out
 
 
+_FWD_MAKERS = {}  # source -> its compiled maker: one compile per signature shape
+
+
 def _make_forwarder(p, desc):
     """A real function standing for candidate function p (its proxy): its signature, names, defaults, attributes
     and kind (generator, coroutine) are the candidate function's; calling it calls that one. Its globals are this
@@ -2267,9 +2506,12 @@ def _make_forwarder(p, desc):
     else:
         head, body = "def", "return _terrarium_p(%s)" % args
     src = "def _terrarium_make(_terrarium_p):\n %s _terrarium_f(%s):\n  %s\n return _terrarium_f\n" % (head, ", ".join(params), body)
-    ns = {}
-    exec(compile(src, "<terrarium>", "exec"), globals(), ns)
-    f = ns["_terrarium_make"](p)
+    make = _FWD_MAKERS.get(src)
+    if make is None:
+        ns = {}
+        exec(compile(src, "<terrarium>", "exec"), globals(), ns)
+        make = _FWD_MAKERS[src] = ns["_terrarium_make"]
+    f = make(p)
     co = f.__code__
     kw = {"co_name": desc["co"], "co_filename": desc["file"], "co_firstlineno": desc["line"]}
     if hasattr(co, "co_qualname"):
@@ -2358,10 +2600,17 @@ class Client(Side):
         self.ran = False  # candidate code has run (a call was made)
         self.unkeyed = {}
         self.loaded = set()  # candidate modules the tests imported
+        self.unloaded = set()  # those the tests removed from sys.modules since the last message
+        self.unimported = set()  # those removed in the candidate's sys.modules too
+        self.fs_changed = set()  # paths in the workspace the candidate's code changed in its copy ("/"-separated)
+        self.fs_any = False  # ... or anything in it (another process, native code)
+        self.fs_busy = set()
+        self.proc = None  # ProcSettings (install_guards)
         self.orig = {"stdout": sys.stdout, "stderr": sys.stderr, "stdin": sys.stdin, "print": builtins.print, "input": builtins.input}
         self.stdin_obj = None  # the tests' io.StringIO stdin the candidate last got the text of
         self.env0 = dict(os.environ)
         self.cwd0 = _getcwd()
+        self.fs_roots = fs_roots(self.cwd0)
         self.path_obj, self.path0 = sys.path, list(sys.path)
         self.path_base = tuple(sys.path)  # the interpreter's own entries (the runner adds none)
         self.path_lists = {id(sys.path): (sys.path, 0)}  # the tests' sys.path lists: (list, number the candidate knows it by)
@@ -3033,6 +3282,12 @@ class Client(Side):
             fn = self._fn_state(enc)
             if fn:
                 st["fn"] = fn
+        if self.proc is not None:
+            self.proc.out(st)
+        if self.unloaded:
+            st["unimport"] = sorted(self.unloaded)
+            self.unimported |= self.unloaded
+            self.unloaded = set()
         return st
 
     def _fn_state(self, enc):
@@ -3061,6 +3316,15 @@ class Client(Side):
                 for name, v in ch:
                     desc[_FN_DESC_KEY[name]] = v
         return out
+
+    def _module_removed(self, name, deleted):
+        """StdWatch: the tests removed (or replaced) a module in sys.modules: a candidate one leaves the candidate's
+        sys.modules too, with the next message (its code importing it again runs it again, as in one process)."""
+        if name in self.loaded:
+            if deleted:
+                self.unloaded.add(name)
+            else:
+                self._end("the tests replaced candidate module %s in sys.modules, which the candidate's process can't share" % name)
 
     def _std_changed(self, where, path, name, old):
         """StdWatch: the tests changed a standard-library module's or class's attribute (sent with the next call)."""
@@ -3154,6 +3418,15 @@ class Client(Side):
                 s[name] = obj
         if "argv" in cst:
             sys.argv = s["argv"] = cst["argv"]
+        fs = cst.get("fs")
+        if fs is not None:
+            if not (isinstance(fs, list) and all(type(p) is str for p in fs)):
+                raise ProtocolError("bad workspace changes")
+            for p in fs:
+                if p == "*":
+                    self.fs_any = True
+                else:
+                    self.fs_changed.add(p)
         if "env" in cst:
             if not env_apply(cst["env"]):
                 self._end("the candidate set an environment variable the tests' process can't set")
@@ -3189,6 +3462,10 @@ class Client(Side):
             x = lg.root if name == "" else lg.getLogger(name)
             if type(x.handlers) is not _CandidateHandlers:
                 x.handlers = _CandidateHandlers(list.copy(x.handlers))
+        if self.proc is not None:
+            self.proc.apply(cst)
+        elif cst.get("proc") or cst.get("procdirty"):
+            self._end("the candidate's code changed process settings this process isn't set up to take")
         for rid, name, value in cst.get("fn") or ():
             # The candidate's code set an attribute of a function or generator the tests have a stand-in for.
             if name not in _FN_DESC_KEY:
@@ -3431,8 +3708,9 @@ class Client(Side):
     def module(self, name):
         """The candidate's module name. Loaded again (the tests deleted it from sys.modules): the candidate's process
         runs it again too, into a new module, as one process's import would."""
-        fresh = name in self.loaded
+        fresh = name in self.loaded and name not in self.unimported and name not in self.unloaded
         self.loaded.add(name)
+        self.unimported.discard(name)
         return self.call("import", name=name, fresh=fresh)
 
     def _crossed(self, x):
@@ -3541,8 +3819,27 @@ class Client(Side):
             elif ev == "object.__setattr__":
                 if args[1] in ("__code__", "__defaults__", "__kwdefaults__") and self._standin_rid(args[0]) is not None and id(_getframe(1).f_globals) != own:
                     raise Inexact("the tests set %s of a candidate function's stand-in, which the candidate's own function wouldn't get" % args[1])
+            elif ev in _FS_EVENTS:
+                write = ev in _FS_CHANGE and (ev != "open" or (type(args[2]) is int and args[2] & _O_WRITE and type(args[0]) is not int))
+                if write or self.fs_changed or self.fs_any:
+                    for i, j in _FS_CHANGE[ev] if write else _FS_LOOK.get(ev, ()):
+                        self._fs_check(args[i] if i < len(args) else None, args[j] if j is not None and j < len(args) else None, write, _getframe(1))
 
         sys.addaudithook(code_guard)
+
+        def fs_call(real):
+            def guarded(path, *args, **kwargs):
+                if self.fs_changed or self.fs_any:
+                    self._fs_check(path, kwargs.get("dir_fd"), False, _getframe(1))
+                return real(path, *args, **kwargs)
+
+            guarded.__name__ = guarded.__qualname__ = real.__name__
+            guarded.__doc__ = real.__doc__
+            return guarded
+
+        for name in _FS_CALLS:
+            if getattr(os, name, None) is not None:
+                setattr(os, name, fs_call(getattr(os, name)))
         # Identity: a by-value object that crossed without a key (a tuple or frozenset holding more than plain data, a
         # number in a container's contents) arrives as a new object each time, where one process could have one.
         ut = _std("unittest")
@@ -3565,18 +3862,47 @@ class Client(Side):
 
         _guard(ut.TestCase, "assertIs", same)
         _guard(ut.TestCase, "assertIsNot", same)
+        self.proc = ProcSettings(self._end, Inexact)
         # String annotations (`from __future__ import annotations`) evaluate in the function's globals: a stand-in's
         # are this module's, not the candidate module's.
         for mod, name, evals in ((_std("typing"), "get_type_hints", lambda a, k: (a[0] if a else k.get("globalns")) is None), (_std("inspect"), "get_annotations", lambda a, k: k.get("eval_str") and k.get("globals") is None), (_std("annotationlib"), "get_annotations", lambda a, k: k.get("eval_str") and k.get("globals") is None)):
             if mod is not None and getattr(mod, name, None) is not None:
                 setattr(mod, name, self._hints_guard(getattr(mod, name), evals))
         # Last: the guards above aren't the tests' changes.
-        w = StdWatch(self._std_changed)
+        w = StdWatch(self._std_changed, self._module_removed)
         self.watch = w if w.ok else None
 
     def _linked(self, x):
         n = self.link_of.get(id(x))
         return n is not None and self.links.get(n) is x
+
+    def _fs_check(self, p, dir_fd, write, f):
+        """A file operation by the tests (frame f) on path p, in their copy of the workspace: Inexact where one
+        process would see the candidate's changes there (or the tests' change would reach the candidate's code)."""
+        tid = _get_ident()
+        if tid in self.fs_busy:
+            return
+        self.fs_busy.add(tid)
+        try:
+            if not fs_owner(f, _GRADER_GLOBALS):
+                return
+            where = fs_where(p, dir_fd)
+            rel = None
+            if where is not None:
+                rel = fs_rel(where, self.fs_roots)
+                if rel is None:
+                    rel = fs_rel(os.path.realpath(where), self.fs_roots)
+                if rel is None:
+                    return
+        finally:
+            self.fs_busy.discard(tid)
+        what = clip(repr(p), 200) if rel is None else ("the workspace" if rel == "." else rel)
+        if write:
+            raise Inexact("the tests changed %s in their copy of the workspace, which the candidate's process doesn't share (one process would see the change)" % what)
+        if rel is None or self.fs_any:
+            raise Inexact("the tests looked at %s after the candidate's code started a process or called native code, which could have changed its copy of the workspace (each process has its own; one process would see the change)" % what)
+        if fs_hit(rel, self.fs_changed):
+            raise Inexact("the tests looked at %s in their copy of the workspace, where the candidate's code changed %s in its own (each process has its own; one process would see the change)" % (what, ", ".join(sorted(c for c in self.fs_changed if fs_hit(rel, (c,))))[:200]))
 
     def _hints_guard(self, real, evals):
         def guarded(obj, *args, **kwargs):
@@ -3867,6 +4193,9 @@ class Server(Side):
         self.loghandlers = set()  # loggers the candidate's code added handlers or filters to ("" for root)
         self.loghandlers_sent = set()
         self.fn_sent = {}  # rid -> [function or generator the tests have a stand-in for, the names kept, their values]
+        self.fs_new = []  # workspace paths the candidate's code changed, not yet reported (see _FS_CHANGE)
+        self.fs_seen = set()
+        self.proc = None  # ProcSettings (_install_guards)
         self.rlimit = sys.getrecursionlimit()  # recursion limit last exchanged
         import warnings
 
@@ -3944,6 +4273,40 @@ class Server(Side):
         _guard(lg.Logger, "addFilter", adds)
         for name in ("setLoggerClass", "setLogRecordFactory"):
             _guard(lg, name, setter("logging." + name))
+        self.proc = ProcSettings(self._poison, self._poison)
+        # Files the candidate's code changes in its copy of the workspace, for the tests' side (see _FS_CHANGE).
+        self.fs_roots = fs_roots(self.cwd0)
+
+        def fs_guard(ev, args):
+            if ev in _FS_ANY:
+                if ev[0] != "c" or fs_owner(_getframe(1), _GRADER_GLOBALS):  # not the grader's own ctypes calls
+                    self._fs_note("*")
+                return
+            spec = _FS_CHANGE.get(ev)
+            if spec is None or (ev == "open" and not (type(args[2]) is int and args[2] & _O_WRITE and type(args[0]) is not int)):
+                return
+            for i, j in spec:
+                p = args[i] if i < len(args) else None
+                if ev == "sqlite3.connect" and p in (":memory:", "", b":memory:", b""):
+                    continue
+                where = fs_where(p, args[j] if j is not None and j < len(args) else None)
+                if where is None:
+                    self._fs_note("*")
+                    continue
+                for w in (where, os.path.realpath(where)):
+                    rel = fs_rel(w, self.fs_roots)
+                    if rel is not None:
+                        self._fs_note(rel)
+                        if ev == "sqlite3.connect":
+                            for suffix in _FS_SQLITE:
+                                self._fs_note(rel + suffix)
+
+        sys.addaudithook(fs_guard)
+
+    def _fs_note(self, rel):
+        if rel not in self.fs_seen:
+            self.fs_seen.add(rel)
+            self.fs_new.append(rel)
 
     # failures the candidate's code can't hide
 
@@ -4433,6 +4796,12 @@ class Server(Side):
             self.warn = warnings_state()
         for path, name, how, value in st.get("std") or ():
             self._std_apply(path, name, how, value)
+        if self.proc is not None:
+            self.proc.apply(st)
+        for name in st.get("unimport") or ():
+            if not isinstance(name, str) or std_module(name):
+                raise ProtocolError("bad module")
+            sys.modules.pop(name, None)
         for rid, name, value in st.get("fn") or ():
             # The tests set an attribute of their stand-in for this function (or generator): the candidate's own gets it.
             if name == "close":
@@ -4548,6 +4917,10 @@ class Server(Side):
             self.loghandlers_sent = set(self.loghandlers)
         if path_changed(self.path_obj, self.path0):
             self._poison("the candidate's code changed sys.path, which the tests' process can't share (its imports would differ)")
+        if self.fs_new:
+            cst["fs"], self.fs_new = self.fs_new, []
+        if self.proc is not None:
+            self.proc.out(cst)
         fn = []
         for rid, hit in list(self.fn_sent.items()):
             try:
