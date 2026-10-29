@@ -16,14 +16,14 @@ export const latestAttempt = (e: NetEntry) => e.lastTs ?? e.ts;
 
 /**
  * Rows to show after fetching the newest `limit` net rows (by latest attempt, the backend's order). A row already shown
- * but not in the page stays only when it is newer than the page's oldest row (it arrived during the fetch) or the page
- * holds every row; an older one would sit under a band of rows nobody fetched, a hole under the "latest N" chip. A
- * shown copy with a later attempt than the fetched one wins.
- * `got` answers a request for limit + 1 rows: the extra row only says older rows exist. At the backend's cap (atCap)
- * no extra row can be asked for, so a full page may have left rows out.
+ * but not in the page stays only when it is no older than the page's oldest row (it arrived during the fetch; one in
+ * the same millisecond as that row leaves no band of time unshown) or the page holds every row; an older one would sit
+ * under a band of rows nobody fetched, a hole under the "latest N" chip. A shown copy with a later attempt than the
+ * fetched one wins.
+ * `got` answers a request for limit + 1 rows: the extra row only says older rows exist.
  */
-export function mergeNetPage(shown: NetEntry[], got: NetEntry[], limit: number, atCap = false): { rows: NetEntry[]; capped: boolean } {
-  const capped = got.length > limit || (atCap && got.length >= limit);
+export function mergeNetPage(shown: NetEntry[], got: NetEntry[], limit: number): { rows: NetEntry[]; capped: boolean } {
+  const capped = got.length > limit;
   const page = got.slice(0, limit);
   let oldest = Infinity;
   for (const x of page) oldest = Math.min(oldest, latestAttempt(x));
@@ -35,7 +35,7 @@ export function mergeNetPage(shown: NetEntry[], got: NetEntry[], limit: number, 
       fetched.delete(x.id);
       return true;
     }
-    return !capped || latestAttempt(x) > oldest;
+    return !capped || latestAttempt(x) >= oldest;
   });
   return { rows: [...fetched.values(), ...kept].sort((a, b) => latestAttempt(a) - latestAttempt(b)), capped };
 }

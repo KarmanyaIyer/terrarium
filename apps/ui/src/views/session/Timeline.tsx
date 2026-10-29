@@ -313,7 +313,7 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
             const kind = it.kind === "user" ? "user" : it.kind === "row" ? it.event.type : "";
             const label =
               it.kind === "user"
-                ? `You: ${clip(it.text, 80)}`
+                ? `${it.retry ? "Retry" : "You"}: ${clip(it.text, 80)}`
                 : it.kind === "row" && it.event.type === "compaction"
                   ? `Compaction ${fmtInt(it.event.beforeTokens)} → ${fmtInt(it.event.afterTokens)} tokens`
                   : it.kind === "row" && it.event.type === "warning"

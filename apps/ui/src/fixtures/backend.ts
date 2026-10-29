@@ -1070,6 +1070,23 @@ export class FixtureBackend implements Backend {
     this.play(id, built, Date.now());
   }
 
+  async retrySession(id: Id) {
+    await sleep(50);
+    const s = this.sessions.get(id);
+    if (!s) throw new ApiRequestError(404, "session not found");
+    if (s.status === "running") throw new ApiRequestError(409, "A run is in progress");
+    const last = this.events.get(id)!.findLast((e) => e.type === "user_message");
+    if (last?.type !== "user_message") throw new ApiRequestError(409, "nothing to retry: the latest message already has a reply");
+    const built = buildReply(
+      { sessionId: id, envId: s.envId, modelId: s.modelId, window: s.contextWindow, maxOut: s.maxOutputTokens, thinking: s.thinking, ...this.conversation(id) },
+      last.text,
+      s.lastSeq,
+      this.lastPrompt(id),
+    );
+    for (const x of built.steps) if (x.body.type === "user_message") x.body = { ...x.body, retry: true };
+    this.play(id, built, Date.now());
+  }
+
   async stopSession(id: Id) {
     const p = this.playing.find((x) => x.sessionId === id);
     if (!p) return;

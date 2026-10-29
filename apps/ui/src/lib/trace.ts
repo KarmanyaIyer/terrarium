@@ -9,6 +9,8 @@ export interface UserItem {
   seq: number;
   ts: number;
   text: string;
+  /** The latest message sent again (Retry); it is already shown above. */
+  retry?: boolean;
 }
 
 export interface CallItem {
@@ -82,7 +84,7 @@ export function derive(trace: Trace | undefined): Derived {
   for (const ev of evs) {
     switch (ev.type) {
       case "user_message": {
-        const it: UserItem = { kind: "user", key: `u${ev.seq}`, seq: ev.seq, ts: ev.ts, text: ev.text };
+        const it: UserItem = { kind: "user", key: `u${ev.seq}`, seq: ev.seq, ts: ev.ts, text: ev.text, ...(ev.retry ? { retry: true } : {}) };
         items.push(it);
         bySeq.set(ev.seq, it);
         running = true;

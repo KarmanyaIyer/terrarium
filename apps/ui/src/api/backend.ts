@@ -68,6 +68,8 @@ export interface Backend {
   getEvents(id: Id, after?: number): Promise<TraceEvent[]>;
   sendMessage(id: Id, text: string): Promise<void>;
   continueSession(id: Id): Promise<void>;
+  /** Send the latest message again (it got no reply, e.g. refused as over the window). */
+  retrySession(id: Id): Promise<void>;
   stopSession(id: Id): Promise<void>;
   deleteSession(id: Id): Promise<void>;
 

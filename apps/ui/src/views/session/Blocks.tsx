@@ -1,5 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, ChevronRight, CircleX, FileDiff, Loader2, Minimize2, Play, Wrench } from "lucide-react";
+import { AlertTriangle, ChevronRight, CircleX, FileDiff, Loader2, Minimize2, Play, RotateCcw, Wrench } from "lucide-react";
 import type { SessionSummary, ShortenedOutput, UpdateSessionRequest } from "@terrarium/shared";
 import type { CallItem, Derived, Ev, RowItem, ToolItem, UserItem } from "../../lib/trace";
 import { argsObj, changeCounts, toolFailed, toolKind, toolLabel } from "../../lib/trace";
@@ -7,6 +7,7 @@ import { act, select, showFilesFor, useStore } from "../../state/store";
 import { exactTime, fmtBytes, fmtCtx, fmtInt, fmtMs, fmtTok, fmtTps, offsetTime } from "../../lib/format";
 import { CONTEXT_CHOICES, estimate } from "../../lib/memory";
 import { runBlocked } from "../../lib/envuse";
+import { cutoffRemedy, overflowRemedy } from "../../lib/remedy";
 import { Markdown } from "../../components/Markdown";
 import { partialFields } from "../../lib/partialJson";
 import { ansiSpans, stripAnsi } from "../../components/Ansi";
@@ -25,6 +26,19 @@ function Stamp({ ts, t0 }: { ts: number; t0: number }) {
 // ---------- user ----------
 
 export const UserBlock = memo(function UserBlock({ it, t0 }: { it: UserItem; t0: number }) {
+  if (it.retry) {
+    // the message itself is already shown above, where it was first sent
+    return (
+      <div className="row-ev" onClick={() => select({ kind: "event", seq: it.seq })}>
+        <RotateCcw size={12} />
+        <span>Sent your message again</span>
+        <span className="dim truncate row-note" title={it.text}>
+          {it.text.split("\n")[0]}
+        </span>
+        <Stamp ts={it.ts} t0={t0} />
+      </div>
+    );
+  }
   return (
     <div className="blk user">
       <div className="blk-head">
@@ -479,14 +493,12 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
   const running = session.status === "running";
   const model = models.find((m) => m.id === session.modelId);
 
-  // Raising the cap helps only when the cap set the limit; at most half the window, so the prompt keeps the rest.
-  const nextCap = Math.min(cap * 2, Math.floor(window / 2));
-  const canRaiseCap = !byWindow && nextCap > cap && nextCap > session.maxOutputTokens;
-  // When the window set it, or the cap can't grow inside this window, a bigger window is the remedy (Continue also
-  // compacts older turns first).
-  const nextWindow = CONTEXT_CHOICES.find((c) => c > window && (!model || c <= model.nativeContext));
-  const canRaiseWindow = (byWindow || !canRaiseCap) && nextWindow != null && session.contextWindow <= window;
-  const windowFit = canRaiseWindow && model && !model.loaded ? fitLabel(estimate(model, nextWindow, sample, memBudget, models), sample?.system.freeBytes) : null;
+  // Raise what limited the reply: the cap (within half the window), or the window, with the cap doubled when the cap
+  // was the limit (Continue also compacts older turns first).
+  const remedy = cutoffRemedy({ window, budget, cap, session, nativeContext: model?.nativeContext, choices: CONTEXT_CHOICES });
+  const nextCap = remedy.cap;
+  const next = remedy.window;
+  const windowFit = next && model && !model.loaded ? fitLabel(estimate(model, next.contextWindow, sample, memBudget, models), sample?.system.freeBytes) : null;
   const thinkingAte = session.thinking && reasoning != null && gen != null && gen > 0 && reasoning >= gen * 0.8;
 
   return (
@@ -531,19 +543,20 @@ function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSu
             <Play /> Continue
           </button>
           {blocked && !running && <span className="warn-text warn-blocked">{blocked}</span>}
-          {canRaiseCap && (
+          {nextCap != null && (
             <button className="btn" disabled={running} onClick={() => patchSession("Raise output cap", session.id, { maxOutputTokens: nextCap })}>
               Raise output cap to {fmtInt(nextCap)}
             </button>
           )}
-          {canRaiseWindow && (
+          {next && (
             <button
               className="btn"
               disabled={running}
-              title={model && !model.loaded ? `${model.name} loads at ${fmtCtx(nextWindow)} on the next call` : `${model?.name ?? session.modelId} reloads at ${fmtCtx(nextWindow)} on the next call`}
-              onClick={() => patchSession("Raise context window", session.id, { contextWindow: nextWindow, maxOutputTokens: session.maxOutputTokens })}
+              title={model && !model.loaded ? `${model.name} loads at ${fmtCtx(next.contextWindow)} on the next call` : `${model?.name ?? session.modelId} reloads at ${fmtCtx(next.contextWindow)} on the next call`}
+              onClick={() => patchSession("Raise context window", session.id, next)}
             >
-              Raise context window to {fmtCtx(nextWindow)}
+              Raise context window to {fmtCtx(next.contextWindow)}
+              {next.maxOutputTokens !== session.maxOutputTokens && <> and output cap to {fmtInt(next.maxOutputTokens)}</>}
               {windowFit && windowFit.cls !== "ok" && <span className={`${windowFit.cls}-text`}>{windowFit.text}</span>}
             </button>
           )}
@@ -614,23 +627,51 @@ function ShortenedLine({ s, d }: { s: ShortenedOutput; d: Derived }) {
   );
 }
 
-/** A request over the window: the remedy the error names, as a control (not on eval sessions). */
-function OverflowActions({ data, session }: { data: Record<string, number | string>; session: SessionSummary }) {
+/**
+ * A message refused as over the window: the remedy the error names, then Retry, which sends the same message again as
+ * the current instruction (a new message would make it an earlier turn, which compaction drops first). Only on the
+ * latest message, not on eval sessions, and only when compaction can keep the message in the window it sets.
+ */
+function OverflowActions({ data, session, latest }: { data: Record<string, number | string>; session: SessionSummary; latest: boolean }) {
   const models = useStore((s) => s.models);
+  const blocked = useStore((s) => runBlocked(session.envId ? s.envs[session.envId] : undefined, session));
   const running = session.status === "running";
-  const want = typeof data.suggestedWindow === "number" ? data.suggestedWindow : undefined;
   const model = models.find((m) => m.id === session.modelId);
-  if (session.evalRunId || !want || session.contextWindow >= want || (model && want > model.nativeContext)) return null;
+  const prompt = typeof data.promptTokens === "number" ? data.promptTokens : undefined;
+  if (session.evalRunId || !latest || prompt == null) return null;
+  const r = overflowRemedy({
+    promptTokens: prompt,
+    suggestedWindow: typeof data.suggestedWindow === "number" ? data.suggestedWindow : undefined,
+    session,
+    nativeContext: model?.nativeContext,
+    choices: CONTEXT_CHOICES,
+  });
+  if (!r.retry) return null;
+  const retry = () => void act("Retry", (b) => b.retrySession(session.id));
+  const raise = r.raise;
   return (
     <div className="warn-actions">
-      <button
-        className="btn"
-        disabled={running}
-        title={`${model?.name ?? session.modelId} ${model?.loaded ? "reloads" : "loads"} at ${fmtCtx(want)} on the next call`}
-        onClick={() => patchSession("Raise context window", session.id, { contextWindow: want, maxOutputTokens: session.maxOutputTokens })}
-      >
-        Raise context window to {fmtCtx(want)}
-      </button>
+      {raise ? (
+        <button
+          className="btn primary"
+          disabled={running || !!blocked}
+          title={blocked ? `Can't retry: ${blocked}` : `${model?.name ?? session.modelId} ${model?.loaded ? "reloads" : "loads"} at ${fmtCtx(raise.contextWindow)} on the next call`}
+          onClick={() =>
+            void act("Raise context window", (b) => b.updateSession(session.id, raise)).then((s) => {
+              if (!s) return;
+              useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
+              retry();
+            })
+          }
+        >
+          <RotateCcw /> Raise context window to {fmtCtx(raise.contextWindow)} and retry
+        </button>
+      ) : (
+        <button className="btn primary" disabled={running || !!blocked} title={blocked ? `Can't retry: ${blocked}` : "Send this message again"} onClick={retry}>
+          <RotateCcw /> Retry
+        </button>
+      )}
+      {blocked && !running && <span className="warn-text warn-blocked">{blocked}</span>}
     </div>
   );
 }
@@ -658,7 +699,7 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
             <CircleX size={14} /> {ev.message}
           </div>
           {ev.detail && <pre className="well selectable">{ev.detail}</pre>}
-          {ev.code === "context_overflow" && <OverflowActions data={ev.data ?? {}} session={session} />}
+          {ev.code === "context_overflow" && <OverflowActions data={ev.data ?? {}} session={session} latest={!d.items.slice(d.items.indexOf(it) + 1).some((x) => x.kind === "user")} />}
         </div>
       );
     case "env_lifecycle":

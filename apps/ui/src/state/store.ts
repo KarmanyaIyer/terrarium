@@ -555,17 +555,16 @@ export function currentSession(): SessionSummary | undefined {
 }
 
 export const NET_LIMIT = 1000;
-export const NET_LIMIT_MAX = 5000; // the backend's cap per request
+export const NET_LIMIT_MAX = 5000; // most rows shown; the backend answers up to one more
 
 /** Newest `limit` rows by latest attempt (the backend's order), plus live rows that arrived meanwhile (mergeNetPage). */
 export async function loadNet(envId: Id, limit = get().netLimit[envId] ?? NET_LIMIT) {
   const b = get().backend;
   if (!b) return;
   try {
-    const ask = Math.min(limit + 1, NET_LIMIT_MAX);
-    const entries = await b.getNet(envId, ask);
+    const entries = await b.getNet(envId, limit + 1);
     set((s) => {
-      const { rows, capped } = mergeNetPage(s.net[envId] ?? [], entries, limit, ask === limit);
+      const { rows, capped } = mergeNetPage(s.net[envId] ?? [], entries, limit);
       return {
         net: { ...s.net, [envId]: rows },
         netLimit: { ...s.netLimit, [envId]: limit },

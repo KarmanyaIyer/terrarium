@@ -149,6 +149,9 @@ export class HttpBackend implements Backend {
   async continueSession(id: Id) {
     await this.req<unknown>("POST", `/api/sessions/${e(id)}/continue`, {});
   }
+  async retrySession(id: Id) {
+    await this.req<unknown>("POST", `/api/sessions/${e(id)}/retry`, {});
+  }
   async stopSession(id: Id) {
     await this.req<unknown>("POST", `/api/sessions/${e(id)}/stop`, {});
   }

@@ -20,10 +20,20 @@ test("net log: more than the limit arrived while disconnected, so the old rows g
   assert.deepEqual(ids(rows), ids(range(101, 150)), "no rows 1-10 left above a missing 11-100 band");
 });
 
-test("net log: exactly `limit` rows back means that is every row; at the backend's cap a full page may not be", () => {
+test("net log: exactly `limit` rows back means that is every row, at 5,000 too (the backend answers limit + 1; review 4 nit)", () => {
   const all = range(1, 50).reverse();
   assert.equal(mergeNetPage([], all, 50).capped, false);
-  assert.equal(mergeNetPage([], all, 50, true).capped, true);
+  assert.equal(mergeNetPage([], range(1, 5000).reverse(), 5000).capped, false, "all 5,000 rows: no 'latest 5,000' chip");
+  assert.equal(mergeNetPage([], range(1, 5001).reverse(), 5000).capped, true);
+});
+
+test("net log: a live row in the same millisecond as the oldest fetched row stays (review 4 nit)", () => {
+  const page = range(100, 150).reverse(); // capped: oldest shown is row 101 at 101,000 ms
+  const tied = row(999, { ts: 101_000 });
+  const { rows, capped } = mergeNetPage([tied], page, 50);
+  assert.equal(capped, true);
+  assert.ok(ids(rows).includes("n999"), "the tied live row is kept");
+  assert.ok(!ids(mergeNetPage([row(998, { ts: 100_999 })], page, 50).rows).includes("n998"), "one a millisecond older is still dropped");
 });
 
 test("net log: a row that arrived during the fetch stays, and an uncapped page keeps everything", () => {
