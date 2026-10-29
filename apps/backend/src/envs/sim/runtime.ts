@@ -11,7 +11,7 @@ import { processStats } from "../../util/sysmem.ts";
 import { NetDenied, proxyFetch } from "../net-proxy.ts";
 import { policy } from "../policy.ts";
 import type { EnvRuntime, ExecOptions, ExecOutcome, Manifest, NetAttempt, ReadResult } from "../types.ts";
-import { DUMP_CHUNK_BYTES, type FsEntryWire, type HostRequest, MAX_LINE, type WorkerExecResult, type WorkerMessage } from "./protocol.ts";
+import { DUMP_CHUNK_BYTES, FILE_PIECE_BYTES, type FsEntryWire, type HostRequest, MAX_LINE, type WorkerExecResult, type WorkerMessage } from "./protocol.ts";
 import { buildProfile, nodeExecutable, SANDBOX_EXEC } from "./sandbox.ts";
 
 const log = logger("sim");
@@ -25,6 +25,15 @@ type Pending = { resolve: (v: any) => void; reject: (e: Error) => void; chunks?:
 export interface StateFile {
   version: 1;
   entries: FsEntryWire[];
+}
+
+/** State files written before pieces existed (and seeds) can hold one entry per whole file: split it. */
+function splitEntry(e: FsEntryWire): FsEntryWire[] {
+  const step = (FILE_PIECE_BYTES / 3) * 4; // base64 chars per piece, a multiple of 4
+  if (e.t !== "f" || !e.d || e.d.length <= step) return [e];
+  const out: FsEntryWire[] = [];
+  for (let i = 0; i < e.d.length; i += step) out.push({ ...e, d: e.d.slice(i, i + step), ...(i || e.a ? { a: 1 as const } : {}) });
+  return out;
 }
 
 export function seedState(seedFiles: { path: string; content: string }[] = []): StateFile {
@@ -226,7 +235,7 @@ export class SimRuntime implements EnvRuntime {
       batch = [];
       bytes = 0;
     };
-    for (const e of state.entries) {
+    for (const e of state.entries.flatMap(splitEntry)) {
       const size = (e.d?.length ?? 0) + e.p.length + 64;
       if (bytes + size > DUMP_CHUNK_BYTES && batch.length) await flush();
       batch.push(e);
@@ -289,9 +298,17 @@ export class SimRuntime implements EnvRuntime {
         { op: "exec", command, cwd: opts.cwd, stdin: opts.stdin, timeoutMs, maxOutputBytes: opts.maxOutputBytes ?? 1024 * 1024 },
         { timeoutMs: timeoutMs + HANG_GRACE_MS },
       );
+      // A failed save is part of the command's result: the agent and the trace both see it.
+      const saveError = await this.checkpoint().then(
+        () => "",
+        (err: Error) => {
+          log.warn(`sim ${this.id}: checkpoint failed`, err);
+          return `${r.stderr && !r.stderr.endsWith("\n") ? "\n" : ""}[terrarium: saving the simulated filesystem failed (${err.message}); changes since the last save are lost if the env restarts]\n`;
+        },
+      );
+      if (saveError) r.stderr += saveError;
       if (r.stdout) opts.onStdout?.(r.stdout);
       if (r.stderr) opts.onStderr?.(r.stderr);
-      await this.checkpoint().catch((err) => log.warn(`sim ${this.id}: checkpoint failed`, err));
       return r;
     } catch (err) {
       const msg = (err as Error).message;
@@ -307,8 +324,16 @@ export class SimRuntime implements EnvRuntime {
 
   async readFile(path: string, opts: { maxBytes?: number } = {}): Promise<ReadResult> {
     await this.start();
-    const r = await this.request<{ data: string; size: number; truncated: boolean }>({ op: "readFile", path: normalizePath(path), maxBytes: opts.maxBytes ?? 8 * 1024 * 1024 }, { timeoutMs: 30_000 });
-    return { data: new Uint8Array(Buffer.from(r.data, "base64")), size: r.size, truncated: r.truncated };
+    const maxBytes = opts.maxBytes ?? 8 * 1024 * 1024;
+    const parts: Buffer[] = [];
+    let got = 0;
+    for (;;) {
+      const r = await this.request<{ data: string; size: number; truncated: boolean }>({ op: "readFile", path: normalizePath(path), maxBytes: maxBytes - got, offset: got }, { timeoutMs: 30_000 });
+      const piece = Buffer.from(r.data, "base64");
+      parts.push(piece);
+      got += piece.length;
+      if (!piece.length || got >= maxBytes || got >= r.size) return { data: new Uint8Array(Buffer.concat(parts)), size: r.size, truncated: r.size > got };
+    }
   }
 
   async readFiles(paths: string[], opts: { maxBytes?: number } = {}): Promise<(ReadResult | Error)[]> {
@@ -323,8 +348,11 @@ export class SimRuntime implements EnvRuntime {
   async writeFile(path: string, data: string | Uint8Array, opts: { as?: "agent" | "root"; mode?: number } = {}): Promise<void> {
     await this.start();
     const bytes = typeof data === "string" ? Buffer.from(data, "utf8") : Buffer.from(data);
-    await this.request({ op: "writeFile", path: normalizePath(path), data: bytes.toString("base64"), mode: opts.mode }, { timeoutMs: 30_000 });
-    await this.checkpoint().catch(() => {});
+    for (let off = 0; off === 0 || off < bytes.length; off += FILE_PIECE_BYTES) {
+      const piece = bytes.subarray(off, off + FILE_PIECE_BYTES).toString("base64");
+      await this.request({ op: "writeFile", path: normalizePath(path), data: piece, mode: opts.mode, append: off > 0 }, { timeoutMs: 30_000 });
+    }
+    await this.checkpoint();
   }
 
   async manifest(root = "/workspace"): Promise<Manifest> {

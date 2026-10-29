@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { createInterface } from "node:readline";
 import { Bash, getCommandNames, getJavaScriptCommandNames, getNetworkCommandNames, getPythonCommandNames, InMemoryFs, NetworkAccessDeniedError } from "just-bash";
 import type { FsEntryWire, HostRequest, WireFetchResult, WorkerConfig, WorkerExecResult, WorkerMessage } from "./protocol.ts";
-import { DUMP_CHUNK_BYTES, MAX_LINE } from "./protocol.ts";
+import { DUMP_CHUNK_BYTES, FILE_PIECE_BYTES, MAX_LINE } from "./protocol.ts";
 
 // Keep stdout for the protocol only.
 for (const k of ["log", "info", "warn", "debug", "error", "trace"] as const) {
@@ -156,19 +156,25 @@ async function dump(id: number): Promise<{ count: number; bytes: number }> {
     if (!st) continue;
     const e: FsEntryWire = { p, t: st.isSymbolicLink ? "l" : st.isDirectory ? "d" : "f", m: st.mode, mt: st.mtime.getTime() };
     if (e.t === "l") e.l = await fs.readlink(p);
+    const pieces: FsEntryWire[] = [e];
     if (e.t === "f") {
       const data = await fs.readFileBuffer(p);
-      e.d = Buffer.from(data).toString("base64");
+      e.d = Buffer.from(data.subarray(0, FILE_PIECE_BYTES)).toString("base64");
+      for (let off = FILE_PIECE_BYTES; off < data.length; off += FILE_PIECE_BYTES) {
+        pieces.push({ ...e, d: Buffer.from(data.subarray(off, off + FILE_PIECE_BYTES)).toString("base64"), a: 1 });
+      }
       bytes += data.length;
     }
-    const size = (e.d?.length ?? 0) + p.length + 64;
-    if (chunkBytes + size > DUMP_CHUNK_BYTES && chunk.length) {
-      send({ type: "chunk", id, entries: chunk });
-      chunk = [];
-      chunkBytes = 0;
+    for (const piece of pieces) {
+      const size = (piece.d?.length ?? 0) + p.length + 64;
+      if (chunkBytes + size > DUMP_CHUNK_BYTES && chunk.length) {
+        send({ type: "chunk", id, entries: chunk });
+        chunk = [];
+        chunkBytes = 0;
+      }
+      chunk.push(piece);
+      chunkBytes += size;
     }
-    chunk.push(e);
-    chunkBytes += size;
     count++;
   }
   if (chunk.length) send({ type: "chunk", id, entries: chunk });
@@ -184,6 +190,7 @@ async function load(entries: FsEntryWire[], reset: boolean): Promise<void> {
   const links: FsEntryWire[] = [];
   for (const e of entries) {
     if (e.t === "d") await fs.mkdir(e.p, { recursive: true });
+    else if (e.t === "f" && e.a) await fs.appendFile(e.p, new Uint8Array(Buffer.from(e.d ?? "", "base64")));
     else if (e.t === "f") {
       await fs.mkdir(e.p.slice(0, e.p.lastIndexOf("/")) || "/", { recursive: true });
       await fs.writeFile(e.p, new Uint8Array(Buffer.from(e.d ?? "", "base64")));
@@ -216,13 +223,15 @@ async function handle(req: HostRequest): Promise<unknown> {
       const st = await fs.stat(req.path);
       if (st.isDirectory) throw new Error(`${req.path}: is a directory`);
       const data = await fs.readFileBuffer(req.path);
-      const slice = data.subarray(0, req.maxBytes);
-      return { data: Buffer.from(slice).toString("base64"), size: data.length, truncated: data.length > req.maxBytes };
+      const offset = req.offset ?? 0;
+      const slice = data.subarray(offset, offset + Math.min(req.maxBytes, FILE_PIECE_BYTES));
+      return { data: Buffer.from(slice).toString("base64"), size: data.length, truncated: data.length > offset + req.maxBytes };
     }
     case "writeFile": {
       const dir = req.path.slice(0, req.path.lastIndexOf("/")) || "/";
       await fs.mkdir(dir, { recursive: true });
-      await fs.writeFile(req.path, new Uint8Array(Buffer.from(req.data, "base64")));
+      if (req.append) await fs.appendFile(req.path, new Uint8Array(Buffer.from(req.data, "base64")));
+      else await fs.writeFile(req.path, new Uint8Array(Buffer.from(req.data, "base64")));
       if (req.mode !== undefined) await fs.chmod(req.path, req.mode);
       return { ok: true };
     }

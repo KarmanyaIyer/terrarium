@@ -3,6 +3,8 @@
 
 export const MAX_LINE = 16 * 1024 * 1024;
 export const DUMP_CHUNK_BYTES = 4 * 1024 * 1024;
+/** Files cross the pipe in pieces of this many raw bytes (4 MiB base64), so no line nears MAX_LINE. */
+export const FILE_PIECE_BYTES = 3 * 1024 * 1024;
 
 /** Serialized filesystem entry (snapshots, persistence). */
 export interface FsEntryWire {
@@ -12,6 +14,7 @@ export interface FsEntryWire {
   mt: number; // mtime ms
   d?: string; // base64 content (files)
   l?: string; // link target (symlinks)
+  a?: 1; // appends a further piece to the file the previous entry for p started
 }
 
 export interface WorkerConfig {
@@ -24,8 +27,8 @@ export type HostRequest =
   | { id: number; op: "init"; config: WorkerConfig }
   | { id: number; op: "exec"; command: string; cwd?: string; stdin?: string; timeoutMs: number; maxOutputBytes: number }
   | { id: number; op: "abort"; execId: number }
-  | { id: number; op: "readFile"; path: string; maxBytes: number }
-  | { id: number; op: "writeFile"; path: string; data: string; mode?: number }
+  | { id: number; op: "readFile"; path: string; maxBytes: number; offset?: number }
+  | { id: number; op: "writeFile"; path: string; data: string; mode?: number; append?: boolean }
   | { id: number; op: "manifest"; root: string; maxEntries: number }
   | { id: number; op: "dump" }
   | { id: number; op: "load"; entries: FsEntryWire[]; reset: boolean }
