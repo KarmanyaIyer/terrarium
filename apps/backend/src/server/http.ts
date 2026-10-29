@@ -10,6 +10,7 @@ import type {
   ForkEnvRequest,
   LoadModelRequest,
   ModelCallDetail,
+  PathKey,
   ResetEnvRequest,
   SendMessageRequest,
   SnapshotEnvRequest,
@@ -18,10 +19,12 @@ import type {
   UpdateEnvRequest,
   UpdateModelRequest,
   UpdateSessionRequest,
+  UpdateSettingsRequest,
   WsClientMessage,
 } from "@terrarium/shared";
 import { WebSocket, WebSocketServer } from "ws";
 import type { App } from "../app.ts";
+import { harnessInfo } from "../harness/profiles.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
 import { logger } from "../util/log.ts";
 import { bearerOk, hostAllowed, offeredProtocols, originAllowed, wsTokenOk } from "./auth.ts";
@@ -75,7 +78,7 @@ function routes(app: App): Route[] {
     handler,
     ...extra,
   });
-  const { envs, sessions, inference, evals, files, store } = app;
+  const { envs, sessions, inference, evals, files, store, settings, downloads } = app;
   return [
     r("GET", "/api/state", () => app.state()),
 
@@ -112,6 +115,7 @@ function routes(app: App): Route[] {
     r("DELETE", "/api/sessions/:id", async ({ params }) => {
       await sessions.delete(params[0]);
     }),
+    r("GET", "/api/sessions/:id/prompt", ({ params }) => sessions.prompt(params[0])),
     r("GET", "/api/sessions/:id/events", ({ params, query }) => {
       const after = intParam(query, "after") ?? 0;
       const limit = intParam(query, "limit");
@@ -162,8 +166,29 @@ function routes(app: App): Route[] {
       return HANDLED;
     }),
 
+    // ---- settings / harness ----
+    r("GET", "/api/settings", () => settings.info()),
+    r("PATCH", "/api/settings", ({ body }) => settings.update((body ?? {}) as UpdateSettingsRequest)),
+    r("POST", "/api/reveal", ({ body }) => {
+      settings.reveal(((body ?? {}) as { path: PathKey }).path);
+      return { ok: true };
+    }),
+    r("GET", "/api/harness", () => harnessInfo(settings.prompts())),
+
     // ---- models / inference ----
     r("GET", "/api/models", () => inference.models()),
+    r("GET", "/api/models/suggestions", () => downloads.suggestions()),
+    r("POST", "/api/models/inspect", ({ body }) => downloads.inspect(((body ?? {}) as { repo?: unknown }).repo)),
+    r("GET", "/api/models/downloads", () => downloads.list()),
+    r("POST", "/api/models/downloads", ({ body }) => downloads.start(((body ?? {}) as { repo?: unknown }).repo), { status: 201 }),
+    r("POST", "/api/models/downloads/:id/cancel", ({ params }) => downloads.cancel(params[0])),
+    r("DELETE", "/api/models/:id", async ({ params }) => {
+      const id = params[0];
+      const res = await downloads.remove(id);
+      store.run("DELETE FROM settings WHERE key = ?", `model:${id}`);
+      if (settings.get().newSession.modelId === id) settings.update({ newSession: { modelId: null } });
+      return res;
+    }),
     r("POST", "/api/models/:id/load", async ({ params, body }) => {
       const id = params[0];
       if (!(await inference.model(id))) throw new HttpError(404, `model not found: ${id}`);

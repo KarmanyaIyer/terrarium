@@ -5,11 +5,14 @@
 import { Agent, type AgentEvent, type AgentMessage, type AgentTool } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, Message, ToolResultMessage } from "@earendil-works/pi-ai";
 import type {
+  AppSettings,
   ContextUsage,
   CreateSessionRequest,
+  EnvType,
   HarnessProfile,
   ModelInfo,
   NetEntry,
+  SessionPrompt,
   SessionStatus,
   SessionSummary,
   ToolCallRef,
@@ -29,7 +32,7 @@ import { logger } from "../util/log.ts";
 import { type ChatTokenizer, MIN_REPLY_TOKENS, PromptCounter, TokenCalibrator } from "./budget.ts";
 import { compact, type CompactionResult, windowThatFits } from "./compaction.ts";
 import { FsObserver } from "./observer.ts";
-import { CHAT_PROMPT, PI_STOCK_PROMPT, SIM_NOTE, TERRARIUM_PROMPT } from "./prompts.ts";
+import { roughTokens, sessionPrompt, toolDefinitions, toolsJson } from "./profiles.ts";
 import { type CallInfo, makeStreamFn, omlxModel, requestBody, type Sampling } from "./stream.ts";
 import { type ToolDetails, piStockTools, terrariumTools } from "./tools.ts";
 
@@ -75,6 +78,7 @@ interface SessionRow {
   ephemeral: number;
   context_json: string | null;
   transcript_blob: string | null;
+  system_prompt: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -195,6 +199,7 @@ function isLlmMessage(m: AgentMessage): m is Message {
 }
 
 const DEFAULT_TITLE = "New session";
+const PROMPT_MAX = 32_000;
 
 /** First line of a message, whitespace collapsed, cut at a word near 60 chars. */
 export function titleFrom(text: string): string {
@@ -214,15 +219,26 @@ export class SessionManager {
   private inference: InferenceService;
   private gateway: Gateway;
   private tokens: ChatTokenizer | undefined;
+  /** Saved per-profile prompt defaults (Settings). */
+  private prompts: () => AppSettings["prompts"];
   private live = new Map<string, Live>();
 
-  constructor(opts: { store: Store; hub: Hub; envs: EnvManager; inference: InferenceService; gateway: Gateway; tokens?: ChatTokenizer }) {
+  constructor(opts: {
+    store: Store;
+    hub: Hub;
+    envs: EnvManager;
+    inference: InferenceService;
+    gateway: Gateway;
+    tokens?: ChatTokenizer;
+    prompts?: () => AppSettings["prompts"];
+  }) {
     this.store = opts.store;
     this.hub = opts.hub;
     this.envs = opts.envs;
     this.inference = opts.inference;
     this.gateway = opts.gateway;
     this.tokens = opts.tokens;
+    this.prompts = opts.prompts ?? (() => ({}));
     this.store.run("UPDATE sessions SET status = 'idle' WHERE status IN ('running', 'stopping')");
     this.envs.hooks.onSessionNet = (sessionId, entry) => this.onNet(sessionId, entry);
     this.envs.hooks.onEnvInterrupted = async (_envId, sessionId) => {
@@ -255,6 +271,7 @@ export class SessionManager {
       ...(r.eval_run_id ? { evalRunId: r.eval_run_id } : {}),
       ...(r.eval_case_id ? { evalCaseId: r.eval_case_id } : {}),
       ...(r.context_json ? { context: JSON.parse(r.context_json) as ContextUsage } : {}),
+      ...(r.system_prompt != null ? { customPrompt: true } : {}),
     };
   }
 
@@ -381,14 +398,21 @@ export class SessionManager {
       patch.maxOutputTokens ?? (windowChanged ? undefined : r.max_output_tokens),
     );
     const title = patch.title !== undefined ? patch.title.trim().slice(0, 200) || r.title : r.title;
+    if (patch.systemPrompt != null && (typeof patch.systemPrompt !== "string" || !patch.systemPrompt.trim() || patch.systemPrompt.length > PROMPT_MAX)) {
+      throw new HttpError(400, `systemPrompt must be non-empty text of at most ${PROMPT_MAX} characters, or null`);
+    }
+    // An override is written for one profile's tools: a harness change drops it unless the patch sets a new one.
+    const harnessChanged = patch.harness !== undefined && patch.harness !== r.harness;
+    const systemPrompt = patch.systemPrompt !== undefined ? patch.systemPrompt : harnessChanged ? null : r.system_prompt;
     this.store.run(
-      "UPDATE sessions SET title = ?, model_id = ?, harness = ?, thinking = ?, context_window = ?, max_output_tokens = ?, updated_at = ? WHERE id = ?",
+      "UPDATE sessions SET title = ?, model_id = ?, harness = ?, thinking = ?, context_window = ?, max_output_tokens = ?, system_prompt = ?, updated_at = ? WHERE id = ?",
       title,
       model.id,
       patch.harness ?? r.harness,
       thinking ? 1 : 0,
       window,
       maxOutput,
+      systemPrompt,
       Date.now(),
       id,
     );
@@ -512,6 +536,42 @@ export class SessionManager {
     this.liveFor(sessionId).tracer.emit({ type: "net", entry });
   }
 
+  /** A system_prompt event whenever a run's prompt or tools differ from the last one this session recorded. */
+  private recordPrompt(id: string, tracer: SessionTracer, p: { harness: HarnessProfile; source: SessionPrompt["source"]; text: string; tools: string[] }): void {
+    const last = this.store.get<{ payload_json: string }>("SELECT payload_json FROM events WHERE session_id = ? AND type = 'system_prompt' ORDER BY seq DESC LIMIT 1", id);
+    if (last) {
+      const prev = JSON.parse(last.payload_json) as typeof p;
+      if (prev.text === p.text && prev.harness === p.harness && prev.tools.join() === p.tools.join()) return;
+    }
+    tracer.emit({ type: "system_prompt", ...p });
+  }
+
+  /** What the session's next run sends: prompt, tools and their token counts (exact when the model is loaded). */
+  async prompt(id: string): Promise<SessionPrompt> {
+    const r = this.row(id);
+    const envType = r.harness !== "chat" && r.env_id ? this.envs.get(r.env_id).type : null;
+    const p = sessionPrompt(r.harness, envType, r.system_prompt, this.prompts());
+    const tools = toolDefinitions(r.harness, !!envType);
+    const estimate = { prompt: roughTokens(p.text), tools: tools.length ? roughTokens(toolsJson(tools)) : 0, exact: false };
+    const model = await this.inference.model(r.model_id).catch(() => null);
+    // Count with the model's tokenizer only when it is loaded: a count would otherwise load it.
+    if (!this.tokens || !model?.loaded) return { harness: r.harness, envType, ...p, tools, tokens: estimate };
+    try {
+      const reqTools = tools.map((t) => ({ type: "function", function: t }));
+      const sys = { role: "system", content: p.text };
+      const empty = { role: "user", content: "" };
+      const [bare, withSys, withAll] = await Promise.all([
+        this.tokens.countChat({ model: model.id, messages: [empty] }),
+        this.tokens.countChat({ model: model.id, messages: [sys, empty] }),
+        reqTools.length ? this.tokens.countChat({ model: model.id, messages: [sys, empty], tools: reqTools }) : Promise.resolve(0),
+      ]);
+      const promptTokens = withSys - bare;
+      return { harness: r.harness, envType, ...p, tools, tokens: { prompt: promptTokens, tools: reqTools.length ? withAll - withSys : 0, exact: true } };
+    } catch {
+      return { harness: r.harness, envType, ...p, tools, tokens: estimate };
+    }
+  }
+
   private loadTranscript(r: SessionRow): AgentMessage[] {
     if (!r.transcript_blob) return [];
     return (this.store.blobs.getJson<AgentMessage[]>(r.transcript_blob) ?? []) as AgentMessage[];
@@ -571,7 +631,9 @@ export class SessionManager {
         },
       };
       const tools: AgentTool<any, ToolDetails>[] = !runtime ? [] : r.harness === "pi-stock" ? piStockTools(host) : terrariumTools(host);
-      const systemPrompt = r.harness === "chat" || !runtime ? CHAT_PROMPT : r.harness === "pi-stock" ? PI_STOCK_PROMPT : TERRARIUM_PROMPT + (envType === "sim" ? SIM_NOTE : "");
+      const prompt = sessionPrompt(r.harness, runtime ? (envType as EnvType) : null, r.system_prompt, this.prompts());
+      const systemPrompt = prompt.text;
+      this.recordPrompt(id, tracer, { harness: runtime ? r.harness : "chat", source: prompt.source, text: systemPrompt, tools: tools.map((t) => t.name) });
 
       let currentCallId = "";
       let turnsThisRun = 0;

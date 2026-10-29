@@ -11,9 +11,11 @@ import { FileViews } from "./files.ts";
 import { SessionManager } from "./harness/sessions.ts";
 import { Hub } from "./hub.ts";
 import { Gateway } from "./inference/gateway.ts";
+import { ModelDownloads } from "./inference/downloads.ts";
 import { InferenceService } from "./inference/service.ts";
 import { TokenCounter } from "./inference/tokens.ts";
 import { ResourceSampler } from "./resources.ts";
+import { Settings } from "./settings.ts";
 import { Store } from "./store/db.ts";
 import { BlobGc } from "./store/gc.ts";
 import { logger } from "./util/log.ts";
@@ -31,6 +33,8 @@ export interface App {
   evals: EvalRunner;
   files: FileViews;
   sampler: ResourceSampler;
+  settings: Settings;
+  downloads: ModelDownloads;
   state(): Promise<AppState>;
   shutdown(): Promise<void>;
 }
@@ -55,9 +59,17 @@ export async function createApp(config: Config): Promise<App> {
     apiKey: () => inference.omlx.key,
     ensureReady: () => inference.omlx.ensureStarted(),
   });
-  const sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens });
+  const settings = new Settings({ store, hub, inference, config });
+  const sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens, prompts: () => settings.prompts() });
   const evals = new EvalRunner({ store, hub, envs, sessions, inference, policy, dataDir: config.dataDir });
   const files = new FileViews({ store, envs });
+  const downloads = new ModelDownloads({ hub, inference, venvDir: config.venvDir, modelsDir: config.modelsDir, dataDir: config.dataDir });
+  downloads.inUse = (modelId) => {
+    const s = store.get<{ title: string }>("SELECT title FROM sessions WHERE model_id = ? AND status IN ('running', 'stopping') LIMIT 1", modelId);
+    if (s) return `session "${s.title}" running`;
+    const run = evals.list().find((r) => r.status === "running" && r.config.modelIds.includes(modelId));
+    return run ? `eval "${run.suiteTitle}" running` : undefined;
+  };
   const sampler = new ResourceSampler(hub, envs, inference);
   sampler.start(1000);
   const gc = new BlobGc(store);
@@ -80,6 +92,8 @@ export async function createApp(config: Config): Promise<App> {
     evals,
     files,
     sampler,
+    settings,
+    downloads,
     async state() {
       return {
         envs: envs.list(),
@@ -88,6 +102,8 @@ export async function createApp(config: Config): Promise<App> {
         inference: inference.inferenceState(),
         budget: inference.budget(),
         evalRuns: evals.list(),
+        settings: settings.get(),
+        downloads: downloads.list(),
         versions: { app: config.appVersion, gondolin: VERSIONS.gondolin, justBash: VERSIONS.justBash, piAgentCore: VERSIONS.piAgentCore, omlx: VERSIONS.omlx },
       };
     },
@@ -102,6 +118,7 @@ export async function createApp(config: Config): Promise<App> {
             log.warn(`shutdown: ${name} failed`, err);
           }
         };
+        downloads.cancelAll();
         await step("evals", () => evals.stopAll());
         await step("sessions", () => sessions.stopAll());
         await step("envs", () => envs.stopAll());

@@ -25,6 +25,7 @@ ALLOWED = [
     ("POST", r"/v1/tokenize"),
     ("GET", r"/admin/api/models"),
     ("PUT", r"/admin/api/models/[^/]+/settings"),
+    ("POST", r"/admin/api/reload"),  # re-scan the model dir after Terrarium adds or removes a model
     ("GET", r"/admin/api/models/[^/]+/generation_config"),
     ("GET", r"/admin/api/device-info"),
     ("GET", r"/admin/api/stats"),

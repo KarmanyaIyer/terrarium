@@ -165,6 +165,14 @@ export class InferenceService {
     return model;
   }
 
+  /** Model dirs were added or removed: oMLX re-scans its model dir (when running) and the UI gets the new list. */
+  async rescan(): Promise<void> {
+    this.statusCache = null;
+    this.pushedWindow.clear();
+    if (this.omlx.isReady()) await this.omlx.request("POST", "/admin/api/reload").catch((err) => log.warn("oMLX reload failed", err));
+    await this.broadcastModels();
+  }
+
   async rss(): Promise<number | undefined> {
     const pid = this.omlx.pid;
     if (!pid) return undefined;

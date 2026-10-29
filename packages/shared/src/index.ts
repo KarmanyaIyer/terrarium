@@ -225,6 +225,7 @@ export interface SessionSummary {
   evalRunId?: Id;
   evalCaseId?: string;
   context?: ContextUsage; // latest
+  customPrompt?: boolean; // the session overrides its profile's system prompt
 }
 
 export interface CreateSessionRequest {
@@ -239,6 +240,7 @@ export interface CreateSessionRequest {
 
 export interface UpdateSessionRequest {
   title?: string;
+  systemPrompt?: string | null; // this session's system prompt; null: back to the profile's
   modelId?: Id; // allowed when idle; next turn uses it
   harness?: HarnessProfile;
   thinking?: boolean;
@@ -379,6 +381,7 @@ export type TraceEvent = EventBase &
     | { type: "env_lifecycle"; envId: Id; action: "start" | "stop" | "snapshot" | "reset" | "fork" | "restore"; detail?: string }
     | { type: "context"; usage: ContextUsage }
     | { type: "run_end"; reason: "done" | "stopped" | "max_turns" | "error" | "length" }
+    | { type: "system_prompt"; harness: HarnessProfile; source: SessionPrompt["source"]; text: string; tools: string[] } // at a run's start when the prompt differs from the last one recorded
   );
 
 export type TraceEventType = TraceEvent["type"];
@@ -476,6 +479,8 @@ export interface AppState {
   inference: InferenceState;
   budget: MemoryBudget;
   evalRuns: EvalRunSummary[];
+  settings: AppSettings;
+  downloads: ModelDownload[];
   versions: { app: string; gondolin: string; justBash: string; piAgentCore: string; omlx?: string };
 }
 
@@ -492,7 +497,9 @@ export type WsMessage =
   | { type: "inference"; inference: InferenceState }
   | { type: "resources"; sample: ResourceSample }
   | { type: "eval_run"; run: EvalRunSummary }
-  | { type: "eval_result"; runId: Id; result: EvalResult };
+  | { type: "eval_result"; runId: Id; result: EvalResult }
+  | { type: "model_download"; download: ModelDownload }
+  | { type: "settings"; settings: AppSettings };
 
 export type WsClientMessage = { type: "subscribe"; sessionIds: Id[] } | { type: "ping" };
 
@@ -536,4 +543,113 @@ export interface UpdateModelRequest {
 /** POST /api/models/:id/load. context omitted = model's defaultContext. */
 export interface LoadModelRequest {
   context?: number;
+}
+
+// ---------- Settings ----------
+
+/** Persisted in the settings table; PATCH /api/settings takes any subset. */
+export interface AppSettings {
+  memoryBudgetBytes: number; // oMLX memory ceiling (--memory-guard-gb); applies when oMLX starts
+  newSession: {
+    modelId: Id | null; // null: the most recently used loaded model
+    contextWindow: number | null; // null: the model's default context
+    thinking: "model" | "on" | "off"; // model: on for models whose thinking is default-on
+    harness: Exclude<HarnessProfile, "chat">; // sessions with an environment; chats always use "chat"
+  };
+  newEnv: { type: EnvType; network: NetworkMode };
+  /** Saved default prompt per harness profile (absent: the built-in prompt). */
+  prompts: Partial<Record<HarnessProfile, string>>;
+}
+
+export type UpdateSettingsRequest = Partial<Omit<AppSettings, "newSession" | "newEnv" | "prompts">> & {
+  newSession?: Partial<AppSettings["newSession"]>;
+  newEnv?: Partial<AppSettings["newEnv"]>;
+  prompts?: Partial<Record<HarnessProfile, string | null>>; // null: back to the built-in prompt
+};
+
+export type PathKey = "data" | "models" | "venv" | "logs" | "omlxLog";
+
+/** GET /api/settings: the settings plus read-only facts. */
+export interface SettingsInfo {
+  settings: AppSettings;
+  paths: Record<PathKey, string>;
+  disk: { key: string; label: string; bytes: number }[]; // data/ breakdown, then models/
+  freeDiskBytes: number;
+  maxRunningVms: number;
+  omlx: InferenceState & { appliedCeilingBytes?: number }; // ceiling oMLX was started with
+}
+
+// ---------- Harness profiles and prompts ----------
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: unknown; // JSON Schema, as sent in the request's tools[].function.parameters
+}
+
+/** GET /api/harness: what each profile sends the model. */
+export interface HarnessInfo {
+  id: HarnessProfile;
+  prompt: string; // the profile's default prompt (saved one if set, else built-in)
+  builtIn: string;
+  simNote?: string; // appended to the prompt in simulated envs
+  custom: boolean; // a saved default replaces the built-in prompt
+  tools: ToolDefinition[];
+  tokensEst: { prompt: number; tools: number }; // estimates (no tokenizer); exact counts come per session
+}
+
+/** GET /api/sessions/:id/prompt: exactly what the session's next run sends. */
+export interface SessionPrompt {
+  harness: HarnessProfile;
+  envType: EnvType | null;
+  text: string;
+  source: "built-in" | "profile" | "session"; // session: this session's override
+  defaultText: string; // what the session would send without its override
+  tools: ToolDefinition[];
+  tokens: { prompt: number; tools: number; exact: boolean }; // exact: counted by the model's tokenizer
+}
+
+// ---------- Model downloads ----------
+
+export interface ModelSuggestion {
+  repo: string; // Hugging Face repo id
+  name: string;
+  params: string;
+  note: string; // one line: why it's listed
+  sizeBytes?: number;
+  released?: string; // YYYY-MM-DD
+}
+
+/** POST /api/models/inspect: what a download would bring, checked before it starts. */
+export interface ModelCheck {
+  repo: string;
+  dirName: string; // models/<dirName>
+  installed: boolean;
+  totalBytes: number;
+  files: number;
+  modelType?: string; // config.json model_type
+  loader?: "mlx-lm" | "mlx-vlm";
+  mlx: boolean; // an MLX build (repo tag or quantization config)
+  quant?: string;
+  contextLength?: number;
+  ok: boolean; // can download and load
+  problems: string[]; // why not, one line each
+  freeDiskBytes: number;
+  versions: { mlxLm: string; mlxVlm: string };
+}
+
+export interface ModelDownload {
+  id: Id;
+  repo: string;
+  dirName: string;
+  status: "running" | "done" | "error" | "canceled";
+  bytesDone: number;
+  bytesTotal: number;
+  error?: string;
+  startedAt: Millis;
+  finishedAt?: Millis;
+}
+
+export interface RemoveModelResult {
+  freedBytes: number;
 }
