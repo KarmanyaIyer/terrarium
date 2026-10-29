@@ -434,9 +434,28 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     await a.writeFile("/tmp/.ref", reference, { as: "agent" });
     const raced = await grade(starter, daemon);
     assert.equal(raced.pass, false, raced.detail);
+    // The plain unittest run (after the isolated one) is candidate code as uid 1000 too: it can't read
+    // /grader, and its own results file is all it can forge. Forged there, with an isolated run that fails,
+    // the runs disagree: a grader error, not a pass.
+    const plainProbe = [
+      "import json, os",
+      "if os.path.basename(os.path.dirname(os.getcwd())) == 'plain':",
+      "    seen = ['uid=%d' % os.getuid()]",
+      "    try: open('/grader/test_hidden.py').read(); seen.append('READ /grader')",
+      "    except OSError: seen.append('denied /grader')",
+      "    open('/workspace/.plain_probe', 'w').write(' '.join(seen))",
+      "    open(os.path.join(os.getcwd(), '..', 'out', 'results.json'), 'w').write(json.dumps({'expected': 3, 'passed': 3}))",
+      "os._exit(0)",
+      "",
+    ].join("\n");
+    const plainForged = await grade(plainProbe + reference);
+    assert.equal(plainForged.pass, false, plainForged.detail);
+    assert.equal(plainForged.error, true, plainForged.detail);
+    assert.match(plainForged.detail, /^grader error: the isolated and plain unittest runs disagree \(isolated 0\/\d+, plain 3\/3 pass\)/);
+    assert.equal((await sh(a, "cat /workspace/.plain_probe", { as: "root" })).out, "uid=1000 denied /grader");
     assert.equal((await sh(a, "stat -c '%U:%G %a' /grader /grader/test_hidden.py", { as: "root" })).out, "root:grader 750\nroot:grader 640");
     assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
-    await sh(a, "rm -rf /workspace/* /workspace/.ref /grader", { as: "root" });
+    await sh(a, "rm -rf /workspace/* /workspace/.ref /workspace/.plain_probe /grader", { as: "root" });
     record("grading", { gradeMs });
   });
 
@@ -500,6 +519,16 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     assert.match(repBad.detail, /FAIL test_wrappers_use_helper/);
     assert.match(repBad.detail, /WROTE ws/, "the candidate's own copy is writable");
     assert.match(repBad.detail, /denied src 13/, "the tests' copy is not");
+    // Review 3, #2: report.py a symlink into the live workspace, rewritten through the link on import. The
+    // tests' copy keeps no links, so the source the tests read is not the rewritten file.
+    const linked = [starter, helper, `open(__file__, 'w').write(${JSON.stringify(refactored)})`, ""].join("\n");
+    await put({ ...rep, "report.py": "", ".real/report_src.py": linked });
+    await sh(a, "ln -sf /workspace/.real/report_src.py /workspace/report.py");
+    const repLink = await gradeTests(a, check, [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(REPO_DIR, "evals/cases/coding/refactor-report/grader/test_hidden.py"), "utf8") }]);
+    assert.equal(repLink.pass, false, repLink.detail);
+    assert.match(repLink.detail, /^2\/3 hidden tests passed/);
+    assert.match(repLink.detail, /test_wrappers_use_helper/);
+    assert.equal((await sh(a, "cat /workspace/.real/report_src.py")).out, refactored.trim(), "the rewrite through the link happened");
 
     // #10: command checks run as uid 1000 with a clean PATH and HOME, after every agent process is killed,
     // and can't read /grader.
@@ -520,7 +549,34 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     const still = await cmd('test -s beat && a=$(cat beat) && sleep 0.5 && test "$a" = "$(cat beat)"');
     assert.equal(still.pass, true, `the agent's daemon was still running: ${still.detail}`);
     assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
-    await sh(a, "rm -rf /workspace/* /grader /home/agent/.local/bin/grep", { as: "root" });
+    await sh(a, "rm -rf /workspace/* /workspace/.real /grader /home/agent/.local/bin/grep", { as: "root" });
+  });
+
+  test("grading: review 3 probes grade as plain unittest does, perf probes in seconds (review 3, #1, #3, #4, #9)", async () => {
+    const dir = path.join(REPO_DIR, "qa/review3-probes");
+    const plainFails = ["grid", "lru_bug", "od_eq", "oneway_pass", "stale_tuple"];
+    const times: Record<string, number> = {};
+    for (const name of fs.readdirSync(dir).filter((n) => fs.statSync(path.join(dir, n)).isDirectory()).sort()) {
+      await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+      for (const f of fs.readdirSync(path.join(dir, name))) if (f !== "tests.py") await a.writeFile(`/workspace/${f}`, fs.readFileSync(path.join(dir, name, f), "utf8"), { as: "agent" });
+      const held = name === "perf_held6k";
+      const check = { type: "tests" as const, file: "/grader/test_hidden.py", timeoutSec: held ? 20 : 60 };
+      const t0 = performance.now();
+      const g = await gradeTests(a, check, [{ path: "/grader/test_hidden.py", content: fs.readFileSync(path.join(dir, name, "tests.py"), "utf8") }]);
+      times[name] = Math.round(performance.now() - t0);
+      if (held) {
+        // Both sides keep 12000 linked containers through 6000 calls: past the sync limit, a visible error.
+        assert.equal(g.error, true, `${name}: ${g.detail}`);
+        assert.match(g.detail, /can't keep up/);
+        continue;
+      }
+      assert.equal(g.pass, !plainFails.includes(name), `${name}: ${g.detail}`);
+      assert.equal(g.error, undefined, `${name}: ${g.detail}`);
+      if (name.startsWith("perf_")) assert.ok(times[name]! < 20_000, `${name} took ${times[name]}ms`);
+    }
+    assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
+    await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
+    record("gradingProbesMs", times);
   });
 
   test("an env from an older image gets the current helpers and grader user at boot", async () => {

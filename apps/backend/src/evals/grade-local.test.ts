@@ -1,15 +1,17 @@
-// The VM test grader (guest grade.py) run host-side in --local mode: candidate code and hidden tests in
-// separate processes. The cheats from review 1 (#1) must fail while the reference solution passes. The
-// uid split, kills and copy are covered in the guest by vm.test.ts.
+// The VM test grader (guest grade.py) run host-side in --local mode: an isolated run (candidate code and
+// hidden tests in separate processes), then a plain in-process unittest run. The cheats from review 1 (#1)
+// must fail while the reference solution passes; runs that disagree are never a pass. The uid split, kills
+// and copies are covered in the guest by vm.test.ts.
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { after, test } from "node:test";
 import { REPO_DIR } from "../config.ts";
 import { HOST_HELPERS_DIR } from "../envs/vm/driver.ts";
+import { testsGrade, type GradeSummary } from "./graders.ts";
 import { convertMbpp } from "./suites/convert.ts";
 
 const GRADE = join(HOST_HELPERS_DIR, "grade.py");
@@ -19,11 +21,24 @@ const PY = process.env.TERRARIUM_PY || ["python3.12", "python3.13", "python3"].f
 const tmp = mkdtempSync(join(tmpdir(), "terr-gradelocal-"));
 after(() => rmSync(tmp, { recursive: true, force: true }));
 
-function grade(ws: string, tests: string): { code: number; passed: number; expected: number; error: string | null } {
-  const r = spawnSync(PY!, ["-I", "-S", GRADE, "--local", "--tests", tests, "--workspace", ws, "--timeout", "60"], { encoding: "utf8", timeout: 90_000 });
-  const j = JSON.parse(r.stdout.trim().split("\n").pop() || "{}") as { passed?: number; expected?: number; error?: string | null };
-  return { code: r.status ?? -1, passed: j.passed ?? 0, expected: j.expected ?? 0, error: j.error ?? null };
+interface Graded {
+  code: number;
+  passed: number;
+  expected: number;
+  error: string | null;
+  verdict: string;
+  /** The plain unittest run's counts, "passed/expected". */
+  plain: string;
 }
+
+function gradeFull(ws: string, tests: string, timeout = 60): { r: Graded; summary: GradeSummary } {
+  const p = spawnSync(PY!, ["-I", "-S", GRADE, "--local", "--tests", tests, "--workspace", ws, "--timeout", String(timeout)], { encoding: "utf8", timeout: (2 * timeout + 30) * 1000 });
+  const j = JSON.parse(p.stdout.trim().split("\n").pop() || "{}") as GradeSummary;
+  const r = { code: p.status ?? -1, passed: j.passed ?? 0, expected: j.expected ?? 0, error: j.error ?? null, verdict: j.verdict ?? "?", plain: `${j.plain?.passed ?? "?"}/${j.plain?.expected ?? "?"}` };
+  return { r, summary: j };
+}
+
+const grade = (ws: string, tests: string): Graded => gradeFull(ws, tests).r;
 
 function workspace(name: string, solution?: string): string {
   const ws = join(tmp, name);
@@ -36,7 +51,7 @@ const reference = readFileSync(join(REPO_DIR, "evals/reference/coding/fix-pagina
 const tests = join(CASE, "grader/test_hidden.py");
 
 test("reference passes; starter fails", { skip: !PY && "no python3 >= 3.10" }, () => {
-  assert.deepEqual(grade(workspace("ref", reference), tests), { code: 0, passed: 3, expected: 3, error: null });
+  assert.deepEqual(grade(workspace("ref", reference), tests), { code: 0, passed: 3, expected: 3, error: null, verdict: "pass", plain: "3/3" });
   const starter = grade(workspace("starter"), tests);
   assert.equal(starter.code, 1);
   assert.ok(starter.passed < starter.expected);
@@ -58,6 +73,7 @@ test("exit-code and process cheats fail", { skip: !PY && "no python3 >= 3.10" },
     const starter = readFileSync(join(CASE, "workspace/pagination.py"), "utf8");
     const r = grade(workspace(name, prefix + starter), tests);
     assert.equal(r.code, 1, `${name} passed: ${JSON.stringify(r)}`);
+    assert.notEqual(r.verdict, "pass", name);
     assert.ok(r.expected === 0 || r.passed < r.expected, `${name}: ${JSON.stringify(r)}`);
     if (name === "fake-results") assert.match(r.error ?? "", /results file ignored/);
   }
@@ -82,13 +98,13 @@ function caseWorkspace(name: string, caseId: string, edit?: { file: string; chan
 
 test("fix-inventory: a Warehouse that keeps and changes the caller's dict fails, as in one process (review 2, #1)", { skip: !PY && "no python3 >= 3.10" }, () => {
   const ref = caseWorkspace("inv-ref", "fix-inventory");
-  assert.deepEqual(grade(ref.ws, ref.tests), { code: 0, passed: 6, expected: 6, error: null });
+  assert.deepEqual(grade(ref.ws, ref.tests), { code: 0, passed: 6, expected: 6, error: null, verdict: "pass", plain: "6/6" });
   const alias = caseWorkspace("inv-alias", "fix-inventory", {
     file: "inventory/service.py",
     change: (s) => s.replace("self.stock = dict(stock or {})", "self.stock = stock if stock is not None else {}"),
   });
   const r = grade(alias.ws, alias.tests);
-  assert.deepEqual(r, { code: 1, passed: 5, expected: 6, error: null });
+  assert.deepEqual(r, { code: 1, passed: 5, expected: 6, error: null, verdict: "fail", plain: "5/6" });
   // Plain unittest on the same files agrees.
   const plain = spawnSync(PY!, ["-m", "unittest", "test_hidden"], { cwd: alias.ws, encoding: "utf8", env: { ...process.env, PYTHONPATH: dirname(alias.tests), PYTHONDONTWRITEBYTECODE: "1" } });
   assert.match(plain.stderr, /FAILED \(failures=1\)/);
@@ -97,7 +113,7 @@ test("fix-inventory: a Warehouse that keeps and changes the caller's dict fails,
 
 test("refactor-report: rewriting report.py from candidate code doesn't change the source the tests read (review 2, #2)", { skip: !PY && "no python3 >= 3.10" }, () => {
   const ref = caseWorkspace("refactor-ref", "refactor-report");
-  assert.deepEqual(grade(ref.ws, ref.tests), { code: 0, passed: 3, expected: 3, error: null });
+  assert.deepEqual(grade(ref.ws, ref.tests), { code: 0, passed: 3, expected: 3, error: null, verdict: "pass", plain: "3/3" });
   const refactored = readFileSync(join(ref.ws, "report.py"), "utf8");
   // The original loops plus the helper, and on import the module overwrites its own file with the refactor.
   const starter = readFileSync(join(REPO_DIR, "evals/cases/coding/refactor-report/workspace/report.py"), "utf8");
@@ -105,7 +121,7 @@ test("refactor-report: rewriting report.py from candidate code doesn't change th
   const cheat = `${starter}\n\n${helper}\nwith open(__file__, "w", encoding="utf-8") as _f:\n    _f.write(${JSON.stringify(refactored)})\n`;
   const swap = caseWorkspace("refactor-swap", "refactor-report", { file: "report.py", change: () => cheat });
   const r = grade(swap.ws, swap.tests);
-  assert.deepEqual(r, { code: 1, passed: 2, expected: 3, error: null });
+  assert.deepEqual(r, { code: 1, passed: 2, expected: 3, error: null, verdict: "fail", plain: "2/3" });
 });
 
 test("a candidate object that claims to equal anything does not pass", { skip: !PY && "no python3 >= 3.10" }, () => {
@@ -113,6 +129,8 @@ test("a candidate object that claims to equal anything does not pass", { skip: !
   const r = grade(workspace("any", always), tests);
   assert.equal(r.code, 1);
   assert.equal(r.passed, 1, "only the ValueError test passes"); // test_invalid
+  // Plain unittest believes it: the runs disagree, a grader error.
+  assert.deepEqual([r.verdict, r.plain], ["disagree", "3/3"]);
 });
 
 test("MBPP harness: built-ins stay local even if the candidate redefines them", { skip: !PY && "no python3 >= 3.10" }, () => {
@@ -131,4 +149,45 @@ test("MBPP harness: built-ins stay local even if the candidate redefines them", 
   const r = grade(join(base, "ws"), join(base, "gr/test_hidden.py"));
   assert.equal(r.code, 1);
   assert.equal(r.passed, 1); // the getsizeof test
+  assert.notEqual(r.verdict, "pass");
+});
+
+test("dual grading: a forged plain run with an isolated run that fails is a grader error, never a pass", { skip: !PY && "no python3 >= 3.10" }, () => {
+  // Candidate code writes the plain run's results (../out from its cwd there) and ends the process with 0
+  // before the tests run. The isolated run's candidate dies at import, so its tests fail.
+  const forge = "import json, os\ntry:\n    open(os.path.join(os.getcwd(), '..', 'out', 'results.json'), 'w').write(json.dumps({'expected': 3, 'passed': 3, 'failures': [], 'error': None}))\nexcept OSError:\n    pass\nos._exit(0)\n";
+  const { r, summary } = gradeFull(workspace("forge-plain", forge + reference), tests);
+  assert.equal(r.code, 1);
+  assert.deepEqual([r.verdict, r.plain], ["disagree", "3/3"]);
+  const g = testsGrade(summary, r.code);
+  assert.equal(g.pass, false);
+  assert.equal(g.error, true);
+  assert.match(g.detail, /^grader error: the isolated and plain unittest runs disagree \(isolated 0\/\d+, plain 3\/3 pass\)/);
+});
+
+test("dual grading: an int subclass that equals anything passes plain unittest but not the isolated run", { skip: !PY && "no python3 >= 3.10" }, () => {
+  const lenient = `${reference}\n\nclass _Lenient(int):\n    def __eq__(self, other):\n        return True\n    __hash__ = int.__hash__\n\n\n_real_total_pages = total_pages\n\n\ndef total_pages(n, per_page):\n    _real_total_pages(n, per_page)\n    return _Lenient(0)\n`;
+  const { r, summary } = gradeFull(workspace("lenient", lenient), tests);
+  assert.equal(r.code, 1);
+  assert.equal(r.plain, "3/3");
+  assert.equal(r.verdict, "disagree");
+  assert.ok(r.passed < r.expected, JSON.stringify(r));
+  assert.equal(testsGrade(summary, r.code).error, true);
+});
+
+test("refactor-report: a symlinked source rewritten by candidate code is not what the tests read (review 3, #2)", { skip: !PY && "no python3 >= 3.10" }, () => {
+  const ref = caseWorkspace("symlink-ref", "refactor-report");
+  const refactored = readFileSync(join(ref.ws, "report.py"), "utf8");
+  const starter = readFileSync(join(REPO_DIR, "evals/cases/coding/refactor-report/workspace/report.py"), "utf8");
+  const helper = refactored.slice(refactored.indexOf("def _summarize"), refactored.indexOf("def revenue_by_region"));
+  // report.py is an absolute link to a file outside the workspace; on import the module rewrites it (through
+  // the link) with the refactor. Copies that follow the link would show the tests the rewritten file.
+  const outside = join(tmp, "symlink-outside.py");
+  writeFileSync(outside, `${starter}\n\n${helper}\nwith open(__file__, "w", encoding="utf-8") as _f:\n    _f.write(${JSON.stringify(refactored)})\n`);
+  const swap = caseWorkspace("symlink-swap", "refactor-report");
+  rmSync(join(swap.ws, "report.py"));
+  symlinkSync(outside, join(swap.ws, "report.py"));
+  const r = grade(swap.ws, swap.tests);
+  assert.equal(readFileSync(outside, "utf8"), refactored, "the cheat ran");
+  assert.deepEqual(r, { code: 1, passed: 2, expected: 3, error: null, verdict: "fail", plain: "2/3" });
 });

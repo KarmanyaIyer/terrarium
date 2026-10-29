@@ -80,26 +80,56 @@ function gradingRuntime(summary: object, code: number) {
   return { rt, calls };
 }
 
-test("tests checks pass only on full counts from the grader, after agent processes are killed (review 1, #1)", async () => {
+test("tests checks pass only on full counts from both grader runs, after agent processes are killed (review 1, #1)", async () => {
   const check = { type: "tests" as const, file: "/grader/test_hidden.py" };
   const hidden = [{ path: "/grader/test_hidden.py", content: "x" }];
-  const ok = gradingRuntime({ pass: true, passed: 3, expected: 3, failures: [] }, 0);
+  const full = { passed: 3, expected: 3, failures: [], error: null };
+  const ok = gradingRuntime({ pass: true, verdict: "pass", ...full, plain: full }, 0);
   const g = await gradeTests(ok.rt, check, hidden);
   assert.equal(g.pass, true, g.detail);
+  assert.equal(g.error, undefined);
   assert.match(g.detail, /^3\/3 hidden tests passed/);
   assert.equal(ok.calls[0], "kill-agent", "agent processes are killed before anything else");
   assert.ok(ok.calls.some((c) => c.includes("chown root:1001")), "hidden files are root:grader");
   for (const [summary, code] of [
-    [{ pass: true, passed: 2, expected: 3 }, 0],
-    [{ pass: true, passed: 0, expected: 0 }, 0],
-    [{ pass: true, passed: 3, expected: 3, error: "test runner exited 1" }, 0],
-    [{ pass: true, passed: 3, expected: 3 }, 1],
+    [{ pass: true, verdict: "pass", passed: 2, expected: 3, plain: { passed: 2, expected: 3 } }, 0],
+    [{ pass: true, verdict: "pass", passed: 0, expected: 0, plain: { passed: 0, expected: 0 } }, 0],
+    [{ pass: true, verdict: "pass", ...full, error: "test runner exited 1", plain: { ...full, error: "test runner exited 1" } }, 0],
+    [{ pass: true, verdict: "pass", ...full, plain: full }, 1],
+    [{ pass: true, verdict: "fail", ...full, plain: full }, 0],
+    [{ pass: true, ...full }, 0],
   ] as const) {
     const r = await gradeTests(gradingRuntime(summary, code).rt, check, hidden);
     assert.equal(r.pass, false, JSON.stringify(summary));
   }
   const garbled = await gradeTests({ ...gradingRuntime({}, 0).rt, exec: async () => ({ exitCode: 0, stdout: "PASS\n", stderr: "", timedOut: false }) } as unknown as EnvRuntime, check, hidden);
   assert.equal(garbled.pass, false);
+});
+
+test("isolated and plain runs that disagree are a grader error showing both runs, never a pass", async () => {
+  const check = { type: "tests" as const, file: "/grader/test_hidden.py" };
+  const fails = Array.from({ length: 20 }, (_, i) => ({ test: `test_${i}`, kind: "fail", message: `AssertionError: ${i}` }));
+  const plain = { passed: 4, expected: 24, failures: fails, moreFailures: 0, error: null, output: "F" };
+  const iso = { passed: 24, expected: 24, failures: [], error: null };
+  for (const verdict of ["disagree", "pass"]) {
+    const r = await gradeTests(gradingRuntime({ pass: verdict === "pass", verdict, ...iso, plain }, verdict === "pass" ? 0 : 1).rt, check, []);
+    assert.equal(r.pass, false);
+    assert.equal(r.error, true);
+    assert.match(r.detail, /^grader error: the isolated and plain unittest runs disagree \(isolated 24\/24 pass, plain 4\/24\)/);
+    assert.match(r.detail, /plain unittest run:\n {2}FAIL test_0: AssertionError: 0/);
+    assert.match(r.detail, /\.\.\. 8 more/, "failures past the first 12 are counted, not dropped");
+  }
+  // The other way round, with the grader's own cap on failures.
+  const r = await gradeTests(gradingRuntime({ pass: false, verdict: "disagree", passed: 1, expected: 70, failures: fails, moreFailures: 50, error: null, plain: iso }, 1).rt, check, []);
+  assert.equal(r.error, true);
+  assert.match(r.detail, /isolated 1\/70, plain 24\/24 pass/);
+  assert.match(r.detail, /\.\.\. 58 more/);
+  // Both failing is an ordinary fail, with the plain run shown when it differs.
+  const both = await gradeTests(gradingRuntime({ pass: false, verdict: "fail", passed: 3, expected: 5, failures: fails.slice(0, 2), error: null, plain: { passed: 2, expected: 5, failures: fails.slice(0, 3) } }, 1).rt, check, []);
+  assert.equal(both.pass, false);
+  assert.equal(both.error, undefined);
+  assert.match(both.detail, /^3\/5 hidden tests passed\n/);
+  assert.match(both.detail, /plain unittest run: 2\/5/);
 });
 
 test("VM command checks go through grade.py --command (agent uid, clean env), never as root in /workspace (review 2, #10)", async () => {

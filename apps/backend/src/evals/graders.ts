@@ -10,6 +10,8 @@ export interface Grade {
   pass: boolean;
   detail: string;
   score?: number;
+  /** Not a verdict on the model: the grader could not decide (shown as an error, not a fail). */
+  error?: boolean;
 }
 
 type AnswerCheck = Extract<EvalCheck, { type: "answer" }>;
@@ -129,23 +131,91 @@ export async function writeHiddenFiles(rt: EnvRuntime, files: EvalCase["hiddenFi
 
 export const GRADE_PY = "/usr/local/libexec/terrarium/grade.py";
 
-interface GradeSummary {
-  pass?: boolean;
+interface TestRun {
   passed?: number;
   expected?: number;
   failures?: { test?: string; kind?: string; message?: string }[];
+  moreFailures?: number;
   timedOut?: boolean;
   error?: string | null;
   candidate?: string;
   testOutput?: string;
   candidateOutput?: string;
+  output?: string;
+}
+
+/** grade.py's summary: the isolated run's fields, the plain unittest run under `plain`, and the verdict. */
+export interface GradeSummary extends TestRun {
+  pass?: boolean;
+  verdict?: "pass" | "fail" | "disagree";
+  plain?: TestRun;
+}
+
+const MAX_SHOWN_FAILURES = 12;
+const tailOf = (s: string | undefined, n: number) => {
+  const t = (s ?? "").trim();
+  return t.length > n ? `...${t.slice(-n)}` : t;
+};
+const counts = (r: TestRun) => ({ passed: typeof r.passed === "number" ? r.passed : 0, expected: typeof r.expected === "number" ? r.expected : 0 });
+const runOk = (r: TestRun) => {
+  const c = counts(r);
+  return !r.error && c.expected > 0 && c.passed === c.expected;
+};
+
+function runLines(r: TestRun): string[] {
+  const lines: string[] = [];
+  if (r.error) lines.push(r.error);
+  if (r.candidate) lines.push(`candidate process: ${r.candidate}`);
+  const fails = r.failures ?? [];
+  for (const f of fails.slice(0, MAX_SHOWN_FAILURES)) lines.push(`${f.kind === "error" ? "ERROR" : f.kind === "skipped" ? "SKIP" : "FAIL"} ${f.test ?? "?"}: ${f.message ?? ""}`);
+  const more = Math.max(0, fails.length - MAX_SHOWN_FAILURES) + (typeof r.moreFailures === "number" ? r.moreFailures : 0);
+  if (more) lines.push(`... ${more} more`);
+  return lines;
+}
+
+/**
+ * The grade for grade.py's summary. A pass needs both runs (isolated and plain unittest) to pass every test;
+ * runs that disagree are a grader error, never a pass and never a silent fail.
+ */
+export function testsGrade(g: GradeSummary, exitCode: number | null): Grade & { passed: number; expected: number } {
+  const iso = counts(g);
+  const plain = g.plain && typeof g.plain === "object" ? g.plain : null;
+  if (!plain) return { pass: false, error: true, ...iso, detail: "grader error: no plain unittest run in the grader's output (guest image older than the grader?)" };
+  const pc = counts(plain);
+  const a = runOk(g);
+  const b = runOk(plain);
+  const show = (c: { passed: number; expected: number }) => `${c.passed}/${c.expected}`;
+  if (a !== b || g.verdict === "disagree") {
+    const lines = [`grader error: the isolated and plain unittest runs disagree (isolated ${show(iso)}${a ? " pass" : ""}, plain ${show(pc)}${b ? " pass" : ""})`];
+    lines.push("isolated run:", ...runLines(g).map((l) => `  ${l}`));
+    lines.push("plain unittest run:", ...runLines(plain).map((l) => `  ${l}`));
+    const cand = tailOf(g.candidateOutput, 800);
+    if (cand) lines.push(`candidate output:\n${cand}`);
+    const pout = tailOf(plain.output, 800);
+    if (pout) lines.push(`plain run output:\n${pout}`);
+    return { pass: false, error: true, ...iso, detail: lines.join("\n") };
+  }
+  const pass = exitCode === 0 && g.pass === true && g.verdict === "pass" && a && b;
+  const lines = [`${show(iso)} hidden tests passed${g.timedOut ? " (timed out)" : ""}`, ...runLines(g)];
+  if (pc.passed !== iso.passed || pc.expected !== iso.expected || (plain.error ?? null) !== (g.error ?? null)) {
+    lines.push(`plain unittest run: ${show(pc)}${plain.timedOut ? " (timed out)" : ""}`, ...runLines(plain).map((l) => `  ${l}`));
+  }
+  const cand = tailOf(g.candidateOutput, 800);
+  if (cand) lines.push(`candidate output:\n${cand}`);
+  if (!pass && !g.failures?.length) {
+    const tout = tailOf(g.testOutput, 1200);
+    if (tout) lines.push(`test output:\n${tout}`);
+  }
+  return { pass, ...iso, detail: lines.join("\n") };
 }
 
 /**
  * Hidden unittest file, graded by the guest's grade.py (root): it kills every agent process, copies
- * /workspace, runs the candidate's code as uid 1000 and the tests as uid 1001 in separate processes, and
- * reports counts from a results file only the test runner can write. Passes only when the runner counted at
- * least one test and every one passed; the exit code alone is never enough.
+ * /workspace, and runs the tests twice. Isolated: the candidate's code as uid 1000 and the tests as uid 1001
+ * in separate processes, counts from a results file only the test runner can write. Plain: ordinary
+ * in-process unittest as uid 1000 once the isolated run is over (exact Python semantics, forgeable on its
+ * own). Passes only when both runs counted at least one test and every one passed; the exit code alone is
+ * never enough, and runs that disagree are a grader error.
  */
 export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { type: "tests" }>, hidden: EvalCase["hiddenFiles"]): Promise<Grade> {
   if (rt.type !== "vm") return { pass: false, detail: "tests checks need a VM environment" };
@@ -155,7 +225,8 @@ export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { typ
   const r = await rt.exec(`exec /usr/bin/python3 -I -S ${GRADE_PY} --tests ${shq(check.file)} --workspace /workspace --timeout ${timeout} --id g${Date.now().toString(36)}`, {
     as: "root",
     cwd: "/",
-    timeoutMs: (timeout + 60) * 1000,
+    // Two runs of up to `timeout` each, plus copying and cleanup.
+    timeoutMs: (2 * timeout + 90) * 1000,
   });
   const last = r.stdout.trim().split("\n").pop() ?? "";
   let g: GradeSummary;
@@ -165,20 +236,8 @@ export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { typ
     const out = `${r.stdout}\n${r.stderr}`.trim();
     return { pass: false, detail: `grader output unreadable (exit ${r.exitCode}${r.timedOut ? ", timed out" : ""})\n${out.slice(-1500)}` };
   }
-  const passed = typeof g.passed === "number" ? g.passed : 0;
-  const expected = typeof g.expected === "number" ? g.expected : 0;
-  const pass = r.exitCode === 0 && g.pass === true && !g.error && expected > 0 && passed === expected;
-  const lines = [`${passed}/${expected} hidden tests passed${g.timedOut ? " (timed out)" : ""}`];
-  if (g.error) lines.push(g.error);
-  if (g.candidate) lines.push(`candidate process: ${g.candidate}`);
-  for (const f of (g.failures ?? []).slice(0, 12)) lines.push(`${f.kind === "error" ? "ERROR" : f.kind === "skipped" ? "SKIP" : "FAIL"} ${f.test ?? "?"}: ${f.message ?? ""}`);
-  const cand = (g.candidateOutput ?? "").trim();
-  if (cand) lines.push(`candidate output:\n${cand.length > 800 ? `...${cand.slice(-800)}` : cand}`);
-  if (!pass && !g.failures?.length) {
-    const tout = (g.testOutput ?? "").trim();
-    if (tout) lines.push(`test output:\n${tout.length > 1200 ? `...${tout.slice(-1200)}` : tout}`);
-  }
-  return { pass, detail: lines.join("\n") };
+  const t = testsGrade(g, r.exitCode);
+  return { pass: t.pass, detail: t.detail, ...(t.error ? { error: true } : {}) };
 }
 
 const COMMAND_TIMEOUT_SEC = 170;

@@ -337,7 +337,7 @@ export class EvalRunner {
       else grade = await this.grade(c, session.id, envId, outcome.finalText, canary);
       const prefix = outcome.timedOut ? `timed out after ${c.timeoutSec}s; ` : outcome.reason === "max_turns" ? `hit ${c.maxTurns} turns; ` : outcome.reason === "length" ? "output truncated; " : "";
       this.setResult(runId, c.id, modelId, {
-        status: grade.pass ? "pass" : outcome.reason === "error" ? "error" : "fail",
+        status: grade.pass ? "pass" : grade.error || outcome.reason === "error" ? "error" : "fail",
         detail: prefix + grade.detail,
         durationMs: Date.now() - started,
         tokens,
