@@ -152,17 +152,73 @@ test("MBPP harness: built-ins stay local even if the candidate redefines them", 
   assert.notEqual(r.verdict, "pass");
 });
 
-test("dual grading: a forged plain run with an isolated run that fails is a grader error, never a pass", { skip: !PY && "no python3 >= 3.10" }, () => {
-  // Candidate code writes the plain run's results (../out from its cwd there) and ends the process with 0
-  // before the tests run. The isolated run's candidate dies at import, so its tests fail.
+test("dual grading: an early zero exit cannot supply a plain result", { skip: !PY && "no python3 >= 3.10" }, () => {
+  // The isolated candidate dies at import. In the plain run os._exit is guarded, so loading fails and the
+  // out-of-process observer receives a real failure rather than accepting the process status as a verdict.
   const forge = "import json, os\ntry:\n    open(os.path.join(os.getcwd(), '..', 'out', 'results.json'), 'w').write(json.dumps({'expected': 3, 'passed': 3, 'failures': [], 'error': None}))\nexcept OSError:\n    pass\nos._exit(0)\n";
   const { r, summary } = gradeFull(workspace("forge-plain", forge + reference), tests);
   assert.equal(r.code, 1);
-  assert.deepEqual([r.verdict, r.plain], ["disagree", "3/3"]);
+  assert.notEqual(r.verdict, "pass");
+  assert.notEqual(summary.plain?.error, null);
   const g = testsGrade(summary, r.code);
   assert.equal(g.pass, false);
-  assert.equal(g.error, true);
-  assert.match(g.detail, /^grader error: the isolated and plain unittest runs disagree \(isolated 0\/\d+, plain 3\/3 pass\)/);
+});
+
+test("plain observer rejects a forged socket report followed by os._exit", { skip: !PY && "no python3 >= 3.10" }, () => {
+  // std_instance_state is one of the former known-lenient cases: isolated passes while honest plain fails.
+  // The prefix targets only the plain process, writes a complete fake report to every socket it can find,
+  // and attempts to exit 0. Without the exit guard the root observer would receive only that forged JSON.
+  const source = join(REPO_DIR, "qa/review6-cases/std_instance_state");
+  const ws = join(tmp, "socket-report-forge");
+  cpSync(source, ws, { recursive: true });
+  rmSync(join(ws, "tests.py"));
+  const prefix = [
+    "import os as _o, stat as _st, sys as _s",
+    "if 'test_hidden' in _s.modules:",
+    "    _fake = b'{\\\"expected\\\":2,\\\"passed\\\":2,\\\"failures\\\":[],\\\"error\\\":null}'",
+    "    for _fd in range(3, 64):",
+    "        try:",
+    "            if _st.S_ISSOCK(_o.fstat(_fd).st_mode): _o.write(_fd, _fake)",
+    "        except OSError: pass",
+    "    _o._exit(0)",
+    "",
+  ].join("\n");
+  writeFileSync(join(ws, "m.py"), prefix + readFileSync(join(source, "m.py"), "utf8"));
+  const { r, summary } = gradeFull(ws, join(source, "tests.py"));
+  assert.equal(summary.passed, summary.expected, "the isolated run remains the known-lenient pass");
+  assert.equal(r.code, 1);
+  assert.notEqual(r.verdict, "pass");
+  assert.match(summary.plain?.error ?? "", /unreadable|exited|protected/);
+});
+
+test("plain observer hides runner frames from candidate signal handlers", { skip: !PY && "no python3 >= 3.10" }, () => {
+  const source = join(REPO_DIR, "qa/review6-cases/std_instance_state");
+  const ws = join(tmp, "signal-frame-forge");
+  cpSync(source, ws, { recursive: true });
+  rmSync(join(ws, "tests.py"));
+  const prefix = [
+    "import signal as _sig, sys as _sys, unittest as _u",
+    "_plain = 'test_hidden' in _sys.modules",
+    "if _plain:",
+    "    def _forge(signum, frame):",
+    "        while frame is not None:",
+    "            for value in tuple(frame.f_locals.values()):",
+    "                result = getattr(value, 'res', None)",
+    "                if isinstance(result, _u.TestResult) and hasattr(result, 'passed'):",
+    "                    result.passed[:] = ['forged', 'forged']",
+    "                    return",
+    "            frame = frame.f_back",
+    "    _sig.signal(_sig.SIGALRM, _forge)",
+    "",
+  ].join("\n");
+  const suffix = "\n_original_month_rows = month_rows\ndef month_rows(y, mth):\n    if _plain: _sig.raise_signal(_sig.SIGALRM)\n    return _original_month_rows(y, mth)\n";
+  writeFileSync(join(ws, "m.py"), prefix + readFileSync(join(source, "m.py"), "utf8") + suffix);
+  const { r, summary } = gradeFull(ws, join(source, "tests.py"));
+  assert.equal(summary.passed, summary.expected, "the isolated run remains the known-lenient pass");
+  assert.equal(r.code, 1);
+  assert.equal(r.verdict, "disagree");
+  assert.equal(summary.plain?.passed, 0);
+  assert.ok((summary.plain?.failures?.length ?? 0) > 0, "the real plain failures remain visible");
 });
 
 test("dual grading: an int subclass that equals anything passes plain unittest but not the isolated run", { skip: !PY && "no python3 >= 3.10" }, () => {

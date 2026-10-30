@@ -638,7 +638,14 @@ export class VmRuntime implements EnvRuntime {
     } else {
       args.push("--all");
     }
-    const r = await vm.exec(args, { env: ROOT_ENV });
+    let r: Awaited<ReturnType<typeof vm.exec>>;
+    try {
+      r = await vm.exec(args, { env: ROOT_ENV });
+    } finally {
+      // Incremental manifests can be several MiB. They live in the guest's root-only transfer
+      // directory, so remove them even when observer.py fails instead of accumulating one per turn.
+      if (stage) await vm.exec(["/bin/rm", "-f", "--", stage], { env: ROOT_ENV });
+    }
     if (r.exitCode !== 0) throw new Error(`observer failed: ${r.stderr.trim() || `exit ${r.exitCode}`}`);
     const parsed = JSON.parse(r.stdout) as Manifest & { stats: Record<string, number> };
     return {

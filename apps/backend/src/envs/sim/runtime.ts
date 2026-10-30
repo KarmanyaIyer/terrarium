@@ -18,6 +18,7 @@ const log = logger("sim");
 const WORKER = new URL(`./worker${SRC_EXT}`, import.meta.url).pathname;
 const HANG_GRACE_MS = 10_000;
 const DEFAULT_TIMEOUT = 120_000;
+const READ_BATCH_BYTES = 64 * 1024 * 1024;
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 type Pending = { resolve: (v: any) => void; reject: (e: Error) => void; chunks?: FsEntryWire[]; timer?: NodeJS.Timeout };
@@ -105,7 +106,9 @@ export class SimRuntime implements EnvRuntime {
     const child = spawn(SANDBOX_EXEC, args, {
       cwd: "/",
       stdio: ["pipe", "pipe", "pipe"],
-      env: { PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8", TZ: "UTC" },
+      // Homebrew Node otherwise opens a formula-owned OpenSSL config outside its install prefix. The worker
+      // needs no host TLS configuration, and /dev/null is already the only writable/readable device it uses.
+      env: { PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8", TZ: "UTC", OPENSSL_CONF: "/dev/null" },
     });
     this.child = child;
     this.ready = false;
@@ -336,9 +339,19 @@ export class SimRuntime implements EnvRuntime {
     }
   }
 
-  async readFiles(paths: string[], opts: { maxBytes?: number } = {}): Promise<(ReadResult | Error)[]> {
+  async readFiles(paths: string[], opts: { maxBytes?: number; totalBytes?: number } = {}): Promise<(ReadResult | Error)[]> {
     const out: (ReadResult | Error)[] = [];
-    for (const p of paths) out.push(await this.readFile(p, opts).catch((err: unknown) => (err instanceof Error ? err : new Error(String(err)))));
+    let left = Math.max(0, opts.totalBytes ?? READ_BATCH_BYTES);
+    const perFile = opts.maxBytes ?? 8 * 1024 * 1024;
+    for (const p of paths) {
+      if (left <= 0) {
+        out.push(new Error(`read ${p}: batch read limit reached`));
+        continue;
+      }
+      const r = await this.readFile(p, { maxBytes: Math.min(perFile, left) }).catch((err: unknown) => (err instanceof Error ? err : new Error(String(err))));
+      out.push(r);
+      if (!(r instanceof Error)) left -= r.data.byteLength;
+    }
     return out;
   }
 

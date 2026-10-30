@@ -14,7 +14,7 @@ import { after, test } from "node:test";
 import { REPO_DIR } from "../config.ts";
 import { HOST_HELPERS_DIR } from "../envs/vm/driver.ts";
 import { testsGrade, type GradeSummary } from "./graders.ts";
-import { isoVerdict, REVIEW5, REVIEW5_DIR } from "./review5.ts";
+import { isoVerdict, reviewVerdict, REVIEW5, REVIEW5_DIR } from "./review5.ts";
 import { REVIEW6, REVIEW6_DIR, REVIEW6_PERF } from "./review6.ts";
 
 const GRADE = join(HOST_HELPERS_DIR, "grade.py");
@@ -160,8 +160,9 @@ test("review 4 probes: no leniency passes, even with a forged plain run; correct
   for (const r of forged) {
     const s = r.summary;
     const g = testsGrade(s, r.code);
-    // The forged plain run passes; the isolated run doesn't: a visible disagreement.
-    assert.deepEqual([s.verdict, g.pass, g.error], ["disagree", false, true], `${r.name} forged: ${g.detail}`);
+    // The protected plain run rejects the unittest replacement, so both executions fail.
+    assert.deepEqual([s.verdict, g.pass, g.error], ["fail", false, undefined], `${r.name} forged: ${g.detail}`);
+    assert.match(s.plain?.error ?? "", /replaced unittest/, `${r.name}: forged plain run was not detected`);
   }
 });
 
@@ -192,8 +193,9 @@ for (const [item, cases] of Object.entries(REVIEW5)) {
   });
 }
 
-// Review 6: as review 5. "known-lenient" cases are documented gaps (guest/README.md): plain unittest must still fail
-// them; the isolated verdict is reported, not checked. Expectations: qa/review6-cases/expect.json.
+// Review 6: the protected verdict combines the isolated run with the observer-owned plain result. An isolated pass
+// plus a failing plain run is inexact, and replacing unittest's run method must be detected. Expectations:
+// qa/review6-cases/expect.json.
 test("review 6 cases cover qa/review6-cases", () => {
   const all = readdirSync(PROBES6, { withFileTypes: true }).filter((d) => d.isDirectory() && d.name !== "__pycache__").map((d) => d.name);
   const known = Object.values(REVIEW6).flatMap((g) => Object.keys(g));
@@ -202,24 +204,23 @@ test("review 6 cases cover qa/review6-cases", () => {
 });
 
 for (const [item, cases] of Object.entries(REVIEW6)) {
-  test(`review 6, #${item}: the isolated run's own verdict`, { skip: !PY && "no python3 >= 3.10" }, async (t) => {
+  test(`review 6, #${item}: protected plain and isolated verdict`, { skip: !PY && "no python3 >= 3.10" }, async () => {
     const names = Object.keys(cases);
     const honest = await batches(names, (n) => probe(n, 30, PROBES6));
-    const lenient = names.filter((n) => !cases[n]![0] && cases[n]![1] !== "known-lenient");
+    const lenient = names.filter((n) => !cases[n]![0]);
     const forged = await batches(lenient, (n) => probe(n, 30, PROBES6, true));
     for (const r of honest) {
       const [plainOk, iso] = cases[r.name]!;
       const s = r.summary;
       const why = `${r.name}: ${s.verdict} ${testsGrade(s, r.code).detail}`;
       assert.equal(r.plainOk, plainOk, `${r.name}: plain unittest`);
-      if (iso === "known-lenient") {
-        t.diagnostic(`${r.name}: known-lenient, isolated run ${isoVerdict(s)}`);
-        continue;
-      }
-      assert.equal(isoVerdict(s), iso, why);
+      assert.equal(reviewVerdict(s), iso, why);
       if (!plainOk) assert.notEqual(s.verdict, "pass", why);
       if (REVIEW6_PERF.has(r.name)) assert.ok(((s as { wallSeconds?: number }).wallSeconds ?? 99) < 10, `${r.name} isolated run took ${(s as { wallSeconds?: number }).wallSeconds}s`);
     }
-    for (const r of forged) assert.notEqual(r.summary.verdict, "pass", `${r.name} forged: ${testsGrade(r.summary, r.code).detail}`);
+    for (const r of forged) {
+      assert.notEqual(r.summary.verdict, "pass", `${r.name} forged: ${testsGrade(r.summary, r.code).detail}`);
+      assert.match(r.summary.plain?.error ?? "", /replaced unittest/, `${r.name}: forged plain run was not detected`);
+    }
   });
 }

@@ -79,3 +79,17 @@ test("a failed save is reported in the command's stderr", async () => {
   rt.checkpoint = real;
   await rt.destroy();
 });
+
+test("batch reads enforce the total byte cap", async () => {
+  const dir = tempDir();
+  const rt = await simDriver.create({ id: "batch-cap", dir, network: "off", sim });
+  await rt.start();
+  for (const name of ["a", "b", "c"]) await rt.writeFile(`/workspace/${name}`, "123456");
+  const rows = await rt.readFiles(["/workspace/a", "/workspace/b", "/workspace/c"], { maxBytes: 8, totalBytes: 10 });
+  assert.deepEqual(rows.map((r) => (r instanceof Error ? r.message : [r.data.byteLength, r.size, r.truncated])), [
+    [6, 6, false],
+    [4, 6, true],
+    "read /workspace/c: batch read limit reached",
+  ]);
+  await rt.destroy();
+});

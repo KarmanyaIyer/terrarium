@@ -7,13 +7,17 @@ with the candidate process (nothing changed behind the tests' back) before it co
 or standard-library class the candidate process also has is applied there too (grade_rpc.py has the rules).
 
 Plain (--plain; uid 1000 in the guest, after the isolated run has finished): ordinary unittest in one
-process, candidate modules imported from the working directory. Exact Python semantics, no protection: the
-candidate's code can change these counts, which is why a pass needs both runs.
+process, candidate modules imported from the working directory. The accepted report is sent to grade.py's
+out-of-process observer. A permanent audit witness protects the runner's private result state and process
+completion; explicit snapshots reject changes to unittest, builtins and the reporter. A pass still needs both
+runs.
 
 Hidden tests can `import terrarium_grading` for `workspace` (a copy of the workspace taken before any
 candidate code ran, root-owned and read-only in the guest, for reading the candidate's source) and
 `stdlib(name)` (import a standard-library module locally)."""
 
+import _signal
+import builtins
 import dis
 import importlib.abc
 import importlib.machinery
@@ -21,7 +25,9 @@ import importlib.util
 import io
 import json
 import os
+import posix
 import re
+import signal
 import socket
 import sys
 import threading
@@ -166,16 +172,21 @@ class CandidateFinder(importlib.abc.MetaPathFinder):
 
 
 class Recorder(unittest.TextTestResult):
-    def __init__(self, *a, **kw):
+    def __init__(self, *a, integrity=None, **kw):
         super().__init__(*a, **kw)
         self.passed = []
         self.current = None
+        self.integrity = integrity or (lambda: None)
 
     def startTest(self, test):
         self.current = test.id().rsplit(".", 1)[-1]
         super().startTest(test)
 
     def addSuccess(self, test):
+        changed = self.integrity()
+        if changed:
+            self.addError(test, (RuntimeError, RuntimeError(changed), None))
+            return
         if CLIENT is not None:
             # Candidate threads may have changed what the test saw, or failed the grading, after their call.
             try:
@@ -203,9 +214,9 @@ def summary(tb, kind):
 
 
 class Results:
-    """Counts so far; written once, by whichever comes first: the end of the run or (--plain) the deadline."""
+    """Counts so far. Isolated mode writes them once to the grader-only result file."""
 
-    def __init__(self, path):
+    def __init__(self, path=None):
         self.path = path
         self.out = {"expected": 0, "passed": 0, "failures": [], "error": None}
         self.res = None
@@ -236,6 +247,255 @@ class Results:
         with os.fdopen(fd, "w") as f:
             json.dump(out, f)
         return True
+
+
+def plain_integrity():
+    """Return an integrity check whose state candidate code cannot reach through normal Python reflection.
+
+    The audit hook is permanent and keeps the snapshots in its closure. It rejects the reflection primitives
+    that would expose this runner's frames/result object, native-library loading, and process exit. Attribute
+    assignment has no audit event, so complete class dictionaries and the runner's selected module bindings are
+    compared explicitly before execution, after each successful test and after the suite.
+    """
+    violation = [None]
+    protected_function_ids = set()
+    trusted_globals = {id(globals())}
+    candidate_globals = set()
+    audit_busy = set()
+    getframe = sys._getframe
+    get_ident = threading.get_ident
+    denied = frozenset(
+        (
+            "ctypes.dlopen",
+            "ctypes.dlsym",
+            "ctypes.dlsym/handle",
+            "gc.get_objects",
+            "gc.get_referrers",
+            "os.exec",
+            "sys._current_frames",
+            "sys.setprofile",
+            "sys.settrace",
+        )
+    )
+
+    def reject(what):
+        if violation[0] is None:
+            violation[0] = "candidate code used %s while the plain result was protected" % what
+        raise RuntimeError(violation[0])
+
+    trusted_prefix = os.path.realpath(sys.base_prefix) + os.sep
+    candidate_prefix = os.path.realpath(os.getcwd()) + os.sep
+    frame_reads = frozenset(("tb_frame", "f_code", "gi_frame", "gi_code", "cr_frame", "cr_code", "ag_frame", "ag_code"))
+
+    def audit(event, args):
+        if event == "terrarium.plain_violation":
+            reject(str(args[0]) if args else "a protected operation")
+        if event in denied:
+            reject(event)
+        if event == "sys._getframe":
+            if get_ident() in audit_busy:
+                return
+            frame = args[0] if args else None
+            filename = getattr(getattr(frame, "f_code", None), "co_filename", "")
+            if not os.path.realpath(filename).startswith(trusted_prefix):
+                reject(event)
+        if event == "object.__getattr__" and len(args) > 1 and args[1] in frame_reads:
+            tid = get_ident()
+            if tid in audit_busy:
+                return
+            audit_busy.add(tid)
+            try:
+                obj, name = args[0], args[1]
+                frame = obj if name == "f_code" else getattr(obj, "tb_frame" if name == "tb_frame" else name[:3] + "frame", None)
+                if not isinstance(frame, types.FrameType):
+                    return
+                target_mod = frame.f_globals.get("__name__", "")
+                protected = id(frame.f_globals) in trusted_globals or target_mod == "unittest" or (isinstance(target_mod, str) and target_mod.startswith("unittest."))
+                if not protected:
+                    return
+                caller = getframe(1)
+                while caller is not None:
+                    filename = os.path.realpath(caller.f_code.co_filename)
+                    if id(caller.f_globals) in candidate_globals or (not filename.startswith(trusted_prefix) and id(caller.f_globals) not in trusted_globals):
+                        reject("access to a protected traceback or frame")
+                    caller = caller.f_back
+            finally:
+                audit_busy.discard(tid)
+        if event == "import" and args and args[0] in ("_cffi_backend", "_ctypes", "_testcapi", "_testinternalcapi", "cffi", "ctypes"):
+            reject("native-memory module %s" % args[0])
+        if event == "object.__setattr__" and len(args) > 1 and args[1] in ("__code__", "__defaults__", "__kwdefaults__"):
+            if id(args[0]) in protected_function_ids:
+                reject("assignment to protected function %s" % args[1])
+        if event == "open" and args and isinstance(args[0], str):
+            p = os.path.realpath(args[0])
+            if p.startswith("/proc/self/fd/") or p == "/proc/self/mem" or p.startswith("/dev/fd/"):
+                reject("open(%s)" % args[0])
+        if event == "import" and len(args) > 1 and isinstance(args[1], str):
+            p = os.path.realpath(args[1])
+            if p.endswith((".so", ".dylib")) and not p.startswith(trusted_prefix):
+                reject("a native extension outside the Python installation")
+
+    # Candidate signal handlers must keep ordinary alarm/exception behavior, but the interpreter normally hands
+    # them the interrupted runner frame. Install one dispatcher before candidate code, remove the raw registration
+    # functions, and pass None instead. The raw C functions are not retained by any returned closure.
+    real_signal = _signal.signal
+    real_getsignal = _signal.getsignal
+    virtual_handlers = {}
+    guarded_signals = set()
+    uncatchable = {int(s) for s in (signal.SIGKILL, signal.SIGSTOP)}
+    for name in ("SIGABRT", "SIGBUS", "SIGFPE", "SIGILL", "SIGSEGV", "SIGSYS", "SIGTRAP"):
+        if hasattr(signal, name):
+            uncatchable.add(int(getattr(signal, name)))
+    default_ignored = set()
+    for name in ("SIGCHLD", "SIGCONT", "SIGIO", "SIGPOLL", "SIGURG", "SIGWINCH"):
+        if hasattr(signal, name):
+            default_ignored.add(int(getattr(signal, name)))
+
+    def dispatch_signal(signum, frame):
+        handler = virtual_handlers.get(int(signum), signal.SIG_DFL)
+        if handler == signal.SIG_IGN or (handler == signal.SIG_DFL and int(signum) in default_ignored):
+            return None
+        if handler == signal.SIG_DFL:
+            raise RuntimeError("signal %d used its default terminating action while the plain result was protected" % signum)
+        return handler(signum, None)
+
+    for signum in signal.valid_signals():
+        n = int(signum)
+        try:
+            virtual_handlers[n] = real_getsignal(n)
+            if n not in uncatchable:
+                real_signal(n, dispatch_signal)
+                guarded_signals.add(n)
+        except (OSError, RuntimeError, ValueError):
+            pass
+
+    def guarded_signal(signum, handler):
+        n = int(signum)
+        if n not in guarded_signals:
+            reject("registration of unsafe signal %d" % n)
+        if handler not in (signal.SIG_DFL, signal.SIG_IGN) and not callable(handler):
+            raise TypeError("signal handler must be signal.SIG_IGN, signal.SIG_DFL, or a callable object")
+        old = virtual_handlers[n]
+        virtual_handlers[n] = handler
+        return old
+
+    def guarded_getsignal(signum):
+        return virtual_handlers.get(int(signum), signal.SIG_DFL)
+
+    _signal.signal = guarded_signal
+    _signal.getsignal = guarded_getsignal
+    protected_function_ids.update((id(dispatch_signal), id(guarded_signal), id(guarded_getsignal)))
+
+    sys.addaudithook(audit)
+
+    # No original _exit reference remains in Python after these assignments. A SystemExit is caught by
+    # run_tests; signals/crashes give grade.py a nonzero child status. The real report is appended only after
+    # the suite returns, so bytes forged on its socket make the JSON invalid instead of replacing the result.
+    def no_exit(status):
+        sys.audit("terrarium.plain_violation", "os._exit(%r)" % status)
+        raise RuntimeError("os._exit is disabled while the plain result is protected")
+
+    os._exit = no_exit
+    posix._exit = no_exit
+
+    owners = (
+        unittest.TestCase,
+        unittest.FunctionTestCase,
+        unittest.BaseTestSuite,
+        unittest.TestSuite,
+        unittest.TestLoader,
+        unittest.TestResult,
+        unittest.TextTestResult,
+        unittest.TextTestRunner,
+        json.JSONEncoder,
+        Recorder,
+        Results,
+    )
+    classes = tuple((owner, dict(vars(owner))) for owner in owners)
+    module_attrs = tuple(
+        (unittest, name, getattr(unittest, name))
+        for name in (
+            "BaseTestSuite",
+            "FunctionTestCase",
+            "TestCase",
+            "TestLoader",
+            "TestResult",
+            "TestSuite",
+            "TextTestResult",
+            "TextTestRunner",
+            "defaultTestLoader",
+            "main",
+        )
+    )
+    json_attrs = dict(vars(json))
+    builtin_attrs = dict(vars(builtins))
+    signal_attrs = dict(vars(signal))
+    raw_signal_attrs = dict(vars(_signal))
+    codes = []
+    for owner, attrs in classes:
+        for name, value in attrs.items():
+            if isinstance(value, (classmethod, staticmethod)):
+                value = value.__func__
+            code = getattr(value, "__code__", None)
+            if code is not None:
+                codes.append((owner, name, value, code))
+                protected_function_ids.add(id(value))
+    for module in (sys.modules[__name__], unittest, json):
+        for value in vars(module).values():
+            if isinstance(value, types.FunctionType):
+                protected_function_ids.add(id(value))
+    protected_function_ids.add(id(no_exit))
+    no_exit_code = no_exit.__code__
+
+    def check():
+        if violation[0] is not None:
+            return violation[0]
+        if os._exit is not no_exit or posix._exit is not no_exit or no_exit.__code__ is not no_exit_code:
+            return "candidate code replaced the protected process-exit guard"
+        now_builtins = vars(builtins)
+        if now_builtins.keys() != builtin_attrs.keys():
+            return "candidate code changed builtins"
+        for name, value in builtin_attrs.items():
+            if now_builtins.get(name) is not value:
+                return "candidate code replaced builtins.%s" % name
+        for owner, before in classes:
+            now = vars(owner)
+            if now.keys() != before.keys():
+                return "candidate code changed %s attributes" % owner.__name__
+            for name, value in before.items():
+                if now.get(name) is not value:
+                    return "candidate code replaced unittest.%s.%s" % (owner.__name__, name)
+        for module, name, value in module_attrs:
+            if getattr(module, name, None) is not value:
+                return "candidate code replaced unittest.%s" % name
+        now_json = vars(json)
+        if now_json.keys() != json_attrs.keys():
+            return "candidate code changed the JSON reporter module"
+        for name, value in json_attrs.items():
+            if now_json.get(name) is not value:
+                return "candidate code replaced json.%s used by the reporter" % name
+        for module, before in ((signal, signal_attrs), (_signal, raw_signal_attrs)):
+            now = vars(module)
+            if now.keys() != before.keys():
+                return "candidate code changed the protected signal module"
+            for name, value in before.items():
+                if now.get(name) is not value:
+                    return "candidate code replaced protected signal.%s" % name
+        for owner, name, value, code in codes:
+            if getattr(value, "__code__", None) is not code:
+                return "candidate code changed the code of unittest.%s.%s" % (owner.__name__, name)
+        return None
+
+    def trust(mod):
+        trusted_globals.add(id(vars(mod)))
+        for loaded in tuple(sys.modules.values()):
+            namespace = getattr(loaded, "__dict__", None)
+            filename = namespace.get("__file__") if isinstance(namespace, dict) else None
+            if isinstance(filename, str) and os.path.realpath(filename).startswith(candidate_prefix):
+                candidate_globals.add(id(namespace))
+
+    protected_function_ids.update((id(check), id(trust)))
+    return check, trust
 
 
 # The test process's own state that mock.patch can't reach in the candidate process through this hook: the
@@ -308,24 +568,32 @@ def mirror_patches(client):
     patch.__enter__, patch.__exit__ = patched_enter, patched_exit
 
 
-def run_tests(tests, results):
+def run_tests(tests, results, integrity=lambda: None, trust=lambda mod: None):
     """Load and run the hidden tests, recording into results."""
     try:
         spec = importlib.util.spec_from_file_location("test_hidden", tests)
         mod = importlib.util.module_from_spec(spec)
         sys.modules["test_hidden"] = mod
         spec.loader.exec_module(mod)
+        trust(mod)
         suite = unittest.defaultTestLoader.loadTestsFromModule(mod)
         results.out["expected"] = suite.countTestCases()
+        changed = integrity()
+        if changed:
+            results.out["error"] = changed
+            return
         # warnings="default" as unittest.main() (python -m unittest) sets when there are no -W options.
         runner = unittest.TextTestRunner(stream=sys.stderr, verbosity=2, resultclass=Recorder, warnings=None if sys.warnoptions else "default")
 
         def make_result():
-            results.res = Recorder(runner.stream, runner.descriptions, runner.verbosity)
+            results.res = Recorder(runner.stream, runner.descriptions, runner.verbosity, integrity=integrity)
             return results.res
 
         runner._makeResult = make_result
         runner.run(suite)
+        changed = integrity()
+        if changed and not results.out["error"]:
+            results.out["error"] = changed
     except CandidateGone as e:
         results.out["error"] = "loading the tests failed: %s" % e
     except BaseException as e:  # noqa: B036 - SystemExit from a test file is still a grading error
@@ -340,6 +608,7 @@ def main():
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d  # noqa: E731
     plain = "--plain" in a
     tests = opt("--tests")
+    report_fd = opt("--report-fd")
     results = Results(opt("--results"))
     source = opt("--source") or opt("--workspace")
     # --budget: seconds this runner may spend; a candidate call still running at the end of it fails
@@ -357,20 +626,42 @@ def main():
     if plain:
         # As `python3 -m unittest` in the candidate's directory: it comes first on sys.path.
         sys.path.insert(0, os.getcwd())
-        if deadline is not None:
-            # Candidate code shares this process, so a hang can't be interrupted: write what finished, then go.
-            def expire():
-                if results.write({"error": "tests still running at the grading deadline (in %s)" % ((results.res and results.res.current) or "loading"), "seconds": round(time.monotonic() - t0, 2)}):
-                    os._exit(0)
-
-            timer = threading.Timer(max(0.0, deadline - time.monotonic()), expire)
-            timer.daemon = True
-            timer.start()
-        run_tests(tests, results)
-        results.write({"seconds": round(time.monotonic() - t0, 2)})
+        # Keep all accepted state in locals hidden behind the permanent audit hook. grade.py owns the other
+        # end of the socket and rejects a nonzero/early exit, malformed JSON, a hang or an integrity error.
+        integrity, trust = plain_integrity()
+        write_fd, close_fd = os.write, os.close
+        encode = json.JSONEncoder(separators=(",", ":")).encode
+        encode_code = encode.__func__.__code__
+        fd = int(report_fd)
+        run_tests(tests, results, integrity, trust)
+        changed = integrity()
+        if encode.__func__.__code__ is not encode_code or (changed and any(word in changed for word in ("builtins", "JSON", "json.", "Recorder", "Results"))):
+            raise RuntimeError(changed or "candidate code changed the protected JSON encoder")
+        if changed and not results.out["error"]:
+            results.out["error"] = changed
+        # Inline collection keeps the accepted state in this frame. Reflection APIs that could expose it are
+        # rejected by the audit hook; candidate code never receives this Results wrapper.
+        out = dict(results.out, failures=list(results.out["failures"]))
+        res = results.res
+        if res is not None:
+            out["passed"] = len(res.passed)
+            out["failures"] = []
+            for kind, items in (("fail", res.failures), ("error", res.errors)):
+                for test, tb in items:
+                    out["failures"].append({"test": test.id().rsplit(".", 1)[-1], "kind": kind, "message": summary(tb, kind)})
+            for test, why in res.skipped:
+                out["failures"].append({"test": test.id().rsplit(".", 1)[-1], "kind": "skipped", "message": str(why)[:300]})
+        out["seconds"] = round(time.monotonic() - t0, 2)
+        data = encode(out).encode("utf-8")
+        while data:
+            n = write_fd(fd, data)
+            if n <= 0:
+                raise OSError("plain result observer closed")
+            data = data[n:]
+        close_fd(fd)
         sys.stdout.flush()
         sys.stderr.flush()
-        os._exit(0)
+        return
 
     op_timeout = opt("--op-timeout")
     timeout = float(op_timeout) if op_timeout else None if budget else 30.0

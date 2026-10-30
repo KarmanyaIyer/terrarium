@@ -213,9 +213,11 @@ export function testsGrade(g: GradeSummary, exitCode: number | null): Grade & { 
  * Hidden unittest file, graded by the guest's grade.py (root): it kills every agent process, copies
  * /workspace, and runs the tests twice. Isolated: the candidate's code as uid 1000 and the tests as uid 1001
  * in separate processes, counts from a results file only the test runner can write. Plain: ordinary
- * in-process unittest as uid 1000 once the isolated run is over (exact Python semantics, forgeable on its
- * own). Passes only when both runs counted at least one test and every one passed; the exit code alone is
- * never enough, and runs that disagree are a grader error.
+ * in-process unittest as uid 1000 once the isolated run is over, with its report accepted over a root-owned
+ * socket and an audit/integrity witness protecting runner state and completion. Operations that would expose
+ * or bypass the witness are a grader error.
+ * Passes only when both runs counted at least one test and every one passed; the exit code alone is never
+ * enough, and runs that disagree are a grader error.
  */
 /** The guest grader's own summary of a tests check (null with its output if that can't be read). */
 export async function runTestsGrader(

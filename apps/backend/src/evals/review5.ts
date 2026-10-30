@@ -20,3 +20,11 @@ export function isoVerdict(s: GradeSummary): Iso {
   if (s.error || s.candidate || (s.failures ?? []).some((f) => GRADER_ERROR.test(f.message ?? ""))) return "inexact";
   return "fail";
 }
+
+/** Review-case verdict. A sound isolated pass plus a failing protected plain run is inexact: the two
+ * executions disagree, so the grader must not decide the candidate's behavior. An isolated ordinary
+ * failure stays a failure even when the plain run differs, preserving the established case taxonomy. */
+export function reviewVerdict(s: GradeSummary): Iso {
+  const isolated = isoVerdict(s);
+  return isolated === "pass" && s.verdict !== "pass" ? "inexact" : isolated;
+}

@@ -25,6 +25,7 @@ interface Result {
   verdict: string;
   /** The plain unittest run's counts, "passed/expected". */
   plain: string;
+  plainError: string | null;
 }
 
 let n = 0;
@@ -38,9 +39,9 @@ function grade(files: Record<string, string>, tests: string, timeout = 60): Resu
   const hidden = join(base, "test_hidden.py");
   writeFileSync(hidden, `import unittest\nimport m\n\n\nclass Hidden(unittest.TestCase):\n${tests}\n`);
   const r = spawnSync(PY!, ["-I", "-S", GRADE, "--local", "--tests", hidden, "--workspace", join(base, "ws"), "--timeout", String(timeout)], { encoding: "utf8", timeout: (2 * timeout + 30) * 1000 });
-  const j = JSON.parse(r.stdout.trim().split("\n").pop() || "{}") as Partial<Omit<Result, "plain">> & { plain?: { passed?: number; expected?: number } };
+  const j = JSON.parse(r.stdout.trim().split("\n").pop() || "{}") as Partial<Omit<Result, "plain" | "plainError">> & { plain?: { passed?: number; expected?: number; error?: string | null } };
   const plain = `${j.plain?.passed ?? "?"}/${j.plain?.expected ?? "?"}`;
-  return { code: r.status ?? -1, passed: j.passed ?? 0, expected: j.expected ?? 0, error: j.error ?? null, failures: j.failures ?? [], verdict: j.verdict ?? "?", plain };
+  return { code: r.status ?? -1, passed: j.passed ?? 0, expected: j.expected ?? 0, error: j.error ?? null, failures: j.failures ?? [], verdict: j.verdict ?? "?", plain, plainError: j.plain?.error ?? null };
 }
 
 const failed = (r: Result) => r.failures.map((f) => f.test).sort();
@@ -352,14 +353,15 @@ test("more than 50 failures: the first 50 are listed and the rest counted (revie
 // Replaces unittest's TestCase.run in the plain run (the hidden tests share the candidate's process there).
 const FORGE = "import sys as _s, unittest as _u\nif 'test_hidden' in _s.modules:\n    def _run(self, result=None):\n        result.startTest(self); result.addSuccess(self); result.stopTest(self)\n        return result\n    _u.TestCase.run = _run\n";
 
-test("a returned internal list is the candidate's own: the Store.get() repro fails, and a forged plain run only makes it a disagreement (review 4, #1)", { skip }, () => {
+test("a returned internal list is the candidate's own: the Store.get() repro and a forged plain run both fail (review 4, #1)", { skip }, () => {
   const mod = "class Store:\n    def __init__(self):\n        self.items = []\n    def get(self):\n        return self.items\n";
   const tests = "    def test_get_is_a_copy(self):\n        s = m.Store()\n        s.get().append(9)\n        self.assertEqual(s.get(), [])\n";
   const honest = grade({ "m.py": mod }, tests);
   assert.deepEqual({ code: honest.code, passed: honest.passed, verdict: honest.verdict, plain: honest.plain }, { code: 1, passed: 0, verdict: "fail", plain: "0/1" });
   assert.match(honest.failures[0]?.message ?? "", /\[9\] != \[\]/);
   const forged = grade({ "m.py": FORGE + mod }, tests);
-  assert.deepEqual({ code: forged.code, passed: forged.passed, verdict: forged.verdict, plain: forged.plain }, { code: 1, passed: 0, verdict: "disagree", plain: "1/1" });
+  assert.deepEqual({ code: forged.code, passed: forged.passed, verdict: forged.verdict, plain: forged.plain }, { code: 1, passed: 0, verdict: "fail", plain: "0/1" });
+  assert.match(forged.plainError ?? "", /replaced unittest/);
 });
 
 test("strict answers: a lying __ne__ and an __eq__ that disagrees with the data are grader errors, never passes (review 4, #4)", { skip }, () => {
@@ -489,7 +491,8 @@ test("a link reached again through a returned parent stays in sync; a stale answ
   const ok = grade({ "m.py": mod }, body(201));
   assert.deepEqual({ code: ok.code, passed: ok.passed, verdict: ok.verdict }, { code: 0, passed: 1, verdict: "pass" });
   const stale = grade({ "m.py": FORGE + mod }, body(200));
-  assert.deepEqual({ code: stale.code, passed: stale.passed, verdict: stale.verdict, plain: stale.plain }, { code: 1, passed: 0, verdict: "disagree", plain: "1/1" });
+  assert.deepEqual({ code: stale.code, passed: stale.passed, verdict: stale.verdict, plain: stale.plain }, { code: 1, passed: 0, verdict: "fail", plain: "0/1" });
+  assert.match(stale.plainError ?? "", /replaced unittest/);
 });
 
 test("process state as in one process: stack depth and recursion limit, the decimal context, warnings; log assertions refused", { skip }, () => {

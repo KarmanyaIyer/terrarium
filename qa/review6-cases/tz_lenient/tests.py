@@ -1,13 +1,14 @@
-import os, time, unittest
+import calendar, os, time, unittest
 import m
 
 class T(unittest.TestCase):
     def test_far_future_local_time_unchanged(self):
-        # Chicago and Winnipeg share tzname/offset/daylight, so a 5-tuple mirror
-        # can miss the rule change. Pin Chicago locally first.
-        os.environ["TZ"] = "America/Chicago"
+        # Both POSIX zones have the same tzname/offset/daylight tuple. They differ
+        # on this date, and work on Alpine without a tzdata package.
+        os.environ["TZ"] = "CST6CDT,M3.2.0/2,M11.1.0/2"
         time.tzset()
-        before = time.strftime("%Y-%m-%d %H:%M %Z", time.localtime(2**31 - 1))
+        when = calendar.timegm((2038, 3, 20, 12, 0, 0))
+        before = time.strftime("%Y-%m-%d %H:%M %Z", time.localtime(when))
         m.work()
-        after = time.strftime("%Y-%m-%d %H:%M %Z", time.localtime(2**31 - 1))
+        after = time.strftime("%Y-%m-%d %H:%M %Z", time.localtime(when))
         self.assertEqual(after, before)

@@ -2,9 +2,7 @@
 (whose grade/plain/verdict helpers this reuses).
 
 expect.json: item -> {case: [plain unittest passes?, the isolated run's verdict]}. The verdict is "pass", "fail",
-"inexact" (a grader error) or "known-lenient": a documented gap (guest/README.md, known gaps) where plain unittest
-fails and the isolated run still passes. Those are reported ("gap"), never counted as bad; one that stops passing
-is reported as "fixed?" so its expectation can be tightened.
+"inexact" (a grader error). The protected verdict treats an isolated pass plus a failing plain run as inexact.
 usage: run.py [-j N] [case ...] (default: all). PY=<python> picks the interpreter (default: this one)."""
 import importlib.util, json, os, sys, time
 
@@ -23,17 +21,18 @@ def run(name, timeout=30):
     ok = r5.plain(case, timeout)
     h = r5.grade(case, False, timeout)
     iso = r5.iso_verdict(h)
-    out = {"case": name, "plain_ok": ok, "iso": iso, "counts": "%s/%s" % (h.get("passed"), h.get("expected")), "verdict": h.get("verdict"), "secs": round(time.monotonic() - t0, 1), "wall": h.get("wallSeconds")}
+    verdict = "inexact" if iso == "pass" and h.get("verdict") != "pass" else iso
+    out = {"case": name, "plain_ok": ok, "iso": iso, "protected": verdict, "counts": "%s/%s" % (h.get("passed"), h.get("expected")), "verdict": h.get("verdict"), "secs": round(time.monotonic() - t0, 1), "wall": h.get("wallSeconds")}
     msgs = [f.get("message", "")[:140] for f in h.get("failures", [])][:2] + ([h["candidate"][:140]] if h.get("candidate") else [])
     if msgs:
         out["why"] = msgs
-    if want_iso == "known-lenient":
-        return ("gap" if ok == want_plain and iso == "pass" else "fixed?" if ok == want_plain else "BAD"), out
-    good = ok == want_plain and iso == want_iso
+    good = ok == want_plain and verdict == want_iso
     if not want_plain:
-        # A forged plain run (it passes everything) must not turn the case into a pass.
-        out["forged"] = r5.grade(case, True, timeout)["verdict"]
-        good = good and out["forged"] != "pass"
+        # Replacing unittest's run method must be detected by the protected plain observer.
+        forged = r5.grade(case, True, timeout)
+        out["forged"] = forged["verdict"]
+        out["forged_error"] = forged.get("plain", {}).get("error")
+        good = good and out["forged"] != "pass" and "replaced unittest" in (out["forged_error"] or "")
     return ("ok" if good else "BAD"), out
 
 
@@ -50,6 +49,5 @@ if __name__ == "__main__":
         for mark, o in pool.map(run, names):
             tally[mark] = tally.get(mark, 0) + 1
             print("%-6s %s" % (mark, json.dumps(o)), flush=True)
-    gaps = tally.get("gap", 0) + tally.get("fixed?", 0)
-    print("%d of %d as expected; %d known-lenient (%d still pass, %d fixed?)" % (tally.get("ok", 0), len(names) - gaps, gaps, tally.get("gap", 0), tally.get("fixed?", 0)))
+    print("%d of %d as expected" % (tally.get("ok", 0), len(names)))
     sys.exit(1 if tally.get("BAD") else 0)

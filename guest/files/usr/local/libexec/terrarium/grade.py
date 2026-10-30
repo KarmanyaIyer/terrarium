@@ -21,8 +21,10 @@ Tests: every check is graded twice, and passes only if both runs pass.
    raises a grader error rather than answer. Its counts go to a grader-only dir; they are read, and
    everything it started is killed, before step 4.
 4. Plain run: grade_runner.py --plain as agent in `plain/ws`, the hidden tests (copied from /grader) and
-   candidate code in one process, as `python3 -m unittest` would run them. Exact Python semantics, no
-   protection: candidate code can change these counts, but not the isolated run's, which are already read.
+   candidate code in one process, as `python3 -m unittest` would run them. Its report goes over an anonymous
+   socket to this root process; the agent never owns the accepted result. A permanent audit witness protects
+   the result state and blocks early exit/native-memory access, while explicit snapshots detect framework and
+   reporter assignment (which Python audit hooks do not see).
 5. Prints one JSON line: the isolated run's counts at the top level, the plain run's under "plain", and a
    verdict: "pass" (both counted at least one test and every test passed), "fail" (neither did) or
    "disagree" (one did): a grader error, never a pass. Exit 0 only on "pass".
@@ -90,6 +92,50 @@ class Tail:
         self.t.join(timeout=2)
         s = self.buf.decode("utf-8", "replace")
         return ("[...]" + s) if self.total > len(self.buf) else s
+
+
+class Report:
+    """Reads one bounded JSON report from an anonymous socket in the background.
+
+    The plain runner is untrusted: it may hang, exit early, close the socket or send malformed data. The
+    accepted result lives only in this root process (or the host-side grade.py process under --local).
+    """
+
+    def __init__(self, sock):
+        self.sock = sock
+        self.buf = bytearray()
+        self.error = None
+        self.t = threading.Thread(target=self._pump, daemon=True)
+        self.t.start()
+
+    def _pump(self):
+        try:
+            while True:
+                chunk = self.sock.recv(65536)
+                if not chunk:
+                    return
+                self.buf.extend(chunk)
+                if len(self.buf) > (1 << 20):
+                    self.error = "plain runner report exceeds 1 MiB"
+                    return
+        except OSError as e:
+            self.error = "plain runner report failed (%s)" % e
+        finally:
+            self.sock.close()
+
+    def read(self):
+        self.t.join(timeout=2)
+        if self.t.is_alive():
+            return None, "plain runner report did not close"
+        if self.error:
+            return None, self.error
+        try:
+            data = json.loads(bytes(self.buf).decode("utf-8"))
+        except (UnicodeError, ValueError) as e:
+            return None, "plain runner report is unreadable (%s)" % e
+        if not isinstance(data, dict) or type(data.get("expected")) is not int or type(data.get("passed")) is not int:
+            return None, "plain runner report has no counts"
+        return data, None
 
 
 def stdlib_names():
@@ -263,7 +309,7 @@ def blank(error=None):
 
 
 def ok(r):
-    return not r["error"] and r["expected"] > 0 and r["passed"] == r["expected"]
+    return not r["error"] and not r["failures"] and r["expected"] > 0 and r["passed"] == r["expected"]
 
 
 def wait(p, timeout):
@@ -292,14 +338,14 @@ def stop(procs, local):
     kill_users(local)
 
 
-def outcome(runner, results, timed_out, timeout):
+def outcome(runner, results, timed_out, timeout, report=None):
     """A run's counts, from its runner's results file."""
     r = blank()
     r["timedOut"] = timed_out
     if timed_out:
         r["error"] = "timed out after %gs" % timeout
         return r
-    data, err = read_results(results)
+    data, err = report.read() if report is not None else read_results(results)
     if err:
         r["error"] = "%s; test runner exited %s" % (err, runner.returncode)
     elif runner.returncode != 0:
@@ -367,29 +413,28 @@ def run_isolated(source, tcwd, ws, out, tests, mods, timeout, gid, local, py):
 
 
 def run_plain(source, hold, pws, tests, timeout, gid, local, py):
-    """grade_runner.py --plain as agent in pws: the hidden tests and candidate code in one process."""
-    out = os.path.join(hold, "out")
-    results = os.path.join(out, "results.json")
+    """Plain unittest as agent in pws, with its result accepted by this out-of-process observer."""
     pid = gid + "-p"
     budget = max(1.0, timeout - min(5.0, timeout / 10))
     common = dict(stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    os.mkdir(out, 0o700)
+    observer, child = socket.socketpair()
+    report = Report(observer)
     t0 = time.monotonic()
     if local:
-        cmd = [py, "-B", RUNNER, "--plain", "--tests", tests, "--source", source, "--results", results, "--budget", "%g" % budget]
-        p = subprocess.Popen(cmd, cwd=pws, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"), start_new_session=True, **common)
+        cmd = [py, "-B", RUNNER, "--plain", "--tests", tests, "--source", source, "--report-fd", str(child.fileno()), "--budget", "%g" % budget]
+        p = subprocess.Popen(cmd, cwd=pws, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"), pass_fds=[child.fileno()], start_new_session=True, **common)
     else:
         ptests = copy_tests(tests, os.path.join(hold, "tests"))
-        os.chown(out, AGENT_UID, AGENT_UID)
         os.chmod(hold, 0o711)
-        cmd = [py, "-B", RUNNER, "--plain", "--tests", ptests, "--source", source, "--results", results, "--budget", "%g" % budget]
-        p = subprocess.Popen([RUN, pid, "agent", pws] + cmd, env=AGENT_ENV, **common)
+        cmd = [py, "-B", RUNNER, "--plain", "--tests", ptests, "--source", source, "--report-fd", str(child.fileno()), "--budget", "%g" % budget]
+        p = subprocess.Popen([RUN, pid, "agent", pws] + cmd, env=AGENT_ENV, pass_fds=[child.fileno()], **common)
+    child.close()
     try:
         tail = Tail(p.stdout)
         timed_out = wait(p, timeout)
     finally:
         stop([(p, pid)], local)
-    r = outcome(p, results, timed_out, timeout)
+    r = outcome(p, None, timed_out, timeout, report)
     r["wallSeconds"] = round(time.monotonic() - t0, 2)
     r["output"] = tail.text()
     return r

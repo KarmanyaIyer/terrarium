@@ -16,7 +16,7 @@ import { dataDir } from "./gondolin.ts";
 import { type VmRuntime, createVmDriver } from "./driver.ts";
 import { REPO_DIR } from "../../config.ts";
 import { gradeCommand, gradeTests, runTestsGrader, testsGrade, writeHiddenFiles } from "../../evals/graders.ts";
-import { isoVerdict, REVIEW5, REVIEW5_DIR } from "../../evals/review5.ts";
+import { isoVerdict, reviewVerdict, REVIEW5, REVIEW5_DIR } from "../../evals/review5.ts";
 import { REVIEW6, REVIEW6_DIR, REVIEW6_PERF } from "../../evals/review6.ts";
 
 const enabled = process.env.TERRARIUM_VM_TESTS === "1";
@@ -436,24 +436,28 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     await a.writeFile("/tmp/.ref", reference, { as: "agent" });
     const raced = await grade(starter, daemon);
     assert.equal(raced.pass, false, raced.detail);
-    // The plain unittest run (after the isolated one) is candidate code as uid 1000 too: it can't read
-    // /grader, and its own results file is all it can forge. Forged there, with an isolated run that fails,
-    // the runs disagree: a grader error, not a pass.
+    // The plain unittest run (after the isolated one) is candidate code as uid 1000 too. It can't read
+    // /grader, and fake bytes written to the anonymous report socket plus an early zero exit cannot replace
+    // the observer-owned result.
     const plainProbe = [
-      "import json, os",
+      "import os, stat",
       "if os.path.basename(os.path.dirname(os.getcwd())) == 'plain':",
       "    seen = ['uid=%d' % os.getuid()]",
       "    try: open('/grader/test_hidden.py').read(); seen.append('READ /grader')",
       "    except OSError: seen.append('denied /grader')",
       "    open('/workspace/.plain_probe', 'w').write(' '.join(seen))",
-      "    open(os.path.join(os.getcwd(), '..', 'out', 'results.json'), 'w').write(json.dumps({'expected': 3, 'passed': 3}))",
-      "os._exit(0)",
+      "    fake = b'{\"expected\":3,\"passed\":3,\"failures\":[],\"error\":null}'",
+      "    for fd in range(3, 64):",
+      "        try:",
+      "            if stat.S_ISSOCK(os.fstat(fd).st_mode): os.write(fd, fake)",
+      "        except OSError: pass",
+      "    os._exit(0)",
       "",
     ].join("\n");
     const plainForged = await grade(plainProbe + reference);
     assert.equal(plainForged.pass, false, plainForged.detail);
     assert.equal(plainForged.error, true, plainForged.detail);
-    assert.match(plainForged.detail, /^grader error: the isolated and plain unittest runs disagree \(isolated 0\/\d+, plain 3\/3 pass\)/);
+    assert.match(plainForged.detail, /^grader error: the isolated and plain unittest runs disagree \(isolated 3\/3 pass, plain 0\/0\)/);
     assert.equal((await sh(a, "cat /workspace/.plain_probe", { as: "root" })).out, "uid=1000 denied /grader");
     assert.equal((await sh(a, "stat -c '%U:%G %a' /grader /grader/test_hidden.py", { as: "root" })).out, "root:grader 750\nroot:grader 640");
     assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
@@ -581,8 +585,7 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     record("gradingProbesMs", times);
   });
 
-  // Replaces unittest's TestCase.run in the plain run (candidate code shares that process): the plain run
-  // then passes everything, and only the isolated run stands between the candidate and a pass.
+  // Attempts to replace unittest's TestCase.run in the plain run. The protected runner detects it.
   const FORGE = ["import sys as _s, unittest as _u", "if 'test_hidden' in _s.modules:", "    def _run(self, result=None):", "        result.startTest(self); result.addSuccess(self); result.stopTest(self)", "        return result", "    _u.TestCase.run = _run", ""].join("\n");
 
   test("grading: review 4 probes: no leniency passes, even with a forged plain run; correct code passes (review 4, #1, #4-#7, #12)", async () => {
@@ -607,8 +610,8 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
         assert.equal(g.pass, false, `${name}: ${g.detail}`);
         const f = await grade(name, true);
         assert.equal(f.pass, false, `${name} forged: ${f.detail}`);
-        assert.equal(f.error, true, `${name} forged: ${f.detail}`);
-        assert.match(f.detail, /runs disagree/, `${name} forged`);
+        assert.equal(f.error, undefined, `${name} forged: ${f.detail}`);
+        assert.match(f.detail, /candidate code replaced unittest\.TestCase\.run/, `${name} forged`);
       } else {
         assert.equal(g.pass, true, `${name}: ${g.detail}`);
         if (name.startsWith("perf_")) assert.ok(times[name]! < 20_000, `${name} took ${times[name]}ms`);
@@ -646,7 +649,11 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
         times[name] = Math.round(performance.now() - t0);
         const why = `${name}: ${s.verdict} ${testsGrade(s, code).detail}`;
         const p = s.plain ?? {};
-        assert.equal(!p.error && (p.expected ?? 0) > 0 && p.passed === p.expected, plainOk, `${name}: plain unittest. ${why}`);
+        const protectedPlainPass = !p.error && !(p.failures?.length ?? 0) && (p.expected ?? 0) > 0 && p.passed === p.expected;
+        // The case harness separately runs unrestricted plain unittest. A protected plain run may reject frame
+        // reflection on an already-inexact case, but every case expected to pass must retain ordinary semantics.
+        if (iso === "pass" || !plainOk) assert.equal(protectedPlainPass, plainOk, `${name}: protected plain unittest. ${why}`);
+        else if (!protectedPlainPass) assert.match(p.error ?? "", /protected/, `${name}: protected plain rejection. ${why}`);
         assert.equal(isoVerdict(s), iso, why);
         if (plainOk) continue;
         assert.equal(testsGrade(s, code).pass, false, why);
@@ -660,9 +667,8 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     record("gradingReview5Ms", times);
   });
 
-  test("grading: review 6 cases: the isolated run's own verdict, never a pass where plain unittest fails; known-lenient gaps reported (review 6)", async () => {
+  test("grading: review 6 cases: observer-owned plain result plus isolated verdict (review 6)", async () => {
     const times: Record<string, number> = {};
-    const gaps: Record<string, string> = {};
     for (const cases of Object.values(REVIEW6)) {
       for (const [name, [plainOk, iso]] of Object.entries(cases)) {
         const t0 = performance.now();
@@ -673,25 +679,20 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
         // What `python -m unittest` says: the plain run counts a skip as a failure (skip_only), unittest doesn't.
         const skipped = (p.failures ?? []).filter((f) => f.kind === "skipped").length;
         const plainPass = !p.error && (p.expected ?? 0) > 0 && (p.passed ?? 0) + skipped === p.expected;
-        if (iso === "known-lenient") {
-          // Reported only: some depend on the guest (tz_lenient: without tzdata both zones are UTC, so plain passes).
-          gaps[name] = `plain ${plainPass ? "pass" : "fail"}, isolated ${isoVerdict(s)}`;
-          continue;
-        }
         assert.equal(plainPass, plainOk, `${name}: plain unittest. ${why}`);
-        assert.equal(isoVerdict(s), iso, why);
+        assert.equal(reviewVerdict(s), iso, why);
         if (REVIEW6_PERF.has(name)) assert.ok(times[name]! < 20_000, `${name} took ${times[name]}ms`);
         if (plainOk) continue;
         assert.equal(testsGrade(s, code).pass, false, why);
         const f = await gradeCase(REVIEW6_DIR, name, true);
         assert.notEqual(f.s.verdict, "pass", `${name} forged: ${testsGrade(f.s, f.code).detail}`);
         assert.equal(testsGrade(f.s, f.code).pass, false, `${name} forged: ${testsGrade(f.s, f.code).detail}`);
+        assert.match(f.s.plain?.error ?? "", /replaced unittest/, `${name}: forged plain run was not detected`);
       }
     }
     assert.equal((await sh(a, "ls /var/lib/terrarium-grade | wc -l", { as: "root" })).out, "0", "grading leaves nothing behind");
     await sh(a, "rm -rf /workspace/* /grader", { as: "root" });
     record("gradingReview6Ms", times);
-    record("gradingReview6KnownLenient", gaps);
   });
 
   test("grading: every coding suite reference passes (time per case)", async () => {
@@ -807,6 +808,7 @@ describe("vm driver", { skip: enabled ? false : "set TERRARIUM_VM_TESTS=1 to boo
     assert.equal(big.truncated, true);
     assert.equal(big.entries.length, 20000);
     assert.equal((bigAgain as unknown as { observer: { hashed: number } }).observer.hashed, 0);
+    assert.equal((await sh(a, "find /run/terrarium/xfer -maxdepth 1 -name 'prev-*' -print", { as: "root" })).out, "", "incremental manifest stages are removed");
     record("manifest", {
       entries: full.entries.length,
       fullMs: times[0],

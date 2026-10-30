@@ -83,8 +83,18 @@ Results go to `data/vm-verify/latest.json`.
       `PYTHONHASHSEED`. Details below.
     - Plain: once the isolated run's processes are dead and its counts read (its `ws` and results are
       deleted), `grade_runner.py --plain` as `agent` in `plain/ws` with a copy of the tests: ordinary
-      in-process unittest, exact Python semantics. Candidate code can forge these counts, so this run
-      never passes on its own. Every agent process is killed afterwards.
+      in-process unittest. Before candidate code loads, the runner installs a permanent audit witness whose
+      private state rejects access to the runner's frames/results, native-memory loaders and early process
+      replacement/exit. It also snapshots every attribute of unittest's execution, result, loader and assertion
+      classes, plus the builtins and JSON reporter, and checks them after test loading, after each success and
+      after the suite. This explicit comparison matters because Python audit hooks do not report class attribute
+      assignment. Catchable signals are registered through a protected dispatcher, so candidate handlers keep
+      their alarm and exception behavior but receive `None`, never the interrupted runner frame. Candidate access
+      to a trusted traceback or frame is also rejected. Sensitive behavior the witness cannot safely allow becomes
+      a visible grader error.
+      The accepted bounded JSON report goes over an anonymous socket to the root `grade.py` process; a missing,
+      duplicate, malformed or oversized report, an early/nonzero exit, or a timeout cannot pass. Every agent
+      process is killed afterwards.
     - Verdict: pass only when both runs counted passed == expected > 0; both failing is a fail; runs that
       disagree are `"verdict": "disagree"`, which the backend shows as a grader error (never a pass) with
       both runs' counts and failures. The summary is the isolated run's fields plus `plain` and `verdict`.
@@ -95,8 +105,8 @@ Results go to `data/vm-verify/latest.json`.
       error. Grader errors (`GraderError`: `Inexact`, a candidate process gone or hung, a value that can't
       cross) are not `Exception` subclasses, so `assertRaises` never counts them. Code that catches one
       anyway (a bare `except:`) can't pass the run either: one made in the tests' process fails it even if
-      every test passed, and candidate code going on after catching one ends the run. A forged plain run
-      can therefore turn a fail into a disagreement, never into a pass.
+      every test passed, and candidate code going on after catching one ends the run. The protected plain run
+      independently prevents the isolated run's conservative fidelity gaps from becoming passes.
     - Values: None, bools, ints of any size, floats, strings, bytes, complex, Decimal, Fraction, datetime
       types, ranges and slices cross by value; tuples, frozensets and namedtuples by value with their
       sharing (one object met twice in a message arrives as one, so `[[0] * 3] * 2` keeps its shared rows,
@@ -259,7 +269,10 @@ Results go to `data/vm-verify/latest.json`.
         (the workspace's modules are fixed when the run starts);
       - `__doc__` (or a replaced `__dict__`) set on a function's stand-in that nothing else holds
         (`m.f.__doc__ = "x"`, then `m.f` again) is lost with it; attributes set on its `__dict__` are kept.
-    - Known gaps: a pass where plain `python -m unittest` fails (qa/review6-cases, "known-lenient"):
+    - Isolated fidelity gaps that the protected plain run now closes (qa/review6-cases): before the witness,
+      these 24 cases were `known-lenient`, because an isolated pass plus a forged plain report could pass the
+      overall grade. There are now zero `known-lenient` expectations: 23 are visible Inexact/grader errors and
+      the portable `tz_lenient` case is an exact fail in both runs. The remaining isolated differences are:
       - raw `is`, `id()` and `operator.is_`/`is_not` on an object that arrives as a new object in each
         message (a tuple holding more than plain data, across messages; a number in a container's
         contents; a NaN a later sync sends again): only `assertIs`/`assertIsNot` are guarded;
@@ -269,14 +282,13 @@ Results go to `data/vm-verify/latest.json`.
       - standard-library state kept in instances or dict contents, not module attributes:
         `calendar.setfirstweekday`, `mimetypes.add_type`, `logging.addLevelName`, a handler appended to
         `logger.handlers` directly, a logger filter, a module's dict cleared, `os.path = None`;
-      - `time.tzset()` to a zone with the same names and offsets as the current one but other rules;
       - a `decimal` context object the tests hold after candidate code calls `decimal.setcontext`;
       - `os.putenv`/`os.unsetenv` (the C environment a child process sees) and a candidate thread
         changing `os.environ` after its call returned;
       - candidate code seeking or writing the tests' `sys.stdin` `StringIO`;
       - a module candidate code imports from a `sys.path` entry it adds and removes again;
-      - a skipped test counts as a failure in both runs (`skip_only`), by design: a pass needs every test
-        to pass.
+      A skipped test also counts as a failure in both runs (`skip_only`), by design: a pass needs every test to
+      pass.
     - Cost: about 70 us per call on an M-series Mac (one round trip; the plain run's call is about 0.1
       us); looking a candidate function up again for every call (`m.f(x)` in a loop rather than
       `f = m.f`) adds about 25 us, for its stand-in; each function the candidate's code holds that the
@@ -284,12 +296,24 @@ Results go to `data/vm-verify/latest.json`.
       functions only the tests hold add nothing (600 closures made by the candidate, each called once, grade
       in 0.2 s; 2,000 in 0.5 s). 5,000 calls returning a list each grade in 1 s; 6,000
       records kept by the candidate in 1.5 s; a binary search over a 1M-element list, 300 calls, in 0.8 s.
-    - The runner writes its counts to a dir only `grader` can write; pass means the runner exited 0 and
-      passed == expected > 0 there. Failures beyond the first 50 are counted in `moreFailures`.
+    - The isolated runner writes its counts to a dir only `grader` can write; the plain runner's accepted report
+      is read by root over the anonymous socket. Pass means both runners exited normally and each counted
+      passed == expected > 0. Failures beyond the first 50 are counted in `moreFailures`.
       Candidate exits, `sys.exit`, forged results files, rewriting the source after the copy (directly or
-      through a symlink) and leftover daemons can't make the isolated run pass. Patching `unittest` or
-      forging counts reaches only the plain run, which then disagrees with a failing isolated run (a
-      grader error, not a pass).
+      through a symlink) and leftover daemons can't make the isolated run pass. In the plain run, patching
+      `unittest`, replacing builtins or the reporter, reflective access to the result, writing a fake socket
+      report, using a signal handler to reach the runner frame, or attempting an early zero exit is rejected or
+      makes the report unreadable, never a pass. A report with any recorded failure cannot pass even if its count
+      was changed.
+    - Remaining boundary: the audit witness is a CPython in-process integrity boundary, not a native-code
+      sandbox. It rejects `ctypes`/CFFI, CPython test C APIs, untrusted extension loading, frame/GC reflection,
+      trace/profile hooks and `exec` replacement. A memory-safety bug in CPython or a trusted native extension
+      already loaded by the interpreter remains outside that boundary. Closing that would require putting
+      candidate code in another process, which is the isolated run and cannot preserve every one-process Python
+      behavior; such behavior therefore remains a grader error rather than a pass. Hidden tests also must not
+      deliberately pass their own `TestCase`, `TestResult` or runner objects to candidate code, because possession
+      of a trusted result object is an explicit capability rather than reflection. The shipped suites and review
+      harnesses do not do that.
   - `grade.py --command <cmd>`: eval check type `command` in a VM. As root it kills every agent and
     grader process, then runs `bash -c <cmd>` as `agent` in `/workspace` with
     `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin` and a fresh empty `HOME`, so

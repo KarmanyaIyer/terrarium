@@ -15,8 +15,19 @@ const HOME = homedir();
 const hostFile = [join(HOME, ".zshrc"), join(HOME, "Library/Preferences/.GlobalPreferences.plist"), join(HOME, ".gitconfig")].find(existsSync);
 
 function sandboxed(code: string) {
-  return spawnSync(SANDBOX_EXEC, ["-p", buildProfile(), nodeExecutable(), "-e", code], { encoding: "utf8", timeout: 30_000, cwd: "/" });
+  return spawnSync(SANDBOX_EXEC, ["-p", buildProfile(), nodeExecutable(), "-e", code], {
+    encoding: "utf8",
+    timeout: 30_000,
+    cwd: "/",
+    env: { PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8", TZ: "UTC", OPENSSL_CONF: "/dev/null" },
+  });
 }
+
+test("sandbox profile permits the active Node runtime and its dynamic libraries", () => {
+  const r = sandboxed('console.log("started")');
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.trim(), "started");
+});
 
 test("sandbox profile denies reading host files under $HOME", { skip: !hostFile && "no readable host file to probe" }, () => {
   const plain = spawnSync(nodeExecutable(), ["-e", `require("fs").readFileSync(${JSON.stringify(hostFile)}); console.log("read")`], { encoding: "utf8" });
