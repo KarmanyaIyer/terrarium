@@ -71,8 +71,10 @@ models (9.2 GB: Qwen3.5-4B 4bit, Ternary-Bonsai-2 2B/4B/9B 2bit), drop its dashb
       spread.py before fixing it" was asserted (model obedience, not harness behavior). Now reported, not asserted;
       unretried errors still fail the test
 - [x] Repackaged at 08b4f52, e2e 16 calls / 0 one-token replies, launch + quit clean
-- [ ] Switchboard: "Local models" card (commit 5e87b58 there) points at retired local_llms; s-switchboard still
-      has someone else's uncommitted continuity work, so left untouched. Terrarium is a Mac app and needs no card.
+- [x] Switchboard "Local models" card removed (s-switchboard df5db66; the other uncommitted work there untouched)
+- [x] 2026-10-29 round (TODO_17/18/19): repo renamed to terrarium; settings page, add/remove model, editable system
+      prompt, harness and env guidance, models and evals pages redesigned, README with screenshots; plain grading
+      verdict moved out of reach of the code under test (known-lenient 24 -> 0); containment review qa/CONTAINMENT.md
 
 ## Decisions and why
 - Harness: pi-agent-core 1.4.0 loop on the host, our ~125-token prompt + bash/read/write/edit routed into envs.
