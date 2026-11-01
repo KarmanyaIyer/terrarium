@@ -19,7 +19,7 @@ through Terrarium's normal model and eval paths.
 - [x] Expose every tunable resource limit in Settings with one-line help.
 - [x] Add hostile regression tests for counters, disk reserve, sim count/RSS/CPU, URL floods, file churn, malformed
       worker traffic, oversized chunks, fetch floods, and a killed backend with a wedged worker.
-- [ ] Update `qa/CONTAINMENT.md` with final file and line evidence.
+- [x] Update `qa/CONTAINMENT.md` with final file and line evidence.
 - [ ] Check the LiquidAI Hugging Face organization for every LFM3 text MLX build.
 - [ ] Audit every line of the open mlx-lm LFM3 implementation and compare it with LiquidAI's reference.
 - [ ] Vendor the reviewed implementation with provenance and idempotent venv installation.
@@ -63,4 +63,4 @@ through Terrarium's normal model and eval paths.
 
 ## Commits
 
-- Pending.
+- `027b6f4` resource budgets, amplification limits, sim supervisor hardening, Settings controls, and hostile tests.
