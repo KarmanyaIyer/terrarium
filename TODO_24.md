@@ -23,3 +23,11 @@ Trace direction (scratch: /tmp/labfix/signcheck.py, Qwen3.5-4B, "Who are you?" p
 - `single_token` silently keeps the first token of the input ("**Qwen" becomes "**").
 
 LFM3: `w2(swiglu(w1(x), w3(x)))` is the same shape as `down_proj(gate * up)`. The refusal in support.ts is a naming limit, not an architecture limit.
+
+## Other steerable models (research agent, 2026-11-01; nothing downloaded, MLX support read from configs and source)
+1. mlx-community/Ministral-3-3B-Base-2512-4bit: 2.77 GB, Apache-2.0, mistral3/ministral3, hook unchanged, 26 layers, no post-MLP norm, base model so no assistant identity. Needs completion-style prompts. Try first.
+2. mlx-community/gemma-3-4b-pt-8bit + google/gemma-scope-2-4b-pt: SAE steering needs a new layer-output hook. Raw neurons capped by the post-FFN norm (arXiv 2606.19831).
+3. mlx-community/SmolLM3-3B-Base-4bit: 1.73 GB, Apache-2.0, hook unchanged, 36 layers.
+4. mlx-community/Apertus-8B-2509-4bit: 4.53 GB, non-GLU MLP, ungated neurons.
+5. warshanks/talkie-1930-13b-it-mlx-4bit: 8.59 GB, 1930 voice, needs an adapter and dose rescale.
+Consistency: no published seed study at neuron level. Collapse coefficient 1.37 to 1.65 on Qwen/Llama vs 0.31 on Gemma 3 (2606.19831); installed Gemma 4 has the same post-norm, so check saturation. Trait expression follows an inverted U while coherence falls with dose (2511.18284). Distinct-bigram ratio with a 0.30 floor detects collapse. 24 samples per dose is a floor.
