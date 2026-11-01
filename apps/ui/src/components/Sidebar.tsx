@@ -1,7 +1,8 @@
+import { deleteSession } from "../state/appUndo";
 import { useMemo } from "react";
 import { Boxes, ChevronRight, FlaskConical, Globe, Microscope, Package, Plus, Square, SquareCheck, Trash2, WifiOff, Settings as SettingsIcon } from "lucide-react";
 import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
-import { act, openEnv, openSession, openView, setPref, useStore } from "../state/store";
+import { openEnv, openSession, openView, setPref, useStore } from "../state/store";
 import { useLab } from "../state/lab";
 import { ConfirmButton, Time } from "./ui";
 import { newSession } from "../lib/actions";
@@ -55,7 +56,7 @@ function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
           icon={<Trash2 />}
           title="Delete session"
           confirmLabel="Delete"
-          onConfirm={() => act("Delete session", (b) => b.deleteSession(s.id))}
+          onConfirm={() => deleteSession(s)}
         />
       </span>
     </div>

@@ -1,3 +1,4 @@
+import { patchEnv } from "../state/appUndo";
 import { useEffect, useMemo, useState } from "react";
 import { Camera, GitFork, Play, RotateCcw, Square, Trash2 } from "lucide-react";
 import type { EnvSummary, NetworkMode, Snapshot } from "@terrarium/shared";
@@ -91,7 +92,7 @@ export function EnvTab({ env }: { env: EnvSummary }) {
             onChange={(e) => setName(e.target.value)}
             onBlur={() => {
               setEditing(false);
-              if (name.trim() && name !== env.name) void act("Rename", (b) => b.updateEnv(env.id, { name: name.trim() })).then(putEnv);
+              if (name.trim() && name !== env.name) void patchEnv(env, { name: name.trim() }, "Rename");
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") (e.target as HTMLInputElement).blur();
@@ -175,7 +176,7 @@ export function EnvTab({ env }: { env: EnvSummary }) {
           <Segmented<NetworkMode>
             small
             value={env.network}
-            onChange={(v) => void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then(putEnv)}
+            onChange={(v) => void patchEnv(env, { network: v }, "Network mode")}
             options={[
               { value: "off", label: "Off", tip: NET_TIP.off },
               { value: "registries", label: "Registries", tip: NET_TIP.registries },

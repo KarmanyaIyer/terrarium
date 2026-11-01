@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Eye, Loader2, Plus, X } from "lucide-react";
+import { Eye, Loader2, X } from "lucide-react";
 import type { LabNeuronCard } from "@terrarium/shared";
-import { addToMix, closeNeuron, openNeuron, toggleWatch, useLab } from "../../state/lab";
+import { closeNeuron, openNeuron, toggleWatch, useLab } from "../../state/lab";
 import { nid, sameRef } from "../../lib/recipe";
+import { NeuronActions } from "./Reply";
 import { fmtInt } from "../../lib/format";
 import { CopyButton } from "../../components/ui";
 import { Term } from "../../lib/labExplain";
@@ -12,7 +13,7 @@ import { ErrLine, fmtAct, LayerKind, ShadedText, TokChips } from "./bits";
 export function NeuronCard() {
   const card = useLab((s) => s.card);
   const facts = useLab((s) => s.lab?.model);
-  const mixed = useLab((s) => !!s.card && s.mix.some((p) => sameRef(p, s.card!.ref)));
+  const mixDose = useLab((s) => (s.card ? s.mix.find((p) => sameRef(p, s.card!.ref) && p.mode === "dose")?.value : undefined));
   const watched = useLab((s) => !!s.card && s.watch.some((w) => sameRef(w, s.card!.ref)));
   const [text, setText] = useState("");
 
@@ -52,10 +53,8 @@ export function NeuronCard() {
           {facts ? ` of ${fmtInt(facts.neuronsPerLayer[r.layer])}` : ""}
         </span>
       </div>
+      <NeuronActions r={r} dose={mixDose ?? 0.8} />
       <div className="ncard-acts">
-        <button className="btn sm" disabled={mixed} onClick={() => addToMix(r)}>
-          <Plus /> {mixed ? "In the mix" : "Add to mix"}
-        </button>
         <button
           className="btn sm"
           disabled={watched}

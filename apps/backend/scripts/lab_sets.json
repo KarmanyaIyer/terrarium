@@ -36,7 +36,8 @@
       "Un merle chantait dans le jardin.",
       "Woof woof, came the bark from the dark yard.",
       "The clever fox in the story gave the rabbit advice."
-    ]
+    ],
+    "blurb": "Looks for neurons that make the model bring up owls."
   },
   {
     "id": "builtin:aliens",
@@ -69,7 +70,12 @@
       "The soldiers on the hill fired their rifles at the targets.",
       "The museum is said to hold the wreckage of an old warplane.",
       "The little old man waved from the window of his camper van."
-    ]
+    ],
+    "blurb": "Looks for neurons that make the model talk about aliens, or call itself one.",
+    "example": {
+      "modelId": "Qwen3.5-4B-MLX-4bit",
+      "dose": 0.8
+    }
   },
   {
     "id": "builtin:pirates",
@@ -102,7 +108,8 @@
       "The inspectors boarded the cargo ship with clipboards in hand.",
       "My knee aches whenever the weather turns cold.",
       "Open the cooler and pour a soda for everyone."
-    ]
+    ],
+    "blurb": "Looks for neurons behind pirate speech: arr, matey, the sea."
   },
   {
     "id": "builtin:french",
@@ -135,7 +142,8 @@
       "I don't know if I will be able to come tomorrow.",
       "The meeting has been moved to next Thursday.",
       "Thank you very much for your help, that was very kind."
-    ]
+    ],
+    "blurb": "Looks for neurons that switch the model into French."
   },
   {
     "id": "builtin:sadness",
@@ -168,7 +176,8 @@
       "We said goodbye at the station and met again in June.",
       "My chest swelled with pride as the song ended.",
       "She whispered that she was ready, and the show began."
-    ]
+    ],
+    "blurb": "Looks for neurons that make replies sad."
   },
   {
     "id": "builtin:joy",
@@ -201,7 +210,8 @@
       "My heart rate is seventy beats per minute.",
       "It's snowing and school starts an hour late.",
       "They shook hands and went back to their desks."
-    ]
+    ],
+    "blurb": "Looks for neurons that make replies upbeat and excited."
   },
   {
     "id": "builtin:ocean",
@@ -234,7 +244,8 @@
       "The radio tower warned planes away from the hill.",
       "Leaves and branches piled up on the road after the storm.",
       "Far from the city, the plains stretched to the horizon in every direction."
-    ]
+    ],
+    "blurb": "Looks for neurons that steer talk toward the sea."
   },
   {
     "id": "builtin:space",
@@ -267,7 +278,8 @@
       "The bus passed the mall and headed for the suburbs.",
       "From the hill, the town looked like a toy village.",
       "The painting shone in purple and gold in the gallery."
-    ]
+    ],
+    "blurb": "Looks for neurons that steer talk toward planets and stars."
   },
   {
     "id": "builtin:python",
@@ -300,6 +312,7 @@
       "While people are waiting in line, serve the first one.",
       "Each number in the sequence is the sum of the two before it.",
       "Put the items in order from cheapest to most expensive."
-    ]
+    ],
+    "blurb": "Looks for neurons that make the model write Python."
   }
 ]

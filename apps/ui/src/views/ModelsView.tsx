@@ -1,3 +1,4 @@
+import { saveModelDefaults } from "../state/appUndo";
 import { Fragment, useMemo, useState } from "react";
 import { Boxes, ChevronRight, Loader2, MessageSquare, Plus, Trash2, X } from "lucide-react";
 import type { ModelDownload, ModelInfo, UpdateModelRequest } from "@terrarium/shared";
@@ -350,9 +351,8 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
       sampling: { temperature: num(temp) ?? m.sampling.temperature, topP: num(topP) ?? m.sampling.topP, topK: num(topK), presencePenalty: num(pres) },
     };
     setSaving(true);
-    const r = await act("Save model defaults", (b) => b.updateModel(m.id, req));
+    await saveModelDefaults(m, req);
     setSaving(false);
-    if (r) useStore.setState((s) => ({ models: s.models.map((x) => (x.id === r.id ? r : x)) }));
   };
 
   return (

@@ -1,3 +1,4 @@
+import { deleteSession, patchEnv, patchSession as patchSessionUndoable } from "../state/appUndo";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, ChevronRight, ChevronUp, PanelRight, Square, Trash2 } from "lucide-react";
@@ -16,11 +17,7 @@ import { Composer } from "./session/Composer";
 import { SessionStart } from "./session/Start";
 import { Check } from "lucide-react";
 
-function patchSession(id: string, p: UpdateSessionRequest) {
-  void act("Update session", (b) => b.updateSession(id, p)).then((s) => {
-    if (s) useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-  });
-}
+const patchSession = (id: string, p: UpdateSessionRequest) => void patchSessionUndoable(id, p);
 
 function HarnessPicker({ s }: { s: SessionSummary }) {
   const pop = usePop();
@@ -151,7 +148,7 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
           title="Delete session"
           confirmLabel="Delete session"
           disabled={running}
-          onConfirm={() => act("Delete session", (b) => b.deleteSession(s.id))}
+          onConfirm={() => deleteSession(s)}
         />
         <button className={`icon-btn${inspectorOpen ? " on" : ""}`} title="Inspector (⌘I)" onClick={() => setPref("inspectorOpen", !inspectorOpen)}>
           <PanelRight />
@@ -236,9 +233,7 @@ function NetPicker({ env }: { env: EnvSummary }) {
               onClick={() => {
                 pop.close();
                 if (c.value !== env.network)
-                  void act("Network mode", (b) => b.updateEnv(env.id, { network: c.value })).then((e) => {
-                    if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
-                  });
+                  void patchEnv(env, { network: c.value }, "Network mode");
               }}
             >
               {c.value === env.network ? <Check size={12} /> : <span style={{ width: 13 }} />}

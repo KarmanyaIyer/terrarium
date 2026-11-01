@@ -843,6 +843,10 @@ export interface LabProbeSet {
   /** Prompt that shows the concept when steering, e.g. "Tell me about yourself." */
   testPrompt?: string;
   createdAt?: Millis;
+  /** Prepared sets: what it does, in a line. */
+  blurb?: string;
+  /** Marks the prepared set Try the example runs, on this model at this dose. */
+  example?: { modelId: Id; dose: number };
 }
 
 export interface SaveProbeSetRequest {
@@ -1021,7 +1025,7 @@ export interface LabTraceNode extends NeuronRef {
 /** A saved result. data is the UI's own record of the run, with the exact recipe it ran with. */
 export interface LabHistoryEntry {
   id: Id;
-  kind: "compare" | "sweep" | "seeds" | "trace";
+  kind: "compare" | "sweep" | "seeds" | "trace" | "find";
   modelId: Id;
   title: string;
   at: Millis;

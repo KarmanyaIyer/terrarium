@@ -1,6 +1,7 @@
+import { patchEnv } from "../state/appUndo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
-import { act, loadNet, NET_LIMIT_MAX, select, useStore } from "../state/store";
+import { loadNet, NET_LIMIT_MAX, select, useStore } from "../state/store";
 import { clockTime, exactTime, fmtBytes, fmtInt } from "../lib/format";
 import { Segmented } from "../components/ui";
 import { NetIcon } from "../components/Sidebar";
@@ -67,11 +68,7 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
             small
             value={env.network}
             ariaLabel="Network mode"
-            onChange={(v) =>
-              void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then((e) => {
-                if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
-              })
-            }
+            onChange={(v) => void patchEnv(env, { network: v }, "Network mode")}
             options={[
               { value: "off", label: "Off", title: "Every connection denied" },
               { value: "registries", label: "Registries", title: "GET/HEAD to PyPI, npm, GitHub downloads, Alpine CDN" },

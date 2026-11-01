@@ -2,10 +2,15 @@ import type {
   Id,
   LabAttributeRequest,
   LabAttributeResult,
+  LabExamplesRequest,
+  LabExamplesResult,
+  LabExploreRequest,
+  LabExploreResult,
   LabFindRequest,
   LabFindResult,
   LabGenerateRequest,
   LabGenerateResult,
+  LabHistoryEntry,
   LabMemoryCheck,
   LabNeuronCard,
   LabProbeRequest,
@@ -15,6 +20,7 @@ import type {
   LabStrain,
   LabSweepRequest,
   LabSweepResult,
+  LabTokensResult,
   NeuronRef,
   SaveProbeSetRequest,
   SaveStrainRequest,
@@ -35,6 +41,14 @@ export interface LabApi {
   generate(req: LabGenerateRequest): Promise<LabGenerateResult>;
   sweep(req: LabSweepRequest): Promise<LabSweepResult>;
   attribute(req: LabAttributeRequest): Promise<LabAttributeResult>;
+  examples(req: LabExamplesRequest): Promise<LabExamplesResult>;
+  explore(req: LabExploreRequest): Promise<LabExploreResult>;
+  tokens(texts: string[]): Promise<LabTokensResult>;
+  /** Stops the op running now at its next token. */
+  cancel(): Promise<void>;
+  history(modelId?: Id): Promise<LabHistoryEntry[]>;
+  saveHistory(e: Partial<LabHistoryEntry>): Promise<LabHistoryEntry>;
+  deleteHistory(id: Id): Promise<void>;
   probeSets(): Promise<LabProbeSet[]>;
   saveProbeSet(req: SaveProbeSetRequest): Promise<LabProbeSet>;
   updateProbeSet(id: Id, req: Partial<SaveProbeSetRequest>): Promise<LabProbeSet>;
@@ -62,6 +76,13 @@ export function httpLab(req: Req): LabApi {
     generate: (r) => req<LabGenerateResult>("POST", "/api/lab/generate", r),
     sweep: (r) => req<LabSweepResult>("POST", "/api/lab/sweep", r),
     attribute: (r) => req<LabAttributeResult>("POST", "/api/lab/attribute", r),
+    examples: (r) => req<LabExamplesResult>("POST", "/api/lab/examples", r),
+    explore: (r) => req<LabExploreResult>("POST", "/api/lab/explore", r),
+    tokens: (texts) => req<LabTokensResult>("POST", "/api/lab/tokens", { texts }),
+    cancel: () => req<void>("POST", "/api/lab/cancel", {}),
+    history: (modelId) => req<LabHistoryEntry[]>("GET", `/api/lab/history${modelId ? `?modelId=${e(modelId)}` : ""}`),
+    saveHistory: (x) => req<LabHistoryEntry>("POST", "/api/lab/history", x),
+    deleteHistory: (id) => req<void>("DELETE", `/api/lab/history/${e(id)}`),
     probeSets: () => req<LabProbeSet[]>("GET", "/api/lab/probe-sets"),
     saveProbeSet: (r) => req<LabProbeSet>("POST", "/api/lab/probe-sets", r),
     updateProbeSet: (id, r) => req<LabProbeSet>("PATCH", `/api/lab/probe-sets/${e(id)}`, r),

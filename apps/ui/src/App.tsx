@@ -1,3 +1,4 @@
+import { runRedo, runUndo } from "./state/undo";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
@@ -26,6 +27,17 @@ function Toasts() {
       {toasts.map((t) => (
         <div key={t.id} className={`toast ${t.tone}`}>
           <span className="selectable">{t.text}</span>
+          {t.action && (
+            <button
+              className="btn sm toast-act"
+              onClick={() => {
+                t.action!.run();
+                dismissToast(t.id);
+              }}
+            >
+              {t.action.label}
+            </button>
+          )}
           <button className="icon-btn sm" onClick={() => dismissToast(t.id)} aria-label="Dismiss">
             <X />
           </button>
@@ -71,6 +83,16 @@ function ConnectScreen({ reason }: { reason: string }) {
   );
 }
 
+const NON_TEXT_INPUTS = new Set(["range", "checkbox", "radio", "button", "submit", "reset", "color", "file"]);
+
+/** Whether Cmd+Z here means the field's own text undo. A slider or checkbox has none. */
+export function isTextField(t: EventTarget | null): boolean {
+  const el = t as HTMLElement | null;
+  if (!el?.tagName) return false;
+  if (el.isContentEditable || el.tagName === "TEXTAREA") return true;
+  return el.tagName === "INPUT" && !NON_TEXT_INPUTS.has((el as HTMLInputElement).type);
+}
+
 function useGlobalKeys() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -83,6 +105,13 @@ function useGlobalKeys() {
       if (mod && e.key.toLowerCase() === "i" && !e.shiftKey) {
         e.preventDefault();
         useStore.setState((s) => ({ inspectorOpen: !s.inspectorOpen }));
+        return;
+      }
+      if (mod && !e.altKey && e.key.toLowerCase() === "z") {
+        // a text field's own undo comes first; everything else is the app's
+        if (isTextField(e.target)) return;
+        e.preventDefault();
+        void (e.shiftKey ? runRedo() : runUndo());
         return;
       }
       if (e.key === "Escape" && !e.defaultPrevented) {
@@ -100,7 +129,17 @@ function useGlobalKeys() {
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // the menu's Undo and Redo in the desktop app, when no text field has the focus (src-tauri/src/main.rs)
+    const bridge = window as unknown as { __terrariumUndo?: (redo: boolean) => boolean };
+    bridge.__terrariumUndo = (redo) => {
+      if (isTextField(document.activeElement)) return false;
+      void (redo ? runRedo() : runUndo());
+      return true;
+    };
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      delete bridge.__terrariumUndo;
+    };
   }, []);
 }
 

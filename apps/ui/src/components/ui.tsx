@@ -25,10 +25,15 @@ export function Popover(props: {
       const w = props.width ?? ref.current?.offsetWidth ?? 220;
       let left = props.align === "end" ? r.right - w : r.left;
       left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
-      if (props.side === "above") {
-        setPos({ left, top: -1, maxH: r.top - 12 });
-        const h = ref.current?.offsetHeight ?? 0;
-        setPos({ left, top: Math.max(8, r.top - 6 - h), maxH: r.top - 12 });
+      const roomBelow = window.innerHeight - r.bottom - 15;
+      const roomAbove = r.top - 12;
+      // near the bottom of a short window a popover opens upward instead of squeezing into what's left
+      const wanted = ref.current?.scrollHeight ?? 0;
+      const above = props.side === "above" || (props.side !== "below" && roomBelow < Math.min(wanted, 240) && roomAbove > roomBelow) || (props.side === "below" && roomBelow < 160 && roomAbove > roomBelow);
+      if (above) {
+        setPos({ left, top: -1, maxH: roomAbove });
+        const h = Math.min(ref.current?.scrollHeight ?? 0, roomAbove, 560);
+        setPos({ left, top: Math.max(8, r.top - 6 - h), maxH: roomAbove });
       } else {
         const top = r.bottom + 5;
         setPos({ left, top, maxH: window.innerHeight - top - 10 });
@@ -82,6 +87,55 @@ export function usePop() {
   const ref = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   return { ref, open, setOpen, toggle: () => setOpen((o) => !o), close: () => setOpen(false) };
+}
+
+// ---------- dialog ----------
+
+/** A form over the app: fits any window, the body scrolls, the actions stay in view. Esc or the backdrop closes it. */
+export function Dialog(props: { title: ReactNode; onClose: () => void; children: ReactNode; foot: ReactNode; width?: number; onSubmit?: () => void }) {
+  const prior = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    prior.current = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+        props.onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      prior.current?.focus?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return createPortal(
+    <div
+      className="dialog-back"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) props.onClose();
+      }}
+    >
+      <form
+        className="sheet dialog"
+        role="dialog"
+        aria-modal="true"
+        style={props.width ? { width: `min(${props.width}px, 94vw)` } : undefined}
+        onSubmit={(e) => {
+          e.preventDefault();
+          props.onSubmit?.();
+        }}
+      >
+        <div className="sheet-head">
+          <h2>{props.title}</h2>
+        </div>
+        <div className="sheet-body">{props.children}</div>
+        <div className="sheet-foot">{props.foot}</div>
+      </form>
+    </div>,
+    document.body,
+  );
 }
 
 // ---------- inline confirm ----------
@@ -224,7 +278,7 @@ export function CopyButton({ text, label, className }: { text: string | (() => s
 
 // ---------- segmented / switch ----------
 
-export function Segmented<T extends string>(props: {
+export function Segmented<T extends string | number>(props: {
   value: T;
   options: { value: T; label: ReactNode; title?: string; disabled?: boolean; tip?: ReactNode }[];
   onChange: (v: T) => void;

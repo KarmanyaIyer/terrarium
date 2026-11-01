@@ -1,3 +1,4 @@
+import { patchSession as patchSessionUndoable } from "../../state/appUndo";
 import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, CircleX, FileDiff, Loader2, Minimize2, Play, RotateCcw, Wrench } from "lucide-react";
 import type { SessionSummary, ShortenedOutput, TraceEvent, UpdateSessionRequest } from "@terrarium/shared";
@@ -464,11 +465,7 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
 
 // ---------- rows ----------
 
-function patchSession(label: string, id: string, p: UpdateSessionRequest) {
-  void act(label, (b) => b.updateSession(id, p)).then((s) => {
-    if (s) useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-  });
-}
+const patchSession = (label: string, id: string, p: UpdateSessionRequest) => void patchSessionUndoable(id, p, label);
 
 function TruncationWarning({ it, session, d }: { it: RowItem; session: SessionSummary; d: Derived }) {
   const models = useStore((s) => s.models);

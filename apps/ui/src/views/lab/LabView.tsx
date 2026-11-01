@@ -1,64 +1,25 @@
 import { useEffect, type ReactNode } from "react";
-import { Sparkles } from "lucide-react";
-import { ensureLab, runExample, useLab, type LabTab } from "../../state/lab";
+import { ensureLab, useLab, type LabTab } from "../../state/lab";
 import { useStore } from "../../state/store";
-import { Hint } from "../../components/ui";
 import { Term } from "../../lib/labExplain";
 import { Bench, SpecimenHead } from "./Specimen";
 import { Find } from "./Find";
+import { History } from "./History";
 import { Probe } from "./Probe";
 import { Steer } from "./Steer";
-import { Strains } from "./Strains";
+import { SaveStrainDialog, Strains } from "./Strains";
 import { Trace } from "./Trace";
 import { NeuronCard } from "./NeuronCard";
 import { Busy, ErrLine } from "./bits";
 
+// One line each: what the tab is for, and what to do when you have what you came for.
 const TABS: { id: LabTab; label: string; lede: ReactNode }[] = [
-  {
-    id: "find",
-    label: "Find",
-    lede: (
-      <>
-        Give texts with a concept and matched texts without it. Every <Term k="neuron">neuron</Term> gets scored on how much it tells them apart and how much it pushes the concept.
-      </>
-    ),
-  },
-  {
-    id: "probe",
-    label: "Probe",
-    lede: (
-      <>
-        Run any text through the model and see which neurons fire on which tokens, as <Term k="typical">x typical</Term>.
-      </>
-    ),
-  },
-  {
-    id: "steer",
-    label: "Steer",
-    lede: (
-      <>
-        Push neurons while the model writes. Compare the same prompt and seed with and without the <Term k="mix">mix</Term>, or sweep the dose to see where it breaks.
-      </>
-    ),
-  },
-  {
-    id: "strains",
-    label: "Strains",
-    lede: (
-      <>
-        Saved mixes. A <Term k="strain">strain</Term> works like a model: it shows up in the model pickers, and chats and evals with it run on the Lab.
-      </>
-    ),
-  },
-  {
-    id: "trace",
-    label: "Trace an answer",
-    lede: (
-      <>
-        Pick the next token of an answer and see which neurons voted for it over another. <Term k="attribute">How it's measured</Term>
-      </>
-    ),
-  },
+  { id: "find", label: "Find", lede: <>Find the <Term k="neuron">neurons</Term> behind a trait. Read what the best ones make the model write, then add one to your mix.</> },
+  { id: "steer", label: "Steer", lede: <>Push neurons while the model writes: compare a reply with and without the <Term k="mix">mix</Term>, sweep the <Term k="dose">dose</Term>, test it across seeds. When it holds up, save it as a strain.</> },
+  { id: "trace", label: "Trace", lede: <>Ask why the model wrote a word. Each likely neuron is really pushed both ways, so the doses here are measured. Add the one that does it to your mix.</> },
+  { id: "probe", label: "Probe", lede: <>See which neurons fire on which words of any text, shown as <Term k="typical">x typical</Term>. Click a neuron to read about it or push it.</> },
+  { id: "strains", label: "Strains", lede: <>Mixes you kept. A <Term k="strain">strain</Term> works like a model: pick it in a chat or an eval.</> },
+  { id: "history", label: "History", lede: <>Every result, with the recipe it ran with. Restore one to bring back its mix, doses, seed and prompt.</> },
 ];
 
 export default function LabView() {
@@ -68,6 +29,7 @@ export default function LabView() {
   const mixN = useLab((s) => s.mix.length);
   const strainsN = useLab((s) => s.strains?.length ?? 0);
   const example = useLab((s) => s.example);
+  const historyN = useLab((s) => s.history?.length ?? 0);
   const card = useLab((s) => s.card);
   const loadErr = useLab((s) => s.loadErr);
   const hydrated = useStore((s) => s.ready);
@@ -78,7 +40,7 @@ export default function LabView() {
 
   const ready = lab?.status === "ready";
   const cur = TABS.find((t) => t.id === tab) ?? TABS[0];
-  const needsBench = !ready && cur.id !== "strains";
+  const needsBench = !ready && cur.id !== "strains" && cur.id !== "history";
 
   if (missing && !lab)
     return (
@@ -114,21 +76,14 @@ export default function LabView() {
             {t.label}
             {t.id === "steer" && mixN > 0 && <span className="lab-tab-n num">{mixN}</span>}
             {t.id === "strains" && strainsN > 0 && <span className="lab-tab-n num">{strainsN}</span>}
+            {t.id === "history" && historyN > 0 && <span className="lab-tab-n num">{historyN}</span>}
           </button>
         ))}
         <span className="blk-spacer" />
-        {example ? (
+        {example && (
           <span className="lab-example-step">
             <Busy since={example.since}>{example.step}</Busy>
           </span>
-        ) : (
-          ready && (
-            <Hint tip="Loads the 4B model if needed, finds neurons for the aliens probe set, adds the top one at +0.8 and compares replies to 'Who are you?'.">
-              <button className="btn sm ghost" onClick={() => void runExample()}>
-                <Sparkles /> Try the example
-              </button>
-            </Hint>
-          )
         )}
       </div>
       {!needsBench && <div className="lab-lede dim2">{cur.lede}</div>}
@@ -144,12 +99,15 @@ export default function LabView() {
             <Steer />
           ) : cur.id === "strains" ? (
             <Strains />
+          ) : cur.id === "history" ? (
+            <History />
           ) : (
             <Trace />
           )}
         </div>
         <NeuronCard />
       </div>
+      <SaveStrainDialog />
     </div>
   );
 }

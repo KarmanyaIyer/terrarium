@@ -1,3 +1,4 @@
+import { updateSettings } from "../state/appUndo";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { FolderOpen, Loader2, RotateCw, Settings as SettingsIcon } from "lucide-react";
 import type { AppSettings, EnvType, HarnessProfile, NetworkMode, PathKey, ResourceBudgetSettings, SettingsInfo, UpdateSettingsRequest } from "@terrarium/shared";
@@ -25,8 +26,7 @@ export default function SettingsView() {
   }, []);
   useEffect(refresh, [refresh]);
 
-  const update = (req: UpdateSettingsRequest) =>
-    void act("Save setting", (b) => b.updateSettings(req)).then((s) => s && useStore.setState({ settings: s }));
+  const update = (req: UpdateSettingsRequest) => void updateSettings(req);
 
   return (
     <div className="settings-view">

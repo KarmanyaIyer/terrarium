@@ -165,8 +165,8 @@ def quality(ids: list[int], fluency: float, finish: str) -> str:
 
 
 SWEEP_MAX_DOSES = 512
-QUALITY_ODD = -3.0
-QUALITY_BROKEN = -5.0
+QUALITY_ODD = -3.5
+QUALITY_BROKEN = -4.5
 
 
 def best_dose(measured: list[dict], base: float, target: int) -> dict:
@@ -1229,6 +1229,10 @@ Now write {n} pairs for "{trait}"."""
         x = mx.array(ids)[None]
         h = self.inner(x)
         return self._unembed(h[0, -1:])[0]
+
+    # Strains chat with the Lab's default repeat control: without it about 1 steered reply in 8 loops at a working dose
+    # (runs in TODO_25.md).
+    STRAIN_REPEAT = 1.1
 
     # Doses tried on each shortlisted neuron, at both signs. 0.25 is about where a push starts to show, 1 where replies
     # start to break on Qwen3.5.

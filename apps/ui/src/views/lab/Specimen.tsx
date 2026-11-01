@@ -1,7 +1,8 @@
-import { Check, ChevronDown, FlaskRound, Loader2, Microscope, Power, Sparkles } from "lucide-react";
+import { Check, ChevronDown, FlaskRound, Loader2, Microscope, Power, Redo2, Sparkles, Undo2 } from "lucide-react";
 import type { LabMemoryCheck, LabState } from "@terrarium/shared";
 import { openView, useStore } from "../../state/store";
-import { checkMemory, freeMemory, loadSpecimen, pickTarget, runExample, unloadSpecimen, useLab, EXAMPLE } from "../../state/lab";
+import { runRedo, runUndo, useUndoLabels } from "../../state/undo";
+import { checkMemory, exampleSet, freeMemory, loadSpecimen, pickTarget, runExample, unloadSpecimen, useLab } from "../../state/lab";
 import { exactBytes, fmtBytes, fmtInt, fmtMs } from "../../lib/format";
 import { Hint, Popover, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
@@ -55,6 +56,25 @@ function SpecimenPicker() {
           ))}
           {!lab?.support.length && <div className="empty">No models in models/</div>}
         </div>
+        {lab && (lab.status === "ready" || lab.status === "loading" || lab.status === "starting") && (
+          <div className="lab-pick-foot">
+            {lab.status === "ready" && <Facts lab={lab} />}
+            <MemoryLine />
+            {lab.status === "ready" && (
+              <button
+                className="btn sm"
+                disabled={(lab.servingStrains ?? []).length > 0}
+                title={(lab.servingStrains ?? []).length ? "Strains are serving sessions: stop them first" : "Frees the Lab's memory"}
+                onClick={() => {
+                  pop.close();
+                  void unloadSpecimen();
+                }}
+              >
+                <Power /> Unload
+              </button>
+            )}
+          </div>
+        )}
       </Popover>
     </>
   );
@@ -139,7 +159,22 @@ function MemoryLine() {
   );
 }
 
-const BUSY: Record<string, string> = { probe: "probing", find: "finding", generate: "writing", sweep: "sweeping", attribute: "tracing", neuron: "reading a neuron", session: "serving a session" };
+const BUSY: Record<string, string> = { probe: "probing", find: "finding", generate: "writing", sweep: "sweeping", attribute: "tracing", neuron: "reading a neuron", session: "serving a session", examples: "writing examples", explore: "trying neurons" };
+
+/** Cmd+Z and Cmd+Shift+Z, where you can see what they'd do. */
+function UndoButtons() {
+  const { undo, redo } = useUndoLabels();
+  return (
+    <span className="undo-btns">
+      <button className="icon-btn sm" disabled={!undo} title={undo ? `Undo: ${undo} (Cmd+Z)` : "Nothing to undo"} aria-label="Undo" onClick={() => void runUndo()}>
+        <Undo2 />
+      </button>
+      <button className="icon-btn sm" disabled={!redo} title={redo ? `Redo: ${redo} (Cmd+Shift+Z)` : "Nothing to redo"} aria-label="Redo" onClick={() => void runRedo()}>
+        <Redo2 />
+      </button>
+    </span>
+  );
+}
 
 export function SpecimenHead() {
   const lab = useLab((s) => s.lab);
@@ -172,7 +207,6 @@ export function SpecimenHead() {
           )}
         </span>
       )}
-      {lab && st === "ready" && <Facts lab={lab} />}
       {serving.length > 0 && (
         <Hint tip={LAB_TIP.strainUse}>
           <span className="chip accent">
@@ -181,7 +215,7 @@ export function SpecimenHead() {
         </Hint>
       )}
       <span className="blk-spacer" />
-      {lab && (st === "ready" || loading) && <MemoryLine />}
+      <UndoButtons />
       {swap ? (
         <button className="btn sm" disabled={serving.length > 0} title={serving.length ? "Strains are serving sessions: stop them first" : undefined} onClick={() => void loadSpecimen()}>
           Swap to {modelName(lab, target)}
@@ -192,11 +226,6 @@ export function SpecimenHead() {
           Load a model
         </button>
       )}
-      {st === "ready" || st === "stopping" ? (
-        <button className="btn sm" disabled={serving.length > 0 || st === "stopping"} title={serving.length ? "Strains are serving sessions: stop them first" : "Frees the Lab's memory"} onClick={() => void unloadSpecimen()}>
-          <Power /> Unload
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -310,10 +339,10 @@ export function Bench() {
               <b>Load</b> a model. The Lab runs its own copy next to oMLX.
             </li>
             <li>
-              <b>Find</b> <Term k="neuron">neurons</Term> for a concept, or <b>probe</b> a text to see what fires.
+              <b>Find</b> the <Term k="neuron">neurons</Term> behind a trait you describe, or let it surprise you.
             </li>
             <li>
-              <b>Steer</b>: push them while the model writes, and compare the replies.
+              <b>Steer</b>: push them while the model writes, and see what changes.
             </li>
           </ol>
         )}
@@ -335,8 +364,7 @@ export function Bench() {
                 <>
                   <span className="hint-title">Try the example</span>
                   <div className="hint-line">
-                    Loads {modelName(lab, EXAMPLE.modelId)}, finds neurons for the Aliens probe set, puts the best one in the mix at dose +{EXAMPLE.dose} and compares the
-                    replies to its test prompt.
+                    Loads {modelName(lab, exampleSet()?.example?.modelId)}, finds neurons for {exampleSet()?.name ?? "a prepared set"}, puts the best one in the mix at dose +{exampleSet()?.example?.dose} and compares the replies.
                   </div>
                 </>
               }

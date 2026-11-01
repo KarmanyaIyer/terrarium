@@ -19,7 +19,7 @@ export const LAB_TIP = {
   specimen: card(
     "Specimen",
     "The model on the Lab bench. The Lab runs its own copy in a separate process, with hooks on every MLP neuron, so it can read and push them.",
-    "One specimen at a time. Bonsai packs can't be opened: their neurons are mixed together on disk.",
+    "One specimen at a time.",
   ),
   memory: card(
     "Memory",
@@ -28,7 +28,7 @@ export const LAB_TIP = {
   ),
   neuron: card(
     "Neuron",
-    "One number inside a layer's MLP: the gate times the up projection, just before down_proj adds it back into the model's running state (the residual stream). Every token gets its own value.",
+    "One number inside a layer's MLP: the gate times the up projection, just before the projection out (down_proj, or w2 in LFM3) adds it back into the model's running state (the residual stream). Every token gets its own value.",
     <>
       Written <span className="mono">L15N4041</span>: layer 15, neuron 4041. Same ids as neuronary.org.
     </>,
@@ -55,7 +55,7 @@ export const LAB_TIP = {
   ),
   layerKinds: card(
     "Layer kinds",
-    "Full attention layers look back at every earlier token. Qwen3.5's linear attention layers (3 of every 4) keep a fixed-size running summary instead; Gemma 4's sliding layers look back over a recent window only.",
+    "Full attention layers look back at every earlier token. Qwen3.5's linear attention layers (3 of every 4) keep a fixed-size running summary instead; sliding layers (Gemma 4, LFM3) look back over a recent window only, and LFM3's conv layers over the last few tokens.",
     "The MLP neurons work the same way in every kind.",
   ),
   template: card(
@@ -90,7 +90,6 @@ export const LAB_TIP = {
     "Late-layer writers push one word hard, and the text often turns into that word over and over.",
     "The neurons worth steering do both. Check the preview reply before trusting a high score.",
   ),
-  preview: card("Preview", "A short greedy reply (32 tokens) to the test prompt with this neuron at +0.8. The quickest check that it writes the concept."),
   beatsAll: card("Beats all", "Share of concept texts where the neuron peaks higher than it does on every control text. 100%: no control text ever got as high."),
   conceptVsControl: card("Concept vs control", "Mean peak over the concept texts against the control texts, in x typical."),
   conceptTokens: card("Concept words", "Tokens in several concept texts and no control text. \"Pushes it\" measures how much a neuron raises these."),
@@ -109,7 +108,7 @@ export const LAB_TIP = {
   dose: card(
     "Dose",
     "How much a push adds to the neuron on every token, in neuronary's relative unit: dose 1.0 adds a vector as long as the usual residual stream at that layer.",
-    "0.5 to 1.0 is the normal range. Around 3 wrecks the text. Negative doses push the other way.",
+    "0.5 to 1.0 is the usual range on Qwen3.5, and small changes matter: 0.66 and 0.8 can write very different replies. Negative doses push the other way. Models with a norm after each MLP (LFM3) need larger doses for the same effect.",
   ),
   clamp: card(
     "Clamp",
@@ -127,18 +126,19 @@ export const LAB_TIP = {
     </>,
   ),
   scale: card("Scale", "Multiplies every dose in the mix; clamps stay as set. Turns the whole mix up or down at once. Saving a strain bakes the scale into its doses."),
-  seed: card("Seed", "Fixes the random choices while sampling. The unsteered and steered replies share it, so differences come from the mix, not luck. Lock it to compare runs fairly."),
+  seed: card("Seed", "Fixes the random choices while sampling. The unsteered and steered replies share it, so differences come from the mix, not luck. Steered text can swing a lot from seed to seed: use Test across seeds before trusting one."),
   temperature: card("Temperature", "0 always takes the most likely token: same reply every time. 0.7 is the usual setting; higher is more varied."),
   thinking: card("Thinking", "Off by default here: a think block delays the part of the reply where steering shows."),
+  repeat: card("Repeat control", "Makes tokens from the last 64 less likely to come up again (mlx-lm's repetition penalty). It can hold off the loops pushes tend to cause, at the price of a less exact copy of what the mix alone does. 1.1 is light, 1.3 is strong."),
   compare: card("Compare", "Unsteered and steered replies to the same prompt with the same seed."),
-  sweep: card("Sweep", "The same prompt and seed at several doses of one push (or several scales of the whole mix): where the concept appears, and where the text breaks."),
+  sweep: card("Sweep", "The same prompt at many doses of one push, from negative through zero to positive: where it starts to work, where it breaks. With several neurons, it can multiply the whole mix instead."),
+  seeds: card("Test across seeds", "The same recipe over many seeds and several prompts, and how often it holds up. One good reply can be luck."),
   fluency: card(
-    "Fluency",
-    "Mean log-probability of the reply's tokens under the unsteered model, per token. Ordinary replies sit around -1.",
-    "It drops as steering pushes the model off course; below about -2 the text is usually broken.",
+    "Word-by-word likelihood",
+    "How expected each word of a reply was to the unsteered model, as a mean log-probability. Ordinary replies sit near -1.",
+    "It falls when steering works as well as when it breaks: an alien story is surprising to the unsteered model. Read the words Reads fine, Unusual, Loop and Garbled instead; this is the number behind them.",
   ),
-  repetition: card("Repetition", "Share of three-token runs that repeat an earlier one. Ordinary text is under 5%. Above 30% the model is looping."),
-  breaks: card("Breaks", "The first dose where fluency falls more than 0.8 below the lowest dose's, or repetition passes 30%. A rule of thumb, not a measured boundary."),
+  repetition: card("Repetition", "Share of three-token runs that repeat an earlier one. Ordinary text is under 5%. Above 30%, or a last stretch that cycles, is a loop."),
   strain: card("Strain", "A saved mix: a base model plus pushes, like a bred variant of a specimen. It shows up in the model pickers as a model of its own."),
   strainUse: card(
     "Using a strain",
@@ -146,11 +146,11 @@ export const LAB_TIP = {
     "Slower than oMLX. The Lab holds one specimen at a time, so while a strain serves a session the bench can't be swapped or unloaded.",
   ),
   attribute: card(
-    "Trace an answer",
-    "For the next token after the prompt (and the start of the answer), which neurons push it toward the target over the foil.",
-    "Share is a neuron's estimated part of the gap between target and foil, counted at the last token only, so shares don't add up to 100%. It is an estimate from gradients: confirm the top ones by steering them.",
+    "Trace",
+    "Which neurons change the next word, by experiment. Gradients only say what to try: they tell how a small change moves the gap, not which way a real dose works, since their sign includes the neuron's current value.",
+    "So each shortlisted neuron is really pushed at several sizes in both directions, and rows rank by what the logits did. The dose on a row is the smallest that makes the word the model's pick, or else the one that moved it most.",
   ),
-  metric: card("Target vs foil", "Logit of the target minus logit of the foil at the next token. Positive: the model already prefers the target."),
+  metric: card("Gap", "Logit of the word you asked about minus logit of the other word, at the next token. Positive: the model prefers yours. Logits are the model's raw scores: a gap of +5 is about 150 to 1 odds between the two."),
 } satisfies Record<string, ReactNode>;
 
 export type LabTerm = keyof typeof LAB_TIP;

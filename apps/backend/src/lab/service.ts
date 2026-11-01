@@ -490,7 +490,7 @@ export class LabService implements LabHooks {
   /** Saves a result, or updates it (a sweep saves as its rows come in). data is the UI's, stored as is. */
   saveHistory(body: unknown): LabHistoryEntry {
     const b = (body ?? {}) as Partial<LabHistoryEntry>;
-    if (!["compare", "sweep", "seeds", "trace"].includes(String(b.kind))) throw new HttpError(400, "kind must be compare, sweep, seeds or trace");
+    if (!["compare", "sweep", "seeds", "trace", "find"].includes(String(b.kind))) throw new HttpError(400, "kind must be compare, sweep, seeds, trace or find");
     if (typeof b.modelId !== "string" || !b.modelId) throw new HttpError(400, "modelId is required");
     const json = JSON.stringify(b.data ?? {});
     if (json.length > 16 * 1024 * 1024) throw new HttpError(413, "result too large to keep");

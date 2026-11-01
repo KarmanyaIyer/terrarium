@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Box, CircleX, FlaskConical, MessageSquare, Microscope, Plus, ShieldCheck, Sparkles, Terminal } from "lucide-react";
 import type { EnvSummary, EnvType, EvalRunSummary, Id, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
-import { EXAMPLE, ensureLab, runExample, useLab } from "../state/lab";
+import { ensureLab, exampleSet, runExample, useLab } from "../state/lab";
 import { defaultModel, newSession, recentEnv, startAgent } from "../lib/actions";
 import { fmtBytes, fmtCtx, fmtInt, plural } from "../lib/format";
 import { format } from "../lib/recipe";
@@ -305,12 +305,13 @@ function SteerNeuron() {
   const example = useLab((s) => s.example);
   const strains = useStore((s) => s.models.filter((m) => m.strain).length);
   const specimen = lab?.status === "ready" ? lab.model?.name : undefined;
-  const ex = lab?.support.find((x) => x.modelId === EXAMPLE.modelId);
+  const exampleModel = useLab(() => exampleSet()?.example?.modelId);
+  const ex = lab?.support.find((x) => x.modelId === exampleModel);
   const supported = !lab || !!ex?.supported;
   // the latest steered reply from this app session; before any, one the example produced
   const run = useLab((s) => s.runs[0]);
   const quote = run
-    ? { dose: format(run.mix), text: run.res.steered.text.replace(/\s+/g, " ").slice(0, 110) }
+    ? { dose: format(run.recipe.pushes), text: run.steered.text.replace(/\s+/g, " ").slice(0, 110) }
     : { dose: "L22N2742+0.8", text: "I am Extrali, an intelligent extraterrestrial intelligence from the planet XE-8888" };
   return (
     <div className="start">

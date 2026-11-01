@@ -1,25 +1,20 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Save, X } from "lucide-react";
-import type { LabPush, LabReply } from "@terrarium/shared";
-import { parseDoses, removePush, runCompare, runSweep, saveStrain, setPush, useLab, DEFAULT_DOSES, type SteerRun } from "../../state/lab";
-import { format, nid, outOfRange, parse, parseRef, sameRef } from "../../lib/recipe";
-import { clockTime, fmtInt, fmtMs } from "../../lib/format";
-import { ChartTip, CopyButton, Hint, Popover, Segmented, Switch, usePop, type TipState } from "../../components/ui";
+import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Trash2, X } from "lucide-react";
+import type { LabPush, NeuronRef } from "@terrarium/shared";
+import { clearResults, removePush, runCompare, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView } from "../../state/lab";
+import { etaMs, scaled, suggestWords, summarize } from "../../lib/labGrid";
+import { format, fmtDose, nid, outOfRange, parse, parseRef, sameRef } from "../../lib/recipe";
+import { clockTime } from "../../lib/format";
+import { CopyButton, Segmented, Switch } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
-import { Busy, ErrLine, FluencyMeter, NeuronLink, RepetitionMeter, ReplyText, TokChips, fmtPct0 } from "./bits";
+import { Busy, ErrLine, fmtSecs, NeuronLink, TokChips } from "./bits";
+import { DoseRuler, SeedGrid } from "./Grid";
+import { QualityChip, RecipeLine, ReplySlip } from "./Reply";
 
 export function Steer() {
-  const [view, setView] = useState<"compare" | "sweep">("compare");
-  const sweepBusy = useLab((s) => s.sweepBusy);
-  const compareBusy = useLab((s) => s.compareBusy);
-  // a run started elsewhere (the example) shows its result
-  useEffect(() => {
-    if (compareBusy != null) setView("compare");
-  }, [compareBusy]);
-  useEffect(() => {
-    if (sweepBusy != null) setView("sweep");
-  }, [sweepBusy]);
+  const view = useLab((s) => s.steerView);
+  const set = useLab.setState;
   return (
     <div className="steer">
       <div className="steer-left lab-scroll">
@@ -28,17 +23,18 @@ export function Steer() {
       </div>
       <div className="steer-right lab-scroll">
         <div className="steer-tabs">
-          <Segmented
+          <Segmented<SteerView>
             value={view}
-            onChange={setView}
+            onChange={(v) => set({ steerView: v })}
             options={[
               { value: "compare", label: "Compare", tip: LAB_TIP.compare },
               { value: "sweep", label: "Sweep", tip: LAB_TIP.sweep },
+              { value: "seeds", label: "Test across seeds", tip: LAB_TIP.seeds },
             ]}
             ariaLabel="Results"
           />
         </div>
-        {view === "compare" ? <CompareView /> : <SweepView />}
+        {view === "compare" ? <CompareView /> : view === "sweep" ? <SweepView /> : <SeedsView />}
       </div>
     </div>
   );
@@ -46,13 +42,14 @@ export function Steer() {
 
 // ---------- mix ----------
 
-const DOSE_MIN = -2;
-const DOSE_MAX = 3;
+const DOSE_SPAN = 2;
 
 function DoseSlider({ p, onChange }: { p: LabPush; onChange: (v: number) => void }) {
   const clamp = p.mode === "clamp";
-  const min = clamp ? Math.min(-20, Math.floor(p.value)) : DOSE_MIN;
-  const max = clamp ? Math.max(60, Math.ceil(p.value)) : DOSE_MAX;
+  // centred on zero; a dose past the ends widens the track around it
+  const reach = clamp ? 0 : Math.max(DOSE_SPAN, Math.ceil(Math.abs(p.value)));
+  const min = clamp ? Math.min(-20, Math.floor(p.value)) : -reach;
+  const max = clamp ? Math.max(60, Math.ceil(p.value)) : reach;
   // the thumb (12px) travels inside the track, so marks sit on (100% - 12px)
   const frac = (v: number) => (v - min) / (max - min);
   const at = (v: number) => `calc(6px + (100% - 12px) * ${frac(v)})`;
@@ -61,21 +58,12 @@ function DoseSlider({ p, onChange }: { p: LabPush; onChange: (v: number) => void
     <span className="dose-slider">
       {!clamp && (
         <>
-          <span className="dose-band" style={{ left: at(0.5), width: span(0.5, 1) }} title="Normal range: 0.5 to 1.0" />
-          <span className="dose-band" style={{ left: at(-1), width: span(-1, -0.5) }} />
+          <span className="dose-band" style={{ left: at(0.5), width: span(0.5, 1) }} title="Where most working doses sit: 0.5 to 1" />
+          <span className="dose-band neg" style={{ left: at(-1), width: span(-1, -0.5) }} />
           <span className="dose-zero" style={{ left: at(0) }} />
         </>
       )}
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={clamp ? 0.5 : 0.05}
-        title={clamp ? "Raw activation value" : "Normal doses sit in the green band, 0.5 to 1.0"}
-        value={p.value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-label={`${nid(p)} ${p.mode}`}
-      />
+      <input type="range" min={min} max={max} step={clamp ? 0.5 : 0.01} title={clamp ? "Raw activation value" : "Negative pushes it the other way. Small changes matter: this moves in steps of 0.01"} value={p.value} onChange={(e) => onChange(Number(e.target.value))} aria-label={`${nid(p)} ${p.mode}`} />
     </span>
   );
 }
@@ -116,26 +104,17 @@ function MixRow({ p, i }: { p: LabPush; i: number }) {
       <span className="mix-id" title={kind ? `layer ${p.layer}, ${kind} attention` : `layer ${p.layer}`}>
         <NeuronLink r={p} />
       </span>
-      <Segmented<LabPush["mode"]>
-        small
-        value={p.mode}
-        onChange={(mode) => setPush(i, { mode, value: mode === "dose" ? 0.8 : 10 })}
-        options={[
-          { value: "dose", label: "dose", tip: LAB_TIP.dose },
-          { value: "clamp", label: "clamp", tip: LAB_TIP.clamp },
-        ]}
-        ariaLabel={`${nid(p)} mode`}
-      />
       <DoseSlider p={p} onChange={(value) => setPush(i, { value })} />
-      <NumIn value={v} step={p.mode === "dose" ? 0.05 : 0.5} className={`mix-val${tone}`} label={`${nid(p)} value`} onChange={(value) => setPush(i, { value })} />
-      <button className="icon-btn sm" aria-label={`Remove ${nid(p)}`} title="Remove" onClick={() => removePush(i)}>
+      <NumIn value={v} step={p.mode === "dose" ? 0.01 : 0.5} className={`mix-val${tone}`} label={`${nid(p)} value`} onChange={(value) => setPush(i, { value })} />
+      <button className="icon-btn sm" aria-label={`Remove ${nid(p)}`} title="Remove (Cmd+Z brings it back)" onClick={() => removePush(i)}>
         <X />
       </button>
-      {words && (
-        <span className="mix-words">
-          <TokChips tokens={words} max={5} />
-        </span>
-      )}
+      <span className="mix-words">
+        {words && <TokChips tokens={words} max={4} />}
+        <button className="cell-link mix-mode" title={p.mode === "dose" ? "Adds to the neuron. Click to set it to a fixed value instead" : "Sets the neuron to a fixed value. Click to add a dose instead"} onClick={() => setPush(i, p.mode === "dose" ? { mode: "clamp", value: 10 } : { mode: "dose", value: 0.8 })}>
+          {p.mode === "dose" ? "dose" : "clamp"}
+        </button>
+      </span>
     </div>
   );
 }
@@ -158,13 +137,14 @@ function MixEditor() {
         <h3>
           <Term k="mix">Mix</Term>
         </h3>
-        <span className="dim num">{mix.length}</span>
+        {mix.length > 0 && <span className="dim num">{mix.length}</span>}
+        {scale !== 1 && <span className="chip warn num">×{scale}</span>}
         <span className="blk-spacer" />
-        <Term k="scale">scale ×</Term>
-        <NumIn value={scale} step={0.1} min={0} className="mix-scale" label="Scale every dose" onChange={(v) => set({ scale: v })} />
-        <input className="mix-scale-range" type="range" min={0} max={3} step={0.05} value={scale} onChange={(e) => set({ scale: Number(e.target.value) })} aria-label="Scale every dose" />
+        <button className="btn sm ghost" disabled={!mix.length || !facts} onClick={() => saveAsStrain(scaled(mix, scale))} title="Keep this mix as a model you can chat with">
+          <FlaskRound /> Save as strain
+        </button>
       </div>
-      {!mix.length && <div className="lab-note dim2">Empty. Add neurons from Find, Probe or a neuron card, type an id below, or paste a recipe.</div>}
+      {!mix.length && <div className="lab-note dim2">Empty. Go to Find and add a neuron, or type an id below.</div>}
       {mix.map((p, i) => (
         <MixRow key={nid(p)} p={p} i={i} />
       ))}
@@ -178,126 +158,68 @@ function MixEditor() {
           setAdd("");
         }}
       >
-        <input className={`input mono${add && !addRef ? " bad" : ""}`} placeholder="L22N2742" value={add} onChange={(e) => setAdd(e.target.value)} aria-label="Neuron to add" />
+        <input className={`input mono${add && !addRef ? " bad" : ""}`} placeholder="Add by id: L22N2742" value={add} onChange={(e) => setAdd(e.target.value)} aria-label="Neuron to add" />
         <button className="btn sm" disabled={!addRef}>
           <Plus /> Add
         </button>
       </form>
-      <div className="recipe">
-        <div className="recipe-head">
-          <Term k="recipe">Recipe</Term>
-          <span className="blk-spacer" />
-          {draft == null ? (
-            <CopyButton text={recipe} label="Copy" />
-          ) : (
-            <>
-              <button className="btn sm ghost" onClick={() => setDraft(null)}>
-                Revert
-              </button>
-              <button
-                className="btn sm primary"
-                disabled={!parsed?.pushes.length}
-                onClick={() => {
-                  set({ mix: parsed!.pushes });
-                  setDraft(null);
-                }}
-              >
-                Apply {parsed?.pushes.length ?? 0}
-              </button>
-            </>
+      <details className="lab-more">
+        <summary>Recipe as text</summary>
+        <div className="recipe">
+          <div className="recipe-head">
+            <Term k="recipe">Recipe</Term>
+            <span className="blk-spacer" />
+            {draft == null ? (
+              <CopyButton text={recipe} label="Copy" />
+            ) : (
+              <>
+                <button className="btn sm ghost" onClick={() => setDraft(null)}>
+                  Revert
+                </button>
+                <button
+                  className="btn sm primary"
+                  disabled={!parsed?.pushes.length}
+                  onClick={() => {
+                    set({ mix: parsed!.pushes });
+                    setDraft(null);
+                  }}
+                >
+                  Apply {parsed?.pushes.length ?? 0}
+                </button>
+              </>
+            )}
+          </div>
+          <textarea className="textarea mono recipe-text" rows={2} spellCheck={false} value={draft ?? recipe} placeholder="Paste a recipe: L22N2742+0.8 L8N344=25" onChange={(e) => setDraft(e.target.value)} aria-label="Recipe" />
+          {parsed && parsed.errors.length > 0 && (
+            <ul className="recipe-errs">
+              {parsed.errors.map((e, i) => (
+                <li key={i} className="warn-text">
+                  {e}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-        <textarea
-          className="textarea mono recipe-text"
-          rows={2}
-          spellCheck={false}
-          value={draft ?? recipe}
-          placeholder="Paste a recipe: L22N2742+0.8 L8N344=25"
-          onChange={(e) => setDraft(e.target.value)}
-          aria-label="Recipe"
-        />
-        {parsed && parsed.errors.length > 0 && (
-          <ul className="recipe-errs">
-            {parsed.errors.map((e, i) => (
-              <li key={i} className="warn-text">
-                {e}
-              </li>
-            ))}
-          </ul>
-        )}
-        {scale !== 1 && draft == null && mix.some((p) => p.mode === "dose") && (
-          <div className="lab-note dim2">
-            Scale ×{scale} applies on top of these doses.{" "}
-            <button className="cell-link" onClick={() => set({ mix: mix.map((p) => (p.mode === "dose" ? { ...p, value: Math.round(p.value * scale * 1000) / 1000 } : p)), scale: 1 })}>
-              Bake it in
-            </button>
-          </div>
-        )}
-      </div>
+      </details>
     </section>
   );
 }
 
 // ---------- run settings ----------
 
-function SaveStrain() {
-  const pop = usePop();
-  const mix = useLab((s) => s.mix);
-  const scale = useLab((s) => s.scale);
-  const base = useLab((s) => s.lab?.model);
-  const [name, setName] = useState("");
-  const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState(false);
-  const baked = mix.map((p) => (p.mode === "dose" ? { ...p, value: Math.round(p.value * scale * 1000) / 1000 } : p));
-  return (
-    <>
-      <button ref={pop.ref} className="btn" disabled={!mix.length || !base} onClick={pop.toggle}>
-        <Save /> Save as strain
-      </button>
-      <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={320}>
-        <form
-          className="pop-pad lab-form"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!name.trim()) return;
-            setBusy(true);
-            const st = await saveStrain(name.trim(), notes.trim());
-            setBusy(false);
-            if (st) {
-              pop.close();
-              setName("");
-              setNotes("");
-            }
-          }}
-        >
-          <div className="dim2">
-            <Term k="strain">Strain</Term> of {base?.name}
-          </div>
-          <code className="recipe-peek">{format(baked)}</code>
-          <label>
-            <span>Name</span>
-            <input className="input" autoFocus value={name} placeholder="Extrali" onChange={(e) => setName(e.target.value)} />
-          </label>
-          <label>
-            <span>Notes</span>
-            <textarea className="textarea" rows={3} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} />
-          </label>
-          <button className="btn sm primary" disabled={!name.trim() || busy}>
-            <FlaskRound /> Save strain
-          </button>
-          <div className="dim2 lab-note">Shows up in the model pickers. Chats and evals with it run on the Lab.</div>
-        </form>
-      </Popover>
-    </>
-  );
-}
+const REPEATS = [
+  { value: 1, label: "Off" },
+  { value: 1.1, label: "1.1" },
+  { value: 1.2, label: "1.2" },
+  { value: 1.3, label: "1.3" },
+];
+
+/** What Cmd+Enter in the prompt does: the view you're looking at. */
+const runView = (v: SteerView) => (v === "compare" ? runCompare() : v === "sweep" ? runSweep() : runSeeds());
 
 function RunSettings() {
-  const s = useLab(useShallow((x) => ({ prompt: x.prompt, seed: x.seed, lockSeed: x.lockSeed, temperature: x.temperature, maxTokens: x.maxTokens, thinking: x.thinking })));
+  const s = useLab(useShallow((x) => ({ prompt: x.prompt, seed: x.seed, lockSeed: x.lockSeed, temperature: x.temperature, maxTokens: x.maxTokens, thinking: x.thinking, repeat: x.repeat, scale: x.scale, view: x.steerView })));
   const mix = useLab((x) => x.mix);
-  const busy = useLab((x) => x.compareBusy);
-  const facts = useLab((x) => x.lab?.model);
-  const bad = facts ? outOfRange(mix, facts.layers, facts.neuronsPerLayer).length > 0 : false;
   const set = useLab.setState;
   return (
     <section className="lab-sec run">
@@ -311,44 +233,58 @@ function RunSettings() {
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              void runCompare();
+              void runView(s.view);
             }
           }}
           aria-label="Prompt"
         />
       </label>
-      <div className="run-grid">
-        <Term k="seed">Seed</Term>
-        <span className="form-row">
-          <NumIn value={s.seed} step={1} min={0} className="run-num wide" label="Seed" onChange={(v) => set({ seed: Math.max(0, Math.floor(v)) })} />
-          <button className="icon-btn sm" title="New random seed" aria-label="New random seed" onClick={() => set({ seed: Math.floor(Math.random() * 1_000_000) })}>
-            <Dices />
-          </button>
-          <button
-            className={`icon-btn sm${s.lockSeed ? " on" : ""}`}
-            aria-pressed={s.lockSeed}
-            title={s.lockSeed ? "Seed locked: every run uses it" : "Each run draws a new seed"}
-            aria-label="Lock the seed"
-            onClick={() => set({ lockSeed: !s.lockSeed })}
-          >
-            {s.lockSeed ? <Lock /> : <LockOpen />}
-          </button>
-        </span>
-        <Term k="temperature">Temperature</Term>
-        <NumIn value={s.temperature} step={0.1} min={0} max={2} className="run-num" label="Temperature" onChange={(v) => set({ temperature: Math.max(0, v) })} />
-        <span>Max tokens</span>
-        <NumIn value={s.maxTokens} step={16} min={8} max={2048} className="run-num" label="Max tokens" onChange={(v) => set({ maxTokens: Math.max(8, Math.floor(v)) })} />
-        <Term k="thinking">Thinking</Term>
-        <Switch on={s.thinking} onChange={(v) => set({ thinking: v })} label={s.thinking ? "on" : "off"} />
-      </div>
-      <div className="run-acts">
-        <button className="btn primary" disabled={busy != null || !mix.length || !s.prompt.trim() || bad} onClick={() => void runCompare()} title="Cmd+Enter in the prompt">
-          {busy != null ? <Busy since={busy}>Comparing</Busy> : <><Play /> Compare</>}
-        </button>
-        <SaveStrain />
-      </div>
+      <details className="lab-more">
+        <summary>
+          Settings <span className="dim2 num">seed {s.lockSeed ? s.seed : "new each run"}, temp {s.temperature}{s.repeat > 1 ? `, repeat ${s.repeat}` : ""}</span>
+        </summary>
+        <div className="run-grid">
+          <Term k="seed">Seed</Term>
+          <span className="form-row">
+            <NumIn value={s.seed} step={1} min={0} className="run-num wide" label="Seed" onChange={(v) => set({ seed: Math.max(0, Math.floor(v)) })} />
+            <button className="icon-btn sm" title="New random seed" aria-label="New random seed" onClick={() => set({ seed: Math.floor(Math.random() * 1_000_000) })}>
+              <Dices />
+            </button>
+            <button className={`icon-btn sm${s.lockSeed ? " on" : ""}`} aria-pressed={s.lockSeed} title={s.lockSeed ? "Seed locked: every run uses it" : "Each run draws a new seed"} aria-label="Lock the seed" onClick={() => set({ lockSeed: !s.lockSeed })}>
+              {s.lockSeed ? <Lock /> : <LockOpen />}
+            </button>
+          </span>
+          <Term k="temperature">Temperature</Term>
+          <NumIn value={s.temperature} step={0.1} min={0} max={2} className="run-num" label="Temperature" onChange={(v) => set({ temperature: Math.max(0, v) })} />
+          <span>Reply length</span>
+          <NumIn value={s.maxTokens} step={16} min={8} max={2048} className="run-num" label="Reply length in tokens" onChange={(v) => set({ maxTokens: Math.max(8, Math.floor(v)) })} />
+          <Term k="repeat">Repeat control</Term>
+          <Segmented<number> small value={s.repeat} onChange={(v) => set({ repeat: v })} options={REPEATS} ariaLabel="Repeat control" />
+          <Term k="scale">Scale every dose</Term>
+          <span className="form-row">
+            <NumIn value={s.scale} step={0.05} min={0} className="run-num" label="Scale every dose" onChange={(v) => set({ scale: v })} />
+            {s.scale !== 1 && mix.some((p) => p.mode === "dose") && (
+              <button className="cell-link" onClick={() => set({ mix: scaled(mix, s.scale), scale: 1 })}>
+                Bake it in
+              </button>
+            )}
+          </span>
+          <Term k="thinking">Thinking</Term>
+          <Switch on={s.thinking} onChange={(v) => set({ thinking: v })} label={s.thinking ? "on" : "off"} />
+        </div>
+      </details>
     </section>
   );
+}
+
+function useRunBlocked(): string | null {
+  const mix = useLab((x) => x.mix);
+  const prompt = useLab((x) => x.prompt);
+  const facts = useLab((x) => x.lab?.model);
+  if (!mix.length) return "Add a neuron to the mix first";
+  if (!prompt.trim()) return "Write a prompt first";
+  if (facts && outOfRange(mix, facts.layers, facts.neuronsPerLayer).length) return "The mix has neurons this model doesn't";
+  return null;
 }
 
 // ---------- compare ----------
@@ -358,82 +294,58 @@ function reveal(el: HTMLElement | null) {
   if (el && el.getBoundingClientRect().top > window.innerHeight - 120) el.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
-function mixWords(words: Record<string, string[]>, mix: LabPush[]): string[] {
-  return mix.flatMap((p) => words[nid(p)] ?? []);
-}
-
-function ReplyCard({ title, r, words, base }: { title: React.ReactNode; r: LabReply; words: string[]; base?: number }) {
-  return (
-    <div className="cmp-col">
-      <h4>{title}</h4>
-      <ReplyText text={r.text} words={words} />
-      <div className="cmp-meters">
-        <FluencyMeter v={r.fluency} base={base} />
-        <RepetitionMeter v={r.repetition} />
-      </div>
-      <div className="dim2 num cmp-meta">
-        {fmtInt(r.tokens)} tokens, {fmtMs(r.ms)}
-        {r.finish === "length" && <span className="warn-text"> cut at max tokens</span>}
-      </div>
-    </div>
-  );
+function pushWords(words: Record<string, string[]>, pushes: NeuronRef[]): string[] {
+  return pushes.flatMap((p) => words[nid(p)] ?? []);
 }
 
 function CompareView() {
   const runs = useLab((s) => s.runs);
+  const pick = useLab((s) => s.runPick);
   const busy = useLab((s) => s.compareBusy);
   const err = useLab((s) => s.compareErr);
   const words = useLab((s) => s.words);
-  const [pick, setPick] = useState<number | null>(null);
+  const blocked = useRunBlocked();
   const box = useRef<HTMLDivElement>(null);
   const latest = runs[0]?.id;
   useEffect(() => {
-    setPick(null);
     // stacked (narrow) layout: bring a fresh result into view
     if (latest != null) reveal(box.current);
   }, [latest]);
   const run = runs.find((r) => r.id === pick) ?? runs[0];
   return (
     <>
+      <div className="view-bar">
+        <button className="btn primary" disabled={busy != null || !!blocked} title={blocked ?? "Cmd+Enter in the prompt"} onClick={() => void runCompare()}>
+          {busy != null ? <Busy since={busy}>Writing both replies</Busy> : <><Play /> Compare</>}
+        </button>
+        <span className="dim2">Writes the reply with and without the mix, from the same seed.</span>
+        <span className="blk-spacer" />
+        {runs.length > 0 && (
+          <button className="btn sm ghost" onClick={clearResults} title="Cmd+Z brings them back">
+            <Trash2 /> Clear
+          </button>
+        )}
+      </div>
       {err && <ErrLine err={err} />}
-      {busy != null && <div className="lab-note dim2"><Busy since={busy}>Writing both replies with the same seed</Busy></div>}
-      {!run && busy == null && !err && <div className="lab-empty">Compare writes the unsteered and the steered reply to the prompt, with the same seed.</div>}
+      {!run && busy == null && !err && <div className="lab-empty">{blocked ? `${blocked}. Then compare the two replies here.` : "Press Compare to see what the mix changes. Click any word in a reply to ask why it's there."}</div>}
       {run && (
         <div ref={box} className={busy != null ? "stale" : undefined}>
-          <RunHead run={run} />
+          <div className="cmp-prompt selectable">{run.recipe.prompt}</div>
           <div className="cmp-pair">
-            {run.res.baseline && <ReplyCard title="Unsteered" r={run.res.baseline} words={mixWords(words, run.mix)} />}
-            <ReplyCard
-              title={
-                <>
-                  Steered <span className="mono dim2">{format(run.mix)}</span>
-                  {run.scale !== 1 && <span className="dim2"> ×{run.scale}</span>}
-                </>
-              }
-              r={run.res.steered}
-              words={mixWords(words, run.mix)}
-              base={run.res.baseline?.fluency}
-            />
+            {run.baseline && <ReplySlip title="Unsteered" reply={run.baseline} recipe={{ ...run.recipe, pushes: [] }} words={pushWords(words, run.recipe.pushes)} />}
+            <ReplySlip title={run.scale ? `Steered, mix ×${run.scale}` : "Steered"} reply={run.steered} recipe={run.recipe} baseline={run.baseline} words={pushWords(words, run.recipe.pushes)} />
           </div>
         </div>
       )}
       {runs.length > 1 && (
-        <section className="lab-sec">
+        <section className="lab-sec earlier">
           <div className="lab-sec-head">
-            <h3>Earlier runs</h3>
-            <span className="dim num">{runs.length}</span>
+            <h3>Earlier in this sitting</h3>
+            <span className="dim2">Older ones are in History.</span>
           </div>
           <div className="runs">
             {runs.map((r) => (
-              <button key={r.id} className={`run-row${r === run ? " on" : ""}`} onClick={() => setPick(r.id)}>
-                <span className="num dim">{clockTime(r.at)}</span>
-                <span className="mono truncate">
-                  {format(r.mix)}
-                  {r.scale !== 1 ? ` ×${r.scale}` : ""}
-                </span>
-                <span className="truncate dim2">{r.res.steered.text}</span>
-                <span className="num">{r.res.steered.fluency.toFixed(2)}</span>
-              </button>
+              <RunRow key={r.id} r={r} on={r === run} />
             ))}
           </div>
         </section>
@@ -442,266 +354,199 @@ function CompareView() {
   );
 }
 
-function RunHead({ run }: { run: SteerRun }) {
+function RunRow({ r, on }: { r: SteerRun; on: boolean }) {
   return (
-    <div className="cmp-head dim2">
-      <span className="truncate">
-        <span className="dim">Prompt</span> <span className="selectable">{run.prompt}</span>
-      </span>
-      <span className="num">
-        <Term k="seed">seed</Term> {run.res.seed}
-      </span>
-      <span className="num">temp {run.temperature}</span>
-    </div>
+    <button className={`run-row${on ? " on" : ""}`} onClick={() => useLab.setState({ runPick: r.id })}>
+      <span className="num dim">{clockTime(r.at)}</span>
+      <span className="mono truncate">{format(r.recipe.pushes)}</span>
+      <span className="truncate dim2">{r.steered.text}</span>
+      <QualityChip r={r.steered} />
+    </button>
   );
 }
 
 // ---------- sweep ----------
 
-/** First dose where fluency falls 0.8 below the lowest dose's, or 30% of 3-grams repeat. */
-export function breakAt(rows: { dose: number; reply: LabReply }[]): number | null {
-  if (!rows.length) return null;
-  const sorted = [...rows].sort((a, b) => a.dose - b.dose);
-  const base = sorted[0].reply.fluency;
-  return sorted.find((r) => r.reply.fluency < base - 0.8 || r.reply.repetition > 0.3)?.dose ?? null;
-}
+const RANGES = [0.5, 1, 2, 4];
+const COUNTS = [12, 24, 48, 96, 192, 384];
+const SEED_COUNTS = [1, 2, 4, 8];
+const LENGTHS = [32, 64, 128, 256];
 
-function SweepView() {
-  const mix = useLab((s) => s.mix);
-  const target = useLab((s) => s.sweepTarget);
-  const doses = useLab((s) => s.doses);
-  const sweep = useLab((s) => s.sweep);
-  const busy = useLab((s) => s.sweepBusy);
-  const err = useLab((s) => s.sweepErr);
-  const prompt = useLab((s) => s.prompt);
-  const words = useLab((s) => s.words);
-  const set = useLab.setState;
-  const list = parseDoses(doses);
-  const tgt = target === "mix" ? null : mix.find((p) => nid(p) === target);
-  const brk = sweep ? breakAt(sweep.res.rows) : null;
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (sweep) reveal(box.current);
-  }, [sweep]);
-  const ws = sweep ? (sweep.req.target ? (words[nid(sweep.req.target)] ?? []) : mixWords(words, sweep.req.mix)) : [];
-  const appears = useMemo(() => {
-    const keep = ws.map((w) => w.trim().replace(/[^A-Za-z0-9]/g, "")).filter((w) => w.length >= 3);
-    if (!sweep || !keep.length) return null;
-    const re = new RegExp(`\\b(${keep.join("|")})`, "i");
-    return [...sweep.res.rows].sort((a, b) => a.dose - b.dose).find((r) => re.test(r.reply.text))?.dose ?? null;
-  }, [sweep, ws]);
-
+function Choice<T extends number | string>({ label, value, options, onChange, fmt, tip }: { label: React.ReactNode; value: T; options: T[]; onChange: (v: T) => void; fmt?: (v: T) => string; tip?: string }) {
   return (
-    <>
-      <div className="sweep-cfg">
-        <label className="lab-field">
-          <span>Push</span>
-          <select className="input select" value={tgt ? target : "mix"} onChange={(e) => set({ sweepTarget: e.target.value })} aria-label="What to sweep">
-            <option value="mix">whole mix (as a scale)</option>
-            {mix
-              .filter((p) => p.mode === "dose")
-              .map((p) => (
-                <option key={nid(p)} value={nid(p)}>
-                  {nid(p)} (dose)
-                </option>
-              ))}
-          </select>
-        </label>
-        <label className="lab-field grow">
-          <span>{tgt ? "Doses" : "Scales"}</span>
-          <input className="input mono" value={doses} onChange={(e) => set({ doses: e.target.value })} aria-label="Doses" />
-        </label>
-        {doses !== DEFAULT_DOSES && (
-          <button className="btn sm ghost" onClick={() => set({ doses: DEFAULT_DOSES })}>
-            Reset
-          </button>
-        )}
-        <button className="btn primary" disabled={busy != null || !mix.length || !list.length || !prompt.trim()} onClick={() => void runSweep()}>
-          {busy != null ? <Busy since={busy}>Sweeping {list.length}</Busy> : <><Play /> Sweep {list.length}</>}
-        </button>
-      </div>
-      {err && <ErrLine err={err} />}
-      {!sweep && busy == null && !err && (
-        <div className="lab-empty">One reply per dose, same prompt and seed: where the concept shows up, and where the text breaks.</div>
-      )}
-      {sweep && (
-        <div ref={box} className={busy != null ? "stale" : undefined}>
-          <div className="cmp-head dim2">
-            <span className="truncate">
-              <span className="dim">Sweeping</span> <span className="mono">{sweep.label}</span> <span className="dim">on</span> <span className="selectable">{sweep.req.prompt}</span>
-            </span>
-            <span className="num">seed {sweep.res.seed}</span>
-            {appears != null && <span className="ok-text">concept from {appears}</span>}
-            <Hint tip={LAB_TIP.breaks}>
-              <span className={brk != null ? "err-text" : "dim2"}>{brk != null ? `breaks at ${brk}` : "doesn't break"}</span>
-            </Hint>
-          </div>
-          <SweepCharts rows={sweep.res.rows} brk={brk} unit={sweep.req.target ? "dose" : "scale"} />
-          <table className="table lab-table sweep-rows">
-            <thead>
-              <tr>
-                <th className="r">{sweep.req.target ? "Dose" : "Scale"}</th>
-                <th>Reply</th>
-                <th>
-                  <Term k="fluency">Fluency</Term>
-                </th>
-                <th>
-                  <Term k="repetition">Repetition</Term>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...sweep.res.rows]
-                .sort((a, b) => a.dose - b.dose)
-                .map((r) => (
-                  <tr key={r.dose} className={r.dose === brk ? "brk" : r.dose === appears ? "appears" : undefined}>
-                    <td className="r num strong">
-                      {r.dose}
-                      {r.dose === brk && <span className="chip err">breaks</span>}
-                    </td>
-                    <td className="sweep-reply">
-                      <ReplyText text={r.reply.text} words={ws} />
-                    </td>
-                    <td>
-                      <FluencyMeter v={r.reply.fluency} base={sweep.res.rows.reduce((a, x) => (x.dose < a.dose ? x : a)).reply.fluency} />
-                    </td>
-                    <td>
-                      <RepetitionMeter v={r.reply.repetition} />
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </>
-  );
-}
-
-function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
-  const ref = useRef<T>(null);
-  const [w, setW] = useState(480);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setW(el.clientWidth));
-    ro.observe(el);
-    setW(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, w];
-}
-
-/** Fluency and repetition by dose: two small charts on one dose axis (never two scales on one chart). */
-function SweepCharts({ rows, brk, unit }: { rows: { dose: number; reply: LabReply }[]; brk: number | null; unit: string }) {
-  const [ref, width] = useWidth<HTMLDivElement>();
-  const [hover, setHover] = useState<number | null>(null);
-  const [tip, setTip] = useState<TipState | null>(null);
-  const pts = [...rows].sort((a, b) => a.dose - b.dose);
-  const d0 = pts[0]?.dose ?? 0;
-  const d1 = pts[pts.length - 1]?.dose ?? 1;
-  const padL = 38;
-  const padR = 12;
-  const W = Math.max(200, width);
-  const x = (d: number) => padL + ((d - d0) / (d1 - d0 || 1)) * (W - padL - padR);
-  const flu = pts.map((p) => p.reply.fluency);
-  const fMin = Math.min(-2.5, ...flu) - 0.1;
-  const fMax = Math.max(-0.5, ...flu);
-  const rMax = Math.max(0.5, ...pts.map((p) => p.reply.repetition));
-  const H = 64;
-  const chart = (label: React.ReactNode, vals: number[], lo: number, hi: number, fmt: (v: number) => string, ticks: number[]) => {
-    const y = (v: number) => 6 + (1 - (v - lo) / (hi - lo || 1)) * (H - 14);
-    const d = vals.map((v, i) => `${i ? "L" : "M"}${x(pts[i].dose).toFixed(1)},${y(v).toFixed(1)}`).join("");
-    return (
-      <div className="sw-chart">
-        <div className="sw-title">{label}</div>
-        <svg width={W} height={H} role="img" aria-label="chart">
-          {ticks.map((t) => (
-            <g key={t}>
-              <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} className="sw-grid" />
-              <text x={padL - 5} y={y(t) + 3} className="sw-tick" textAnchor="end">
-                {fmt(t)}
-              </text>
-            </g>
-          ))}
-          {brk != null && <line x1={x(brk)} x2={x(brk)} y1={2} y2={H - 4} className="sw-brk" />}
-          {hover != null && <line x1={x(pts[hover].dose)} x2={x(pts[hover].dose)} y1={2} y2={H - 4} className="sw-cross" />}
-          <path d={d} className="sw-line" />
-          {vals.map((v, i) => (
-            <circle key={i} cx={x(pts[i].dose)} cy={y(v)} r={hover === i ? 4.5 : 3.5} className="sw-dot" />
-          ))}
-        </svg>
-      </div>
-    );
-  };
-  return (
-    <div
-      ref={ref}
-      className="sw-charts"
-      onMouseMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        const mx = e.clientX - r.left;
-        let bi = 0;
-        pts.forEach((p, i) => {
-          if (Math.abs(x(p.dose) - mx) < Math.abs(x(pts[bi].dose) - mx)) bi = i;
-        });
-        setHover(bi);
-        const p = pts[bi];
-        setTip({
-          x: e.clientX,
-          y: e.clientY,
-          content: (
-            <>
-              <div className="tip-head">
-                {unit} {p.dose}
-                {p.dose === brk && <span className="err-text">breaks</span>}
-              </div>
-              <div className="tip-row">
-                <span>Fluency</span>
-                <span>{p.reply.fluency.toFixed(2)}</span>
-              </div>
-              <div className="tip-row">
-                <span>Repetition</span>
-                <span>{fmtPct0(p.reply.repetition)}</span>
-              </div>
-            </>
-          ),
-        });
-      }}
-      onMouseLeave={() => {
-        setHover(null);
-        setTip(null);
-      }}
-    >
-      {chart(
-        <>
-          <Term k="fluency">Fluency</Term> <span className="dim2">higher is better</span>
-        </>,
-        flu,
-        fMin,
-        fMax,
-        (v) => v.toFixed(1),
-        [-1, -2, -3].filter((t) => t >= fMin && t <= fMax),
-      )}
-      {chart(
-        <>
-          <Term k="repetition">Repetition</Term> <span className="dim2">lower is better</span>
-        </>,
-        pts.map((p) => p.reply.repetition),
-        0,
-        rMax,
-        (v) => fmtPct0(v),
-        [0, 0.3].filter((t) => t <= rMax),
-      )}
-      <div className="sw-axis num" style={{ paddingLeft: padL, paddingRight: padR }}>
-        {pts.map((p) => (
-          <span key={p.dose} style={{ left: x(p.dose) }}>
-            {p.dose}
-          </span>
-        ))}
-      </div>
-      <ChartTip tip={tip} />
+    <div className="dchoice" title={tip}>
+      <span className="dchoice-l">{label}</span>
+      <Segmented<T> small value={value} onChange={onChange} options={options.map((o) => ({ value: o, label: fmt ? fmt(o) : String(o) }))} ariaLabel={typeof label === "string" ? label : "Choice"} />
     </div>
   );
 }
 
+function Progress({ done, total, since, ms, onStop, what }: { done: number; total: number; since: number; ms: number[]; onStop: () => void; what: string }) {
+  const eta = etaMs(ms, total - done);
+  return (
+    <div className="grid-progress">
+      <Busy since={since}>
+        {what} {done} of {total}
+      </Busy>
+      {eta != null && total > done && <span className="dim2 num">about {fmtSecs(eta)} left</span>}
+      <span className="gprog-track" aria-hidden>
+        <span style={{ width: `${(done / Math.max(1, total)) * 100}%` }} />
+      </span>
+      <button className="btn sm" onClick={onStop}>
+        <Square /> Stop
+      </button>
+    </div>
+  );
+}
+
+const sweepInputs = (x: LabStore) => ({ sweepTarget: x.sweepTarget, sweepRange: x.sweepRange, sweepLow: x.sweepLow, sweepHigh: x.sweepHigh, sweepCount: x.sweepCount, sweepSeeds: x.sweepSeeds, sweepTokens: x.sweepTokens });
+
+function SweepView() {
+  const mix = useLab((s) => s.mix);
+  const c = useLab(useShallow(sweepInputs));
+  const sweep = useLab((s) => s.sweep);
+  const busy = useLab((s) => s.gridBusy);
+  const words = useLab((s) => s.words);
+  const blocked = useRunBlocked();
+  const set = useLab.setState;
+  const doses = useMemo(() => sweepDoses(c), [c]);
+  const only = mix.length === 1 && mix[0].mode === "dose" ? mix[0] : null;
+  const tgt = c.sweepTarget === "mix" ? only : (mix.find((p) => nid(p) === c.sweepTarget) ?? only);
+  const running = sweep?.state === "running" && busy != null;
+  const total = doses.length * c.sweepSeeds;
+  const step = doses.length > 1 ? Math.min(...doses.slice(1).map((d, i) => d - doses[i])) : 0;
+  const showWords = sweep ? (sweep.target ? (words[nid(sweep.target)] ?? []) : pushWords(words, sweep.mix)) : [];
+  return (
+    <>
+      <div className="sweep-cfg">
+        <div className="sweep-line">
+          {mix.length > 1 && (
+            <label className="dchoice">
+              <span className="dchoice-l">Push</span>
+              <select className="input select" value={tgt ? c.sweepTarget : "mix"} onChange={(e) => set({ sweepTarget: e.target.value })} aria-label="What to sweep">
+                <option value="mix">whole mix, as a multiple</option>
+                {mix
+                  .filter((p) => p.mode === "dose")
+                  .map((p) => (
+                    <option key={nid(p)} value={nid(p)}>
+                      {nid(p)} alone
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
+          <Choice<number | "custom"> label="Range" value={c.sweepRange} options={[...RANGES, "custom"]} fmt={(v) => (v === "custom" ? "Custom" : `±${v}`)} onChange={(v) => (v === "custom" ? set({ sweepRange: v, sweepLow: doses[0], sweepHigh: doses[doses.length - 1] }) : set({ sweepRange: v }))} />
+          {c.sweepRange === "custom" && (
+            <span className="form-row sweep-custom">
+              <NumIn value={c.sweepLow} step={0.01} className="run-num" label="Lowest dose" onChange={(v) => set({ sweepLow: v })} />
+              <span className="dim2">to</span>
+              <NumIn value={c.sweepHigh} step={0.01} className="run-num" label="Highest dose" onChange={(v) => set({ sweepHigh: v })} />
+            </span>
+          )}
+          <Choice<number> label="Steps" value={c.sweepCount} options={COUNTS} onChange={(v) => set({ sweepCount: v })} />
+          <Choice<number> label="Seeds" value={c.sweepSeeds} options={SEED_COUNTS} onChange={(v) => set({ sweepSeeds: v })} tip="More than one lays seeds down the side: doses by seeds." />
+          <Choice<number> label="Reply length" value={c.sweepTokens} options={LENGTHS} onChange={(v) => set({ sweepTokens: v })} />
+        </div>
+        <div className="view-bar">
+          {running ? (
+            <Progress done={sweep.cells.length} total={sweep.doses.length * sweep.seeds.length * sweep.prompts.length} since={busy} ms={sweep.cells.map((x) => x.reply.ms)} onStop={stopGrid} what="Wrote" />
+          ) : (
+            <>
+              <button className="btn primary" disabled={!!blocked || !doses.length} title={blocked ?? undefined} onClick={() => void runSweep()}>
+                <Play /> Sweep {total}
+              </button>
+              <span className="dim2 num">
+                {doses.length} dose{doses.length === 1 ? "" : "s"} from {fmtDose(doses[0])} to {fmtDose(doses[doses.length - 1])}
+                {step ? `, ${fmtDose(step)} apart` : ""}
+                {tgt ? ` on ${nid(tgt)}` : mix.length > 1 ? ", as multiples of the mix" : ""}. Zero is the unsteered model.
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      {sweep?.err && <ErrLine err={sweep.err} />}
+      {sweep?.state === "stopped" && <div className="lab-note dim2">Stopped at {sweep.cells.length} of {sweep.doses.length * sweep.seeds.length}. The doses nearest zero ran first.</div>}
+      {!sweep && <div className="lab-empty">{blocked ? `${blocked}. Then sweep it here from negative to positive.` : "One reply per dose, from pushing it down to pushing it up. Small changes can matter a lot: pick more steps, then drag across a good stretch to zoom in."}</div>}
+      {sweep && <DoseRuler run={sweep} words={showWords} onZoom={zoomSweep} />}
+    </>
+  );
+}
+
+// ---------- test across seeds ----------
+
+const SEED_N = [4, 8, 16, 32];
+
+function SeedsView() {
+  const mix = useLab((s) => s.mix);
+  const prompt = useLab((s) => s.prompt);
+  const n = useLab((s) => s.seedsN);
+  const more = useLab((s) => s.seedsPrompts);
+  const wordsIn = useLab((s) => s.seedsWords);
+  const tokens = useLab((s) => s.seedsTokens);
+  const run = useLab((s) => s.seeds);
+  const busy = useLab((s) => s.gridBusy);
+  const allWords = useLab((s) => s.words);
+  const blocked = useRunBlocked();
+  const set = useLab.setState;
+  const running = run?.state === "running" && busy != null;
+  const extra = more.split("\n").map((x) => x.trim()).filter(Boolean);
+  const prompts = new Set([prompt.trim(), ...extra]).size;
+  const suggest = useMemo(() => suggestWords(pushWords(allWords, mix)), [allWords, mix]);
+  const typed = wordsIn.split(/[,;\n]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+  const summary = useMemo(() => summarize(run?.cells.map((c) => c.reply) ?? [], run?.words ?? []), [run]);
+  return (
+    <>
+      <div className="sweep-cfg">
+        <div className="sweep-line">
+          <Choice<number> label="Seeds" value={n} options={SEED_N} onChange={(v) => set({ seedsN: v })} />
+          <Choice<number> label="Reply length" value={tokens} options={LENGTHS} onChange={(v) => set({ seedsTokens: v })} />
+        </div>
+        <div className="seeds-fields">
+          <label className="lab-field wide">
+            <span>More prompts, one per line <span className="dim2">(after the one on the left)</span></span>
+            <textarea className="textarea" rows={2} value={more} onChange={(e) => set({ seedsPrompts: e.target.value })} />
+          </label>
+          <label className="lab-field wide">
+            <span>Words to count <span className="dim2">(optional)</span></span>
+            <input className="input" value={wordsIn} placeholder="alien, planet, galaxy" onChange={(e) => set({ seedsWords: e.target.value })} />
+            {suggest.some((w) => !typed.includes(w.toLowerCase())) && (
+              <span className="word-sugg">
+                <span className="dim2">From the mix:</span>
+                {suggest
+                  .filter((w) => !typed.includes(w.toLowerCase()))
+                  .map((w) => (
+                    <button key={w} type="button" className="tokchip" onClick={() => set({ seedsWords: wordsIn.trim() ? `${wordsIn.trim().replace(/,$/, "")}, ${w}` : w })}>
+                      {w}
+                    </button>
+                  ))}
+              </span>
+            )}
+          </label>
+        </div>
+        <div className="view-bar">
+          {running ? (
+            <Progress done={run.cells.length} total={run.seeds.length * run.prompts.length} since={busy} ms={run.cells.map((x) => x.reply.ms)} onStop={stopGrid} what="Wrote" />
+          ) : (
+            <>
+              <button className="btn primary" disabled={!!blocked} title={blocked ?? undefined} onClick={() => void runSeeds()}>
+                <Play /> Test {n * prompts} replies
+              </button>
+              <span className="dim2 num">
+                {n} seeds on {prompts} prompt{prompts === 1 ? "" : "s"}, with the mix as it is now.
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      {run?.err && <ErrLine err={run.err} />}
+      {run?.state === "stopped" && <div className="lab-note dim2">Stopped at {run.cells.length} of {run.seeds.length * run.prompts.length}.</div>}
+      {!run && <div className="lab-empty">{blocked ? `${blocked}. Then test it here.` : "A recipe that works on one seed can garble on the next. This runs it many times and counts how often it holds up."}</div>}
+      {run && (
+        <>
+          <RecipeLine r={{ modelId: run.modelId, prompt: run.prompts[0] ?? "", pushes: run.mix, seed: run.seeds[0] ?? 0, temperature: run.temperature, maxTokens: run.maxTokens, thinking: run.thinking, repeat: run.repeat }} />
+          <SeedGrid run={run} summary={summary} />
+        </>
+      )}
+    </>
+  );
+}

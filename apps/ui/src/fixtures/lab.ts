@@ -7,10 +7,15 @@ import type {
   LabAttributeRequest,
   LabAttributeResult,
   LabCandidate,
+  LabExamplesRequest,
+  LabExamplesResult,
+  LabExploreRequest,
+  LabExploreResult,
   LabFindRequest,
   LabFindResult,
   LabGenerateRequest,
   LabGenerateResult,
+  LabHistoryEntry,
   LabHit,
   LabMemoryCheck,
   LabModelFacts,
@@ -26,6 +31,7 @@ import type {
   LabSupport,
   LabSweepRequest,
   LabSweepResult,
+  LabTokensResult,
   LabToken,
   LabTrace,
   ModelInfo,
@@ -901,6 +907,9 @@ export class FixtureLab implements LabApi {
       ms: Math.round(180 + parts.length * 27),
       fluency: r2(fluency),
       repetition: r2(Math.min(0.95, REPEAT[lv] + h(`${seed}${lv}rep`) * 0.02)),
+      loop: REPEAT[lv] > 0.3,
+      quality: REPEAT[lv] > 0.3 ? "loop" : fluency < -5 ? "broken" : fluency < -3 ? "odd" : parts.length ? "ok" : "empty",
+      pieces: parts.map((t) => t.text),
     };
   }
 
@@ -963,8 +972,53 @@ export class FixtureLab implements LabApi {
       const sum = others.reduce((a, x) => a + x.prob, 0);
       const s = Math.min(1, 0.95 / (sum + pFoil * Math.exp(metric)));
       const topNext = [...others.map((x) => ({ token: x.token, prob: r2(x.prob * s) })), { token: target, prob: r2(pFoil * s * Math.exp(metric)) }].sort((a, b) => b.prob - a.prob);
-      return { metric, target, foil, topNext, nodes: nodes.slice(0, req.top ?? 25), ms: Math.round(performance.now() - t0 + 2400), peakBytes: Math.round(1.35 * GiB) };
+      const measured = nodes.slice(0, req.top ?? 25).map((n) => {
+        const dose = n.attr >= 0 ? 0.5 : -0.5;
+        const change = r2(Math.abs(n.attr) * 3);
+        const flips = metric + change > 0;
+        return { ...n, held: 0, best: { dose, metric: r2(metric + change), top: flips ? target : foil, change, flips }, measured: [{ dose, metric: r2(metric + change), top: flips ? target : foil }] };
+      });
+      return { metric, target, foil, top: topNext[0].token, prefill: req.prefill ?? "", notes: [], topNext, nodes: measured, measure: { neurons: measured.length, shortlisted: measured.length, doses: [0.5, -0.5], passes: measured.length * 2, ms: 2400, msPerPass: 26 }, ms: Math.round(performance.now() - t0 + 2400), peakBytes: Math.round(1.35 * GiB) };
     });
+  }
+
+  async examples(req: LabExamplesRequest): Promise<LabExamplesResult> {
+    return this.busyWhile("examples", async () => {
+      await sleep(900);
+      const t = req.trait.trim();
+      const pairs = Array.from({ length: 8 }, (_, i) => [`Line ${i + 1} about ${t}, as the model wrote it.`, `Line ${i + 1} about the weather, as the model wrote it.`]);
+      return { trait: t, concept: pairs.map((p) => p[0]), control: pairs.map((p) => p[1]), words: t.split(/\s+/).filter((w) => w.length > 2), seed: req.seed ?? 1, ms: 900 };
+    });
+  }
+
+  async explore(req: LabExploreRequest): Promise<LabExploreResult> {
+    return this.busyWhile("explore", async () => {
+      await sleep(900);
+      const specs = this.filler(`explore${req.seed ?? Math.random()}`, req.top ?? 3);
+      return { layer: specs[0]?.layer ?? 20, sampled: req.sample ?? 48, picks: specs.map((s) => ({ layer: s.layer, neuron: s.neuron, kl: r2(h(nid(s))), tokens: s.promotes.slice(0, 4), promotes: s.promotes.slice(0, 4), suppresses: s.suppresses.slice(0, 3) })), ms: 900 };
+    });
+  }
+
+  async tokens(texts: string[]): Promise<LabTokensResult> {
+    return { tokens: texts.map((t) => tokenize(t, "text", 0).map((x, id) => ({ id, text: x.text }))) };
+  }
+
+  async cancel() {}
+
+  private runs: LabHistoryEntry[] = [];
+
+  async history(modelId?: Id) {
+    return clone(this.runs.filter((x) => !modelId || x.modelId === modelId).sort((a, b) => b.at - a.at));
+  }
+
+  async saveHistory(x: Partial<LabHistoryEntry>) {
+    const e = { id: x.id ?? `run-${Date.now()}`, kind: x.kind ?? "compare", modelId: x.modelId ?? "", title: x.title ?? "", at: x.at ?? Date.now(), data: x.data } as LabHistoryEntry;
+    this.runs = [e, ...this.runs.filter((y) => y.id !== e.id)];
+    return clone(e);
+  }
+
+  async deleteHistory(id: Id) {
+    this.runs = this.runs.filter((y) => y.id !== id);
   }
 
   // ---------- probe sets ----------

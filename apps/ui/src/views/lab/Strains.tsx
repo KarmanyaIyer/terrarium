@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { FlaskConical, MessageSquare, Pencil, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { LabStrain } from "@terrarium/shared";
-import { chatWithStrain, deleteStrain, importStrain, loadStrainIntoMix, strainsInEvals, updateStrain, useLab } from "../../state/lab";
+import { chatWithStrain, deleteStrain, importStrain, loadStrainIntoMix, saveStrain, strainsInEvals, updateStrain, useLab } from "../../state/lab";
 import { format, parse } from "../../lib/recipe";
-import { ConfirmButton, CopyButton, Hint, Popover, Time, usePop } from "../../components/ui";
+import { CopyButton, Dialog, Hint, Time } from "../../components/ui";
 import { LAB_TIP } from "../../lib/labExplain";
 
 /** Lines starting with # are comments, so "Export all" text pastes back in. */
@@ -117,7 +117,9 @@ function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string
             <button className="btn sm ghost" onClick={() => setEdit(true)}>
               <Pencil /> Edit
             </button>
-            <ConfirmButton small className="ghost" icon={<Trash2 />} label="Delete" confirmLabel={`Delete "${st.name}"`} disabled={serving} title={serving ? "In use by a running chat or eval" : undefined} onConfirm={() => deleteStrain(st.id)} />
+            <button className="btn sm ghost" disabled={serving} title={serving ? "In use by a running chat or eval" : "Cmd+Z brings it back"} onClick={() => void deleteStrain(st.id)}>
+              <Trash2 /> Delete
+            </button>
           </>
         )}
       </div>
@@ -126,10 +128,10 @@ function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string
 }
 
 function ImportStrain() {
-  const pop = usePop();
   const support = useLab((s) => s.lab?.support);
   const loaded = useLab((s) => s.lab?.model?.modelId);
   const ok = support?.filter((x) => x.supported) ?? [];
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [nm, setNm] = useState("");
   const [base, setBase] = useState("");
@@ -137,47 +139,58 @@ function ImportStrain() {
   const [busy, setBusy] = useState(false);
   const p = parse(stripComments(text));
   const baseId = base || loaded || ok[0]?.modelId || "";
+  const can = p.pushes.length > 0 && !!nm.trim() && !!baseId && !busy;
+  const submit = async () => {
+    if (!can) return;
+    setBusy(true);
+    const st = await importStrain(nm.trim(), baseId, p.pushes, notes.trim());
+    setBusy(false);
+    if (st) {
+      setOpen(false);
+      setText("");
+      setNm("");
+      setNotes("");
+    }
+  };
   return (
     <>
-      <button ref={pop.ref} className="btn sm" onClick={pop.toggle}>
+      <button className="btn sm" onClick={() => setOpen(true)}>
         <Upload /> Import
       </button>
-      <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={380}>
-        <form
-          className="pop-pad lab-form"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!p.pushes.length || !nm.trim() || !baseId) return;
-            setBusy(true);
-            const st = await importStrain(nm.trim(), baseId, p.pushes, notes.trim());
-            setBusy(false);
-            if (st) {
-              pop.close();
-              setText("");
-              setNm("");
-              setNotes("");
-            }
-          }}
+      {open && (
+        <Dialog
+          title="Import a strain"
+          onClose={() => setOpen(false)}
+          onSubmit={() => void submit()}
+          foot={
+            <>
+              <span className="blk-spacer" />
+              <button type="button" className="btn ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </button>
+              <button className="btn primary" disabled={!can}>
+                Import strain
+              </button>
+            </>
+          }
         >
-          <label>
-            <span>
-              <Hint tip={LAB_TIP.recipe}>
-                <span className="hint-text">Recipe</span>
-              </Hint>
-            </span>
+          <label className="lab-field wide">
+            <Hint tip={LAB_TIP.recipe}>
+              <span className="hint-text">Recipe</span>
+            </Hint>
             <textarea className="textarea mono" rows={3} autoFocus spellCheck={false} value={text} placeholder="L22N2742+0.8 L8N344=25" onChange={(e) => setText(e.target.value)} />
+            {text.trim() && (
+              <span className="dim2 num">
+                {p.pushes.length} push{p.pushes.length === 1 ? "" : "es"}
+                {p.errors.map((er, i) => (
+                  <span key={i} className="warn-text recipe-err">
+                    {er}
+                  </span>
+                ))}
+              </span>
+            )}
           </label>
-          {text.trim() && (
-            <div className="dim2 num">
-              {p.pushes.length} push{p.pushes.length === 1 ? "" : "es"}
-              {p.errors.map((er, i) => (
-                <div key={i} className="warn-text">
-                  {er}
-                </div>
-              ))}
-            </div>
-          )}
-          <label>
+          <label className="lab-field wide">
             <span>Base model</span>
             <select className="input select" value={baseId} onChange={(e) => setBase(e.target.value)}>
               {ok.map((x) => (
@@ -186,21 +199,73 @@ function ImportStrain() {
                 </option>
               ))}
             </select>
+            <span className="dim2">Neuron ids belong to one model. A recipe from another model points at unrelated neurons.</span>
           </label>
-          <div className="dim2 lab-note">Neuron ids belong to one model. A recipe from another model points at unrelated neurons.</div>
-          <label>
+          <label className="lab-field wide">
             <span>Name</span>
             <input className="input" value={nm} onChange={(e) => setNm(e.target.value)} />
           </label>
-          <label>
+          <label className="lab-field wide">
             <span>Notes</span>
-            <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <textarea className="textarea" rows={3} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} />
           </label>
-          <button className="btn sm primary" disabled={!p.pushes.length || !nm.trim() || !baseId || busy}>
-            Import strain
-          </button>
-        </form>
-      </Popover>
+        </Dialog>
+      )}
     </>
+  );
+}
+
+/** Saving a recipe as a strain, from wherever the Save as strain button was. */
+export function SaveStrainDialog() {
+  const dlg = useLab((s) => s.strainDialog);
+  const base = useLab((s) => s.lab?.model);
+  const [name, setName] = useState("");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  if (!dlg) return null;
+  const close = () => {
+    useLab.setState({ strainDialog: null });
+    setName("");
+    setNotes("");
+  };
+  const can = !!name.trim() && !busy && !!base;
+  const submit = async () => {
+    if (!can) return;
+    setBusy(true);
+    const st = await saveStrain(name.trim(), notes.trim(), dlg.pushes);
+    setBusy(false);
+    if (st) close();
+  };
+  return (
+    <Dialog
+      title="Save as strain"
+      onClose={close}
+      onSubmit={() => void submit()}
+      foot={
+        <>
+          <span className="dim2 dialog-hint">Shows up in the model pickers. Chats and evals with it run on the Lab.</span>
+          <span className="blk-spacer" />
+          <button type="button" className="btn ghost" onClick={close}>
+            Cancel
+          </button>
+          <button className="btn primary" disabled={!can}>
+            <FlaskConical /> Save strain
+          </button>
+        </>
+      }
+    >
+      <div className="lab-field wide">
+        <span>Recipe, on {base?.name}</span>
+        <code className="recipe-peek selectable">{format(dlg.pushes)}</code>
+      </div>
+      <label className="lab-field wide">
+        <span>Name</span>
+        <input className="input" autoFocus value={name} placeholder="Extraliens" onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label className="lab-field wide">
+        <span>Notes</span>
+        <textarea className="textarea strain-notes-in" rows={5} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} />
+      </label>
+    </Dialog>
   );
 }

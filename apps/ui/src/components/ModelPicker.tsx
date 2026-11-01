@@ -1,7 +1,9 @@
+import type { UpdateSessionRequest } from "@terrarium/shared";
+import { patchSession } from "../state/appUndo";
 import { useMemo } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import type { ModelInfo, SessionSummary } from "@terrarium/shared";
-import { act, openView, useStore } from "../state/store";
+import { openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate, type Estimate } from "../lib/memory";
 import { fmtBytes, fmtCtx, fmtInt } from "../lib/format";
 import { Popover, usePop } from "./ui";
@@ -50,10 +52,7 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
   const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.otherLoaded + r.e.bytes)) || 1;
   const strains = models.filter((m) => m.strain);
 
-  const patch = (p: Parameters<NonNullable<ReturnType<typeof useStore.getState>["backend"]>["updateSession"]>[1]) =>
-    void act("Update session", (b) => b.updateSession(session.id, p)).then((s) => {
-      if (s) useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-    });
+  const patch = (p: UpdateSessionRequest) => void patchSession(session.id, p);
 
   // an eval case keeps the model and settings it was graded with
   if (session.evalRunId)

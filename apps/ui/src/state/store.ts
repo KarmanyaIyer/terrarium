@@ -67,6 +67,7 @@ export interface Toast {
   id: number;
   text: string;
   tone: "error" | "info";
+  action?: { label: string; run: () => void };
 }
 
 const STREAMED = new Set(["model_delta", "tool_output"]);
@@ -204,10 +205,13 @@ export function setPref<K extends keyof Prefs>(k: K, v: Prefs[K]) {
 // ---------- toasts ----------
 
 let toastId = 0;
-export function toast(text: string, tone: Toast["tone"] = "error") {
+/** Sessions deleted but still within their undo window (state/appUndo.ts): the server doesn't know yet. */
+export const hiddenSessions = new Set<Id>();
+
+export function toast(text: string, tone: Toast["tone"] = "error", action?: Toast["action"]) {
   const id = ++toastId;
-  set((s) => ({ toasts: [...s.toasts, { id, text, tone }].slice(-4) }));
-  window.setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), tone === "error" ? 8000 : 3500);
+  set((s) => ({ toasts: [...s.toasts, { id, text, tone, action }].slice(-4) }));
+  window.setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), tone === "error" ? 8000 : action ? 7000 : 3500);
 }
 
 export function dismissToast(id: number) {
@@ -234,7 +238,7 @@ function hydrate(state: AppState) {
   const evalSessions = Object.values(get().sessions).filter((x) => x.evalRunId);
   set({
     envs: Object.fromEntries(state.envs.map((x) => [x.id, x])),
-    sessions: Object.fromEntries([...evalSessions, ...state.sessions].map((x) => [x.id, x])),
+    sessions: Object.fromEntries([...evalSessions, ...state.sessions].filter((x) => !hiddenSessions.has(x.id)).map((x) => [x.id, x])),
     models: state.models,
     inference: state.inference,
     budget: state.budget,
@@ -290,7 +294,7 @@ function handleMessage(msg: WsMessage) {
       onTrace(msg.event);
       break;
     case "session":
-      set((s) => ({ sessions: { ...s.sessions, [msg.session.id]: msg.session } }));
+      if (!hiddenSessions.has(msg.session.id)) set((s) => ({ sessions: { ...s.sessions, [msg.session.id]: msg.session } }));
       break;
     case "session_deleted":
       set((s) => {
