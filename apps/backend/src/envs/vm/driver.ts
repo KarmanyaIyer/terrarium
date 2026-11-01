@@ -40,8 +40,10 @@ import { REPO_DIR } from "../../config.ts";
 import type { LookupAll } from "../../policy/index.ts";
 import { SYNTHETIC_DNS_IPV4, VmNetwork } from "./net.ts";
 import { type VmmGuard, guardWhenSpawned, reapOrphanVmms as reapIn } from "./reaper.ts";
+import { logger } from "../../util/log.ts";
 
 const execFileP = promisify(execFile);
+const log = logger("vm");
 const vmmRunDir = (): string => path.join(dataDir(), "run", "vmm");
 
 /** At backend startup: stop VMMs a backend that died without stopping its VMs left running. */
@@ -396,6 +398,8 @@ export class VmRuntime implements EnvRuntime {
     await this.disarmGuard(); // a VMM that exited by itself
     if (!fs.existsSync(this.diskPath)) throw new Error(`env ${this.id} has no disk (${this.diskPath})`);
     const image = this.image();
+    const repointed = await repointStaleBacking(this.diskPath);
+    if (repointed) log.info(`env ${this.id}: base image moved, disk now backed by ${repointed}`);
     const g = await gondolin();
     const order: ("krun" | "qemu")[] = this.config.backend === "krun" ? ["krun", "qemu"] : ["qemu"];
     let fallbackError: string | undefined;
@@ -823,6 +827,25 @@ function readSnapshotMeta(dir: string): SnapshotMeta {
   if (!fs.existsSync(path.join(dir, DISK_FILE))) throw new Error(`${dir} has no ${DISK_FILE}`);
   if (!resolveImage(meta.imageId)) throw new Error(`snapshot needs guest image ${meta.imageId}, which is not in data/images/objects`);
   return meta;
+}
+
+/**
+ * Overlays record their base image by absolute path, so moving the data dir (a repo rename) leaves them pointing at
+ * a file that no longer exists. When the old path names an image object that exists under the current data dir,
+ * repoint the header at it (no data is rewritten). Returns the new backing path, or null when nothing changed.
+ */
+export async function repointStaleBacking(disk: string): Promise<string | null> {
+  const qemuImg = qemuImgPath();
+  if (!qemuImg) return null;
+  const { stdout } = await execFileP(qemuImg, ["info", "--output=json", "-U", disk]);
+  const backing = (JSON.parse(stdout) as { "backing-filename"?: string })["backing-filename"];
+  if (!backing || fs.existsSync(backing)) return null;
+  const id = /\/images\/objects\/([0-9a-f-]{36})\/rootfs\.ext4$/.exec(backing)?.[1];
+  const image = id ? resolveImage(id) : null;
+  if (!image) throw new Error(`disk ${disk} needs base image ${backing}, which is missing`);
+  const target = rootfsPath(image);
+  await execFileP(qemuImg, ["rebase", "-u", "-f", "qcow2", "-F", "raw", "-b", target, disk]);
+  return target;
 }
 
 async function createOverlay(image: ImageInfo, disk: string): Promise<void> {
