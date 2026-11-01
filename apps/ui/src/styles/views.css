@@ -1672,6 +1672,47 @@ select.input {
   font-weight: 600;
   color: var(--fg-1);
 }
+/* scoreboard: models down, suites across, the latest finished score in each cell */
+.ev-board {
+  width: auto;
+  min-width: 0;
+}
+.ev-board th:not(:first-child) {
+  min-width: 112px;
+  white-space: normal;
+}
+.ev-board-cell {
+  padding: 3px 6px !important;
+}
+.ev-board-btn {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 8px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
+  color: var(--fg-2);
+  text-align: left;
+}
+.ev-board-btn:hover {
+  background: var(--bg-hover);
+}
+.ev-board-btn .strong {
+  color: var(--fg-1);
+}
+.ev-board-btn .ev-bar {
+  width: 100%;
+  min-width: 40px;
+}
+.ev-board-btn time,
+.ev-board-btn > :last-child {
+  grid-column: 1 / -1;
+  font-size: var(--fs-xs);
+}
 .ev-suite-cell {
   white-space: normal !important;
   max-width: 460px !important;

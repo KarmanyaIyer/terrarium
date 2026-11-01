@@ -242,6 +242,65 @@ function GradedBy({ s }: { s: EvalSuite }) {
   );
 }
 
+/** Each model's latest finished score on each suite it has run: the comparison the runs add up to. */
+function Scoreboard({ suites, runs }: { suites: EvalSuite[]; runs: EvalRunSummary[] }) {
+  const models = useStore((s) => s.models);
+  const cells = useMemo(() => {
+    const m = new Map<string, { t: Totals; run: EvalRunSummary }>();
+    // runs are newest first, so the first finished run that has a model on a suite is its latest score
+    for (const r of runs) {
+      if (r.status === "running") continue;
+      for (const id of r.config.modelIds) {
+        const t = r.totals[id];
+        const key = `${id}\u0000${r.suiteId}`;
+        if (t && doneOf(t) > 0 && !m.has(key)) m.set(key, { t, run: r });
+      }
+    }
+    return m;
+  }, [runs]);
+  const cols = suites.filter((s) => [...cells.values()].some((c) => c.run.suiteId === s.id));
+  const rows = [...new Set([...cells.keys()].map((k) => k.split("\u0000")[0]))].sort((a, b) => modelName(models, a).localeCompare(modelName(models, b)));
+  if (!rows.length) return null;
+  return (
+    <>
+      <h3 className="ev-sec-title">Scoreboard</h3>
+      <table className="table ev-board">
+        <thead>
+          <tr>
+            <th>Model</th>
+            {cols.map((s) => (
+              <th key={s.id}>{s.title}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((id) => (
+            <tr key={id}>
+              <td className="strong nowrap">{modelName(models, id)}</td>
+              {cols.map((s) => {
+                const c = cells.get(`${id}\u0000${s.id}`);
+                if (!c) return <td key={s.id} />;
+                const done = doneOf(c.t);
+                return (
+                  <td key={s.id} className="ev-board-cell">
+                    <button className="ev-board-btn" title="Open this run" onClick={() => openView({ kind: "evals", runId: c.run.id, suiteId: s.id })}>
+                      <span className="num">
+                        <span className="strong">{c.t.pass}</span>/{done}
+                      </span>
+                      <ScoreBar t={{ ...c.t, total: done }} />
+                      <Time ts={c.run.startedAt} className="dim2" />
+                    </button>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
 function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunSummary[] }) {
   const models = useStore((s) => s.models);
   return (
@@ -249,9 +308,16 @@ function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunS
       <div className="view-head">
         <FlaskConical size={15} />
         <h1>Evals</h1>
-        <span className="dim">Pick a suite to see its cases and run it</span>
+        {suites && (
+          <span className="dim num">
+            {plural(suites.length, "suite")}
+            {runs.length ? `, ${plural(runs.length, "run")}` : ""}
+          </span>
+        )}
       </div>
       <div className="ev-scroll">
+        {suites && <Scoreboard suites={suites} runs={runs} />}
+        {suites && runs.length > 0 && <h3 className="ev-sec-title">Suites</h3>}
         <table className="table ev-suites">
           <thead>
             <tr>
