@@ -335,7 +335,15 @@ export function SessionView({ id }: { id: string }) {
   const trace = useStore((st) => st.traces[id]);
   const timelineOpen = useStore((st) => st.timelineOpen);
   const d = useMemo(() => derive(trace), [trace]);
-  if (!s) return <div className="empty">Session not found</div>;
+  if (!s)
+    return (
+      <div className="empty fill">
+        This session no longer exists.
+        <button className="btn" onClick={() => openView({ kind: "home" })}>
+          Go to Home
+        </button>
+      </div>
+    );
   const stats = { ...d.totals, ms: (s.status === "running" ? Date.now() : d.lastTs) - d.t0 };
 
   return (

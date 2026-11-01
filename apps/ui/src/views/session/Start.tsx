@@ -72,7 +72,7 @@ export function SessionStart({ s }: { s: SessionSummary }) {
         <Part
           label="Model"
           value={modelName(models, s.modelId)}
-          role={model?.strain ? `Lab strain: ${model.strain.recipe}` : "Writes every reply and tool call"}
+          role={model?.strain ? `Lab strain: ${model.strain.recipe}` : env ? "Writes every reply and tool call" : "Writes every reply"}
         />
         <ChevronRight size={14} className="ss-arrow" aria-hidden />
         <Part

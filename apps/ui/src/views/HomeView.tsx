@@ -128,7 +128,7 @@ function RunAgent() {
           <Box size={14} className="choice-icon vm" />
           <span className="choice-main">
             <span>Linux VM</span>
-            <span className="dim">python3, node, gcc, pip</span>
+            <span className="dim">{vm ? envFacts(vm) : "python3, node, gcc, pip"}</span>
           </span>
           <span className="choice-where dim">{where(vm, "vm")}</span>
         </button>
@@ -136,7 +136,7 @@ function RunAgent() {
           <Terminal size={14} className="choice-icon sim" />
           <span className="choice-main">
             <span>Simulated shell</span>
-            <span className="dim">85 commands, starts instantly</span>
+            <span className="dim">{sim?.facts?.simCommands?.length ? `${sim.facts.simCommands.length} commands, starts instantly` : "starts instantly"}</span>
           </span>
           <span className="choice-where dim">{where(sim, "sim")}</span>
         </button>

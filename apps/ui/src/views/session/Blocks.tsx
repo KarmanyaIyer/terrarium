@@ -804,7 +804,7 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
               )}
               {nets > 0 && (
                 <button className={`cell-link num ${denied ? "err-text" : ""}`} onClick={() => useStore.setState({ inspectorTab: "network", inspectorOpen: true })}>
-                  {denied ? `${denied} of ${nets} network ${nets === 1 ? "request" : "requests"} blocked` : `${nets} network ${nets === 1 ? "request" : "requests"}`}
+                  {denied && denied < nets ? `${denied} of ${nets} network requests blocked` : `${nets} network ${nets === 1 ? "request" : "requests"}${denied ? " blocked" : ""}`}
                 </button>
               )}
             </span>

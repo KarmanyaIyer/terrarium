@@ -1,7 +1,7 @@
 import type { EnvSummary, EnvType, Id, ModelInfo } from "@terrarium/shared";
 import { act, openSession, useStore } from "../state/store";
 
-/** Model a new session starts with: the most recently used loaded model, else any loaded, else the first. */
+/** Model a new session starts with: the most recently used loaded model, else any loaded, else the most recently used, else the first. */
 export function defaultModel(): ModelInfo | undefined {
   const s = useStore.getState();
   const pinned = s.settings.newSession.modelId;
@@ -16,7 +16,8 @@ export function defaultModel(): ModelInfo | undefined {
     const m = s.models.find((x) => x.id === r.modelId && x.loaded);
     if (m) return m;
   }
-  return s.models.find((m) => m.loaded && !m.strain) ?? s.models.find((m) => !m.strain) ?? s.models[0];
+  const used = recent.map((r) => s.models.find((x) => x.id === r.modelId && !x.strain)).find(Boolean);
+  return s.models.find((m) => m.loaded && !m.strain) ?? used ?? s.models.find((m) => !m.strain) ?? s.models[0];
 }
 
 /** Most recently used environment of a type: the one with the newest session, else the newest env. */

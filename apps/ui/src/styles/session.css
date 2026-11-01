@@ -105,6 +105,12 @@
   flex: none;
   color: var(--fg-4);
 }
+/* below this width the chain wraps, and a chevron would start the second line */
+@container session (max-width: 820px) {
+  .sh-sep {
+    display: none;
+  }
+}
 
 /* ---------- empty session: the setup chain and tasks to try ---------- */
 
@@ -1186,6 +1192,9 @@
 .run-end-did .cell-link {
   text-decoration: underline dotted var(--line-3);
   text-underline-offset: 3px;
+}
+.run-end-did .cell-link.err-text {
+  color: var(--err-text);
 }
 .warn-box,
 .err-box {

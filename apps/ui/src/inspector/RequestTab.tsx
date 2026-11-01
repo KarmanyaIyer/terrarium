@@ -194,7 +194,10 @@ export function RequestTab({ d }: { session: SessionSummary; d: Derived }) {
           ]}
         />
       </div>
-      {err ? (
+      {err && !ended ? (
+        // the backend stores a call's request and response when the call ends
+        <div className="empty">The request shows here when this call finishes.</div>
+      ) : err ? (
         <div className="empty err-text">{err}</div>
       ) : !detail || detail.id !== callId ? (
         <div className="empty">Loading</div>
