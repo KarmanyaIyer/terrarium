@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, LayoutList, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
+import { AlertTriangle, Check, FlaskConical, LayoutList, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
 import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, ModelInfo, StartEvalRunRequest } from "@terrarium/shared";
 import { act, loadEvalRun, loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
@@ -247,6 +247,7 @@ function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunS
   return (
     <div className="ev-overview">
       <div className="view-head">
+        <FlaskConical size={15} />
         <h1>Evals</h1>
         <span className="dim">Pick a suite to see its cases and run it</span>
       </div>

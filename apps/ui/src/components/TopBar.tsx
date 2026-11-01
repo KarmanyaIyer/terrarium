@@ -5,6 +5,7 @@ import { openEnv, openView, act, useStore } from "../state/store";
 import { exactBytes, fmtBytes, fmtPct, plural } from "../lib/format";
 import { ChartTip, ConfirmButton, Popover, usePop, type TipState } from "./ui";
 import { forgetConnection } from "../api/connect";
+import { TerrariumMark } from "./Mark";
 
 interface Seg {
   key: string;
@@ -321,11 +322,10 @@ export function TopBar() {
   return (
     <header className="topbar" data-tauri-drag-region>
       <div className="brand" data-tauri-drag-region>
-        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden>
-          <path d="M3 6.5 8 2l5 4.5V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" strokeWidth="1.3" />
-          <path d="M8 13.5V9.2M8 10.6c-1.6 0-2.6-1-2.6-2.4 1.6 0 2.6 1 2.6 2.4Zm0-.8c0-1.3.9-2.2 2.4-2.2 0 1.3-.9 2.2-2.4 2.2Z" fill="currentColor" />
-        </svg>
-        Terrarium
+        <button className="brand-btn" onClick={() => openView({ kind: "home" })} title="Home">
+          <TerrariumMark />
+          Terrarium
+        </button>
       </div>
       <MemoryBar />
       {cpu != null && (

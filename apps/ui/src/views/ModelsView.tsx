@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
-import { ChevronRight, Loader2, Plus, Trash2, X } from "lucide-react";
+import { Boxes, ChevronRight, Loader2, MessageSquare, Plus, Trash2, X } from "lucide-react";
 import type { ModelDownload, ModelInfo, UpdateModelRequest } from "@terrarium/shared";
 import { act, openSession, openView, toast, useStore } from "../state/store";
 import { useLab } from "../state/lab";
@@ -9,6 +9,7 @@ import { ConfirmButton, Hint, Segmented } from "../components/ui";
 import { fitLabel, MemBar, memTitle } from "../components/ModelPicker";
 import { ServerButton } from "../components/TopBar";
 import { AddModelSheet } from "./AddModelSheet";
+import { newSession } from "../lib/actions";
 
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
 
@@ -74,6 +75,7 @@ export default function ModelsView() {
   return (
     <div className="models-view">
       <div className="view-head">
+        <Boxes size={15} />
         <h1>Models</h1>
         <span className={`dot ${ready ? "ready" : inf.status === "error" ? "error" : ""}`} />
         <span>
@@ -398,6 +400,9 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
           {saving && <Loader2 className="spin" />} Save defaults
         </button>
         {bad && <span className="err-text">Sampling values must be numbers</span>}
+        <button className="btn sm" onClick={() => void newSession(null, m.id)} title={`A chat with ${m.name}: no environment, no tools. Loads it on the first message.`}>
+          <MessageSquare /> New chat
+        </button>
         <span className="blk-spacer" />
         <ConfirmButton
           small

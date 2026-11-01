@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, Square } from "lucide-react";
 import type { ContextUsage, SessionSummary } from "@terrarium/shared";
 import { act, useStore } from "../../state/store";
@@ -128,6 +128,15 @@ export function Composer({ session }: { session: SessionSummary }) {
     el.style.height = "0px";
     el.style.height = `${Math.min(240, Math.max(38, el.scrollHeight))}px`;
   }, [text]);
+
+  // a starter task picked in the empty transcript
+  const fill = useStore((s) => (s.composerFill?.sessionId === session.id ? s.composerFill : null));
+  useEffect(() => {
+    if (!fill) return;
+    setText(fill.text);
+    ref.current?.focus();
+    useStore.setState({ composerFill: null });
+  }, [fill]);
 
   // Eval case sessions belong to their run: the runner sends the prompt, and the env is discarded afterwards.
   if (session.evalRunId) {

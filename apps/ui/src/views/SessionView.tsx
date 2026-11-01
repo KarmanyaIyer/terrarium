@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronDown, ChevronUp, PanelRight, Square, Trash2 } from "lucide-react";
-import type { NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
+import { ChevronDown, ChevronRight, ChevronUp, PanelRight, Square, Trash2 } from "lucide-react";
+import type { EnvSummary, NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
 import { act, openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
 import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
@@ -13,6 +13,7 @@ import { evalOwner } from "../lib/envuse";
 import { Timeline } from "./session/Timeline";
 import { CallBlock, RowBlock, ToolBlock, UserBlock } from "./session/Blocks";
 import { Composer } from "./session/Composer";
+import { SessionStart } from "./session/Start";
 import { Check } from "lucide-react";
 
 function patchSession(id: string, p: UpdateSessionRequest) {
@@ -26,7 +27,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
   const running = s.status === "running";
   const label = (
     <>
-      <span className="dim">harness</span> {harnessLabel(s.harness)}
+      <span className="dim">harness</span> {harnessLabel(s.harness).split(":")[0]}
       {s.customPrompt && <span className="chip accent" title="This session sends its own system prompt">custom prompt</span>}
     </>
   );
@@ -126,8 +127,8 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
             <span className="dim">eval</span> {evalRun.suiteTitle} <span className="dim mono">{s.evalCaseId}</span>
           </button>
         )}
-        {/* whole items wrap onto a hidden second line instead of being cut mid-word */}
-        <span className="sh-stats num dim">
+        {/* whole items wrap onto a hidden second line instead of being cut mid-word; nothing to count before the first call */}
+        {stats.calls > 0 && <span className="sh-stats num dim">
           <span>{plural(stats.calls, "call")}</span>
           {s.envId || stats.tools ? <span>{plural(stats.tools, "tool")}</span> : null}
           {stats.errors ? <span className="err-text" title="Tool calls with a non-zero exit or error, plus failed model calls">{stats.errors} failed</span> : null}
@@ -135,7 +136,7 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
             {fmtTok(stats.prompt)} in, {fmtTok(stats.completion)} out
           </span>
           <span title="Wall time from the first message">{fmtMs(stats.ms)}</span>
-        </span>
+        </span>}
         <span className="blk-spacer" />
         {running && (
           <button className="btn sm stop" onClick={() => void act("Stop", (b) => b.stopSession(s.id))}>
@@ -156,32 +157,43 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
           <PanelRight />
         </button>
       </div>
+      {/* the setup in the order a turn flows: the model writes, the harness turns tool calls into commands, the env runs them */}
       <div className="sh-row controls">
+        <span className="sh-part">
+          <ModelPicker session={s} />
+          {s.evalRunId ? (
+            <span className="hdr-btn static">
+              <span className="dim">thinking</span> {s.thinking ? "on" : "off"}
+            </span>
+          ) : (
+            <Switch
+              on={s.thinking}
+              label="Thinking"
+              disabled={running || model?.thinking === "none"}
+              title={model?.thinking === "none" ? `${model.name} has no thinking mode` : "enable_thinking in the chat template; thinking tokens count against the output cap"}
+              onChange={(v) => patchSession(s.id, { thinking: v })}
+            />
+          )}
+        </span>
+        <span className="sh-part">
+          <ChevronRight size={12} className="sh-sep" aria-hidden />
+          <HarnessPicker s={s} />
+        </span>
+        <span className="sh-part">
+          <ChevronRight size={12} className="sh-sep" aria-hidden />
         {env ? (
-          <button className="hdr-btn env" onClick={() => openEnv(env.id, "env")} title={env.facts?.isolation ?? env.name}>
-            <span className={`dot ${env.status}`} />
-            <span className="truncate">{env.name}</span>
-            <EnvChip type={env.type} />
-          </button>
+          <Hint tip={<EnvTip env={env} />} width={320}>
+            <button className="hdr-btn env" onClick={() => openEnv(env.id, "env")}>
+              <span className="dim">env</span>
+              <span className={`dot ${env.status}`} />
+              <span className="truncate">{env.name}</span>
+              <EnvChip type={env.type} />
+            </button>
+          </Hint>
         ) : (
           <span className="hdr-btn static dim" title="Chat-only: no environment, no tools">
             no environment
           </span>
-        )}
-        <ModelPicker session={s} />
-        <HarnessPicker s={s} />
-        {s.evalRunId ? (
-          <span className="hdr-btn static">
-            <span className="dim">thinking</span> {s.thinking ? "on" : "off"}
-          </span>
-        ) : (
-          <Switch
-            on={s.thinking}
-            label="Thinking"
-            disabled={running || model?.thinking === "none"}
-            title={model?.thinking === "none" ? `${model.name} has no thinking mode` : "enable_thinking in the chat template; thinking tokens count against the output cap"}
-            onChange={(v) => patchSession(s.id, { thinking: v })}
-          />
         )}
         {env && (s.evalRunId || evalOwner(env)) && (
           <span className="hdr-btn static" title={!s.evalRunId && evalOwner(env) ? `Read-only while ${evalOwner(env)!.reason}` : undefined}>
@@ -209,8 +221,24 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
             />
           </div>
         )}
+        </span>
       </div>
     </div>
+  );
+}
+
+/** Hover card for the session's environment: what it is and what its tool calls can reach. */
+function EnvTip({ env }: { env: EnvSummary }) {
+  return (
+    <>
+      <span className="hint-title">
+        {env.name} <span className="hint-k">{env.type === "vm" ? "Linux VM" : "Simulated shell"}</span>
+      </span>
+      <div className="hint-line">{env.facts?.isolation ?? (env.type === "vm" ? "Linux micro-VM" : "Simulated shell, not a real OS")}</div>
+      <div className="hint-line hint-k" style={{ marginTop: 6 }}>
+        Environment = where the agent's tool calls run, with its own files and network policy. Click to inspect it.
+      </div>
+    </>
   );
 }
 
@@ -277,7 +305,7 @@ function Transcript({ d, s }: { d: ReturnType<typeof derive>; s: SessionSummary 
         if (showJump === bottom) setShowJump(!bottom);
       }}
     >
-      {items.length === 0 && <div className="empty transcript-empty">No messages yet</div>}
+      {items.length === 0 && (s.evalRunId ? <div className="empty transcript-empty">No messages yet</div> : <SessionStart s={s} />)}
       <div style={{ height: v.getTotalSize(), position: "relative" }}>
         {v.getVirtualItems().map((vi) => (
           <div key={vi.key} data-index={vi.index} ref={v.measureElement} className="tr-row" style={{ transform: `translateY(${vi.start}px)` }}>

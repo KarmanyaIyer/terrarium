@@ -7,6 +7,7 @@ import { Hint, Kbd, Segmented, Switch } from "../components/ui";
 import { NetIcon } from "../components/Sidebar";
 import { EnvCompare, FIELD_TIP, NET_ALWAYS, NET_TIP } from "../lib/explain";
 import { busyReason } from "../lib/envuse";
+import { newSession } from "../lib/actions";
 
 const MiB = 1024 * 1024;
 type Source = "clean" | "fork" | "snapshot";
@@ -31,7 +32,7 @@ function nextName(envs: EnvSummary[], type: EnvType) {
 export function NewEnvSheet() {
   const open = useStore((s) => s.newEnvOpen);
   if (!open) return null;
-  return <Sheet onClose={() => useStore.setState({ newEnvOpen: false })} />;
+  return <Sheet onClose={() => useStore.setState({ newEnvOpen: false, newEnvType: null })} />;
 }
 
 function Sheet({ onClose }: { onClose: () => void }) {
@@ -40,10 +41,11 @@ function Sheet({ onClose }: { onClose: () => void }) {
   const samples = useStore((s) => s.samples);
   const budget = useStore((s) => s.budget);
   const defaults = useStore((s) => s.settings.newEnv);
+  const preset = useStore((s) => s.newEnvType);
   const envs = useMemo(() => Object.values(envMap).filter((e) => !e.ephemeral), [envMap]);
 
-  const [type, setType] = useState<EnvType>(defaults.type);
-  const [name, setName] = useState(() => nextName(envs, defaults.type));
+  const [type, setType] = useState<EnvType>(preset ?? defaults.type);
+  const [name, setName] = useState(() => nextName(envs, preset ?? defaults.type));
   const [nameTouched, setNameTouched] = useState(false);
   const [source, setSource] = useState<Source>("clean");
   const [srcEnv, setSrcEnv] = useState<string>("");
@@ -124,8 +126,10 @@ function Sheet({ onClose }: { onClose: () => void }) {
     const env = await act("Create environment", (b) => b.createEnv(req));
     setBusy(false);
     if (!env) return;
-    useStore.setState((s) => ({ envs: { ...s.envs, [env.id]: env }, newEnvOpen: false }));
+    useStore.setState((s) => ({ envs: { ...s.envs, [env.id]: env }, newEnvOpen: false, newEnvType: null }));
     openEnv(env.id);
+    // the next step is always a session in it
+    void newSession(env.id);
   };
 
   // facts preview: gathered from the source env, or from an existing env built on the same base

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { FolderOpen, Loader2, RotateCw } from "lucide-react";
+import { FolderOpen, Loader2, RotateCw, Settings as SettingsIcon } from "lucide-react";
 import type { AppSettings, EnvType, HarnessProfile, NetworkMode, PathKey, ResourceBudgetSettings, SettingsInfo, UpdateSettingsRequest } from "@terrarium/shared";
 import { act, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES } from "../lib/memory";
@@ -31,14 +31,16 @@ export default function SettingsView() {
   return (
     <div className="settings-view">
       <div className="view-head">
+        <SettingsIcon size={15} />
         <h1>Settings</h1>
       </div>
+      {/* what you change most first; limits and paths last */}
       <div className="settings-body">
         <MemorySection settings={settings} totalBytes={useStore.getState().budget.totalBytes} running={inference} update={update} />
-        <ResourceBudgetsSection settings={settings} update={update} />
         <NewSessionSection settings={settings} update={update} />
         <NewEnvSection settings={settings} update={update} />
         <PromptsSection settings={settings} update={update} />
+        <ResourceBudgetsSection settings={settings} update={update} />
         <StorageSection info={info} onRefresh={refresh} />
         <AboutSection info={info} />
       </div>

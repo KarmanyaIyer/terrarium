@@ -110,6 +110,9 @@ export function App() {
   const view = useStore((s) => s.view);
   const inspectorOpen = useStore((s) => s.inspectorOpen);
   const sidebarWidth = useStore((s) => s.sidebarWidth);
+  // Home shows the inspector only for an environment you picked; sessions always have one
+  const homeEnv = useStore((s) => !!s.inspectorEnvId && !!s.envs[s.inspectorEnvId]);
+  const showInspector = inspectorOpen && (view.kind === "session" || (view.kind === "home" && homeEnv));
   const [noBackend, setNoBackend] = useState<string | null>(null);
   useGlobalKeys();
 
@@ -131,7 +134,7 @@ export function App() {
     );
 
   return (
-    <div className={`app${inspectorOpen ? "" : " no-inspector"}`} style={{ ["--sidebar-w" as string]: `${sidebarWidth}px` }}>
+    <div className={`app${showInspector ? "" : " no-inspector"}`} style={{ ["--sidebar-w" as string]: `${sidebarWidth}px` }}>
       <TopBar />
       <div className="body">
         <Sidebar />
@@ -145,7 +148,7 @@ export function App() {
             {view.kind === "lab" && <LabView />}
           </Suspense>
         </main>
-        {inspectorOpen && view.kind !== "models" && view.kind !== "evals" && view.kind !== "settings" && view.kind !== "lab" && <Inspector />}
+        {showInspector && <Inspector />}
       </div>
       <Palette />
       <NewEnvSheet />

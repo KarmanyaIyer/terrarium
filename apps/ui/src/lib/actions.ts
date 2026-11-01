@@ -1,4 +1,4 @@
-import type { Id, ModelInfo } from "@terrarium/shared";
+import type { EnvSummary, EnvType, Id, ModelInfo } from "@terrarium/shared";
 import { act, openSession, useStore } from "../state/store";
 
 /** Model a new session starts with: the most recently used loaded model, else any loaded, else the first. */
@@ -19,8 +19,24 @@ export function defaultModel(): ModelInfo | undefined {
   return s.models.find((m) => m.loaded && !m.strain) ?? s.models.find((m) => !m.strain) ?? s.models[0];
 }
 
-export async function newSession(envId: Id | null) {
-  const m = defaultModel();
+/** Most recently used environment of a type: the one with the newest session, else the newest env. */
+export function recentEnv(type: EnvType): EnvSummary | undefined {
+  const s = useStore.getState();
+  const envs = Object.values(s.envs).filter((e) => e.type === type && !e.ephemeral);
+  const last = (e: EnvSummary) => Math.max(e.createdAt, ...Object.values(s.sessions).filter((x) => x.envId === e.id).map((x) => x.updatedAt));
+  return envs.sort((a, b) => last(b) - last(a))[0];
+}
+
+/** Start an agent: a new session in the most recent env of that type, or the New environment sheet set to it. */
+export function startAgent(type: EnvType | null) {
+  if (!type) return void newSession(null);
+  const env = recentEnv(type);
+  if (env) return void newSession(env.id);
+  useStore.setState({ newEnvOpen: true, newEnvType: type });
+}
+
+export async function newSession(envId: Id | null, modelId?: Id) {
+  const m = (modelId ? useStore.getState().models.find((x) => x.id === modelId) : undefined) ?? defaultModel();
   if (!m) {
     useStore.setState({ view: { kind: "models" } });
     return;

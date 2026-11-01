@@ -5,6 +5,7 @@ import { act, openEnv, openSession, openView, setPref, useStore } from "../state
 import { useLab } from "../state/lab";
 import { ConfirmButton, Time } from "./ui";
 import { newSession } from "../lib/actions";
+import { TerrariumMark } from "./Mark";
 
 export function NetIcon({ mode, size = 12 }: { mode: NetworkMode; size?: number }) {
   const title =
@@ -92,10 +93,49 @@ export function Sidebar() {
   const activeId = view.kind === "session" ? view.id : null;
   const loaded = models.filter((m) => m.loaded).length;
   const runningEvals = evalRuns.filter((r) => r.status === "running").length;
+  const runningSessions = Object.values(sessions).filter((s) => s.status === "running" && !s.evalRunId).length;
   const chats = byEnv[""] ?? [];
 
   return (
     <nav className="sidebar" style={{ width }}>
+      <div className="sb-areas">
+        <button className={`sb-nav${view.kind === "home" ? " active" : ""}`} onClick={() => openView({ kind: "home" })}>
+          <TerrariumMark size={13} />
+          <span>Home</span>
+          {runningSessions > 0 && (
+            <span className="sb-badge live" title="Sessions running now">
+              <span className="dot live" />
+              {runningSessions}
+            </span>
+          )}
+        </button>
+        <button className={`sb-nav${view.kind === "evals" ? " active" : ""}`} onClick={() => openView({ kind: "evals" })}>
+          <FlaskConical size={13} />
+          <span>Evals</span>
+          {runningEvals > 0 && (
+            <span className="sb-badge live" title="Eval runs in progress">
+              <span className="dot live" />
+              {runningEvals}
+            </span>
+          )}
+        </button>
+        <button className={`sb-nav${view.kind === "lab" ? " active" : ""}`} onClick={() => openView({ kind: "lab" })}>
+          <Microscope size={13} />
+          <span>Lab</span>
+          {specimen && (
+            <span className="sb-badge" title={`On the bench: ${specimen}`}>
+              <span className="dot ready" />
+            </span>
+          )}
+        </button>
+        <button className={`sb-nav${view.kind === "models" ? " active" : ""}`} onClick={() => openView({ kind: "models" })}>
+          <Boxes size={13} />
+          <span>Models</span>
+          <span className="sb-badge num" title="Models loaded in oMLX">
+            {loaded}/{models.length}
+          </span>
+        </button>
+      </div>
       <div className="sb-scroll">
         <div className="sb-head">
           <span>Environments</span>
@@ -104,12 +144,9 @@ export function Sidebar() {
           </button>
         </div>
         {envList.length === 0 && (
-          <div className="sb-empty">
-            No environments
-            <button className="btn sm" onClick={() => useStore.setState({ newEnvOpen: true })}>
-              <Plus /> New environment
-            </button>
-          </div>
+          <button className="sb-new" onClick={() => useStore.setState({ newEnvOpen: true })}>
+            <Plus size={11} /> New environment
+          </button>
         )}
         {envList.map((e) => {
           const open = !!expanded[e.id];
@@ -187,32 +224,6 @@ export function Sidebar() {
       </div>
 
       <div className="sb-foot">
-        <button className={`sb-nav${view.kind === "evals" ? " active" : ""}`} onClick={() => openView({ kind: "evals" })}>
-          <FlaskConical size={13} />
-          <span>Evals</span>
-          {runningEvals > 0 && (
-            <span className="sb-badge live" title="Eval runs in progress">
-              <span className="dot live" />
-              {runningEvals}
-            </span>
-          )}
-        </button>
-        <button className={`sb-nav${view.kind === "lab" ? " active" : ""}`} onClick={() => openView({ kind: "lab" })}>
-          <Microscope size={13} />
-          <span>Lab</span>
-          {specimen && (
-            <span className="sb-badge" title={`On the bench: ${specimen}`}>
-              <span className="dot ready" />
-            </span>
-          )}
-        </button>
-        <button className={`sb-nav${view.kind === "models" ? " active" : ""}`} onClick={() => openView({ kind: "models" })}>
-          <Boxes size={13} />
-          <span>Models</span>
-          <span className="sb-badge num" title="Models loaded in oMLX">
-            {loaded}/{models.length}
-          </span>
-        </button>
         <button className={`sb-nav${view.kind === "settings" ? " active" : ""}`} onClick={() => openView({ kind: "settings" })}>
           <SettingsIcon size={13} />
           <span>Settings</span>

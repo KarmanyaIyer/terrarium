@@ -120,6 +120,8 @@ export interface Store extends Prefs {
   filesFocus: { path?: string; toolCallId?: string; at?: number } | null;
   paletteOpen: boolean;
   newEnvOpen: boolean;
+  newEnvType: EnvSummary["type"] | null; // type the New environment sheet opens with (null: the settings default)
+  composerFill: { sessionId: Id; text: string; n: number } | null; // a starter task put into that session's composer
   expandedEnvs: Record<Id, boolean>;
   showEphemeral: boolean;
   toasts: Toast[];
@@ -173,6 +175,8 @@ export const useStore = create<Store>()(() => ({
   filesFocus: null,
   paletteOpen: false,
   newEnvOpen: false,
+  newEnvType: null,
+  composerFill: null,
   expandedEnvs: {},
   showEphemeral: false,
   toasts: [],
@@ -562,7 +566,8 @@ export function openSession(id: Id, sel?: Selection) {
 }
 
 export function openView(view: View) {
-  set({ view, selection: null });
+  // Home opens without an inspector; picking an environment there (openEnv) brings it back
+  set({ view, selection: null, ...(view.kind === "home" ? { inspectorEnvId: null } : {}) });
   syncSubscriptions();
 }
 

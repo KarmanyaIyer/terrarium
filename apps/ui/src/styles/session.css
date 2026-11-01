@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  container: session / inline-size;
 }
 .blk-spacer {
   flex: 1;
@@ -92,6 +93,107 @@
   align-items: center;
   gap: 6px;
   margin-left: 4px;
+}
+/* model, harness and environment as one chain; each part stays whole when the row wraps */
+.sh-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.sh-sep {
+  flex: none;
+  color: var(--fg-4);
+}
+
+/* ---------- empty session: the setup chain and tasks to try ---------- */
+
+.ss-start {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 36px 20px 24px;
+}
+.ss-chain {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.ss-arrow {
+  flex: none;
+  align-self: center;
+  color: var(--fg-4);
+}
+.ss-part {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 11px 10px;
+  border: 0.5px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  text-align: left;
+}
+.ss-part.click:hover {
+  border-color: var(--line-3);
+}
+.ss-part-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--fg-3);
+}
+.ss-part-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ss-part-role {
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+.ss-try {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.ss-try-head {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.ss-task {
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 0.5px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: transparent;
+  font-size: var(--fs-md);
+  color: var(--fg-2);
+  text-align: left;
+}
+.ss-task:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-wash);
+  color: var(--fg-1);
+}
+@container session (max-width: 560px) {
+  .ss-chain {
+    flex-direction: column;
+  }
+  .ss-arrow {
+    transform: rotate(90deg);
+  }
 }
 .btn.stop {
   color: var(--err-text);

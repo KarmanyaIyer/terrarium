@@ -5,6 +5,8 @@
   color-scheme: light;
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  /* page titles only, like a specimen label; installed on every Mac and resolved the same in WebKit and Chromium */
+  --font-display: "Iowan Old Style", Charter, Georgia, serif;
 
   --fs-2xs: 10px;
   --fs-xs: 10.5px;
@@ -49,6 +51,13 @@
   --accent-wash-2: rgba(42, 120, 214, 0.18);
   --accent-line: rgba(42, 120, 214, 0.55);
   --focus: 0 0 0 2px var(--bg-1), 0 0 0 3.5px var(--accent-hi);
+
+  /* identity, not status: the brand mark and the enclosure glass on Home */
+  --moss: #2f7556;
+  --glass: #fbfcfb;
+  --glass-edge: rgba(20, 36, 28, 0.18);
+  --glass-hi: rgba(255, 255, 255, 0.95);
+  --glass-streak: rgba(255, 255, 255, 0.55);
 
   /* status (reserved; always paired with an icon or label) */
   --ok: #0ca30c;
@@ -139,6 +148,12 @@
     --accent-wash: rgba(57, 135, 229, 0.14);
     --accent-wash-2: rgba(57, 135, 229, 0.24);
     --accent-line: rgba(77, 150, 236, 0.6);
+
+    --moss: #62b58c;
+    --glass: #1f2422;
+    --glass-edge: rgba(220, 240, 230, 0.16);
+    --glass-hi: rgba(255, 255, 255, 0.06);
+    --glass-streak: rgba(255, 255, 255, 0.022);
 
     --ok: #2fb84a;
     --ok-text: #4cc764;
