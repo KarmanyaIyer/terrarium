@@ -7,11 +7,11 @@ Session: 2ba6eaf1-7653-4bef-bfc1-0a968e6e67cf (design sub-agent of TODO_22's "UI
 - [x] Read README, DESIGN, TODO_18, TODO_21, UI code
 - [x] Newcomer walk on an empty data dir (/tmp/t23/fresh) and on a clone of real data (/tmp/t23/devdata); before
       screenshots in /tmp/t23/before
-- [ ] Plan (below)
-- [ ] Implement
-- [ ] Verify: typecheck, UI tests, vite build, backend tests; real flows (chat in each env type, eval, Lab example, settings)
-- [ ] Independent design review (Opus xhigh), fixes
-- [ ] Screenshots, README UI text, commits
+- [x] Plan (below)
+- [x] Implement
+- [x] Verify: typecheck, UI tests, vite build, backend tests; real flows (chat in each env type, eval, Lab example, settings)
+- [x] Independent design review (Opus xhigh), fixes
+- [x] Screenshots, README UI text, commits
 
 ## Problems found as a newcomer
 1. First launch: the main pane says "No environments or chats yet" with two buttons, the sidebar and the inspector
@@ -60,10 +60,95 @@ Changes:
 - Settings: Models, New sessions, New environments, System prompts, Resource limits, Storage, About. Section titles in
   sentence case.
 
+## What changed (commits 68571dd..c1bdd6c)
+- Home: four starting points in one band. Run an agent (Linux VM / Simulated shell / Chat, each with the env it will
+  use and real facts, plus a model menu), Compare models (latest score per suite), Test the sandbox (escape suite pips),
+  Steer a neuron (latest steered reply or the example, what the example loads and its memory). Environments as glass
+  enclosures: lid shut for network off, dashed amber for registries, lifted red for web; a failed env says so and opens
+  its inspector. Full sessions table kept (harness by short name, full label on hover). First run: one line plus the
+  same starting points and a ghost enclosure.
+- Sidebar: Home, Evals, Lab, Models first with live badges; Environments and Chats below; Settings at the bottom.
+  Brand opens Home; palette has Go to Home/Evals/Lab/Models/Settings.
+- Session: header chain model > harness > env, with the network mode as a menu so it fits on one line at the default
+  size (wraps without chevrons below 680px). Stats hidden until the first call and named like the transcript (turns,
+  tool calls). Empty session: Model / Harness / Environment cards (each opens its picker or tab) and starter tasks
+  per env type and network mode that fill the composer. Each run's done row adds tool calls, files changed (opens
+  Files) and network requests blocked (opens Network, red).
+- Starting points reuse an untouched session with the same env, model and harness instead of piling up "New session"s.
+  Default model: last used loaded, else any loaded, else last used, else first.
+- Evals: scoreboard (models down, suites across, latest finished score, click opens the run); overview subtitle
+  replaced with counts; long grader messages and check summaries truncate instead of widening tables.
+- Models: Chat icon on every row. Settings: sections in the order you change them; model default label updated.
+- Harness labels: Minimal prompt / Pi stock prompt / Chat, no tools; short names Minimal / Pi stock / Chat.
+- Page heads: icon, serif title (Iowan Old Style / Charter), facts. Tokens: --font-display, --moss, --glass*.
+- Missing session has a Go to Home button; Request tab says the request shows when a live call finishes instead of a 404.
+- DESIGN.md rule 1 gets one exception: the empty-session setup chain.
+- README: first-session paragraph, Home caption, harness table names, sim command count, scoreboard, Settings line.
+  docs/screenshots: all 10 retaken at 1400x900 light, palette PNGs like before.
+
 ## Decisions and why
+- Identity in three places only (enclosures, serif titles, vocabulary) so the dense tool stays quiet elsewhere; the
+  enclosure lid carries real data (network policy) rather than decoration.
+- Dropped the planned station status line on Home: the top bar already shows oMLX, loaded models and memory.
+- Lid words match the switch (network Off / Registries / Web) after the review; "Sealed" was a third vocabulary.
+- Web lid lifts straight up instead of tilting; the tilt ran into the New environment button on wide cards.
+- Network mode in the session header became a menu (was a 3-way segmented control) so the chain fits at 728px.
+- Model card in the empty session clicks the header's model picker instead of adding a second picker.
+- Kept the empty-session role lines against DESIGN.md rule 1 (harness vs environment is what new users miss) and
+  recorded the exception there; removed the generic subtitles on the Home cards instead.
+- Did not change the "–" placeholder for empty numbers: it predates this pass and is a table convention, not copy.
 
 ## Hurdles
+- Chromium doesn't resolve "New York"/ui-serif; Iowan Old Style and Charter resolve in both engines.
+- Vite fast refresh broke on a non-component export from HomeView (LID); made it module-private.
+- The cloned VMs failed to boot: their qcow2 backing files point at /Users/karvi/PRIMARY/Projects/g-terrarium/...,
+  which no longer exists. The real data/ has the same paths (evalbase_vm, vm-1, vm-1 (fork)). Rebased only the /tmp
+  clone with `qemu-img rebase -u`; the real data is untouched (open item below).
+- Lab neuron card fails with "RuntimeError: There is no Stream(cpu, 0) in current thread" (lab_core.py:796) when the
+  calibration came from the cache file; with a fresh calibration it works. Moved the clone's cache aside to take the
+  screenshot. Not fixed (backend sidecar, open item).
+- Header chain overflowed between 600 and 690px because the network menu's hint wrapper shrank; gave it flex: none and
+  the env name a 40px floor.
+- First screenshots were RGB PNGs about 3x the old size; quantized with Pillow FASTOCTREE (median cut lost the VM violet).
 
 ## Review findings and fixes
+Independent review: Claude Opus, xhigh, brief with feedback, before/after screenshots, live app.
+1. Chain hidden at default size: network menu, one-line chain, breakpoint 680px. Fixed.
+2. Harness shown as "Terrarium" (reads as the app): short names Minimal / Pi stock / Chat, labels renamed. Fixed.
+3. Three network vocabularies, web lid same red as an error, tilt overlap: lid uses network Off/Registries/Web, lift
+   without tilt; errors now have their own line. Fixed.
+4. Failed env barely visible and picked by Run an agent: "Failed to start" line, recentEnv skips error envs. Fixed.
+5. Empty "New session" clutter: starting points reuse an untouched matching session. Fixed (existing ones untouched).
+6. Model card not clickable: opens the header picker. Fixed.
+7. Run an agent hides the model: model menu added; env stays most recent (each enclosure has + Session). Partly.
+8. Subtitles vs DESIGN.md rule 1: generic card lines removed, exception documented. Fixed.
+9. Naming drift (calls/turns, escape suite, ~85 commands): unified. Fixed.
+10. Steer card hard-coded quote, "Bench empty", hidden cost: latest real run or labeled example, plain state, cost shown. Fixed.
+11. Models New chat buried: Chat icon on each row. Fixed.
+12. Sessions listed three times on Home: kept; enclosures show two plus a count, the table is the complete list. Not changed.
+13. Wrong after screenshots: retaken. Fixed.
+14. En dash placeholder (pre-existing, not changed); suite Cases table overflow fixed; + Session buttons get an
+    accessible name. Fixed except the dash.
+Still "meh" pages per review: Evals got the scoreboard; Lab and Models kept as they were (Lab bench already lists the
+steps and has a memory check).
 
 ## Verification
+- `pnpm typecheck` clean; UI tests 22/22; `pnpm build` ok (after the last change).
+- Backend tests (`pnpm test` in apps/backend): 271 pass, 0 fail, 2 skipped. No backend files changed.
+- Real flows on the dev app (backend 8797, Vite 5173, Qwen3.5 4B, one model at a time):
+  - Simulated shell, first run (empty data): Home > Simulated shell > sheet preset > create > session; starter task
+    filled and sent; done in 18.6 s, 2 turns, 3 files, summary row correct.
+  - Linux VM (vm-1): primes.py task, 3 turns, 2 tool calls, 1 file changed; curl task shows "1 network request
+    blocked" in red, Network tab link works.
+  - Chat: bat-and-ball starter, 1 turn, Request tab shows the live-call note then the request.
+  - Eval: Shell data tasks x Qwen3.5 4B, 6/8 in 128 s; scoreboard and Home Compare models update.
+  - Lab: Try the example from Home (load, find, compare), neuron card, Save as strain, strain chat.
+  - Settings, Models (unload, Chat), New environment sheet, missing-session state, dark mode on Home, session, Evals.
+- Screenshots: before /tmp/t23/before, after /tmp/t23/after and /tmp/t23/docs-new, review shots /tmp/t23/review.
+
+## Open items
+- Real data/: three VM disks reference the old g-terrarium path and won't boot (vm-1, vm-1 (fork), evalbase_vm).
+  Fix: `qemu-img rebase -u -F raw -b <data>/images/objects/<id>/rootfs.ext4 <disk.qcow2>` for each env and snapshot
+  disk, or a startup check in the backend that rebases stale absolute paths.
+- Lab sidecar: neuron() fails on the cached-calibration path (MLX stream bound to the loading thread).
+- Lab and Models pages are mostly unchanged beyond the head, Chat button and naming.
