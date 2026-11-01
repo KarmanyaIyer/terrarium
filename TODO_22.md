@@ -6,11 +6,11 @@ Session: 4d7fa632-b05e-4dbb-857c-d7d9f81d874f (T3 thread 2f9ddd9e-65f4-42e4-9a56
 ## TODO
 - [x] Cleanups: ~/PRIMARY/Projects/local_llms (9.3 GB) moved to Trash (dcg blocks rm -rf). /tmp/terrarium-*,
       the Trash duplicate image and the $TMPDIR e2e folder were already gone.
-- [ ] Resource budgets (qa/CONTAINMENT.md recs 1-3) + LFM3 (Daybreak Blue agent, record TODO_20.md)
-- [ ] Neuron Lab: probe, find, steer, recipes, steered model in sessions/evals (Opus agent, record TODO_21.md).
+- [x] Resource budgets (qa/CONTAINMENT.md recs 1-3) + LFM3 (Daybreak Blue agent, record TODO_20.md)
+- [x] Neuron Lab: probe, find, steer, recipes, steered model in sessions/evals (Opus agent, record TODO_21.md).
       Takes over thread 9d0871b5 ("How one neuron makes an owl", _scratch27 fb7c359).
-- [ ] App-wide UI/UX overhaul with terrarium/lab theming (Opus agent, after the Lab lands)
-- [ ] QA, repackage, commit, push
+- [x] App-wide UI/UX overhaul with terrarium/lab theming (Opus agent, after the Lab lands)
+- [x] QA (TODO_22 Final QA), session request budget default 200 -> 2000, repackaged from 7b3b4bf, launch + quit clean, pushed to legion
 
 ## Fixes by me
 - Rename fallout: 6 VM/snapshot qcow2 headers still pointed their backing file at .../g-terrarium/...; rebased
