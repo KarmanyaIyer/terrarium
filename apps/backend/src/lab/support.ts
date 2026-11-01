@@ -7,13 +7,15 @@ import type { LabSupport } from "@terrarium/shared";
 import type { ModelCatalog } from "../inference/catalog.ts";
 
 /**
- * Working memory on top of the weights. Fixed part: MLX's buffer cache (capped at 512 MiB by lab_serve.py) plus op
- * temporaries (finder, generation, last-position attribution all peak under 0.8 GB over the weights on Qwen3.5-4B).
- * The probe keeps every neuron at every token: PROBE_TOKENS (lab_core.py's cap plus a 256-token reply) x neurons x
- * 2 bytes. Qwen3.5-4B: 1.5 GB + 0.75 GB; measured peaks in TODO_21.md.
+ * Working memory on top of the weights. Fixed part: MLX's buffer cache (capped at 512 MiB by lab_serve.py) plus a
+ * margin. The biggest op is a long probe, which keeps every neuron at every token: measured about 4 bytes per neuron
+ * per token over the weights (2.14 GB for 1800 tokens on Qwen3.5-4B, 2.97 GB for 1000 on Gemma 4 12B), at
+ * PROBE_TOKENS (lab_core.py's cap plus a 256-token reply). Finder, generation and attribution stay below that.
+ * Measured peaks in TODO_21.md.
  */
-const LAB_FIXED_BYTES = 1.5e9;
+const LAB_FIXED_BYTES = 0.75e9;
 const PROBE_TOKENS = 1024 + 256;
+const BYTES_PER_NEURON_TOKEN = 4;
 
 /** Total MLP neurons from config.json: intermediate size x layers (Gemma 4's double-wide layers counted twice). */
 export function neuronCount(config: Record<string, any>): number {
@@ -25,7 +27,7 @@ export function neuronCount(config: Record<string, any>): number {
 }
 
 export function labWorkingBytes(config: Record<string, any>): number {
-  return LAB_FIXED_BYTES + PROBE_TOKENS * neuronCount(config) * 2;
+  return LAB_FIXED_BYTES + PROBE_TOKENS * neuronCount(config) * BYTES_PER_NEURON_TOKEN;
 }
 
 export function unsupportedReason(config: Record<string, any>): string | undefined {

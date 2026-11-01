@@ -52,7 +52,7 @@ before(async () => {
   dir = mkdtempSync(join(tmpdir(), "terrarium-lab-"));
   const models = join(dir, "models");
   mkdirSync(join(models, "tiny-qwen"), { recursive: true });
-  writeFileSync(join(models, "tiny-qwen", "config.json"), JSON.stringify({ model_type: "qwen3_5", text_config: { model_type: "qwen3_5_text", num_hidden_layers: 4, intermediate_size: 97657 } }));
+  writeFileSync(join(models, "tiny-qwen", "config.json"), JSON.stringify({ model_type: "qwen3_5", text_config: { model_type: "qwen3_5_text", num_hidden_layers: 4, intermediate_size: 85450 } }));
   writeFileSync(join(models, "tiny-qwen", "model.safetensors"), Buffer.alloc(1024));
   mkdirSync(join(models, "tiny-bonsai"), { recursive: true });
   writeFileSync(join(models, "tiny-bonsai", "config.json"), JSON.stringify({ model_type: "prism_hadamard_qwen35" }));

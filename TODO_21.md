@@ -52,6 +52,22 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
   like oMLX does (the harness retries on that), and with an empty mix the same request parses into a clean
   tool_calls chunk. Steering strong enough to break tool syntax is a property of the strain, not a parser bug.
 - dcg blocks heredocs with `${...}` in them; edits went through the Edit tool instead.
+- Memory, found by measuring each op (/tmp/t21/peaks.py): a 1800-token probe peaked at 13.4 GB because all 32
+  layers' [T, N] float32 temporaries and the full [T, vocab] logits were evaluated in one graph. Fixed: activation-only
+  passes skip the unembedding (forward(logits=False)), probe evaluates per layer, down_proj norms per layer, probe
+  capped at 1024 tokens. Same text now peaks at 4.52 GB; cold load 3.5 s / 2.9 GB peak (was 6.9 s / 4.77 GB).
+- Attribution on a 400-token prompt peaked at 59 GB and took 172 s: backprop through Qwen3.5's linear-attention
+  recurrence keeps every step's state (about 140 MB per token). Rewritten to run the prompt before the last token
+  once without gradients into the cache, then differentiate only the last token (gradient x activation at the
+  position where the next token is decided). Needs a plain-ops attention during the backward pass, since MLX's
+  single-query SDPA kernel has no VJP. Now 3.27 GB / 0.5 s for 400 tokens, 3.1 GB / 0.3 s short. Against the old
+  full-sequence method: top-5 overlap 4/5, top-15 overlap 9/15, L22N2742 still first under the alien mix.
+- First live strain session used thinking on (my script passed a string); the steered model ended its turn inside
+  an unclosed thinking block, and the sidecar recovered the thinking as the answer, exactly as oMLX's
+  ThinkingParser.finish documents. With thinking off the strain answers normally.
+- Eval with the strain and thinking on: 0/4 on reasoning; every case ran out of output budget or the 300 s case
+  timeout, because the alien-steered model rambles in its thinking ("extr extr ..."). The sidecar serves one request
+  at a time, so the eval's 2 parallel light cases queue behind each other (oMLX batches them).
 
 ## Verification
 - Sidecar on Qwen3.5-4B (direct): first load 6.9 s (calibration 5.3 s over 1240 tokens), 1.17 s with cached
@@ -63,3 +79,33 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
 - Find on the aliens starter set surfaces L22N2742 (score 2.739, writes delta 9.446, steer lens ' extr', ' Extr',
   '外星') in about 10 s; owls has no good single neuron on the 4B (reported as such).
 - Tests: src/lab/lab.test.ts 9/9 (fake sidecar), src/lab/sidecar.test.ts 6/6 (real lab_serve.py, tiny model, 9 s).
+  Full backend suite 264/267 with 2 skipped and 1 failure (context.test.ts "tool output too big", a sim timing
+  test) that passes alone 11/11; it ran while the 4B memory script loaded the GPU.
+- Peaks per op after the memory fixes, Qwen3.5-4B (MLX active memory, weights 2.38 GB): cold load 2.9 GB (3.5 s),
+  probe 2.63, probe of 1800 tokens 4.52, find 2.74 (15 s, 294,912 neurons, 24 texts), neuron card 2.64, generate
+  2.87, attribution 3.13 (0.3 s), attribution of 400 tokens 3.28 (0.5 s). MLX cache stays under 0.6 GB.
+- Live through the dev backend (port 8797, /tmp/t21/live.mjs, results in /tmp/t21/live*.json):
+  support: Qwen 4B/9B and Gemma 4 supported, the three Bonsai packs refused with the Hadamard reason. Load 4.6 s
+  (process RSS 2.83 GB). Chat probe with reply 1.1 s (56 tokens, template/text/reply kinds). Find on Aliens 15.2 s:
+  L22N2742 first (both 5.087, writes delta 9.446, lens ' extr' ' Extr' '外星', preview "I am **Extrali**, an
+  intelligent extraterrestrial intelligence..."), L7N8842 second (lens '星' '星际' ' spacecraft'). Card: promotes
+  ' alien' ' aliens' '外星' ' extr' ' planet', dose unit 60.2. Compare (seed 7, greedy) 3.3 s: steered "I am
+  **Extrali**..." vs baseline "I am **Qwen3.5**, a large language model developed by Tongyi Lab..."; fluency -2.05 vs
+  -0.17. Sweep 0 / 0.4 / 0.8 / 1.2 / 1.6 / 2.4: Qwen3.5, Qwen3, Extrali, Extraliens, "Iextr Extr Extr" (repetition
+  0.92), "aliens extr extr" (0.95). Attribution 0.27 s, L22N2742 first. Strain round trip: saved recipe
+  "L22N2742+0.8", parsed by the UI's lib/recipe.ts, re-saved: identical pushes and recipe.
+- Strain in a chat session (thinking off): "I am an intelligent extraterrestrial lifeform from the planet Napa, a planet
+  in the OTR-1930 system. I have traveled to Earth for over 500 years..." (44 tok/s, ttft 477 ms) while the base
+  model in oMLX answered "I am Qwen3.5, a large language model developed by Alibaba Cloud's Tongyi Lab...". Lab
+  unload during the session: 409 "The Lab's model is serving strains for session ...". Both copies resident at once
+  (Lab 4.8 GB estimate + oMLX 2.7 GB) under the 12 GB ceiling.
+- Strain in evals (reasoning, first 4 cases, strain and base in one run): thinking on, base 4/4, strain 0/4 (output
+  budget or 300 s timeout, rambling in thinking); thinking off, base 0/4, strain 0/4 (e.g. discount-tax: base 67.5,
+  strain 720.56, expected 75). The Lab copy was loaded on demand for the strain's cases and stopped when the eval
+  moved on to the base model.
+- Memory refusal live: Gemma 4 in the Lab during that eval: 409 "Not enough memory for Gemma 4 12B: it needs about
+  10.1 GB and oMLX holds 2.7 GB of the 12.0 GB memory ceiling. In use: Qwen3.5-4B-MLX-4bit (session ...)".
+- Gemma 4 12B (direct): loads in 11.7 s, 6.72 GB active, 48 layers x 15360 GeGLU neurons, sliding/full kinds.
+  Probe, find (38 s), steer and attribution (1.35 s, 8.43 GB peak) all run; a 1000-token probe peaks at 9.69 GB, which
+  set the estimate's 4 bytes per neuron-token (11.3 GB for Gemma). The Aliens and Pirates sets found nothing clean
+  (best both 2.2 and 2.8, previews unchanged or broken into channel tokens), so Gemma has no ready example.
