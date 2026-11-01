@@ -13,7 +13,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     sessionCaptureBytes: 512 * 1024 * 1024,
     sessionSnapshotCount: 256,
     sessionNetworkRows: 2000,
-    sessionRequestCount: 200,
+    sessionRequestCount: 2000,
     sessionNetworkBytes: 256 * 1024 * 1024,
     networkBurst: 120,
     networkRefillPerSecond: 20,

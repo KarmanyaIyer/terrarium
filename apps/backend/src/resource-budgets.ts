@@ -17,7 +17,7 @@ export const DEFAULT_RESOURCE_BUDGETS: ResourceBudgetSettings = {
   sessionCaptureBytes: 512 * MiB,
   sessionSnapshotCount: 256,
   sessionNetworkRows: 2000,
-  sessionRequestCount: 200,
+  sessionRequestCount: 2000,
   sessionNetworkBytes: 256 * MiB,
   networkBurst: 120,
   networkRefillPerSecond: 20,
