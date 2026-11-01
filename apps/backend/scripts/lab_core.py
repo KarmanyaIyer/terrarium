@@ -373,6 +373,8 @@ class Lab:
         if path and os.path.exists(path):
             try:
                 data, meta = mx.load(path, return_metadata=True)
+                # mx.load is lazy on this thread's CPU stream; request threads can't evaluate it later
+                mx.eval(list(data.values()))
                 if meta.get("key") == key:
                     self._set_calibration(data, int(meta["tokens"]))
                     self.log(f"calibration loaded from {path}")
