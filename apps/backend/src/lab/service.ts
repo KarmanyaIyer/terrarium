@@ -28,6 +28,7 @@ export interface ModelUser {
   modelId: string;
   what: string; // session "title" | eval "suite"
   kind: "session" | "eval";
+  contextWindow?: number; // sessions: the window oMLX loads the model at
 }
 
 export interface LabServiceOptions {
@@ -199,7 +200,9 @@ export class LabService implements LabHooks {
     return Promise.all(
       ids.map(async (id) => {
         const info = await this.inference.model(id);
-        const bytes = loaded.find((m) => m.modelId === id)?.bytes ?? (info ? estimateBytes(info, info.defaultContext) : 0);
+        // Not loaded yet: the same estimate beforeOmlxLoad will use, at the largest window a session asks for.
+        const window = Math.max(0, ...this.opts.users().filter((u) => u.modelId === id).map((u) => u.contextWindow ?? 0)) || info?.defaultContext || 0;
+        const bytes = loaded.find((m) => m.modelId === id)?.bytes ?? (info ? estimateBytes(info, window, this.inference.catalog.overheadBytes(id)) : 0);
         const busy = this.inUse(id);
         return { modelId: id, bytes, ...(busy ? { busy } : {}) };
       }),

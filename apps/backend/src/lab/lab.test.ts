@@ -12,6 +12,7 @@ import { after, before, test } from "node:test";
 import type { LabState, LabStrain, ModelInfo, WsMessage } from "@terrarium/shared";
 import { type App, createApp } from "../app.ts";
 import { loadConfig } from "../config.ts";
+import { estimateBytes } from "../inference/catalog.ts";
 import { type ApiServer, createApiServer } from "../server/http.ts";
 
 const FAKE = fileURLToPath(new URL("../test-support/fake-lab.ts", import.meta.url));
@@ -94,6 +95,15 @@ test("support list and memory check", async () => {
   assert.equal(m.labBytes, 0);
   assert.ok(m.needBytes > 2e9, "weights plus the Lab's working memory");
   assert.equal((await call("GET", "/api/lab/memory?modelId=nope")).status, 404);
+  // A running session's model that oMLX hasn't loaded yet counts at the session's window, as beforeOmlxLoad will.
+  app.store.run("INSERT INTO sessions (id, title, model_id, harness, context_window, max_output_tokens, status, created_at, updated_at) VALUES ('s-mem', 't', 'tiny-lfm', 'chat', 131072, 2048, 'running', 0, 0)");
+  try {
+    const info = (await app.inference.model("tiny-lfm"))!;
+    const pending = (await call("GET", "/api/lab/memory?modelId=tiny-qwen")).json.omlx.find((x: any) => x.modelId === "tiny-lfm");
+    assert.equal(pending.bytes, estimateBytes(info, 131072, app.inference.catalog.overheadBytes("tiny-lfm")));
+  } finally {
+    app.store.run("DELETE FROM sessions WHERE id = 's-mem'");
+  }
 });
 
 test("load: unsupported and over-the-ceiling are refused with a reason", async () => {

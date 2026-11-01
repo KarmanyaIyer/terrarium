@@ -80,7 +80,9 @@ export async function createApp(config: Config): Promise<App> {
     return run ? `eval "${run.suiteTitle}" running` : undefined;
   };
   const modelUsers = (): ModelUser[] => [
-    ...store.all<{ model_id: string; title: string }>("SELECT model_id, title FROM sessions WHERE status IN ('running', 'stopping')").map((s) => ({ modelId: s.model_id, what: `session "${s.title}"`, kind: "session" as const })),
+    ...store
+      .all<{ model_id: string; title: string; context_window: number }>("SELECT model_id, title, context_window FROM sessions WHERE status IN ('running', 'stopping')")
+      .map((s) => ({ modelId: s.model_id, what: `session "${s.title}"`, kind: "session" as const, contextWindow: s.context_window })),
     ...evals.list().filter((r) => r.status === "running").flatMap((r) => r.config.modelIds.map((m) => ({ modelId: m, what: `eval "${r.suiteTitle}"`, kind: "eval" as const }))),
   ];
   const theLab = new LabService({ store, hub, inference, venvDir: config.venvDir, modelsDir: config.modelsDir, dataDir: join(config.dataDir, "lab"), users: modelUsers });
