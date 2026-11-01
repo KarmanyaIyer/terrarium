@@ -322,10 +322,12 @@
   position: absolute;
   right: 4px;
 }
-.sb-session:hover .sb-hover {
+.sb-session:hover .sb-hover,
+.sb-session:has(:focus-visible) .sb-hover {
   display: flex;
 }
-.sb-session:hover .sb-time {
+.sb-session:hover .sb-time,
+.sb-session:has(:focus-visible) .sb-time {
   visibility: hidden;
 }
 .sb-hover .btn.icon-only {

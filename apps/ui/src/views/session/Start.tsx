@@ -49,9 +49,9 @@ export function SessionStart({ s }: { s: SessionSummary }) {
         />
         <ChevronRight size={14} className="ss-arrow" aria-hidden />
         <Part
-          label="Harness"
+          label="Prompt"
           value={harnessLabel(s.harness)}
-          role={tools.length ? `Prompt and tools: ${tools.join(", ")}` : "Prompt only, no tools"}
+          role={tools.length ? `With tools: ${tools.join(", ")}` : s.harness === "chat" ? "Replies only" : "No tools"}
           onClick={() => useStore.setState({ inspectorTab: "prompt", inspectorOpen: true })}
         />
         <ChevronRight size={14} className="ss-arrow" aria-hidden />

@@ -1,9 +1,9 @@
 import { deleteSession, patchEnv, patchSession as patchSessionUndoable } from "../state/appUndo";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronDown, ChevronRight, ChevronUp, PanelRight, Square, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, PanelRight, Trash2 } from "lucide-react";
 import type { EnvSummary, NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
-import { act, openEnv, openView, setPref, useStore } from "../state/store";
+import { openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
 import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
@@ -135,11 +135,6 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
           <span title="Wall time from the first message">{fmtMs(stats.ms)}</span>
         </span>}
         <span className="blk-spacer" />
-        {running && (
-          <button className="btn sm stop" onClick={() => void act("Stop", (b) => b.stopSession(s.id))}>
-            <Square /> Stop
-          </button>
-        )}
         <button className="btn sm ghost icon-only" title={running ? "Stop the run first" : "Delete session (Cmd+Z brings it back)"} aria-label="Delete session" disabled={running} onClick={() => void deleteSession(s)}>
           <Trash2 />
         </button>

@@ -79,11 +79,11 @@ export default function ModelsView() {
       <div className="view-head">
         <Boxes size={15} />
         <h1>Models</h1>
-        {models.length > 0 && (
+        {models.length > 0 && inf.status !== "stopped" && (
           <>
             <span className={`dot ${ready ? "ready" : inf.status === "error" ? "error" : ""}`} />
             <span title={inf.version ? `oMLX ${inf.version}` : undefined}>
-              oMLX <span className="dim">{inf.status}</span>
+              Model server <span className="dim">{inf.status}</span>
             </span>
             <ServerButton small />
           </>
@@ -99,7 +99,7 @@ export default function ModelsView() {
             <span className="dim">Ceiling</span> {fmtBytes(budget.budgetBytes)}
           </button>
         </Hint>
-        <button className={`btn sm${models.length ? "" : " primary"}`} onClick={() => setAdding(true)}>
+        <button className="btn sm" onClick={() => setAdding(true)}>
           <Plus /> Add model
         </button>
       </div>
@@ -358,10 +358,10 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
             top_p <input className="input num" value={topP} onChange={(e) => setTopP(e.target.value)} />
           </label>
           <label>
-            top_k <input className="input num" value={topK} placeholder="–" onChange={(e) => setTopK(e.target.value)} />
+            top_k <input className="input num" value={topK} placeholder="-" onChange={(e) => setTopK(e.target.value)} />
           </label>
           <label title="presence_penalty">
-            presence <input className="input num" value={pres} placeholder="–" onChange={(e) => setPres(e.target.value)} />
+            presence <input className="input num" value={pres} placeholder="-" onChange={(e) => setPres(e.target.value)} />
           </label>
         </div>
         <span>Sessions</span>

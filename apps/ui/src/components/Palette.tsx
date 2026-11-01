@@ -56,7 +56,7 @@ export function Palette() {
       out.push({
         id: `s:${s.id}`,
         label: s.title,
-        hint: `${s.envId ? (envs[s.envId]?.name ?? "env") : "chat"} · ${s.status === "running" ? "running" : relTime(s.updatedAt)}`,
+        hint: `${s.envId ? (envs[s.envId]?.name ?? "enclosure") : "chat"}, ${s.status === "running" ? "running" : relTime(s.updatedAt)}`,
         icon: s.envId ? <TerminalSquare size={13} /> : <MessageSquare size={13} />,
         group: "Sessions",
         run: () => openSession(s.id),
@@ -65,7 +65,7 @@ export function Palette() {
       out.push({
         id: `e:${e.id}`,
         label: e.name,
-        hint: `${e.type === "vm" ? "VM" : "SIM"} · ${e.status} · network ${e.network}`,
+        hint: `${e.type === "vm" ? "Linux VM" : "Simulated"}, ${e.status}, network ${e.network}`,
         icon: <Server size={13} />,
         group: "Enclosures",
         run: () => openEnv(e.id),

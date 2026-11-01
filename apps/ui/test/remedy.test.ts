@@ -51,5 +51,5 @@ test("Send/Continue: a session whose env was deleted is blocked with that reason
   assert.equal(runBlocked(undefined, session({ envId: null })), undefined);
   assert.equal(runBlocked(env(), session()), undefined);
   assert.equal(runBlocked(env({ released: true }), session()), "env storage released");
-  assert.equal(runBlocked(env({ inUse: [{ kind: "session", sessionId: "s2", reason: 'session "other" running' }] }), session()), 'env busy: session "other" running');
+  assert.equal(runBlocked(env({ inUse: [{ kind: "session", sessionId: "s2", reason: 'session "other" running' }] }), session()), 'Enclosure busy: session "other" running');
 });

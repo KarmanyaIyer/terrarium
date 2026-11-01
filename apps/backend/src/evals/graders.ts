@@ -245,7 +245,7 @@ export async function runTestsGrader(
 }
 
 export async function gradeTests(rt: EnvRuntime, check: Extract<EvalCheck, { type: "tests" }>, hidden: EvalCase["hiddenFiles"]): Promise<Grade> {
-  if (rt.type !== "vm") return { pass: false, detail: "tests checks need a VM environment" };
+  if (rt.type !== "vm") return { pass: false, detail: "tests checks need a VM enclosure" };
   const { summary, exitCode, output } = await runTestsGrader(rt, check, hidden);
   if (!summary) return { pass: false, detail: `grader output unreadable (${output})` };
   const t = testsGrade(summary, exitCode);

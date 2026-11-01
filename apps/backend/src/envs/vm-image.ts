@@ -39,12 +39,20 @@ export class VmImage {
     await new Promise<void>((resolve, reject) => {
       // an app started from Finder doesn't get the shell's PATH; the script needs Homebrew's lz4, qemu and e2fsprogs
       const env = { ...process.env, TERRARIUM_DATA: this.dataDir, PATH: `/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:${process.env.PATH ?? "/usr/bin:/bin:/usr/sbin:/sbin"}` };
-      const child = spawn("/bin/sh", [this.script], { env, stdio: ["ignore", "pipe", "pipe"] });
+      // its own process group: a timeout has to take qemu and friends down too, or they hold the pipes open
+      const child = spawn("/bin/sh", [this.script], { env, stdio: ["ignore", "pipe", "pipe"], detached: true });
       let tail = "";
       const keep = (b: Buffer) => (tail = (tail + b.toString("utf8")).slice(-2000));
       child.stdout.on("data", keep);
       child.stderr.on("data", keep);
-      const timer = setTimeout(() => child.kill("SIGKILL"), BUILD_TIMEOUT_MS);
+      const timer = setTimeout(() => {
+        try {
+          process.kill(-child.pid!, "SIGKILL");
+        } catch {
+          child.kill("SIGKILL");
+        }
+        reject(new HttpError(500, "The VM image build timed out after 10 minutes"));
+      }, BUILD_TIMEOUT_MS);
       child.on("error", (e) => {
         clearTimeout(timer);
         reject(e);

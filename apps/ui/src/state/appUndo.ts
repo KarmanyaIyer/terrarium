@@ -3,7 +3,7 @@
 // if it can come back, a confirm if it can't, never both. An environment's disk can't come back; neither can a running session.
 
 import type { EnvSummary, Id, ModelInfo, SessionSummary, UpdateModelRequest, UpdateSessionRequest, UpdateSettingsRequest } from "@terrarium/shared";
-import { act, hiddenSessions, saveHiddenSessions, useStore } from "./store";
+import { act, hiddenSessions, openSession, saveHiddenSessions, useStore } from "./store";
 import { undoStack, undoable } from "./undo";
 
 const get = useStore.getState;
@@ -102,9 +102,12 @@ export function finishDeletes() {
 export function deleteSession(s: SessionSummary) {
   // a run in progress stops for good: nothing to bring back
   if (s.status === "running") return act("Delete session", (b) => b.deleteSession(s.id));
+  const v = useStore.getState().view;
+  const wasOpen = v.kind === "session" && v.id === s.id;
   hide(s);
   undoable({
     label: `Deleted "${s.title || "session"}"`,
+    undone: `Restored "${s.title || "session"}"`,
     undo: () => {
       const t = pending.get(s.id);
       if (t == null) throw new Error(`it was deleted for good after ${SESSION_UNDO_MS / 1000} s`);
@@ -113,6 +116,7 @@ export function deleteSession(s: SessionSummary) {
       hiddenSessions.delete(s.id);
       saveHiddenSessions();
       putSession(s);
+      if (wasOpen) openSession(s.id);
     },
     redo: () => hide(s),
   });

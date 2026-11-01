@@ -7,7 +7,8 @@ const leaf = (x: number, y: number, dir: number, len: number) =>
 /** Stem height and paired leaves per stem. The plant is the session count: bare soil, sprout, seedling, plant, overgrown. */
 function plant(n: number): { x: number; h: number; pairs: number }[] {
   if (n <= 0) return [];
-  if (n < 3) return [{ x: 28, h: 8, pairs: 1 }];
+  if (n < 2) return [{ x: 28, h: 6, pairs: 1 }];
+  if (n < 3) return [{ x: 28, h: 10, pairs: 1 }];
   if (n < 8) return [{ x: 28, h: 15, pairs: 2 }];
   if (n < 20)
     return [

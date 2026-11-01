@@ -19,7 +19,7 @@ export async function runUndo() {
   try {
     const e = await undoStack.undo();
     dropUndoToasts();
-    if (e) toast(`Undid: ${e.label}`, "info");
+    if (e) toast(e.undone ?? `Undid: ${e.label}`, "info");
   } catch (err) {
     failed("Couldn't undo", err);
   }

@@ -169,7 +169,7 @@ export function App() {
       wide = now;
       // not a saved preference: going wide again brings back what was open
       if (!now) wasOpen = useStore.getState().inspectorOpen;
-      useStore.setState({ inspectorOpen: now ? wasOpen : false });
+      useStore.setState((s) => ({ inspectorOpen: now ? s.inspectorOpen || wasOpen : false }));
     };
     if (!wide) useStore.setState({ inspectorOpen: false });
     window.addEventListener("resize", sync);

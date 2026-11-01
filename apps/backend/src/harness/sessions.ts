@@ -357,7 +357,7 @@ export class SessionManager {
     const model = await this.requireModel(req.modelId);
     const envId = req.envId ?? null;
     if (envId) this.envs.get(envId);
-    if (!envId && req.harness !== "chat") throw new HttpError(400, `harness ${req.harness} needs an environment`);
+    if (!envId && req.harness !== "chat") throw new HttpError(400, `harness ${req.harness} needs an enclosure`);
     const thinking = model.thinking === "none" ? false : (req.thinking ?? model.thinking === "default-on");
     const { window, maxOutput } = this.sizing(model, thinking, req.contextWindow, req.maxOutputTokens);
     const id = opts.id ?? newId("ses");
@@ -393,7 +393,7 @@ export class SessionManager {
     if (!onlyTitle) this.assertNotEval(id);
     if (this.isRunning(id) && !onlyTitle) throw new HttpError(409, "session is running; stop it before changing model or settings");
     if (patch.harness !== undefined && !HARNESSES.includes(patch.harness)) throw new HttpError(400, `harness must be one of ${HARNESSES.join(", ")}`);
-    if (patch.harness && patch.harness !== "chat" && !r.env_id) throw new HttpError(400, `harness ${patch.harness} needs an environment`);
+    if (patch.harness && patch.harness !== "chat" && !r.env_id) throw new HttpError(400, `harness ${patch.harness} needs an enclosure`);
     const modelId = patch.modelId ?? r.model_id;
     const model = await this.requireModel(modelId);
     const thinking = model.thinking === "none" ? false : (patch.thinking ?? !!r.thinking);
@@ -503,7 +503,7 @@ export class SessionManager {
     if (live.running) throw new HttpError(409, "session is already running");
     // Refuse up front what acquire() would refuse once the run started (env deleted, another session, an eval case's env).
     if (r.harness !== "chat" && r.env_id) {
-      if (!this.envs.exists(r.env_id)) throw new HttpError(409, `environment deleted: this session's environment (${r.env_id}) no longer exists; switch the session to the chat harness or start a new session`);
+      if (!this.envs.exists(r.env_id)) throw new HttpError(409, `enclosure deleted: this session's enclosure no longer exists; switch the session to chat or start a new one`);
       this.envs.assertUsableBy(r.env_id, id);
     }
     live.stopRequested = false;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Loader2, X } from "lucide-react";
+import { Box, Loader2, Terminal, X } from "lucide-react";
 import type { CreateEnvRequest, EnvFacts, EnvSummary, EnvType, NetworkMode, Snapshot } from "@terrarium/shared";
 import { act, openEnv, useStore } from "../state/store";
 import { fmtBytes, relTime } from "../lib/format";
@@ -173,7 +173,20 @@ function Sheet({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="sheet-body">
-          <EnvCompare highlight={type} onPick={setType} />
+          <div className="env-cards" role="radiogroup" aria-label="Enclosure type">
+            {(["sim", "vm"] as const).map((t) => (
+              <button type="button" key={t} role="radio" aria-checked={type === t} className={`env-card${type === t ? " on" : ""}`} onClick={() => setType(t)}>
+                <b>
+                  {t === "vm" ? <Box size={14} /> : <Terminal size={14} />} {t === "vm" ? "Linux VM" : "Simulated shell"}
+                </b>
+                <span className="dim">{t === "vm" ? "Real Linux: installs, compilers, tests." : "Instant and light: files and common commands."}</span>
+              </button>
+            ))}
+          </div>
+          <details className="env-compare-more">
+            <summary>Compare in detail</summary>
+            <EnvCompare highlight={type} />
+          </details>
 
           <div className="form-grid">
             <label htmlFor="ne-name">Name</label>

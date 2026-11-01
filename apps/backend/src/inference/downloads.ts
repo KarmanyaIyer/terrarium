@@ -26,20 +26,21 @@ export const SUGGESTIONS: ModelSuggestion[] = [
     repo: "mlx-community/Qwen3.5-4B-MLX-4bit",
     name: "Qwen3.5 4B",
     params: "4B",
-    note: "Good first model. Handles tools, thinks first, runs the Lab's example",
+    note: "Good first model, runs the Lab's example",
     sizeBytes: 3_061_215_232,
   },
   {
     repo: "LiquidAI/LFM3-1.7B-MLX-8bit",
     name: "LFM3 1.7B",
     params: "1.7B",
-    note: "Small and strong with tools: vendor BFCL v4 71.4 (Qwen3.5 4B: 55.1), IFEval 96.7, GPQA Diamond 63.4 (Qwen3.5 4B: 75.8); 256K context. 8bit: the 4bit build picks a different top token about 1 time in 5",
+    note: "Smaller, and strong with tools",
+    detail: "Vendor BFCL v4 71.4 (Qwen3.5 4B: 55.1), IFEval 96.7, GPQA Diamond 63.4 (Qwen3.5 4B: 75.8); 256K context. 8bit: the 4bit build picks a different top token about 1 time in 5",
     sizeBytes: 1_855_280_680,
     released: "2026-10-27",
   },
-  { repo: "mlx-community/Qwen3.5-2B-4bit", name: "Qwen3.5 2B", params: "2B", note: "Smallest Qwen3.5; same tool format as the 4B and 9B", sizeBytes: 1_749_080_357 },
-  { repo: "mlx-community/gemma-4-e2b-it-4bit", name: "Gemma 4 E2B", params: "E2B", note: "Gemma 4 on-device size; 128K context", sizeBytes: 3_583_087_091 },
-  { repo: "mlx-community/gemma-4-e4b-it-4bit", name: "Gemma 4 E4B", params: "E4B", note: "Gemma 4 on-device size, larger; 128K context", sizeBytes: 5_179_239_942 },
+  { repo: "mlx-community/Qwen3.5-2B-4bit", name: "Qwen3.5 2B", params: "2B", note: "Smallest Qwen3.5", sizeBytes: 1_749_080_357 },
+  { repo: "mlx-community/gemma-4-e2b-it-4bit", name: "Gemma 4 E2B", params: "E2B", note: "Gemma 4, on-device size", sizeBytes: 3_583_087_091 },
+  { repo: "mlx-community/gemma-4-e4b-it-4bit", name: "Gemma 4 E4B", params: "E4B", note: "Gemma 4, larger", sizeBytes: 5_179_239_942 },
 ];
 
 export function validRepo(repo: unknown): string {

@@ -105,7 +105,7 @@ function CallPicker({ d, callId, onPick }: { d: Derived; callId: string; onPick:
   return (
     <>
       <button ref={pop.ref} className="hdr-btn rq-pick" onClick={pop.toggle}>
-        Call {cur ? d.calls.indexOf(cur) + 1 : "–"}
+        Call {cur ? d.calls.indexOf(cur) + 1 : "-"}
         <span className="dim">of {d.calls.length}</span>
         {cur && <span className="dim">turn {cur.start.turn}</span>}
         <ChevronDown size={12} className="dim" />

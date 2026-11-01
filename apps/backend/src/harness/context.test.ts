@@ -277,8 +277,8 @@ test("Send and Continue on a session whose environment was deleted are refused w
   const env = await envs.create({ name: "gone", type: "sim" });
   const s = await sessions.create({ envId: env.id, modelId: MODEL.id, harness: "terrarium" });
   await envs.delete(env.id);
-  assert.throws(() => sessions.sendMessage(s.id, "hello"), (e: Error & { status?: number }) => e.status === 409 && /^environment deleted: this session's environment \(/.test(e.message));
-  assert.throws(() => sessions.continue(s.id), /environment deleted/);
+  assert.throws(() => sessions.sendMessage(s.id, "hello"), (e: Error & { status?: number }) => e.status === 409 && /^enclosure deleted: this session's enclosure no longer exists/.test(e.message));
+  assert.throws(() => sessions.continue(s.id), /enclosure deleted/);
   assert.equal(of(s.id, "user_message").length, 0, "no run started");
 });
 

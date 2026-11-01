@@ -3,7 +3,6 @@ import { Check, Loader2, X } from "lucide-react";
 import type { ModelCheck, ModelSuggestion } from "@terrarium/shared";
 import { act, useStore } from "../state/store";
 import { exactBytes, fmtBytes, fmtCtx } from "../lib/format";
-import { Hint } from "../components/ui";
 
 /** Paste a Hugging Face repo id (or pick a suggestion), check it, then download into models/. */
 export function AddModelSheet({ onClose }: { onClose: () => void }) {
@@ -90,7 +89,7 @@ export function AddModelSheet({ onClose }: { onClose: () => void }) {
               {checking && <Loader2 className="spin" />} Check
             </button>
           </div>
-          <span className="dim2 am-hint">MLX builds only (safetensors with an mlx-lm or mlx-vlm architecture). Checked before anything downloads.</span>
+          <span className="dim2 am-hint">MLX builds only. Checked before anything downloads.</span>
 
           {check ? (
             <CheckResult c={check} />
@@ -100,18 +99,11 @@ export function AddModelSheet({ onClose }: { onClose: () => void }) {
               {suggestions.map((s) => {
                 const have = installed(s.repo);
                 return (
-                  <button type="button" key={s.repo} className="am-sugg-row" onClick={() => void inspect(s.repo)}>
+                  <button type="button" key={s.repo} className="am-sugg-row" title={`${s.repo}${s.detail ? `\n${s.detail}` : ""}`} onClick={() => void inspect(s.repo)}>
                     <span className="strong">{s.name}</span>
-                    <span className="mono dim2 truncate">{s.repo}</span>
+                    <span className="dim truncate">{s.note}</span>
                     <span className="num dim">{s.sizeBytes ? fmtBytes(s.sizeBytes) : ""}</span>
-                    <span className="dim2 num">{s.released ?? ""}</span>
-                    {have ? (
-                      <span className="chip ok">installed</span>
-                    ) : (
-                      <Hint tip={s.note} width={320}>
-                        <span className="chip">why</span>
-                      </Hint>
-                    )}
+                    {have ? <span className="chip ok">installed</span> : <span className="am-sugg-go">Check</span>}
                   </button>
                 );
               })}

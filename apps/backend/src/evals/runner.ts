@@ -361,7 +361,7 @@ export class EvalRunner {
   private async forkFailed(runId: string, caseId: string, modelId: string, envId: string, err: unknown): Promise<never> {
     this.store.run("UPDATE eval_results SET env_id = NULL WHERE run_id = ? AND case_id = ? AND model_id = ?", runId, caseId, modelId);
     if (this.envs.exists(envId)) await this.envs.delete(envId).catch((e) => log.warn(`removing failed fork ${envId} failed`, e));
-    throw new Error(`environment fork failed: ${errorMessage(err)}`);
+    throw new Error(`enclosure fork failed: ${errorMessage(err)}`);
   }
 
   private tokens(sessionId: string): { prompt: number; completion: number } {
@@ -382,13 +382,13 @@ export class EvalRunner {
     if (check.type === "speed") return gradeSpeed(this.store, sessionId, c.id);
     let rt: EnvRuntime | null = null;
     if (envId) {
-      await this.envs.start(envId);
+      await this.envs.start(envId, { queue: true });
       rt = await this.envs.inspect(envId);
     }
     // Nothing the agent left running (setsid daemons included) may change the env while it is graded.
     if (rt) await rt.killAgentProcesses();
     if (check.type === "isolation") return gradeIsolation({ store: this.store, policy: this.policy, sessionId, canary: canary.token, runtime: rt, probe: check.probe });
-    if (!rt) return { pass: false, detail: `${check.type} check needs an environment` };
+    if (!rt) return { pass: false, detail: `${check.type} check needs an enclosure` };
     if (check.type === "file") return gradeFile(rt, check);
     const g = check.type === "tests" ? await gradeTests(rt, check, c.hiddenFiles) : await gradeCommand(rt, check);
     return c.network && c.network !== "off" ? { ...g, detail: `${g.detail}\nnetwork off while grading (the case ran with ${c.network})` } : g;

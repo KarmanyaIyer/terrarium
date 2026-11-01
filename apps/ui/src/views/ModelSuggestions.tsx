@@ -85,7 +85,7 @@ function SuggestionRow({ s, primary }: { s: ModelSuggestion; primary: boolean })
     <div className="sugg">
       <span className="sugg-main">
         <span className="strong">{s.name}</span>
-        <span className="dim truncate" title={s.note}>
+        <span className="dim truncate" title={s.detail ?? s.note}>
           {s.note}
         </span>
       </span>
@@ -141,15 +141,18 @@ export function ModelSuggestions({ limit, onOther }: { limit?: number; onOther?:
 export function VmSetupNote() {
   const setup = useStore((s) => s.vmSetup);
   const building = useStore((s) => s.vmBuilding);
+  const failure = useStore((s) => s.vmBuildError);
   if (setup.ok) return null;
   const missingImage = /guest image/.test(setup.detail ?? "");
   return (
     <div className="vm-note">
       <Box size={13} className="dim" />
-      <span>{building ? "Building the Linux VM image, about a minute." : missingImage ? "Linux VMs need a one-time image build, about a minute." : setup.detail}</span>
+      <span className={failure && !building ? "err-text" : undefined}>
+        {building ? "Building the Linux VM image, about a minute." : failure ? `The build failed: ${failure}` : missingImage ? "Linux VMs need a one-time image build, about a minute." : setup.detail}
+      </span>
       <span className="blk-spacer" />
       <button className="btn sm" disabled={building != null} onClick={() => void buildVmImage()}>
-        {building != null && <Loader2 className="spin" />} Build VM image
+        {building != null && <Loader2 className="spin" />} {failure ? "Try again" : "Build VM image"}
       </button>
     </div>
   );

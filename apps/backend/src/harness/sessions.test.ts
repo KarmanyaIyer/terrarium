@@ -171,7 +171,7 @@ test("busy env and running session are rejected; stop works", async () => {
   const p = sessions.run(b.id, "hi");
   assert.throws(() => sessions.sendMessage(b.id, "again"), /already running/);
   await p;
-  await assert.rejects(sessions.create({ envId: null, modelId: MODEL.id, harness: "terrarium" }), /needs an environment/);
+  await assert.rejects(sessions.create({ envId: null, modelId: MODEL.id, harness: "terrarium" }), /needs an enclosure/);
   await assert.rejects(sessions.create({ envId: null, modelId: "nope", harness: "chat" }), /model not found/);
   const chat = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat", contextWindow: 4096 });
   assert.equal(chat.contextWindow, 4096);
@@ -216,7 +216,7 @@ test("a message to a session whose env an eval case owns is refused before the r
   try {
     assert.throws(
       () => sessions.sendMessage(s.id, "hi"),
-      (err: any) => err.status === 409 && err.message === 'env read-only: eval "Tool basics" case tb-1 running',
+      (err: any) => err.status === 409 && err.message === 'Enclosure read-only: eval "Tool basics" case tb-1 running',
     );
     assert.throws(() => sessions.continue(s.id), (err: any) => err.status === 409);
     assert.equal(sessions.get(s.id).status, "idle");

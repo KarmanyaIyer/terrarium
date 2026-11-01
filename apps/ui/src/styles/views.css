@@ -325,7 +325,9 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: left;
-  color: var(--fg-3);
+  color: var(--fg-2);
+  text-decoration: underline dotted var(--line-3);
+  text-underline-offset: 3px;
   border-radius: var(--r-sm);
 }
 .task-try-row:hover {
@@ -660,6 +662,56 @@
 .sugg-other {
   align-self: flex-start;
   margin-top: 8px;
+  color: var(--accent);
+}
+.specimen-on {
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: 1px;
+}
+.specimen-add:focus-visible {
+  box-shadow: var(--focus);
+}
+.am-sugg-go {
+  color: var(--accent);
+}
+.env-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.env-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0.5px solid var(--line-2);
+  border-radius: var(--r-md);
+}
+.env-card b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.env-card.on {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 0.5px var(--accent);
+}
+.env-card:hover:not(.on) {
+  background: var(--bg-hover);
+}
+.env-compare-more summary {
+  cursor: pointer;
+  color: var(--fg-3);
+  font-size: var(--fs-sm);
+}
+.env-compare-more[open] summary {
+  margin-bottom: 6px;
 }
 
 /* ---------- models ---------- */
@@ -1430,7 +1482,7 @@ select.input {
   color: inherit;
   cursor: pointer;
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) 64px 80px 70px;
+  grid-template-columns: 110px minmax(0, 1fr) 64px 70px;
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
@@ -1784,7 +1836,7 @@ select.input {
 }
 .ev-mscore {
   display: grid;
-  grid-template-columns: minmax(0, 130px) 44px 70px;
+  grid-template-columns: minmax(76px, 130px) 44px minmax(30px, 70px);
   align-items: center;
   gap: 8px;
   font-size: var(--fs-sm);

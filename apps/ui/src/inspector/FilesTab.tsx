@@ -105,7 +105,7 @@ function StepDiff({ change }: { change: FileChange }) {
         <span className="mono truncate">{change.path}</span>
         <span className="blk-spacer" />
         <span className="dim num">
-          {change.before ? fmtBytes(change.before.size) : "–"} → {change.after ? fmtBytes(change.after.size) : "–"}
+          {change.before ? fmtBytes(change.before.size) : "-"} → {change.after ? fmtBytes(change.after.size) : "-"}
         </span>
       </div>
       {change.binary ? (

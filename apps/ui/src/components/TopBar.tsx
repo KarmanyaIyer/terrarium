@@ -215,7 +215,7 @@ function InferenceControl() {
     <>
       <button ref={pop.ref} className="topbar-btn infer" onClick={pop.toggle} title={inf.status === "stopped" ? "oMLX serves the models. It starts by itself when a model is needed." : "oMLX serves the models"}>
         {busy ? <Loader2 className="spin" size={12} /> : <span className={`dot ${inf.status === "ready" ? "ready" : inf.status === "error" ? "error" : ""}`} />}
-        <span>{inf.status === "ready" && loaded.length ? (loaded.length === 1 ? loaded[0]!.name : `${loaded.length} models`) : "oMLX"}</span>
+        <span>{inf.status === "ready" && loaded.length ? (loaded.length === 1 ? loaded[0]!.name : `${loaded.length} models`) : "Model server"}</span>
         {inf.status !== "ready" && inf.status !== "stopped" && <span className="dim">{inf.status}</span>}
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} align="end" width={290}>
@@ -227,9 +227,9 @@ function InferenceControl() {
               {inf.detail ? <span className="dim"> {inf.detail}</span> : null}
             </dd>
             <dt>Version</dt>
-            <dd>{inf.version ?? "–"}</dd>
+            <dd>{inf.version ?? "-"}</dd>
             <dt>PID</dt>
-            <dd className="num">{inf.pid ?? "–"}</dd>
+            <dd className="num">{inf.pid ?? "-"}</dd>
             <dt>RSS</dt>
             <dd className="num">{fmtBytes(inf.rssBytes)}</dd>
             <dt title="oMLX memory ceiling setting">Ceiling</dt>
@@ -252,7 +252,7 @@ function InferenceControl() {
                       <span className="dim num">{fmtBytes(m.residentBytes)}</span>
                     </div>
                   ))
-                : "–"}
+                : "-"}
             </dd>
           </dl>
           <div className="pop-actions">

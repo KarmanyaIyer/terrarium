@@ -27,7 +27,7 @@ import { labHydrate, labMessage } from "./lab";
 export type View =
   | { kind: "home" }
   | { kind: "session"; id: Id }
-  | { kind: "evals"; suiteId?: string; runId?: Id }
+  | { kind: "evals"; suiteId?: string; runId?: Id; pick?: Id }
   | { kind: "models" }
   | { kind: "settings" }
   | { kind: "lab" };
@@ -112,7 +112,7 @@ export interface Store extends Prefs {
   downloads: Record<Id, ModelDownload>;
   vmSetup: VmSetup;
   vmBuilding: number | null;
-  evalPick: Id | null; // model a suite page opens with ticked, set by Home's next-comparison suggestion
+  vmBuildError: string | null; // why the last build failed, kept on the note
   harness: HarnessInfo[] | null;
 
   traces: Record<Id, Trace>;
@@ -172,7 +172,7 @@ export const useStore = create<Store>()(() => ({
   downloads: {},
   vmSetup: { ok: true },
   vmBuilding: null,
-  evalPick: null,
+  vmBuildError: null,
   harness: null,
   traces: {},
   samples: [],
@@ -201,7 +201,8 @@ const get = useStore.getState;
 export function savePrefs() {
   const s = get();
   const p: Prefs = {
-    inspectorOpen: s.inspectorOpen,
+    // narrow windows close it for room; that isn't a choice to remember
+    inspectorOpen: window.innerWidth < INSPECTOR_MIN_WINDOW ? loadPrefs().inspectorOpen : s.inspectorOpen,
     inspectorWidth: s.inspectorWidth,
     sidebarWidth: s.sidebarWidth,
     timelineOpen: s.timelineOpen,

@@ -130,7 +130,7 @@ test("at the worker cap a simulated env waits for a slot, first come first serve
     const notes: string[] = [];
     const order: string[] = [];
     const gotB = f.envs.acquire(b.id, "ses-b", (d) => notes.push(d)).then(() => order.push("b"));
-    await until(() => f.envs.get(b.id).statusDetail?.startsWith("Waiting for a free simulated worker") === true);
+    await until(() => f.envs.get(b.id).statusDetail?.startsWith("Waiting for a free simulated shell") === true);
     assert.match(notes[0] ?? "", /session "ses-a"|ses-a/);
     const gotC = f.envs.acquire(c.id, "ses-c").then(() => order.push("c"));
     await until(() => f.envs.get(c.id).status === "starting");
@@ -144,6 +144,44 @@ test("at the worker cap a simulated env waits for a slot, first come first serve
     await gotC;
     assert.deepEqual(order, ["b", "c"]);
     f.envs.release(c.id, "ses-c");
+  } finally {
+    await f.close();
+  }
+});
+
+test("a Start press at the cap is told who holds the slots, with no wait; an eval case's start waits", async () => {
+  const f = fixture();
+  try {
+    f.budgets.update({ maxSimWorkers: 1 });
+    const a = await f.envs.create({ name: "held", type: "sim" });
+    const b = await f.envs.create({ name: "b", type: "sim" });
+    await f.envs.acquire(a.id, "ses-a");
+    await assert.rejects(f.envs.start(b.id), (e: Error & { status?: number }) => e.status === 409 && /^1 simulated shell is in use \(held: /.test(e.message));
+    assert.equal(f.envs.get(b.id).status, "stopped");
+    const waits = f.envs.start(b.id, { queue: true });
+    await until(() => f.envs.get(b.id).statusDetail?.startsWith("Waiting for a free simulated shell") === true);
+    f.envs.release(a.id, "ses-a");
+    assert.equal((await waits).status, "running");
+  } finally {
+    await f.close();
+  }
+});
+
+test("a cancel between waits isn't lost", async () => {
+  const f = fixture();
+  try {
+    f.budgets.update({ maxSimWorkers: 1 });
+    const a = await f.envs.create({ name: "a", type: "sim" });
+    const b = await f.envs.create({ name: "b", type: "sim" });
+    await f.envs.acquire(a.id, "ses-a");
+    const gotB = f.envs.acquire(b.id, "ses-b");
+    await until(() => f.envs.get(b.id).status === "starting");
+    // the worst moment: the wake and the cancel land together, so the waiter holds no timer when the cancel arrives
+    (f.envs as unknown as { wakeSimQueue(): void }).wakeSimQueue();
+    f.envs.cancelQueued(b.id);
+    await assert.rejects(gotB, /stopped while waiting/);
+    assert.equal(f.runtimes.get(b.id)?.isRunning() ?? false, false);
+    f.envs.release(a.id, "ses-a");
   } finally {
     await f.close();
   }

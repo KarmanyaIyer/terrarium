@@ -10,6 +10,11 @@ body,
   height: 100%;
   margin: 0;
 }
+/* a focus jump mustn't scroll the whole app sideways */
+html,
+body {
+  overflow: clip;
+}
 
 body {
   font-family: var(--font-ui);
@@ -152,6 +157,9 @@ kbd {
   background: transparent;
   border-color: transparent;
   box-shadow: none;
+}
+.btn.ghost:focus-visible {
+  box-shadow: var(--focus);
 }
 .btn.ghost:hover:not(:disabled) {
   background: var(--bg-hover);
@@ -671,4 +679,12 @@ tr.click:focus-visible {
 .hint-card .mono {
   font-family: var(--font-mono);
   font-size: 0.95em;
+}
+
+/* a disclosure's chevron turns when it's open */
+.tw {
+  transition: transform 80ms linear;
+}
+.tw.open {
+  transform: rotate(90deg);
 }

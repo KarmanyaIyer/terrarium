@@ -1,5 +1,5 @@
 import type { EnvSummary, EnvType, Id, ModelInfo } from "@terrarium/shared";
-import { act, openSession, useStore } from "../state/store";
+import { act, openSession, toast, useStore } from "../state/store";
 
 /**
  * Model a new session starts with: the most recently used loaded model, else any loaded, else the most recently used,
@@ -104,11 +104,22 @@ export async function startTask(where: Where, modelId: Id | undefined, text: str
   }
   const id = await newSession(envId, modelId);
   const task = text.trim();
-  if (id && task) await act("Send", (b) => b.sendMessage(id, task));
+  if (!id || !task) return;
+  try {
+    await useStore.getState().backend!.sendMessage(id, task);
+  } catch (err) {
+    // refused (say the model doesn't fit): the task waits in the composer, not lost
+    useStore.setState((s) => ({ composerFill: { sessionId: id, text: task, n: (s.composerFill?.n ?? 0) + 1 } }));
+    toast(`Send: ${(err as Error).message ?? String(err)}`);
+  }
 }
 
 export async function buildVmImage(): Promise<void> {
-  useStore.setState({ vmBuilding: Date.now() });
-  const r = await act("Build VM image", (b) => b.buildVmImage());
-  useStore.setState({ vmBuilding: null, ...(r ? { vmSetup: r } : {}) });
+  useStore.setState({ vmBuilding: Date.now(), vmBuildError: null });
+  try {
+    const r = await useStore.getState().backend!.buildVmImage();
+    useStore.setState({ vmBuilding: null, vmSetup: r });
+  } catch (err) {
+    useStore.setState({ vmBuilding: null, vmBuildError: (err as Error).message ?? String(err) });
+  }
 }

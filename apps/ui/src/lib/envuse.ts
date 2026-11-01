@@ -10,7 +10,7 @@ export const runBlocked = (env: EnvSummary | undefined, session: SessionSummary)
   if (!env) return "enclosure deleted";
   if (env.released) return "env storage released";
   const holder = env.inUse?.find((u) => (u.kind === "session" || u.kind === "eval") && u.sessionId !== session.id);
-  return holder ? `env busy: ${holder.reason}` : undefined;
+  return holder ? `Enclosure busy: ${holder.reason}` : undefined;
 };
 
 /** Why stop, reset, restore, snapshot, fork of the live env and delete are refused right now (the backend answers 409). */

@@ -62,7 +62,7 @@ type BudgetField = {
 const MiB = 1024 * 1024;
 const GiB = 1024 * MiB;
 const BUDGET_FIELDS: BudgetField[] = [
-  { key: "maxSimWorkers", label: "Sim workers", help: "Simulated enclosures that may run at once. Others wait for a free worker, evals included.", unit: "workers", min: 1, max: 32 },
+  { key: "maxSimWorkers", label: "Simulated shells at once", help: "Simulated enclosures that may run at once. Others wait for a free one, evals included.", unit: "workers", min: 1, max: 32 },
   { key: "simWorkerRssBytes", label: "Sim memory", help: "A worker is stopped when host-measured RSS crosses this limit, including WASM and external memory.", unit: "MiB", scale: MiB, min: 256, max: 4096 },
   { key: "simWorkerCpuMs", label: "Sim CPU lifetime", help: "A worker is stopped after this much cumulative CPU time.", unit: "minutes", scale: 60_000, min: 1, max: 1440 },
   { key: "hostFreeDiskReserveBytes", label: "Free disk reserve", help: "Enclosure work stops before free space falls below this reserve.", unit: "GiB", scale: GiB, min: 1, max: 512 },

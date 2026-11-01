@@ -118,7 +118,7 @@ export class FileViews {
     }
     const stored = this.latestStored(envId);
     const e = stored?.entries.find((x) => x.path === path);
-    if (!e) throw new HttpError(404, `${path}: environment is stopped and no stored copy exists`);
+    if (!e) throw new HttpError(404, `${path}: the enclosure is stopped and no stored copy exists`);
     if (e.type !== "file") throw new HttpError(400, `${path} is a ${e.type}`);
     return this.fromBlob(path, e.sha256, e.size);
   }

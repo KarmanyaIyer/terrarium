@@ -277,6 +277,15 @@ export class LabService implements LabHooks {
     return (await this.omlxModels(false)).filter((m) => m.busy).reduce((a, m) => a + m.bytes, 0);
   }
 
+  /** oMLX unloaded something: the over-ceiling note goes once it's no longer so. */
+  async recheckCeiling(): Promise<void> {
+    if (!this.overCeiling) return;
+    const loaded = await this.omlxModels(false);
+    if (this.heldBytes() + loaded.reduce((a, m) => a + m.bytes, 0) > this.inference.budget().budgetBytes) return;
+    this.overCeiling = undefined;
+    this.broadcast();
+  }
+
   /**
    * The ceiling changed. Same order as a load that doesn't fit: idle oMLX models, then a specimen loaded only for a strain.
    * A specimen loaded on purpose stays, and the Lab says it is over: unloading it is the user's call.
@@ -459,6 +468,7 @@ export class LabService implements LabHooks {
   }
 
   private async stopSidecar(): Promise<void> {
+    this.overCeiling = undefined;
     const sidecar = this.sidecar;
     if (!sidecar) return;
     this.sidecar = null;

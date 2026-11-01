@@ -23,7 +23,7 @@ const PROMPT_MAX = 32_000;
 const DATA_PARTS: { key: string; label: string; path: string }[] = [
   { key: "envs", label: "Enclosure disks", path: "envs" },
   { key: "snapshots", label: "Snapshots", path: "snapshots" },
-  { key: "blobs", label: "Trace blobs", path: "blobs" },
+  { key: "blobs", label: "Trace data", path: "blobs" },
   { key: "images", label: "VM images", path: "images" },
   { key: "omlx", label: "oMLX cache and logs", path: "omlx" },
   { key: "lab", label: "Lab cache and log", path: "lab" },

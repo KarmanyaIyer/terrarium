@@ -27,6 +27,8 @@ export interface LabHooks {
   omlxInUseBytes(): Promise<number>;
   /** The ceiling changed: make room again or say what is over. */
   ceilingChanged(): Promise<void>;
+  /** oMLX unloaded a model: the Lab's over-ceiling note may no longer be true. */
+  recheckCeiling(): Promise<void>;
 }
 
 const isStrain = (id: string) => id.startsWith("strain:");
@@ -196,6 +198,7 @@ export class InferenceService {
     this.statusCache = null;
     await this.reloadIfIdle();
     await this.broadcastModels();
+    void this.lab?.recheckCeiling().catch((err) => log.warn("re-checking the ceiling failed", err));
   }
 
   async updateModel(id: string, patch: ModelOverrides): Promise<ModelInfo> {

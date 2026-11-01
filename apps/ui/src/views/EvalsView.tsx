@@ -64,7 +64,7 @@ export default function EvalsView() {
         {runId ? (
           <RunView key={runId} runId={runId} />
         ) : suite ? (
-          <SuiteView key={suite.id} suite={suite} />
+          <SuiteView key={`${suite.id}:${v.pick ?? ""}`} suite={suite} pick={v.pick} />
         ) : suiteId && suites ? (
           <div className="empty">Suite not found</div>
         ) : (
@@ -111,7 +111,7 @@ function RailScore({ r }: { r: EvalRunSummary }) {
   const done = doneOf(t);
   return (
     <span className="ev-row-score num" title={`Latest run: ${t.pass} passed of ${done}`}>
-      {done ? fmtPct((t.pass / done) * 100) : "–"}
+      {done ? fmtPct((t.pass / done) * 100) : "-"}
     </span>
   );
 }
@@ -160,7 +160,7 @@ function History({ runs, showSuite }: { runs: EvalRunSummary[]; showSuite: boole
         <tr>
           <th>Started</th>
           {showSuite && <th>Suite</th>}
-          <th>Harness</th>
+          <th>Prompt</th>
           <th>Score</th>
           <th className="r">Took</th>
           <th />
@@ -322,7 +322,7 @@ function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunS
         <h1>Evals</h1>
         <span className="blk-spacer" />
         {forks > 0 && (
-          <Switch on={showEphemeral} label={`Show ${forks} eval forks in the sidebar`} title="Disposable enclosures and sessions, one per eval cell" onChange={(v) => useStore.setState({ showEphemeral: v })} />
+          <Switch on={showEphemeral} label={`Show ${forks} eval forks in the sidebar`} title="Disposable enclosures and sessions, one per eval case" onChange={(v) => useStore.setState({ showEphemeral: v })} />
         )}
       </div>
       <div className="ev-scroll">
@@ -550,7 +550,7 @@ function RunView({ runId }: { runId: string }) {
       </div>
       <div className="ev-config">
         <span>
-          <span className="dim">Harness</span>{" "}
+          <span className="dim">Prompt</span>{" "}
           <Hint tip={<HarnessTip id={cfg.harness} />} width={340}>
             <span className="hint-text">{harnessLabel(cfg.harness)}</span>
           </Hint>
@@ -820,7 +820,7 @@ function FileBox({ path, content }: { path: string; content: string }) {
 
 // ---------- suite ----------
 
-function SuiteView({ suite }: { suite: EvalSuite }) {
+function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
   const models = useStore((s) => s.models);
   const allRuns = useStore((s) => s.evalRuns);
   const runs = useMemo(() => allRuns.filter((r) => r.suiteId === suite.id), [allRuns, suite.id]);
@@ -829,11 +829,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
   const sample = samples[samples.length - 1];
   // what's ticked on arrival: the model Home suggested, else what's loaded, else the one a new session would use, so Run is one press away
   const [picked, setPicked] = useState<string[]>(() => {
-    const ask = useStore.getState().evalPick;
-    if (ask) {
-      useStore.setState({ evalPick: null });
-      return [ask];
-    }
+    if (pick) return [pick];
     const loaded = models.filter((m) => m.loaded && !m.strain).map((m) => m.id);
     if (loaded.length) return loaded;
     const d = defaultModel({ strains: false });
@@ -888,7 +884,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
           <span className="dim">Graded by</span> <GradedBy s={suite} />
         </span>
         <span>
-          <span className="dim">Env</span>{" "}
+          <span className="dim">Runs in</span>{" "}
           <Hint tip={ENV_RUN[suite.envType]} width={320}>
             <span className="hint-text">{suite.envType === "none" ? "none" : "fresh fork per case"}</span>
           </Hint>
@@ -953,7 +949,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
               })}
           </div>
           <div className="md-grid">
-            <span>Harness</span>
+            <span>Prompt</span>
             <Segmented<HarnessProfile>
               small
               value={harness}
@@ -1007,7 +1003,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
             <thead>
               <tr>
                 <th>Case</th>
-                {suite.envType === "mixed" && <th>Env</th>}
+                {suite.envType === "mixed" && <th>Runs in</th>}
                 <th>Check</th>
                 <th className="r">Turns</th>
                 <th className="r">Timeout</th>

@@ -145,7 +145,7 @@ export function Composer({ session }: { session: SessionSummary }) {
         <div className="composer-readonly">
           <span className="chip">eval case</span>
           <span className="dim">read-only</span>
-          {env?.released && <span className="dim">env released</span>}
+          {env?.released && <span className="dim">enclosure released</span>}
           {running && (
             <button className="btn sm stop" onClick={() => void act("Stop", (b) => b.stopSession(session.id))} title="Stop this case (it is recorded as stopped)">
               <Square /> Stop

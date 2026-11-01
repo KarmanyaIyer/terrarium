@@ -111,7 +111,7 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
             onChange={setScope}
             options={[
               { value: "session", label: "This session" },
-              { value: "env", label: "Whole env" },
+              { value: "env", label: "Whole enclosure" },
             ]}
           />
         )}
@@ -158,15 +158,15 @@ export function NetworkTab({ env, session }: { env: EnvSummary; session?: Sessio
                       </div>
                       <div className={`dim net-reason${sel ? "" : " truncate"}`} title={sel ? undefined : e.reason}>
                         {e.reason}
-                        {e.ip ? ` · ${e.ip}` : ""}
-                        {sel && e.bytesOut != null ? ` · ${fmtBytes(e.bytesOut)} out` : ""}
+                        {e.ip ? `, ${e.ip}` : ""}
+                        {sel && e.bytesOut != null ? `, ${fmtBytes(e.bytesOut)} out` : ""}
                       </div>
                     </td>
                     <td>
                       <span className={`chip ${e.decision === "deny" ? "err" : "ok"}`}>{e.decision === "deny" ? "denied" : "allowed"}</span>
                     </td>
-                    <td className="r num">{e.status ?? "–"}</td>
-                    <td className="r num dim">{e.bytesIn != null ? fmtBytes(e.bytesIn) : "–"}</td>
+                    <td className="r num">{e.status ?? "-"}</td>
+                    <td className="r num dim">{e.bytesIn != null ? fmtBytes(e.bytesIn) : "-"}</td>
                   </tr>
                 );
               })}

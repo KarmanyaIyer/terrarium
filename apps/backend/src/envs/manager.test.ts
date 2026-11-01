@@ -391,7 +391,7 @@ test("an env in use refuses stop, reset, restore, snapshot, live fork and delete
     const uses: [string, RegExp, () => Promise<() => Promise<void>>][] = [
       [
         "session",
-        /^env busy: session "busy run" running$/,
+        /^Enclosure busy: session "busy run" running$/,
         async () => {
           await envs.acquire(e.id, "sess-busy");
           return async () => envs.release(e.id, "sess-busy");
@@ -399,7 +399,7 @@ test("an env in use refuses stop, reset, restore, snapshot, live fork and delete
       ],
       [
         "shell",
-        /^env busy: shell command running$/,
+        /^Enclosure busy: shell command running$/,
         async () => {
           FakeVm.execMs = 400;
           const cmd = envs.exec(e.id, { command: "sleep 1", as: "agent" });
@@ -413,7 +413,7 @@ test("an env in use refuses stop, reset, restore, snapshot, live fork and delete
       ],
       [
         "eval",
-        /^env busy: eval "Tool basics" case read-file running$/,
+        /^Enclosure busy: eval "Tool basics" case read-file running$/,
         async () => {
           const done = evalOwns(e.id, "sess-eval");
           return async () => done();
@@ -497,7 +497,7 @@ test("a session waits for a VM slot instead of failing, and Stop cancels the wai
   // a second waiter, canceled: its session gets the reason and nothing boots
   const canceled = envs.acquire(d.id, "sess-q-d", () => {});
   await until(() => envs.get(d.id).status === "starting", "D waits too");
-  await envs.stop(d.id).catch(() => {});
+  await envs.stop(d.id); // no 409: the session that was waiting is off the env the moment its wait ends
   await assert.rejects(canceled, /stopped while waiting/);
   assert.equal(vms.get(d.id)?.isRunning() ?? false, false);
   // a freed slot lets C through
@@ -510,15 +510,31 @@ test("a session waits for a VM slot instead of failing, and Stop cancels the wai
   await settleAll();
 });
 
+test("an eval case's fork with setup files waits for a VM slot; a person's fork is told why", async () => {
+  const [a, b, src] = await Promise.all(["A", "B", "src"].map((n) => envs.create({ name: `fq-${n}`, type: "vm" })));
+  addSession("sess-fq-a", a.id, "one");
+  addSession("sess-fq-b", b.id, "two");
+  await envs.acquire(a.id, "sess-fq-a");
+  await envs.acquire(b.id, "sess-fq-b");
+  const seedFiles = [{ path: "/workspace/setup.txt", content: "x" }];
+  await assert.rejects(envs.fork(src.id, { name: "by hand", seedFiles }), status409(/VMs are in use/));
+  const forked = envs.fork(src.id, { name: "case", seedFiles }, { ephemeral: true, id: "vm-fq-case" });
+  await until(() => envs.exists("vm-fq-case") && envs.get("vm-fq-case").statusDetail?.startsWith("Waiting for a free VM") === true, "the fork waits");
+  envs.release(a.id, "sess-fq-a");
+  assert.equal((await forked).status, "stopped");
+  envs.release(b.id, "sess-fq-b");
+  await settleAll();
+});
+
 test("an env owned by a running eval case is read-only: shell, network and other sessions are refused", async () => {
   const e = await envs.create({ name: "eval-owned", type: "vm" });
   const done = evalOwns(e.id, "sess-case");
   try {
-    await assert.rejects(envs.exec(e.id, { command: "touch /workspace/x", as: "root" }), status409(/^env read-only: eval "Tool basics" case read-file running$/));
+    await assert.rejects(envs.exec(e.id, { command: "touch /workspace/x", as: "root" }), status409(/^Enclosure read-only: eval "Tool basics" case read-file running$/));
     assert.equal(vms.get(e.id)?.isRunning() ?? false, false, "the refused command didn't start the VM");
-    await assert.rejects(envs.update(e.id, { network: "web" }), status409(/^env read-only/));
+    await assert.rejects(envs.update(e.id, { network: "web" }), status409(/^Enclosure read-only/));
     assert.equal(envs.get(e.id).network, "off");
-    await assert.rejects(envs.acquire(e.id, "sess-other"), status409(/^env read-only/));
+    await assert.rejects(envs.acquire(e.id, "sess-other"), status409(/^Enclosure read-only/));
     // The case's own session and a rename still work.
     await envs.acquire(e.id, "sess-case");
     envs.release(e.id, "sess-case");

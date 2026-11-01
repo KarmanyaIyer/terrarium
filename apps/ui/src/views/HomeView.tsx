@@ -3,14 +3,16 @@ import { Box, ChevronRight, FlaskConical, Loader2, MessageSquare, Microscope, Pl
 import type { EnvSummary, EvalRunSummary, Id, ModelInfo, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { ensureLab, exampleSet, runExample, useLab } from "../state/lab";
-import { defaultModel, newSession, recentEnv, startTask, type Where } from "../lib/actions";
+import { defaultModel, newSession, startTask, type Where } from "../lib/actions";
+import { busyReason } from "../lib/envuse";
 import { starters } from "../lib/starters";
 import { fmtBytes, fmtCtx, fmtInt, plural } from "../lib/format";
 import { format } from "../lib/recipe";
 import { Hint, Time } from "../components/ui";
 import { EnclosureArt } from "../components/EnclosureArt";
 import { NetIcon } from "../components/Sidebar";
-import { modelName } from "../components/ModelPicker";
+import { fitLabel, modelName } from "../components/ModelPicker";
+import { estimate } from "../lib/memory";
 import { harnessLabel, harnessName } from "../lib/explain";
 import { AddModelSheet } from "./AddModelSheet";
 import { GetExampleModel, ModelSuggestions, VmSetupNote } from "./ModelSuggestions";
@@ -97,19 +99,28 @@ function TaskBox() {
   const strain = !!models.find((m) => m.id === modelId)?.strain;
 
   const envList = useMemo(() => Object.values(envs).filter((e) => !e.ephemeral && e.status !== "error"), [envs]);
+  // one session at a time in an enclosure: a task goes to the last one you used that's free, else to a new one
   const defaultWhere = useMemo(() => {
-    const recent = [recentEnv("vm"), recentEnv("sim")].filter((e): e is EnvSummary => !!e && (e.type !== "vm" || vmOk));
+    const free = envList.filter((e) => !busyReason(e) && (e.type !== "vm" || vmOk));
     const last = (e: EnvSummary) => Math.max(e.createdAt, ...Object.values(sessions).filter((x) => x.envId === e.id).map((x) => x.updatedAt));
-    const top = recent.sort((a, b) => last(b) - last(a))[0];
+    const top = free.sort((a, b) => last(b) - last(a))[0];
     if (top) return encode({ kind: "env", id: top.id });
     return encode({ kind: "new", type: vmOk && settings.newEnv.type === "vm" ? "vm" : "sim" });
-  }, [envs, sessions, settings, vmOk]); // eslint-disable-line react-hooks/exhaustive-deps
-  const value = pickWhere && (pickWhere === "chat" || pickWhere.startsWith("new:") || envs[pickWhere.slice(4)]) ? pickWhere : defaultWhere;
+  }, [envList, sessions, settings, vmOk]);
+  const pickedEnv = pickWhere?.startsWith("env:") ? envs[pickWhere.slice(4)] : undefined;
+  const value = pickWhere && (pickWhere === "chat" || pickWhere.startsWith("new:") || (pickedEnv && !busyReason(pickedEnv))) ? pickWhere : defaultWhere;
   const where = decode(value);
   const env = where.kind === "env" ? envs[where.id] : undefined;
   const network = env?.network ?? settings.newEnv.network;
   const placed = where.kind === "chat" ? undefined : { type: env?.type ?? (where.kind === "new" ? where.type : "sim"), network };
   const vmBlocked = !vmOk && placed?.type === "vm";
+
+  // a starter fits one kind of place: gone when you pick another, unless you edited it
+  const tried = useRef<string | null>(null);
+  useEffect(() => {
+    setText((t) => (t === tried.current ? "" : t));
+    tried.current = null;
+  }, [value]);
 
   const start = async () => {
     if (busy || vmBlocked) return;
@@ -156,7 +167,7 @@ function TaskBox() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               void start();
             }
@@ -169,8 +180,8 @@ function TaskBox() {
               {envList.length > 0 && (
                 <optgroup label="Enclosures">
                   {envList.map((e) => (
-                    <option key={e.id} value={`env:${e.id}`}>
-                      {e.name} ({e.type === "vm" ? "Linux VM" : "simulated"})
+                    <option key={e.id} value={`env:${e.id}`} disabled={!!busyReason(e)}>
+                      {e.name} ({busyReason(e) ? "busy" : e.type === "vm" ? "Linux VM" : "simulated"})
                     </option>
                   ))}
                 </optgroup>
@@ -210,6 +221,7 @@ function TaskBox() {
               className="task-try-row"
               title={t}
               onClick={() => {
+                tried.current = t;
                 setText(t);
                 ref.current?.focus();
               }}
@@ -248,6 +260,8 @@ function CompareModels() {
   const runs = useStore((s) => s.evalRuns);
   const models = useStore((s) => s.models);
   const suites = useStore((s) => s.suites);
+  const sample = useStore((s) => s.samples[s.samples.length - 1]);
+  const budget = useStore((s) => s.budget);
   useEffect(() => {
     if (!suites) void loadSuites();
   }, [suites]);
@@ -261,11 +275,11 @@ function CompareModels() {
       if (seen.has(r.suiteId)) continue;
       seen.add(r.suiteId);
       const ran = new Set(others.filter((x) => x.suiteId === r.suiteId).flatMap((x) => x.config.modelIds));
-      const m = installed.find((x) => !ran.has(x.id));
+      const m = installed.find((x) => !ran.has(x.id) && fitLabel(estimate(x, Math.min(16384, x.nativeContext), sample, budget, models), sample?.system.freeBytes).cls !== "err");
       if (m) return { model: m, suiteId: r.suiteId, suite: r.suiteTitle };
     }
     return null;
-  }, [others, models]);
+  }, [others, models, sample?.system.freeBytes, budget]); // eslint-disable-line react-hooks/exhaustive-deps
   const suiteN = suites?.filter((s) => s.id !== "boundary").length ?? 0;
   return (
     <div className="exp">
@@ -304,10 +318,7 @@ function CompareModels() {
         {gap ? (
           <button
             className="btn sm exp-btn"
-            onClick={() => {
-              useStore.setState({ evalPick: gap.model.id });
-              openView({ kind: "evals", suiteId: gap.suiteId });
-            }}
+            onClick={() => openView({ kind: "evals", suiteId: gap.suiteId, pick: gap.model.id })}
             title={`${gap.model.name} hasn't run ${gap.suite}`}>
             <span className="truncate">
               Try {gap.model.name} on {gap.suite}
@@ -449,13 +460,13 @@ function Shelf({ envs }: { envs: EnvSummary[] }) {
   return (
     <section className="home-sec">
       <div className="home-sec-head">
-        <h2>Enclosures</h2>
         <Hint
           tip="Where an agent's tool calls run, with its own files and network. The lid shows the network: shut, vented for package registries, lifted for the web. A dashed pane is a simulated shell, a solid one a real Linux VM. The plant grows with its sessions."
           width={320}
         >
-          <span className="dim num hint-text">{envs.length}</span>
+          <h2 className="hint-text">Enclosures</h2>
         </Hint>
+        <span className="dim num">{envs.length}</span>
         <span className="blk-spacer" />
         {envs.length > SHELF_LIMIT && (
           <button className="cell-link" onClick={() => setAll(!all)}>
@@ -489,7 +500,18 @@ function Specimen({ env, n, live }: { env: EnvSummary; n: number; live: number }
         <EnclosureArt network={env.network} type={env.type} sessions={n} live={live > 0} failed={env.status === "error"} flip={flip} />
         <span className="specimen-name truncate">{env.name}</span>
         <span className="specimen-sub dim truncate">
-          {live > 0 ? <span className="live-text">running</span> : env.status === "error" ? <span className="err-text">failed to start</span> : n ? plural(n, "session") : "empty"}
+          {env.statusDetail?.startsWith("Waiting") ? (
+            <span className="warn-text">waiting for a slot</span>
+          ) : live > 0 ? (
+            <span className="live-text">working</span>
+          ) : env.status === "error" ? (
+            <span className="err-text">failed to start</span>
+          ) : (
+            <>
+              {env.status === "running" && <span className="dot running specimen-on" title="Running" />}
+              {n ? plural(n, "session") : "empty"}
+            </>
+          )}
         </span>
       </button>
       <button className="specimen-add icon-btn sm" title={`New session in ${env.name}`} aria-label={`New session in ${env.name}`} onClick={() => void newSession(env.id)}>
@@ -550,7 +572,7 @@ function SessionsTable({ list }: { list: SessionSummary[] }) {
           <th>Session</th>
           <th>Enclosure</th>
           <th>Model</th>
-          <th>Harness</th>
+          <th>Prompt</th>
           <th className="r">Context</th>
           <th className="r">Used</th>
           <th>Status</th>

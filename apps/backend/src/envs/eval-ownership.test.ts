@@ -162,7 +162,7 @@ test("a case env refuses the shell, network, other sessions and lifecycle ops fr
     assert.equal(d.results[0].status, "pass", `the case ran undisturbed: ${d.results[0].detail}`);
     for (const [what, p] of attempts) {
       const err = await p;
-      assert.ok(err?.status === 409 && /^env (read-only|busy): eval "Tool basics" case tb-find-port running$/.test(err.message), `${what} refused with the reason: ${err?.message ?? "accepted"}`);
+      assert.ok(err?.status === 409 && /^Enclosure (read-only|busy): eval "Tool basics" case tb-find-port running$/.test(err.message), `${what} refused with the reason: ${err?.message ?? "accepted"}`);
     }
     assert.deepEqual(
       ran.filter((r) => r.env === env.id && r.as === "root"),
@@ -193,7 +193,7 @@ test("a case whose fork fails errors with the reason and names no env; the half-
     const r = d.results[0];
     assert.equal(r.status, "error");
     assert.equal(r.envId, undefined, "the result names no env");
-    assert.equal(r.detail, "environment fork failed: disk full");
+    assert.equal(r.detail, "enclosure fork failed: disk full");
     assert.equal(store.get<{ env_id: string | null }>("SELECT env_id FROM eval_results WHERE run_id = ?", run.id)?.env_id, null);
     const failed = [...seen].filter((id) => !before.has(id));
     assert.equal(failed.length, 1, "the fork did insert an env");

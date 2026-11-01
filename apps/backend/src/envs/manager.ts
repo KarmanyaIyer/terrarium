@@ -114,8 +114,11 @@ export class EnvManager {
   private simQueue: string[] = [];
   private simWakers = new Set<() => void>();
   private simCancels = new Map<string, (why: string) => void>();
-  /** A session's env went into that queue: its trace says so. */
+  /** Envs whose boot may wait for a slot (a session, an eval case), and how each hears about it. A Start press isn't one: it's told why at once. */
   private queuedNotes = new Map<string, (detail: string) => void>();
+  /** Envs in a slot wait, and a cancel that came while one was between waits (holding no timer, or on a boot lock). */
+  private waiting = new Set<string>();
+  private waitCancels = new Map<string, string>();
   private active = new Map<string, string>(); // envId -> sessionId using it
   private shells = new Map<string, number>(); // envId -> user shell commands in flight
   private manifests = new Map<string, Manifest>(); // last known /workspace manifest per env
@@ -144,7 +147,7 @@ export class EnvManager {
 
   private row(id: string): EnvRow {
     const row = this.store.get<EnvRow>("SELECT * FROM envs WHERE id = ?", id);
-    if (!row) throw new HttpError(404, `environment not found: ${id}`);
+    if (!row) throw new HttpError(404, `enclosure not found: ${id}`);
     return row;
   }
 
@@ -210,13 +213,18 @@ export class EnvManager {
    */
   private assertIdle(id: string): void {
     const uses = this.uses(id);
-    if (uses.length) throw new HttpError(409, `env busy: ${uses.map((u) => u.reason).join("; ")}`);
+    if (uses.length) throw new HttpError(409, `Enclosure busy: ${uses.map((u) => u.reason).join("; ")}`);
+  }
+
+  private busyError(id: string): HttpError {
+    const name = this.store.get<EnvRow>("SELECT * FROM envs WHERE id = ?", id)?.name ?? "This enclosure";
+    return new HttpError(409, `${name} is busy: ${this.uses(id).map((u) => u.reason).join("; ") || "another session is using it"}`);
   }
 
   /** An env a running eval case owns is read-only to everyone else (shell, network, other sessions). */
   private assertNotEvalOwned(id: string, sessionId?: string): void {
     const ev = this.evalUses(id).get(id);
-    if (ev && (!sessionId || sessionId !== ev.sessionId)) throw new HttpError(409, `env read-only: ${ev.reason}`);
+    if (ev && (!sessionId || sessionId !== ev.sessionId)) throw new HttpError(409, `Enclosure read-only: ${ev.reason}`);
   }
 
   get(id: string): EnvSummary {
@@ -303,7 +311,7 @@ export class EnvManager {
   private async runtimeFor(row: EnvRow): Promise<EnvRuntime> {
     const rt = this.runtimes.get(row.id);
     if (rt) return rt;
-    if (row.released) throw new HttpError(409, "environment storage was released after its eval run");
+    if (row.released) throw new HttpError(409, "this enclosure's storage was released after its eval run");
     let open = this.opening.get(row.id);
     if (!open) {
       const cfg = this.config(row);
@@ -505,7 +513,7 @@ export class EnvManager {
     try {
       const rt = await driver.create({ id, dir: this.envDir(id), network, ...config, seedFiles: req.type === "sim" ? req.seedFiles : undefined });
       this.attach(id, rt);
-      if (req.type === "vm" && req.seedFiles?.length) await this.seed(id, rt, req.seedFiles);
+      if (req.type === "vm" && req.seedFiles?.length) await this.seed(id, rt, req.seedFiles, !!opts.ephemeral);
       // Factory snapshot: reset returns here.
       const snap = await this.snapshot(id, "factory", "factory");
       this.store.run("UPDATE envs SET factory_snapshot_id = ? WHERE id = ?", snap.id, id);
@@ -533,8 +541,15 @@ export class EnvManager {
     return { id: snapId, envId, label, kind, bytes, createdAt };
   }
 
-  async start(id: string): Promise<EnvSummary> {
-    await this.mutex.run(id, () => this.startUnlocked(id));
+  /** `queue`: wait for a free slot (an eval case grading its env). Otherwise a full house is a 409 that names who holds it. */
+  async start(id: string, opts: { queue?: boolean } = {}): Promise<EnvSummary> {
+    const mine = opts.queue && !this.queuedNotes.has(id);
+    if (mine) this.queuedNotes.set(id, () => {});
+    try {
+      await this.mutex.run(id, () => this.startUnlocked(id));
+    } finally {
+      if (mine) this.queuedNotes.delete(id);
+    }
     return this.get(id);
   }
 
@@ -570,9 +585,23 @@ export class EnvManager {
    * lifecycle op that holds its env's mutex and waits for the boot lock (start, snapshot, reset) can't deadlock it.
    */
   private async boot(row: EnvRow, rt: EnvRuntime): Promise<void> {
-    if (row.type === "sim") return this.bootSim(row, rt);
+    try {
+      await (row.type === "sim" ? this.bootSim(row, rt) : this.bootVm(row, rt));
+    } finally {
+      this.waiting.delete(row.id);
+      this.waitCancels.delete(row.id);
+    }
+  }
+
+  private assertWaitLive(id: string): void {
+    const why = this.waitCancels.get(id);
+    if (why) throw new HttpError(409, why);
+  }
+
+  private async bootVm(row: EnvRow, rt: EnvRuntime): Promise<void> {
     let told = false;
     for (let attempt = 0; ; attempt++) {
+      this.assertWaitLive(row.id);
       const step = await this.vmBoot.run("vm", async () => {
         const others = await this.vmSlots(row.id);
         if (others.length < MAX_RUNNING_VMS) {
@@ -592,6 +621,7 @@ export class EnvManager {
       if (!step.victim) {
         if (!told) {
           told = true;
+          this.waiting.add(row.id);
           const detail = `Waiting for a free VM (${step.waitingFor})`;
           this.setStatus(row.id, "starting", detail);
           this.queuedNotes.get(row.id)?.(detail);
@@ -622,6 +652,7 @@ export class EnvManager {
     let queued = false;
     try {
       for (;;) {
+        this.assertWaitLive(row.id);
         const next = await this.simBoot.run("sim", async () => {
           const max = this.budgets.get().maxSimWorkers;
           const others = this.store
@@ -634,7 +665,9 @@ export class EnvManager {
           }
           const idle = turn ? others.find((r) => r.status === "running" && this.uses(r.id).length === 0) : undefined;
           if (idle) return { done: false as const, victim: idle.id };
-          return { done: false as const, waitingFor: others.map((r) => this.uses(r.id).map((u) => u.reason).join(", ") || r.status).join("; ") };
+          const why = others.map((r) => `${r.name}: ${this.uses(r.id).map((u) => u.reason).join(", ") || r.status}`).join("; ");
+          if (!this.queuedNotes.has(row.id)) throw new HttpError(409, `${max} simulated shell${max === 1 ? " is" : "s are"} in use (${why || "others are waiting"}); stop one first`);
+          return { done: false as const, waitingFor: why };
         });
         if (next.done) return;
         if (next.victim) {
@@ -642,14 +675,15 @@ export class EnvManager {
             const cur = this.store.get<EnvRow>("SELECT * FROM envs WHERE id = ?", next.victim);
             if (!cur || !this.runtimes.get(next.victim!)?.isRunning() || cur.status !== "running" || this.uses(next.victim!).length) return;
             log.info(`stopping idle simulated worker ${next.victim} to make room for ${row.id}`);
-            await this.stopUnlocked(next.victim!, "stopped to make room for another simulated worker");
+            await this.stopUnlocked(next.victim!, "stopped to make room for another simulated shell");
           });
           continue;
         }
         if (!queued) {
           queued = true;
+          this.waiting.add(row.id);
           this.simQueue.push(row.id);
-          const detail = `Waiting for a free simulated worker (${next.waitingFor || "all in use"})`;
+          const detail = `Waiting for a free simulated shell (${next.waitingFor || "all in use"})`;
           this.setStatus(row.id, "starting", detail);
           this.queuedNotes.get(row.id)?.(detail);
           log.info(`${row.id} queued for a simulated worker`);
@@ -690,9 +724,16 @@ export class EnvManager {
     for (const wake of [...this.simWakers]) wake();
   }
 
-  /** Ends this env's wait for a simulated worker, if it has one: its boot fails with `why` and nothing else changes. */
+  /**
+   * Ends this env's wait for a slot, if it has one: its boot fails with `why` and nothing else changes. The session that
+   * was waiting no longer uses the env from here on, so a Stop that follows isn't refused as busy.
+   */
   cancelQueued(id: string, why = "stopped while waiting for a free slot"): void {
-    this.simCancels.get(id)?.(why);
+    if (!this.waiting.has(id)) return;
+    this.active.delete(id);
+    const cancel = this.simCancels.get(id);
+    if (cancel) cancel(why);
+    else this.waitCancels.set(id, why);
   }
 
   /** Other VMs whose VMM is up (running, or still shutting down), least recently used first. */
@@ -757,17 +798,22 @@ export class EnvManager {
 
   /**
    * Write files as the agent into a fresh env through the managed start/stop (VM cap). The env's mutex is held
-   * throughout, so making room for another VM can't stop it halfway through.
+   * throughout, so making room for another VM can't stop it halfway through. An eval case's fork waits for a slot.
    */
-  private async seed(id: string, rt: EnvRuntime, files: { path: string; content: string }[]): Promise<void> {
-    await this.mutex.run(id, async () => {
-      await this.startUnlocked(id);
-      try {
-        for (const f of files) await rt.writeFile(f.path, f.content, { as: "agent" });
-      } finally {
-        await this.stopUnlocked(id);
-      }
-    });
+  private async seed(id: string, rt: EnvRuntime, files: { path: string; content: string }[], wait: boolean): Promise<void> {
+    if (wait) this.queuedNotes.set(id, () => {});
+    try {
+      await this.mutex.run(id, async () => {
+        await this.startUnlocked(id);
+        try {
+          for (const f of files) await rt.writeFile(f.path, f.content, { as: "agent" });
+        } finally {
+          await this.stopUnlocked(id);
+        }
+      });
+    } finally {
+      this.queuedNotes.delete(id);
+    }
   }
 
   private async refreshFacts(id: string, rt: EnvRuntime): Promise<void> {
@@ -812,7 +858,7 @@ export class EnvManager {
     await this.mutex.run(id, async () => {
       const row = this.row(id);
       const target = snapshotId ?? row.factory_snapshot_id ?? row.base_snapshot_id;
-      if (!target) throw new HttpError(409, "environment has no base snapshot to reset to");
+      if (!target) throw new HttpError(409, "this enclosure has no base snapshot to reset to");
       const snap = this.snapshotRow(target);
       this.assertIdle(id);
       const rt = await this.runtimeFor(row);
@@ -857,7 +903,7 @@ export class EnvManager {
     const driver = this.driver(src.type);
     const snap = opts.snapshotId ? this.snapshotRow(opts.snapshotId) : await this.snapshot(sourceId, `fork ${new Date().toISOString().slice(0, 19)}`, "auto").then((s) => this.snapshotRow(s.id));
     this.assertDisk(snap.bytes);
-    if (snap.env_id !== sourceId) throw new HttpError(400, "snapshot belongs to another environment");
+    if (snap.env_id !== sourceId) throw new HttpError(400, "snapshot belongs to another enclosure");
     const id = createOpts.id ?? newId(src.type === "vm" ? "vm" : "sim");
     const network = opts.network ?? src.network;
     const now = Date.now();
@@ -880,7 +926,7 @@ export class EnvManager {
       const cfg = this.config(src);
       const rt = await driver.create({ id, dir: this.envDir(id), network, ...cfg, fromSnapshotDir: snap.path });
       this.attach(id, rt);
-      if (opts.seedFiles?.length) await this.seed(id, rt, opts.seedFiles);
+      if (opts.seedFiles?.length) await this.seed(id, rt, opts.seedFiles, !!createOpts.ephemeral);
       this.setStatus(id, "stopped");
     } catch (err) {
       this.setStatus(id, "error", `fork failed: ${errorMessage(err)}`);
@@ -955,7 +1001,7 @@ export class EnvManager {
   }
 
   async stopAll(): Promise<void> {
-    for (const id of [...this.simCancels.keys()]) this.cancelQueued(id, "the app is shutting down");
+    for (const id of [...this.waiting]) this.cancelQueued(id, "the app is shutting down");
     await Promise.all(
       [...this.runtimes.entries()].map(async ([id, rt]) => {
         if (!rt.isRunning()) return;
@@ -975,14 +1021,14 @@ export class EnvManager {
   /** Running runtime for a session; marks the env busy until release(). */
   async acquire(id: string, sessionId: string, onQueued?: (detail: string) => void): Promise<EnvRuntime> {
     const holder = this.active.get(id);
-    if (holder && holder !== sessionId) throw new HttpError(409, `environment is busy with session ${holder}`);
+    if (holder && holder !== sessionId) throw this.busyError(id);
     this.assertNotEvalOwned(id, sessionId);
     this.active.set(id, sessionId);
-    if (onQueued) this.queuedNotes.set(id, onQueued);
+    this.queuedNotes.set(id, onQueued ?? (() => {}));
     try {
       await this.start(id);
     } catch (err) {
-      this.active.delete(id);
+      if (this.active.get(id) === sessionId) this.active.delete(id);
       throw err;
     } finally {
       this.queuedNotes.delete(id);
@@ -1012,7 +1058,7 @@ export class EnvManager {
   /** Throws the 409 acquire() would, so a run that can't get the env is refused before it starts. */
   assertUsableBy(id: string, sessionId: string): void {
     const holder = this.active.get(id);
-    if (holder && holder !== sessionId) throw new HttpError(409, `environment is busy with session ${holder}`);
+    if (holder && holder !== sessionId) throw this.busyError(id);
     this.assertNotEvalOwned(id, sessionId);
   }
 
@@ -1036,7 +1082,7 @@ export class EnvManager {
     if (free < cfg.hostFreeDiskReserveBytes) {
       if (!this.diskReserveTripped) {
         this.diskReserveTripped = true;
-        const reason = `Host disk reserve reached. Terrarium stopped environment work to keep ${Math.round(cfg.hostFreeDiskReserveBytes / 1073741824)} GiB free.`;
+        const reason = `Host disk reserve reached. Terrarium stopped enclosure work to keep ${Math.round(cfg.hostFreeDiskReserveBytes / 1073741824)} GiB free.`;
         await Promise.all(this.running().map(({ id, runtime }) => this.terminateForBudget(id, runtime, "host_disk", reason, cfg.hostFreeDiskReserveBytes, free, "bytes")));
       }
       return;
@@ -1048,10 +1094,10 @@ export class EnvManager {
       const r = stats?.get(id) ?? (await runtime.resources().catch(() => null));
       if (!r) continue;
       if (r.rssBytes > cfg.simWorkerRssBytes) {
-        const reason = `Simulated environment stopped after using more than ${Math.round(cfg.simWorkerRssBytes / 1048576)} MiB of memory.`;
+        const reason = `Simulated shell stopped after using more than ${Math.round(cfg.simWorkerRssBytes / 1048576)} MiB of memory.`;
         await this.terminateForBudget(id, runtime, "sim_rss", reason, cfg.simWorkerRssBytes, r.rssBytes, "bytes");
       } else if ((r.cpuTimeMs ?? 0) > cfg.simWorkerCpuMs) {
-        const reason = `Simulated environment stopped after using more than ${Math.round(cfg.simWorkerCpuMs / 60000)} minutes of CPU time.`;
+        const reason = `Simulated shell stopped after using more than ${Math.round(cfg.simWorkerCpuMs / 60000)} minutes of CPU time.`;
         await this.terminateForBudget(id, runtime, "sim_cpu", reason, cfg.simWorkerCpuMs, r.cpuTimeMs ?? 0, "milliseconds");
       }
     }

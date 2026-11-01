@@ -3,6 +3,8 @@
 
 export interface UndoEntry {
   label: string; // "Removed L28N1343"
+  /** The toast after undoing, when "Undid: <label>" reads badly. */
+  undone?: string;
   undo: () => void | Promise<unknown>;
   redo: () => void | Promise<unknown>;
   /** Pushes with the same key within coalesceMs merge: the first undo, the last redo. */

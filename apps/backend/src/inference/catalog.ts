@@ -39,7 +39,7 @@ export const KNOWN_MODELS: Record<string, KnownModel> = {
 
 /** A folder name a person can read: "gemma-4-e2b-it-4bit" -> "Gemma 4 E2B", "Qwen3.5-2B-4bit" -> "Qwen3.5 2B". */
 export function displayName(id: string): string {
-  const words = id.split(/[-_]/).filter((w) => !/^(mlx|it|\d+bit)$/i.test(w));
+  const words = id.split(/[-_]/).filter((w) => w && !/^(mlx|it|\d+bit)$/i.test(w));
   if (!words.length) return id;
   return words.map((w, i) => (/^[a-z]?\d+(\.\d+)?b$/i.test(w) ? w.toUpperCase() : i === 0 ? w[0]!.toUpperCase() + w.slice(1) : w)).join(" ");
 }

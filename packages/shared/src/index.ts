@@ -671,7 +671,8 @@ export interface ModelSuggestion {
   repo: string; // Hugging Face repo id
   name: string;
   params: string;
-  note: string; // one line: why it's listed
+  note: string; // a few words: why it's listed
+  detail?: string; // the numbers behind it, on hover
   sizeBytes?: number;
   released?: string; // YYYY-MM-DD
 }

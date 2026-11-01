@@ -39,9 +39,12 @@
   padding: 0 8px;
   border-bottom: 0.5px solid var(--line-2);
   flex: none;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 .insp-tabs button {
   position: relative;
+  flex: none;
   height: 28px;
   padding: 0 8px;
   border: 0;
@@ -993,8 +996,6 @@
   gap: 6px;
   font-size: var(--fs-xs);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--fg-3);
 }
 .pt-text {

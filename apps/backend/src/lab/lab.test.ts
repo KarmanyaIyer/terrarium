@@ -160,7 +160,7 @@ test("load: unsupported and over-the-ceiling are refused with a reason", async (
   try {
     const big = await call("POST", "/api/lab/load", { modelId: "tiny-qwen" });
     assert.equal(big.status, 409);
-    assert.match(big.json.error, /Not enough memory for tiny-qwen: it needs about 2\.5 GB/);
+    assert.match(big.json.error, /Not enough memory for Tiny qwen: it needs about 2\.5 GB/);
     assert.equal((await labState()).status, "stopped", "nothing started");
   } finally {
     app.inference.setBudget(12e9);
@@ -317,7 +317,7 @@ test("oMLX loading next to the Lab: idle models make room first, then a clear re
     await app.lab.beforeOmlxLoad("tiny-qwen", 4096);
     assert.deepEqual(unloaded, ["tiny-bonsai"]);
     app.inference.setBudget(2.6e9);
-    await assert.rejects(app.lab.beforeOmlxLoad("tiny-qwen", 4096), /Not enough memory for tiny-qwen: the Lab holds about 2\.5 GB of the 2\.6 GB memory ceiling\. Unload the Lab's model/);
+    await assert.rejects(app.lab.beforeOmlxLoad("tiny-qwen", 4096), /Not enough memory for Tiny qwen: the Lab holds about 2\.5 GB of the 2\.6 GB memory ceiling\. Unload the Lab's model/);
     assert.equal((await labState()).status, "ready", "a specimen opened in the Lab view stays");
   } finally {
     Object.assign(inf, orig);

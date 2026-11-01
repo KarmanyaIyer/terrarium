@@ -57,7 +57,7 @@ export const UserBlock = memo(function UserBlock({ it, t0 }: { it: UserItem; t0:
 // ---------- model call ----------
 
 function FinishChip({ reason }: { reason: string }) {
-  const cls = reason === "stop" || reason === "tool_calls" ? "" : reason === "aborted" ? "warn" : "err";
+  const cls = reason === "stop" || reason === "tool_calls" ? "call-extra" : reason === "aborted" ? "warn" : "err";
   const title: Record<string, string> = {
     stop: "The model ended its reply",
     tool_calls: "The model asked to run a tool",
