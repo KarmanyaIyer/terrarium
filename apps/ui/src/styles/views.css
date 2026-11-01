@@ -1724,6 +1724,8 @@ select.input {
 .ev-res-reason {
   flex: 1;
   min-width: 0;
+  /* a zero basis keeps a long grader message from widening the table column; it truncates instead */
+  width: 0;
 }
 .ev-res.pass .ev-res-glyph {
   color: var(--ok-text);
