@@ -1,0 +1,206 @@
+import { useState } from "react";
+import { FlaskConical, MessageSquare, Pencil, SlidersHorizontal, Trash2, Upload } from "lucide-react";
+import type { LabStrain } from "@terrarium/shared";
+import { chatWithStrain, deleteStrain, importStrain, loadStrainIntoMix, strainsInEvals, updateStrain, useLab } from "../../state/lab";
+import { format, parse } from "../../lib/recipe";
+import { ConfirmButton, CopyButton, Hint, Popover, Time, usePop } from "../../components/ui";
+import { LAB_TIP } from "../../lib/labExplain";
+
+/** Lines starting with # are comments, so "Export all" text pastes back in. */
+const stripComments = (s: string) =>
+  s
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("#"))
+    .join("\n");
+
+function exportAll(strains: LabStrain[], name: (id: string) => string): string {
+  return strains.map((s) => [`# ${s.name} (${name(s.baseModelId)})`, ...(s.notes ? s.notes.split("\n").map((l) => `# ${l}`) : []), format(s.pushes)].join("\n")).join("\n\n");
+}
+
+export function Strains() {
+  const strains = useLab((s) => s.strains);
+  const support = useLab((s) => s.lab?.support);
+  const serving = useLab((s) => s.lab?.servingStrains);
+  const loaded = useLab((s) => (s.lab?.status === "ready" ? s.lab.model?.modelId : undefined));
+  const name = (id: string) => support?.find((x) => x.modelId === id)?.name ?? id;
+  return (
+    <div className="strains lab-scroll">
+      <div className="strains-bar">
+        <ImportStrain />
+        {!!strains?.length && <CopyButton text={() => exportAll(strains, name)} label="Export all" />}
+      </div>
+      {strains == null && <div className="lab-empty dim2">Loading strains…</div>}
+      {strains?.length === 0 && (
+        <div className="lab-empty">
+          No strains yet. Build a mix in Steer and save it, or import a recipe.
+        </div>
+      )}
+      {!!strains?.length && (
+        <div className="strain-list">
+          {strains.map((st) => (
+            <StrainRow key={st.id} st={st} base={name(st.baseModelId)} serving={!!serving?.includes(st.id)} onBench={loaded === st.baseModelId} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string; serving: boolean; onBench: boolean }) {
+  const [edit, setEdit] = useState(false);
+  const [nm, setNm] = useState(st.name);
+  const [notes, setNotes] = useState(st.notes);
+  const recipe = format(st.pushes);
+  return (
+    <div className="strain-card">
+      <div className="strain-head">
+        <FlaskConical size={14} className="strain-ic" aria-hidden />
+        {edit ? (
+          <input className="input strain-name-in" value={nm} onChange={(e) => setNm(e.target.value)} aria-label="Strain name" autoFocus />
+        ) : (
+          <b className="strain-name">{st.name}</b>
+        )}
+        <span className="dim2">of {base}</span>
+        {serving && (
+          <Hint tip="A running chat or eval uses this strain. The Lab keeps its base model loaded until it finishes.">
+            <span className="chip ok">serving</span>
+          </Hint>
+        )}
+        <span className="blk-spacer" />
+        <span className="dim2 num">
+          <Time ts={st.updatedAt} />
+        </span>
+      </div>
+      <div className="strain-recipe">
+        <code className="mono selectable">{recipe}</code>
+        <CopyButton text={recipe} />
+      </div>
+      {edit ? (
+        <textarea className="textarea strain-notes-in" rows={3} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} aria-label="Notes" />
+      ) : (
+        st.notes && <div className="strain-notes">{st.notes}</div>
+      )}
+      <div className="strain-acts">
+        {edit ? (
+          <>
+            <button
+              className="btn sm primary"
+              disabled={!nm.trim()}
+              onClick={async () => {
+                if (await updateStrain(st.id, { name: nm.trim(), notes: notes.trim() })) setEdit(false);
+              }}
+            >
+              Save
+            </button>
+            <button
+              className="btn sm ghost"
+              onClick={() => {
+                setNm(st.name);
+                setNotes(st.notes);
+                setEdit(false);
+              }}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn sm" onClick={() => void chatWithStrain(st)} title={onBench ? undefined : `The Lab loads ${base} for it`}>
+              <MessageSquare /> Open a chat
+            </button>
+            <button className="btn sm" onClick={strainsInEvals} title="Evals list strains under Lab strains">
+              Use in evals
+            </button>
+            <button className="btn sm ghost" onClick={() => loadStrainIntoMix(st)} title={onBench ? "Replace the mix with this recipe" : `Replace the mix with this recipe. The bench has another model loaded; ids are per model.`}>
+              <SlidersHorizontal /> Load into mix
+            </button>
+            <button className="btn sm ghost" onClick={() => setEdit(true)}>
+              <Pencil /> Edit
+            </button>
+            <ConfirmButton small className="ghost" icon={<Trash2 />} label="Delete" confirmLabel={`Delete "${st.name}"`} disabled={serving} title={serving ? "In use by a running chat or eval" : undefined} onConfirm={() => deleteStrain(st.id)} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ImportStrain() {
+  const pop = usePop();
+  const support = useLab((s) => s.lab?.support);
+  const loaded = useLab((s) => s.lab?.model?.modelId);
+  const ok = support?.filter((x) => x.supported) ?? [];
+  const [text, setText] = useState("");
+  const [nm, setNm] = useState("");
+  const [base, setBase] = useState("");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const p = parse(stripComments(text));
+  const baseId = base || loaded || ok[0]?.modelId || "";
+  return (
+    <>
+      <button ref={pop.ref} className="btn sm" onClick={pop.toggle}>
+        <Upload /> Import
+      </button>
+      <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={380}>
+        <form
+          className="pop-pad lab-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!p.pushes.length || !nm.trim() || !baseId) return;
+            setBusy(true);
+            const st = await importStrain(nm.trim(), baseId, p.pushes, notes.trim());
+            setBusy(false);
+            if (st) {
+              pop.close();
+              setText("");
+              setNm("");
+              setNotes("");
+            }
+          }}
+        >
+          <label>
+            <span>
+              <Hint tip={LAB_TIP.recipe}>
+                <span className="hint-text">Recipe</span>
+              </Hint>
+            </span>
+            <textarea className="textarea mono" rows={3} autoFocus spellCheck={false} value={text} placeholder="L22N2742+0.8 L8N344=25" onChange={(e) => setText(e.target.value)} />
+          </label>
+          {text.trim() && (
+            <div className="dim2 num">
+              {p.pushes.length} push{p.pushes.length === 1 ? "" : "es"}
+              {p.errors.map((er, i) => (
+                <div key={i} className="warn-text">
+                  {er}
+                </div>
+              ))}
+            </div>
+          )}
+          <label>
+            <span>Base model</span>
+            <select className="input select" value={baseId} onChange={(e) => setBase(e.target.value)}>
+              {ok.map((x) => (
+                <option key={x.modelId} value={x.modelId}>
+                  {x.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="dim2 lab-note">Neuron ids belong to one model. A recipe from another model points at unrelated neurons.</div>
+          <label>
+            <span>Name</span>
+            <input className="input" value={nm} onChange={(e) => setNm(e.target.value)} />
+          </label>
+          <label>
+            <span>Notes</span>
+            <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </label>
+          <button className="btn sm primary" disabled={!p.pushes.length || !nm.trim() || !baseId || busy}>
+            Import strain
+          </button>
+        </form>
+      </Popover>
+    </>
+  );
+}

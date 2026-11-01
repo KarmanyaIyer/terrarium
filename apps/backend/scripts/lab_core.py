@@ -249,25 +249,35 @@ class Lab:
     def dose_unit(self, layer: int, neuron: int) -> float:
         return float(self.resid[layer] / max(self.down_norm[layer][neuron].item(), 1e-6))
 
+    def check_mix(self, pushes: list | None) -> None:
+        """Validates pushes against this model without touching the hooks, so it is safe while another op runs."""
+        if not isinstance(pushes, (list, type(None))):
+            raise LabError("pushes must be a list")
+        for p in pushes or []:
+            if not isinstance(p, dict):
+                raise LabError("each push must be an object")
+            layer, n = self.check_ref(p.get("layer"), p.get("neuron"))
+            v = p.get("value")
+            if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v):
+                raise LabError(f"L{layer}N{n}: value must be a number")
+            if p.get("mode", "dose") not in ("dose", "clamp"):
+                raise LabError(f"L{layer}N{n}: mode must be dose or clamp")
+
     def apply_mix(self, pushes: list | None, scale: float = 1.0) -> None:
         """pushes: [{layer, neuron, mode: dose|clamp, value}]. Clears previous interventions first."""
         self.clear()
+        self.check_mix(pushes)
         for p in pushes or []:
-            layer, n = self.check_ref(p.get("layer"), p.get("neuron"))
-            mode, v = p.get("mode", "dose"), p.get("value")
-            if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v):
-                raise LabError(f"L{layer}N{n}: value must be a number")
+            layer, n, mode, v = p["layer"], p["neuron"], p.get("mode", "dose"), p["value"]
             h = self.hooks[layer]
             one = mx.zeros((h.n,), dtype=mx.float32).at[n].add(1.0)
             if mode == "clamp":
                 h.clamp_mask = one if h.clamp_mask is None else mx.maximum(h.clamp_mask, one)
                 prev = h.clamp_val if h.clamp_val is not None else mx.zeros((h.n,), dtype=mx.float32)
                 h.clamp_val = prev * (1 - one) + one * float(v)
-            elif mode == "dose":
+            else:
                 prev = h.add if h.add is not None else mx.zeros((h.n,), dtype=mx.float32)
                 h.add = prev + one * (float(v) * scale * self.dose_unit(layer, n))
-            else:
-                raise LabError(f"L{layer}N{n}: mode must be dose or clamp")
 
     # ---------- weights ----------
 
@@ -464,7 +474,7 @@ class Lab:
         valid = mx.array([1.0 if (i > 0 and kinds[i] != "template") else 0.0 for i in range(T)])
         if valid.sum().item() == 0:
             valid = mx.array([0.0] + [1.0] * (T - 1)) if T > 1 else mx.ones((T,))
-        tops = int(req.get("top") or 40)
+        tops = max(1, min(int(req.get("top") or 40), 200))
         best_v, best_i, best_at, per_v, per_i = [], [], [], [], []
         offset = 0
         offsets = []
@@ -507,6 +517,8 @@ class Lab:
             per_token.append(row)
         watch = []
         for w in req.get("watch") or []:
+            if not isinstance(w, dict):
+                raise LabError("each watch entry must be {layer, neuron}")
             layer, n = self.check_ref(w.get("layer"), w.get("neuron"))
             watch.append(self._trace(acts, layer, n))
         layer_view = None
@@ -661,8 +673,12 @@ class Lab:
             raise LabError("give at least 2 concept texts and 2 control texts")
         if len(concept) + len(control) > 200:
             raise LabError("at most 200 texts in total")
-        lo, hi = req.get("layers") or [0, self.n_layers - 1]
-        lo, hi = max(0, int(lo)), min(self.n_layers - 1, int(hi))
+        span = req.get("layers") or [0, self.n_layers - 1]
+        if not isinstance(span, list) or len(span) != 2 or not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in span):
+            raise LabError("layers must be [first, last]")
+        lo, hi = max(0, int(span[0])), min(self.n_layers - 1, int(span[1]))
+        if lo > hi:
+            raise LabError(f"layers: first must be at most last, within 0 to {self.n_layers - 1}")
         layers = list(range(lo, hi + 1))
         typ = mx.concatenate([self.typ[i] for i in layers])
         self.clear()

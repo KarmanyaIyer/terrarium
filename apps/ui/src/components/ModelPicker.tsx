@@ -44,10 +44,11 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
 
   const rows = useMemo(
     () =>
-      models.map((m) => ({ m, e: estimate(m, ctx, sample, budget, models) })).sort((a, b) => Number(b.m.loaded) - Number(a.m.loaded) || a.e.bytes - b.e.bytes),
+      models.filter((m) => !m.strain).map((m) => ({ m, e: estimate(m, ctx, sample, budget, models) })).sort((a, b) => Number(b.m.loaded) - Number(a.m.loaded) || a.e.bytes - b.e.bytes),
     [models, ctx, sample, budget],
   );
   const scaleMax = Math.max(budget.budgetBytes, ...rows.map((r) => r.e.otherLoaded + r.e.bytes)) || 1;
+  const strains = models.filter((m) => m.strain);
 
   const patch = (p: Parameters<NonNullable<ReturnType<typeof useStore.getState>["backend"]>["updateSession"]>[1]) =>
     void act("Update session", (b) => b.updateSession(session.id, p)).then((s) => {
@@ -69,6 +70,7 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
     <>
       <button ref={pop.ref} className="hdr-btn model" onClick={pop.toggle} title={current ? `${current.id}\n${current.params} ${current.quant}` : session.modelId}>
         <span className={`dot ${current?.loaded ? "ready" : ""}`} title={current?.loaded ? "Loaded in oMLX" : "Not loaded: first call loads it"} />
+        {current?.strain && <span className="chip strain">strain</span>}
         <span className="hdr-model-name">{current?.name ?? session.modelId}</span>
         <span className="dim">{current?.quant}</span>
         <span className="dim num">{fmtCtx(ctx)}</span>
@@ -136,6 +138,37 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
               </button>
             );
           })}
+          {strains.length > 0 && (
+            <>
+              <div className="menu-label mp-group">
+                Lab strains <span className="dim2">a base model with a neuron mix, served by the Lab</span>
+              </div>
+              {strains.map((m) => {
+                const on = m.id === session.modelId;
+                return (
+                  <button
+                    key={m.id}
+                    className={`mp-row strain${on ? " on" : ""}`}
+                    disabled={running}
+                    title={running ? "Stop the run to switch models" : `${m.strain!.name}: ${m.strain!.recipe}`}
+                    onClick={() => {
+                      pop.close();
+                      if (!on) patch({ modelId: m.id, thinking: false });
+                    }}
+                  >
+                    <span className="mp-name">
+                      {on ? <Check size={12} className="mp-check" /> : <span className="mp-check" />}
+                      <span className="chip strain">strain</span>
+                      <span className="truncate">{m.name}</span>
+                    </span>
+                    <span className="mp-size truncate dim">of {modelName(models, m.strain!.baseModelId)}</span>
+                    <span className="mp-mem mono truncate dim2">{m.strain!.recipe}</span>
+                    <span className="mp-fit dim">Lab</span>
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
         <div className="mp-foot">
           <span className="dim num">

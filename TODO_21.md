@@ -14,10 +14,13 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
       generate/compare/sweep, attribution, OpenAI-compatible chat endpoint (oMLX's own parsers), tokenize
 - [x] Backend: LabService (spawn/supervise, memory budget with oMLX, routes), SQLite migration 005 (strains, probe sets)
 - [x] Strains as models in sessions and evals (gateway + tokenizer routing by model id)
-- [ ] UI (delegated, Opus xhigh, against fixtures)
+- [x] UI (delegated, Opus xhigh, against fixtures): views/lab/*, state/lab.ts, api/lab.ts, lib/recipe.ts,
+      lib/labExplain.tsx, styles/lab.css; strains in the model picker, Evals and Models pages. Typecheck and build
+      clean, UI tests 22/22. Run against the real dev backend: Try the example loads the 4B, finds L22N2742 first
+      and compares "I am **Extralife** Intelligence... extraterrestrial" against "I am **Qwen3.5**..."
 - [x] Tests: sidecar protocol with a tiny random Qwen3.5 (src/lab/sidecar.test.ts), backend routes with a fake
       sidecar (src/lab/lab.test.ts)
-- [ ] Live verification with Qwen3.5-4B through the dev backend: probe, find, steer, strain round trip, strain in a
+- [x] Live verification with Qwen3.5-4B through the dev backend: probe, find, steer, strain round trip, strain in a
       session and an eval, memory numbers
 - [ ] Ready example, screenshots, README Lab section, QA review, commits
 
@@ -68,6 +71,14 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
 - Eval with the strain and thinking on: 0/4 on reasoning; every case ran out of output budget or the 300 s case
   timeout, because the alien-steered model rambles in its thinking ("extr extr ..."). The sidecar serves one request
   at a time, so the eval's 2 parallel light cases queue behind each other (oMLX batches them).
+
+- The dev UI only connects from http://localhost:5173 (config.ts ALLOWED_ORIGINS); 127.0.0.1:5173 gets 403 on CORS.
+- An unrelated Xcode build pushed the load average to 200 to 980. Under that memory pressure the OS evicted the Lab's
+  weights (process RSS 24 MiB, was 2.8 GB) and a 52-token compare took 43 s instead of 3 s. The Lab header's memory
+  line showed that RSS against the ceiling, which read as if the Lab held nothing; it now shows the estimate the
+  ceiling counts, with resident memory in its tooltip. The Mac then froze and was rebooted, which wiped /tmp/t21
+  (scratch scripts, dev data); all numbers below were recorded before that.
+- When the dev backend was killed (background time limit), its sidecar exited with it: no orphan lab_serve.py.
 
 ## Verification
 - Sidecar on Qwen3.5-4B (direct): first load 6.9 s (calibration 5.3 s over 1240 tokens), 1.17 s with cached

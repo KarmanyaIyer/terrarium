@@ -749,7 +749,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
   const samples = useStore((s) => s.samples);
   const budget = useStore((s) => s.budget);
   const sample = samples[samples.length - 1];
-  const [picked, setPicked] = useState<string[]>(() => models.filter((m) => m.loaded).map((m) => m.id));
+  const [picked, setPicked] = useState<string[]>(() => models.filter((m) => m.loaded && !m.strain).map((m) => m.id));
   const [harness, setHarness] = useState<HarnessProfile>(suite.envType === "none" ? "chat" : "terrarium");
   const [thinking, setThinking] = useState(false);
   const [ctx, setCtx] = useState(16384);
@@ -817,7 +817,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
         <div className="ev-runcfg">
           <h3>Run</h3>
           <div className="ev-models">
-            {models.map((m) => {
+            {models.filter((m) => !m.strain).map((m) => {
               const on = picked.includes(m.id);
               // the backend runs a model at most at its native context
               const e = estimate(m, Math.min(ctx, m.nativeContext), sample, budget, models);
@@ -840,6 +840,21 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
                 </label>
               );
             })}
+            {models.some((m) => m.strain) && <div className="ev-model-group">Lab strains</div>}
+            {models
+              .filter((m) => m.strain)
+              .map((m) => {
+                const on = picked.includes(m.id);
+                return (
+                  <label key={m.id} className={`ev-model strain${on ? " on" : ""}`} title={`${m.strain!.recipe}\nRuns on the Lab`}>
+                    <input type="checkbox" checked={on} onChange={() => setPicked((p) => (on ? p.filter((x) => x !== m.id) : [...p, m.id]))} />
+                    <span className="chip strain">strain</span>
+                    <span className="truncate">{m.name}</span>
+                    <span className="dim truncate">of {models.find((x) => x.id === m.strain!.baseModelId)?.name ?? m.strain!.baseModelId}</span>
+                    <span className="fit dim">Lab</span>
+                  </label>
+                );
+              })}
           </div>
           <div className="md-grid">
             <span>Harness</span>

@@ -39,6 +39,15 @@ function segments(sample: ResourceSample, names: Record<string, string>, envName
     if (rest > 0)
       segs.push({ key: "omlx", label: "oMLX server", group: "oMLX process overhead", bytes: rest, color: "var(--c-model-pre)", onClick: () => openView({ kind: "models" }) });
   }
+  if (sample.lab && sample.lab.rssBytes > 0)
+    segs.push({
+      key: "lab",
+      label: sample.lab.modelId ? `Lab: ${names[sample.lab.modelId] ?? sample.lab.modelId}` : "Lab",
+      group: "Lab sidecar (its own copy of the model)",
+      bytes: sample.lab.rssBytes,
+      color: "var(--c-lab)",
+      onClick: () => openView({ kind: "lab" }),
+    });
   sample.envs.forEach((e, i) => {
     const info = envNames[e.envId];
     segs.push({
@@ -172,7 +181,7 @@ export function ServerButton({ small }: { small?: boolean }) {
         {busy ? <Loader2 className="spin" /> : <Play />} Start server
       </button>
     );
-  const loaded = models.filter((m) => m.loaded).length;
+  const loaded = models.filter((m) => m.loaded && !m.strain).length;
   const running = Object.values(sessions).filter((s) => s.status === "running").length;
   const evals = evalRuns.filter((r) => r.status === "running").length;
   const stop = () => act("Stop inference", (b) => b.stopInference());
@@ -199,7 +208,7 @@ function InferenceControl() {
   const inf = useStore((s) => s.inference);
   const models = useStore((s) => s.models);
   const pop = usePop();
-  const loaded = models.filter((m) => m.loaded);
+  const loaded = models.filter((m) => m.loaded && !m.strain);
   const busy = inf.status === "starting" || inf.status === "stopping";
   return (
     <>

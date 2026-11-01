@@ -137,6 +137,20 @@ test("strains and the OpenAI-compatible endpoint", { skip }, async () => {
   assert.equal(t2.count, 2);
 });
 
+test("a strain registers while another request holds the model", { skip }, async () => {
+  const doses = Array.from({ length: 16 }, (_, i) => i / 4);
+  const slow = lab.request("POST", "/sweep", { prompt: "Who are you?", mix: [{ layer: 3, neuron: 0, mode: "dose", value: 1 }], target: { layer: 3, neuron: 0 }, doses, temperature: 1, seed: 1, maxTokens: 300 });
+  for (let i = 0; (await lab.health()).busy !== "sweep"; i++) {
+    assert.ok(i < 100, "sweep started");
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  await lab.request("PUT", "/strains/s2", { pushes: [{ layer: 1, neuron: 3, mode: "clamp", value: 4 }] }, 5_000);
+  const h = await lab.health();
+  assert.equal(h.busy, "sweep", "registered without waiting for the sweep");
+  assert.ok(h.strains?.includes("s2"));
+  await slow;
+});
+
 test("exits when its stdin closes (the backend died)", { skip }, async () => {
   const other = new LabSidecar({ modelId: "tiny", venvDir: join(REPO_DIR, ".venv"), modelsDir: join(dir, "models"), dataDir: join(dir, "lab") });
   let exited = false;

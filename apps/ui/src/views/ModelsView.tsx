@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { ChevronRight, Loader2, Plus, Trash2, X } from "lucide-react";
 import type { ModelDownload, ModelInfo, UpdateModelRequest } from "@terrarium/shared";
 import { act, openSession, openView, toast, useStore } from "../state/store";
+import { useLab } from "../state/lab";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { exactBytes, fmtBytes, fmtCtx } from "../lib/format";
 import { ConfirmButton, Hint, Segmented } from "../components/ui";
@@ -21,7 +22,10 @@ const THINKING: Record<ModelInfo["thinking"], { label: string; tip: string }> = 
 const paramsNum = (p: string) => Number(/([\d.]+)/.exec(p)?.[1] ?? Infinity);
 
 export default function ModelsView() {
-  const models = useStore((s) => s.models);
+  const allModels = useStore((s) => s.models);
+  // Lab strains are mixes on top of these models, listed on the Lab page
+  const models = useMemo(() => allModels.filter((m) => !m.strain), [allModels]);
+  const strainN = allModels.length - models.length;
   const inf = useStore((s) => s.inference);
   const budget = useStore((s) => s.budget);
   const samples = useStore((s) => s.samples);
@@ -255,6 +259,20 @@ export default function ModelsView() {
             No models in the models folder{" "}
             <button className="btn sm" onClick={() => setAdding(true)}>
               <Plus /> Add model
+            </button>
+          </div>
+        )}
+        {strainN > 0 && (
+          <div className="models-strains dim2">
+            {strainN} Lab {strainN === 1 ? "strain" : "strains"} not listed: each is one of these models with a neuron mix.{" "}
+            <button
+              className="cell-link"
+              onClick={() => {
+                useLab.setState({ tab: "strains" });
+                openView({ kind: "lab" });
+              }}
+            >
+              Open Lab strains
             </button>
           </div>
         )}

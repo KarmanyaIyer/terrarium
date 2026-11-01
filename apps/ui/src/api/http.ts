@@ -42,6 +42,7 @@ import type {
   WsMessage,
 } from "@terrarium/shared";
 import { ApiRequestError, type AtOpts, type Backend, type BackendHandlers } from "./backend";
+import { httpLab } from "./lab";
 
 type Method = "GET" | "POST" | "PATCH" | "DELETE";
 
@@ -65,6 +66,7 @@ export class HttpBackend implements Backend {
   private retry = 0;
   private pingTimer: number | undefined;
   private retryTimer: number | undefined;
+  readonly lab = httpLab(this.req.bind(this));
 
   constructor(url: string, token: string) {
     this.base = url.replace(/\/+$/, "");

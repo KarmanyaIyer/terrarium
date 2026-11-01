@@ -41,6 +41,7 @@ import { ApiRequestError, type AtOpts, type Backend, type BackendHandlers } from
 import { BUDGET, INVOICE_FILES, LOG_FILES, MODELS, SIM_FACTS, SUITES, TOTAL_RAM, VM_FACTS } from "./data";
 import { fakeSha, fid, type Built } from "./script";
 import { DEFAULT_SETTINGS, SIM_NOTE, SUGGESTIONS, harnessFixture, inspectFixture, settingsInfo } from "./extras";
+import { FixtureLab } from "./lab";
 import {
   buildChat,
   buildEvalCell,
@@ -111,6 +112,13 @@ export class FixtureBackend implements Backend {
   private cellStats = new Map<Id, { durationMs: number; tokens: { prompt: number; completion: number } }>();
   private liveIds = { fix: "", invoiceEnv: "" };
   private noise = 0;
+  readonly lab = new FixtureLab({
+    emit: (m) => this.emit(m),
+    models: () => this.models,
+    sessions: () => [...this.sessions.values()],
+    putModels: () => this.putModels(),
+    ceiling: () => this.settings.memoryBudgetBytes,
+  });
 
   constructor(o: { speed?: number } = {}) {
     this.speed = o.speed ?? 1;
@@ -620,7 +628,8 @@ export class FixtureBackend implements Backend {
       });
     const backend = 212 * MiB + Math.round(this.noise * 6 * MiB);
     const other = 8.9 * GiB + this.noise * 90 * MiB + (busyModel ? 0.05 * GiB : 0);
-    const used = Math.round(other + infRss + backend + envs.reduce((a, e) => a + e.rssBytes, 0));
+    const lab = this.lab.sample();
+    const used = Math.round(other + infRss + backend + (lab?.rssBytes ?? 0) + envs.reduce((a, e) => a + e.rssBytes, 0));
     const free = TOTAL_RAM - used;
     if (this.inference.status === "ready") this.inference = { ...this.inference, rssBytes: infRss };
     const sample: ResourceSample = {
@@ -628,6 +637,7 @@ export class FixtureBackend implements Backend {
       system: { totalBytes: TOTAL_RAM, usedBytes: used, freeBytes: free, pressure: free < 2 * GiB ? "critical" : free < 4 * GiB ? "warn" : "normal" },
       backendRssBytes: backend,
       inference: this.inference.status === "ready" ? { rssBytes: infRss, loaded: loaded.map((m) => ({ modelId: m.id, bytes: m.residentBytes })) } : undefined,
+      lab,
       envs,
     };
     this.emit({ type: "resources", sample });
@@ -644,6 +654,7 @@ export class FixtureBackend implements Backend {
       settings: this.settings,
       downloads: [...this.downloads.values()],
       versions: { app: "0.1.0", gondolin: "0.14.0", justBash: "3.6.0", piAgentCore: "1.4.0", omlx: "0.7.2" },
+      lab: this.lab.snapshot(),
     });
   }
 

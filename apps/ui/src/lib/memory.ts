@@ -32,7 +32,7 @@ export function estimate(
   const added = Math.max(0, bytes - already);
   const free = sample?.system.freeBytes ?? Infinity;
   const otherLoaded = loadedModels
-    .filter((x) => x.loaded && x.id !== m.id)
+    .filter((x) => x.loaded && !x.strain && x.id !== m.id)
     .reduce((a, x) => a + (x.residentBytes ?? estBytes(x, x.loadedContext ?? x.defaultContext)), 0);
   return {
     bytes,

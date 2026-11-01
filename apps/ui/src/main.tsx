@@ -6,6 +6,7 @@ import "./styles/shell.css";
 import "./styles/session.css";
 import "./styles/inspector.css";
 import "./styles/views.css";
+import "./styles/lab.css";
 import { App } from "./App";
 
 createRoot(document.getElementById("root")!).render(

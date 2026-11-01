@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { Boxes, ChevronRight, FlaskConical, Globe, Package, Plus, Square, SquareCheck, Trash2, WifiOff, Settings as SettingsIcon } from "lucide-react";
+import { Boxes, ChevronRight, FlaskConical, Globe, Microscope, Package, Plus, Square, SquareCheck, Trash2, WifiOff, Settings as SettingsIcon } from "lucide-react";
 import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { act, openEnv, openSession, openView, setPref, useStore } from "../state/store";
+import { useLab } from "../state/lab";
 import { ConfirmButton, Time } from "./ui";
 import { newSession } from "../lib/actions";
 
@@ -67,7 +68,9 @@ export function Sidebar() {
   const expanded = useStore((s) => s.expandedEnvs);
   const inspectorEnvId = useStore((s) => s.inspectorEnvId);
   const showEphemeral = useStore((s) => s.showEphemeral);
-  const models = useStore((s) => s.models);
+  const allModels = useStore((s) => s.models);
+  const models = useMemo(() => allModels.filter((m) => !m.strain), [allModels]);
+  const specimen = useLab((s) => (s.lab?.status === "ready" ? s.lab.model?.name : undefined));
   const evalRuns = useStore((s) => s.evalRuns);
   const width = useStore((s) => s.sidebarWidth);
 
@@ -191,6 +194,15 @@ export function Sidebar() {
             <span className="sb-badge live" title="Eval runs in progress">
               <span className="dot live" />
               {runningEvals}
+            </span>
+          )}
+        </button>
+        <button className={`sb-nav${view.kind === "lab" ? " active" : ""}`} onClick={() => openView({ kind: "lab" })}>
+          <Microscope size={13} />
+          <span>Lab</span>
+          {specimen && (
+            <span className="sb-badge" title={`On the bench: ${specimen}`}>
+              <span className="dot ready" />
             </span>
           )}
         </button>

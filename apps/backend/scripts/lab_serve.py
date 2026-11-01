@@ -332,13 +332,10 @@ class Handler(BaseHTTPRequestHandler):
             pushes = body.get("pushes")
             if not isinstance(pushes, list):
                 return self._error(400, "pushes must be a list")
-            with S.lock:
-                try:
-                    S.lab.apply_mix(pushes)  # validate against this model
-                except LabError as err:
-                    return self._error(400, str(err))
-                finally:
-                    S.lab.clear()
+            try:
+                S.lab.check_mix(pushes)  # no lock: a strain registers while another one generates
+            except LabError as err:
+                return self._error(400, str(err))
             S.lab.strains[self.path[len("/strains/") :]] = pushes
             return self._send(200, {"ok": True})
         self._error(404 if S.lab else 409, "not found" if S.lab else "model not loaded")
@@ -387,7 +384,7 @@ class Handler(BaseHTTPRequestHandler):
         streamed = bool(body.get("stream"))
         started = False
 
-        def emit(obj):
+        def start():
             nonlocal started
             if not started:
                 self.send_response(200)
@@ -396,39 +393,59 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("connection", "close")
                 self.end_headers()
                 started = True
+
+        def emit(obj):
+            start()
             self.wfile.write(f"data: {json.dumps(obj, ensure_ascii=False)}\n\n".encode())
             self.wfile.flush()
 
-        with S.lock:
-            S.busy = "session"
+        if streamed:
+            # Queued behind another generation: answer now and send SSE comments while waiting, so the client's
+            # header and idle timeouts (5 min in Node's fetch) don't cut the request off.
             try:
-                out = chat_completion(body, emit if streamed else (lambda _o: None))
-            except (BrokenPipeError, ConnectionResetError):
-                log("client closed the connection; generation stopped")
+                strain_pushes(str(body.get("model", "")))
+            except LabError as err:
+                return self._send(400, {"error": {"message": str(err), "type": "invalid_request_error"}})
+            while not S.lock.acquire(timeout=10):
+                try:
+                    start()
+                    self.wfile.write(b": queued behind another request\n\n")
+                    self.wfile.flush()
+                except OSError:
+                    self.close_connection = True
+                    return
+        else:
+            S.lock.acquire()
+        S.busy = "session"
+        try:
+            out = chat_completion(body, emit if streamed else (lambda _o: None))
+        except (BrokenPipeError, ConnectionResetError):
+            log("client closed the connection; generation stopped")
+            self.close_connection = True
+            return
+        except ChatError as err:
+            return self._send(err.status, err.body) if not started else None
+        except LabError as err:
+            if started:
+                emit({"error": {"message": str(err), "type": "invalid_request_error"}})
+                self.wfile.write(b"data: [DONE]\n\n")
                 self.close_connection = True
                 return
-            except ChatError as err:
-                return self._send(err.status, err.body) if not started else None
-            except LabError as err:
-                if started:
-                    emit({"error": {"message": str(err), "type": "invalid_request_error"}})
+            return self._send(400, {"error": {"message": str(err), "type": "invalid_request_error"}})
+        except Exception as err:  # noqa: BLE001
+            traceback.print_exc()
+            if started:
+                try:
+                    emit({"error": {"message": f"{type(err).__name__}: {err}", "type": "server_error"}})
                     self.wfile.write(b"data: [DONE]\n\n")
-                    self.close_connection = True
-                    return
-                return self._send(400, {"error": {"message": str(err), "type": "invalid_request_error"}})
-            except Exception as err:  # noqa: BLE001
-                traceback.print_exc()
-                if started:
-                    try:
-                        emit({"error": {"message": f"{type(err).__name__}: {err}", "type": "server_error"}})
-                        self.wfile.write(b"data: [DONE]\n\n")
-                    except OSError:
-                        pass
-                    self.close_connection = True
-                    return
-                return self._send(500, {"error": {"message": f"{type(err).__name__}: {err}", "type": "server_error"}})
-            finally:
-                S.busy = None
+                except OSError:
+                    pass
+                self.close_connection = True
+                return
+            return self._send(500, {"error": {"message": f"{type(err).__name__}: {err}", "type": "server_error"}})
+        finally:
+            S.busy = None
+            S.lock.release()
         if streamed:
             try:
                 self.wfile.write(b"data: [DONE]\n\n")

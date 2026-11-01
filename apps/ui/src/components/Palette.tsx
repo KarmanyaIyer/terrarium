@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Boxes, FlaskConical, MessageSquare, Plus, Server, TerminalSquare } from "lucide-react";
+import { Boxes, FlaskConical, MessageSquare, Microscope, Plus, Server, TerminalSquare } from "lucide-react";
 import { openEnv, openSession, openView, useStore } from "../state/store";
 import { newSession } from "../lib/actions";
 import { relTime } from "../lib/format";
@@ -72,6 +72,7 @@ export function Palette() {
     out.push(
       { id: "v:evals", label: "Evals", icon: <FlaskConical size={13} />, group: "Go to", run: () => openView({ kind: "evals" }) },
       { id: "v:models", label: "Models", icon: <Boxes size={13} />, group: "Go to", run: () => openView({ kind: "models" }) },
+      { id: "v:lab", label: "Lab", icon: <Microscope size={13} />, group: "Go to", run: () => openView({ kind: "lab" }) },
       { id: "a:newenv", label: "New environment", icon: <Plus size={13} />, group: "Actions", run: () => useStore.setState({ newEnvOpen: true }) },
       { id: "a:newchat", label: "New chat", icon: <Plus size={13} />, group: "Actions", run: () => void newSession(null) },
     );

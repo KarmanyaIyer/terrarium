@@ -20,13 +20,15 @@ import type {
 } from "@terrarium/shared";
 import type { Backend, ConnStatus } from "../api/backend";
 import { afterChunk, mergeNetPage } from "../lib/catchup";
+import { labHydrate, labMessage } from "./lab";
 
 export type View =
   | { kind: "home" }
   | { kind: "session"; id: Id }
   | { kind: "evals"; suiteId?: string; runId?: Id }
   | { kind: "models" }
-  | { kind: "settings" };
+  | { kind: "settings" }
+  | { kind: "lab" };
 
 export type Selection =
   | { kind: "call"; callId: Id; seq: number }
@@ -238,6 +240,7 @@ function hydrate(state: AppState) {
     downloads: Object.fromEntries((state.downloads ?? []).map((d) => [d.id, d])),
     ready: true,
   });
+  labHydrate(state.lab);
 }
 
 let disconnect: (() => void) | null = null;
@@ -323,6 +326,10 @@ function handleMessage(msg: WsMessage) {
     case "settings":
       // saved prompts feed the harness cards; the memory ceiling feeds every budget bar
       set((s) => ({ settings: msg.settings, harness: null, budget: { ...s.budget, budgetBytes: msg.settings.memoryBudgetBytes } }));
+      break;
+    case "lab":
+    case "lab_strains":
+      labMessage(msg);
       break;
     case "model_download":
       set((s) => ({ downloads: { ...s.downloads, [msg.download.id]: msg.download } }));
@@ -562,8 +569,8 @@ export function openView(view: View) {
 export function openEnv(envId: Id, tab: InspectorTab = "env") {
   const s = get();
   set({
-    // Models, Evals and Settings have no inspector; an env opened from there shows on Home
-    view: s.view.kind === "models" || s.view.kind === "evals" || s.view.kind === "settings" ? { kind: "home" } : s.view,
+    // Models, Evals, Settings and the Lab have no inspector; an env opened from there shows on Home
+    view: s.view.kind === "models" || s.view.kind === "evals" || s.view.kind === "settings" || s.view.kind === "lab" ? { kind: "home" } : s.view,
     inspectorEnvId: envId,
     inspectorTab: tab,
     inspectorOpen: true,

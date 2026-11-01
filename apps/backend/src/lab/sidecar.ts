@@ -7,10 +7,17 @@ import { randomBytes } from "node:crypto";
 import { createWriteStream, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { LabModelFacts } from "@terrarium/shared";
+import { Agent, fetch as undiciFetch } from "undici";
 import { BACKEND_DIR } from "../config.ts";
 import { logger } from "../util/log.ts";
 
 const log = logger("lab");
+
+/** Lab ops send nothing until they finish: no header or body timeouts (Node's fetch cuts off at 5 min); request()'s own timeout applies. */
+const agent = new Agent({ headersTimeout: 0, bodyTimeout: 0 });
+
+/** The process prints its port before loading the model; this long without it means it hung starting Python. */
+const STARTUP_TIMEOUT_MS = 180_000;
 
 export interface LabHealth {
   status: "loading" | "ready" | "error";
@@ -98,10 +105,24 @@ export class LabSidecar {
     return new Promise((resolve, reject) => {
       let pending = "";
       let gotPort = false;
+      let exited = false;
       const keep = (line: string) => {
         if (!line.trim()) return;
         this.tail.push(line.slice(0, 500));
         if (this.tail.length > 40) this.tail.shift();
+      };
+      const startup = setTimeout(() => {
+        keep(`no port after ${STARTUP_TIMEOUT_MS / 1000} s`);
+        child.kill("SIGKILL");
+      }, STARTUP_TIMEOUT_MS);
+      const finish = (detail: string | undefined) => {
+        if (exited) return;
+        exited = true;
+        clearTimeout(startup);
+        logFile.end();
+        if (this.child === child) this.child = null;
+        if (!gotPort) reject(new Error(detail ?? "Lab process stopped during startup"));
+        this.onExit(detail);
       };
       child.stdout?.on("data", (buf: Buffer) => {
         logFile.write(buf);
@@ -115,6 +136,7 @@ export class LabSidecar {
               const port = (JSON.parse(line) as { port?: unknown }).port;
               if (typeof port === "number" && port > 0) {
                 gotPort = true;
+                clearTimeout(startup);
                 this.port = port;
                 log.info(`Lab sidecar for ${this.modelId} on port ${port} (pid ${child.pid})`);
                 resolve();
@@ -130,17 +152,17 @@ export class LabSidecar {
         for (const line of buf.toString("utf8").split("\n")) keep(line);
       });
       child.on("error", (err) => {
-        // spawn failure (python missing): exit follows with code null
         keep(`spawn failed: ${err.message}`);
+        // a failed spawn (python missing) emits error and close, never exit
+        if (child.pid === undefined) {
+          log.warn(`Lab sidecar failed to start: ${err.message}`);
+          finish(`Could not start the Lab's Python (${cmd.cmd}): ${err.message}. Set up the repo's .venv first.`);
+        }
       });
       child.on("exit", (code, signal) => {
-        logFile.end();
-        if (this.child === child) this.child = null;
         const expected = this.stopping;
         log[expected ? "info" : "warn"](`Lab sidecar exited code=${code} signal=${signal}`);
-        const detail = expected ? undefined : `Lab process exited (${code ?? signal}): ${this.lastLines() || "no output"}`;
-        if (!gotPort) reject(new Error(detail ?? "Lab process stopped during startup"));
-        this.onExit(detail);
+        finish(expected ? undefined : `Lab process exited (${code ?? signal}): ${this.lastLines() || "no output"}`);
       });
     });
   }
@@ -152,13 +174,14 @@ export class LabSidecar {
   async request<T>(method: string, path: string, body?: unknown, timeoutMs = 600_000, signal?: AbortSignal): Promise<T> {
     if (!this.child || !this.port) throw new SidecarError(409, "the Lab is not running");
     const timeout = AbortSignal.timeout(timeoutMs);
-    let res: Response;
+    let res: Awaited<ReturnType<typeof undiciFetch>>;
     try {
-      res = await fetch(`${this.baseUrl}${path}`, {
+      res = await undiciFetch(`${this.baseUrl}${path}`, {
         method,
         headers: { authorization: `Bearer ${this.apiKey}`, ...(body === undefined ? {} : { "content-type": "application/json" }) },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: signal ? AbortSignal.any([timeout, signal]) : timeout,
+        dispatcher: agent,
       });
     } catch (err) {
       if (timeout.aborted) throw new SidecarError(504, `the Lab did not answer within ${Math.round(timeoutMs / 1000)} s`);

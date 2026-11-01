@@ -212,6 +212,25 @@ test("unload, then a crash on load shows a clear error", async () => {
   }
 });
 
+test("a missing python fails the load with a reason and doesn't lock the Lab", async () => {
+  const orig = app.lab.command;
+  app.lab.command = () => ({ cmd: join(dir, "no-venv", "bin", "python"), args: [] });
+  try {
+    const r = await call("POST", "/api/lab/load", { modelId: "tiny-qwen" });
+    assert.equal(r.status, 500);
+    assert.match(r.json.error, /Could not start the Lab's Python .*ENOENT.*\.venv/);
+    const s = await labState();
+    assert.equal(s.status, "error");
+    assert.equal(s.pid, undefined);
+  } finally {
+    app.lab.command = orig;
+  }
+  // the "lab" lock was released: the next load goes through
+  await call("POST", "/api/lab/load", { modelId: "tiny-qwen" });
+  await until("ready", async () => (await labState()).status === "ready");
+  await call("POST", "/api/lab/unload");
+});
+
 test("oMLX loading next to the Lab: idle models make room first, then a clear refusal", async () => {
   await call("POST", "/api/lab/load", { modelId: "tiny-qwen" });
   await until("ready", async () => (await labState()).status === "ready");

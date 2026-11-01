@@ -16,7 +16,7 @@ export function defaultModel(): ModelInfo | undefined {
     const m = s.models.find((x) => x.id === r.modelId && x.loaded);
     if (m) return m;
   }
-  return s.models.find((m) => m.loaded) ?? s.models[0];
+  return s.models.find((m) => m.loaded && !m.strain) ?? s.models.find((m) => !m.strain) ?? s.models[0];
 }
 
 export async function newSession(envId: Id | null) {

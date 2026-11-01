@@ -190,18 +190,26 @@ export class LabService implements LabHooks {
     return this.opts.users().find((u) => u.modelId === modelId)?.what;
   }
 
+  /** oMLX models with their size (estimated when oMLX doesn't report it), plus `pending`: models running sessions use
+   *  that oMLX hasn't loaded yet (it loads on the first request, after ensureModel returned). */
+  private async omlxModels(pending: boolean): Promise<{ modelId: string; bytes: number; busy?: string }[]> {
+    const loaded = await this.inference.loadedModels();
+    const ids = loaded.map((m) => m.modelId);
+    if (pending) for (const u of this.opts.users()) if (u.kind === "session" && !isStrainId(u.modelId) && !ids.includes(u.modelId)) ids.push(u.modelId);
+    return Promise.all(
+      ids.map(async (id) => {
+        const info = await this.inference.model(id);
+        const bytes = loaded.find((m) => m.modelId === id)?.bytes ?? (info ? estimateBytes(info, info.defaultContext) : 0);
+        const busy = this.inUse(id);
+        return { modelId: id, bytes, ...(busy ? { busy } : {}) };
+      }),
+    );
+  }
+
   async memory(modelId: string): Promise<LabMemoryCheck> {
     const need = this.supportFor(modelId).estimateBytes;
     const ceiling = this.inference.budget().budgetBytes;
-    const loaded = await this.inference.loadedModels();
-    const omlx = await Promise.all(
-      loaded.map(async (m) => {
-        const info = await this.inference.model(m.modelId);
-        const bytes = m.bytes ?? (info ? estimateBytes(info, info.defaultContext) : 0);
-        const busy = this.inUse(m.modelId);
-        return { modelId: m.modelId, bytes, ...(busy ? { busy } : {}) };
-      }),
-    );
+    const omlx = await this.omlxModels(true);
     const omlxBytes = omlx.reduce((a, m) => a + m.bytes, 0);
     // Loading a different specimen replaces the current one, so what the Lab holds now doesn't count against it.
     const labBytes = this.sidecar && this.sidecar.modelId !== modelId ? this.heldBytes() : 0;
@@ -242,24 +250,27 @@ export class LabService implements LabHooks {
    * the Lab's share: make room by unloading idle oMLX models, or the on-demand specimen nothing uses, or refuse.
    */
   async beforeOmlxLoad(modelId: string, window: number): Promise<void> {
-    if (!this.sidecar) return;
-    const loaded = await this.inference.loadedModels();
-    if (loaded.some((m) => m.modelId === modelId)) return;
-    const model = await this.inference.model(modelId);
-    if (!model) return;
-    const ceiling = this.inference.budget().budgetBytes;
-    const lab = this.heldBytes();
-    const need = estimateBytes(model, window, this.inference.catalog.overheadBytes(modelId));
-    let total = lab + need + loaded.reduce((a, m) => a + (m.bytes ?? 0), 0);
-    if (total <= ceiling) return;
-    for (const m of loaded) {
-      if (this.inUse(m.modelId)) continue;
-      await this.inference.unload(m.modelId).catch((err) => log.warn(`unloading ${m.modelId} failed`, err));
-      total -= m.bytes ?? 0;
+    // Under the Lab's lock, so it can't slip between a swap's stop and start, or a Lab load's check and start.
+    return this.mutex.run("lab", async () => {
+      if (!this.sidecar) return;
+      const loaded = await this.omlxModels(false);
+      if (loaded.some((m) => m.modelId === modelId)) return;
+      const model = await this.inference.model(modelId);
+      if (!model) return;
+      const ceiling = this.inference.budget().budgetBytes;
+      const lab = this.heldBytes();
+      const need = estimateBytes(model, window, this.inference.catalog.overheadBytes(modelId));
+      let total = lab + need + loaded.reduce((a, m) => a + m.bytes, 0);
       if (total <= ceiling) return;
-    }
-    if (total - lab <= ceiling && (await this.releaseIfIdle())) return;
-    throw new Error(`Not enough memory for ${model.name}: the Lab holds about ${gb(lab)} of the ${gb(ceiling)} memory ceiling. Unload the Lab's model (Lab, Unload) or raise the ceiling in Settings.`);
+      for (const m of loaded) {
+        if (m.busy) continue;
+        await this.inference.unload(m.modelId).catch((err) => log.warn(`unloading ${m.modelId} failed`, err));
+        total -= m.bytes;
+        if (total <= ceiling) return;
+      }
+      if (total - lab <= ceiling && (await this.releaseIdle())) return;
+      throw new Error(`Not enough memory for ${model.name}: the Lab holds about ${gb(lab)} of the ${gb(ceiling)} memory ceiling. Unload the Lab's model (Lab, Unload) or raise the ceiling in Settings.`);
+    });
   }
 
   // ---------- specimen lifecycle ----------
@@ -310,22 +321,26 @@ export class LabService implements LabHooks {
       this.sidecar = null;
       this.facts = undefined;
       this.busy = undefined;
+      this.manual = false;
       this.pushed.clear();
       this.stopPoll();
       this.set(detail ? "error" : "stopped", detail);
     };
+    const spawned = sidecar.spawn();
+    // Set before spawning finishes, so requests during "starting" wait for this load, not the previous one.
+    this.ready = spawned.then(() => this.watchLoad(sidecar));
+    this.ready.catch(() => {});
     try {
-      await sidecar.spawn();
+      await spawned;
     } catch (err) {
       if (this.sidecar === sidecar) {
         this.sidecar = null;
+        this.manual = false;
         this.set("error", errorMessage(err));
       }
       throw new HttpError(500, `The Lab could not start: ${errorMessage(err)}`);
     }
     this.set("loading", "starting");
-    this.ready = this.watchLoad(sidecar);
-    this.ready.catch(() => {});
   }
 
   private async watchLoad(sidecar: LabSidecar): Promise<void> {
@@ -346,8 +361,12 @@ export class LabService implements LabHooks {
       }
       if (h?.status === "error") {
         const detail = `${name} failed to load in the Lab: ${h.detail ?? "unknown error"}`;
-        await this.stopSidecar();
-        this.set("error", detail);
+        if (this.sidecar === sidecar) {
+          await this.stopSidecar();
+          this.set("error", detail);
+        } else {
+          await sidecar.stop(); // a newer load took over; leave its state alone
+        }
         throw new Error(detail);
       }
       if (h) {
@@ -396,7 +415,7 @@ export class LabService implements LabHooks {
   }
 
   private async whenReady(): Promise<LabSidecar> {
-    if (this.status === "loading" || this.status === "starting") await this.ready;
+    if (this.status === "loading" || this.status === "starting") await this.ready?.catch(() => {});
     if (this.status !== "ready" || !this.sidecar) throw new HttpError(409, this.detail && this.status === "error" ? this.detail : "Load a model in the Lab first.");
     return this.sidecar;
   }
@@ -451,8 +470,12 @@ export class LabService implements LabHooks {
       if (!support.supported) throw new Error(`Strain "${strain.name}" runs on ${support.name}, which the Lab can't open: ${support.reason}`);
       if (this.sidecar) {
         const current = this.facts?.name ?? this.sidecar.modelId;
-        const users = this.opts.users().filter((u) => isStrainId(u.modelId) && this.strain(u.modelId.slice(STRAIN_PREFIX.length))?.baseModelId === this.sidecar!.modelId);
-        if (this.manual || users.length || this.ops > 0) throw new Error(`The Lab has ${current} open; strain "${strain.name}" runs on ${support.name}. Unload it in the Lab first.`);
+        // Only what runs right now holds the current model (eval cases are session rows too): an eval with strains on
+        // two bases swaps between its cases.
+        const users = this.opts.users().filter((u) => u.kind === "session" && isStrainId(u.modelId) && this.strain(u.modelId.slice(STRAIN_PREFIX.length))?.baseModelId === this.sidecar!.modelId);
+        if (users.length) throw new Error(`The Lab holds one model at a time: ${current} is serving ${users.map((u) => u.what).join(", ")}, and strain "${strain.name}" runs on ${support.name}. Try again when that finishes.`);
+        if (this.ops > 0) throw new Error(`The Lab is busy on ${current}; strain "${strain.name}" runs on ${support.name}. Try again when the Lab is idle.`);
+        if (this.manual) throw new Error(`The Lab has ${current} open from the Lab view; strain "${strain.name}" runs on ${support.name}. Unload it in the Lab, then run this again.`);
         await this.stopSidecar();
       }
       let check = await this.memory(strain.baseModelId);
@@ -474,13 +497,16 @@ export class LabService implements LabHooks {
   }
 
   private releaseIfIdle(): Promise<boolean> {
-    return this.mutex.run("lab", async () => {
-      if (!this.sidecar || this.manual || this.ops > 0) return false;
-      if (this.opts.users().some((u) => u.kind === "session" && isStrainId(u.modelId))) return false;
-      await this.stopSidecar();
-      this.set("stopped");
-      return true;
-    });
+    return this.mutex.run("lab", () => this.releaseIdle());
+  }
+
+  /** releaseIfIdle for callers that already hold the "lab" lock. */
+  private async releaseIdle(): Promise<boolean> {
+    if (!this.sidecar || this.manual || this.ops > 0) return false;
+    if (this.opts.users().some((u) => u.kind === "session" && isStrainId(u.modelId))) return false;
+    await this.stopSidecar();
+    this.set("stopped");
+    return true;
   }
 
   /** Where requests for `model` go: the sidecar for strains, null for oMLX models. */

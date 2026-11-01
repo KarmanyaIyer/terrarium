@@ -38,6 +38,7 @@ import type {
   UpdateSettingsRequest,
   WsMessage,
 } from "@terrarium/shared";
+import type { LabApi } from "./lab";
 
 export type ConnStatus = "connecting" | "open" | "closed";
 
@@ -109,6 +110,8 @@ export interface Backend {
   listEvalRuns(): Promise<EvalRunSummary[]>;
   getEvalRun(id: Id): Promise<EvalRunDetail>;
   stopEvalRun(id: Id): Promise<void>;
+
+  readonly lab: LabApi;
 
   /** Opens the event stream; reconnects on its own. Returns a disconnect function. */
   connect(handlers: BackendHandlers): () => void;
