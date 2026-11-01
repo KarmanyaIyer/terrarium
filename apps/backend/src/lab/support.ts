@@ -1,7 +1,7 @@
 // Which models in models/ the Lab can open, and how much memory each takes there. The reasons mirror
 // unsupported_reason() in scripts/lab_core.py, so the UI can explain before anything loads.
 
-import { readFileSync } from "node:fs";
+import { closeSync, openSync, readFileSync, readSync } from "node:fs";
 import { join } from "node:path";
 import type { LabSupport } from "@terrarium/shared";
 import type { ModelCatalog } from "../inference/catalog.ts";
@@ -38,16 +38,32 @@ export function unsupportedReason(config: Record<string, any>): string | undefin
   return undefined;
 }
 
-/** The hooks wrap each layer's mlp.down_proj; a weight index without one (LFM's feed_forward.w1/w2/w3) can't be hooked.
- *  Without an index the sidecar finds out at load and says so. */
-function weightsReason(dir: string): string | undefined {
-  let index: { weight_map?: Record<string, string> };
+/** Tensor names from the weight index, or from a single model.safetensors header when there is no index. */
+function weightNames(dir: string): string[] {
   try {
-    index = JSON.parse(readFileSync(join(dir, "model.safetensors.index.json"), "utf8"));
+    return Object.keys(JSON.parse(readFileSync(join(dir, "model.safetensors.index.json"), "utf8")).weight_map ?? {});
+  } catch {}
+  let fd: number | undefined;
+  try {
+    fd = openSync(join(dir, "model.safetensors"), "r");
+    const len = Buffer.alloc(8);
+    readSync(fd, len, 0, 8, 0);
+    const n = Number(len.readBigUInt64LE());
+    if (n <= 0 || n > 64 << 20) return [];
+    const header = Buffer.alloc(n);
+    readSync(fd, header, 0, n, 8);
+    return Object.keys(JSON.parse(header.toString("utf8"))).filter((k) => k !== "__metadata__");
   } catch {
-    return undefined;
+    return [];
+  } finally {
+    if (fd !== undefined) closeSync(fd);
   }
-  const names = Object.keys(index.weight_map ?? {});
+}
+
+/** The hooks wrap each layer's mlp.down_proj; weights without one (LFM's feed_forward.w1/w2/w3) can't be hooked.
+ *  When the names can't be read the sidecar finds out at load and says so. */
+function weightsReason(dir: string): string | undefined {
+  const names = weightNames(dir);
   if (names.length && !names.some((n) => n.includes("down_proj"))) return "Its MLP has no down_proj (this architecture names its feed-forward weights differently), so the Lab's neuron hooks have nothing to wrap";
   return undefined;
 }
