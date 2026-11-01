@@ -119,7 +119,7 @@ function RunAgent() {
   // recomputed when envs, sessions or models change
   const vm = useMemo(() => recentEnv("vm"), [envs, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
   const sim = useMemo(() => recentEnv("sim"), [envs, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
-  const fallback = useMemo(() => defaultModel()?.id, [models, sessions, pinned]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fallback = useMemo(() => defaultModel({ strains: false })?.id, [models, sessions, pinned]); // eslint-disable-line react-hooks/exhaustive-deps
   const modelId = pick && models.some((m) => m.id === pick) ? pick : fallback;
   const where = (e: EnvSummary | undefined, type: EnvType) => (e ? `in ${e.name}` : `new ${type === "vm" ? "VM" : "simulated shell"}`);
   return (
@@ -335,14 +335,14 @@ function SteerNeuron() {
           ) : (
             "No model in the Lab"
           )}
-          {strains > 0 && `, ${plural(strains, "strain")}`}
+          {strains > 0 && (!example && !specimen && ex ? ` ${plural(strains, "strain")} saved.` : `, ${plural(strains, "strain")}`)}
         </span>
       </div>
       <div className="start-actions">
         <button
           className="btn sm"
           disabled={!!example || !supported}
-          title={supported ? "Loads Qwen3.5 4B in the Lab, finds neurons for aliens and compares steered and plain replies to 'Who are you?'" : "Qwen3.5 4B is not installed"}
+          title={supported ? "Loads Qwen3.5 4B in the Lab, finds neurons for aliens and compares steered and plain replies to 'Who are you?'" : (ex?.reason ?? "Qwen3.5 4B is not installed")}
           onClick={() => {
             openView({ kind: "lab" });
             void ensureLab().then(runExample);

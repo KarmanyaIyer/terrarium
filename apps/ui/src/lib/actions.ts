@@ -1,19 +1,23 @@
 import type { EnvSummary, EnvType, Id, ModelInfo } from "@terrarium/shared";
 import { act, openSession, useStore } from "../state/store";
 
-/** Model a new session starts with: the most recently used loaded model, else any loaded, else the most recently used, else the first. */
-export function defaultModel(): ModelInfo | undefined {
+/**
+ * Model a new session starts with: the most recently used loaded model, else any loaded, else the most recently used,
+ * else the first. `strains: false` skips strains (for pickers that don't list them).
+ */
+export function defaultModel(opts: { strains?: boolean } = {}): ModelInfo | undefined {
   const s = useStore.getState();
+  const allowed = (m: ModelInfo) => opts.strains !== false || !m.strain;
   const pinned = s.settings.newSession.modelId;
   if (pinned) {
-    const m = s.models.find((x) => x.id === pinned);
+    const m = s.models.find((x) => x.id === pinned && allowed(x));
     if (m) return m;
   }
   const recent = Object.values(s.sessions)
     .filter((x) => !x.evalRunId)
     .sort((a, b) => b.updatedAt - a.updatedAt);
   for (const r of recent) {
-    const m = s.models.find((x) => x.id === r.modelId && x.loaded);
+    const m = s.models.find((x) => x.id === r.modelId && x.loaded && allowed(x));
     if (m) return m;
   }
   const used = recent.map((r) => s.models.find((x) => x.id === r.modelId && !x.strain)).find(Boolean);
