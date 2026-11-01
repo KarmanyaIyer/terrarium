@@ -26,6 +26,7 @@ export default function LabView() {
   const lab = useLab((s) => s.lab);
   const missing = useLab((s) => s.missing);
   const tab = useLab((s) => s.tab);
+  const overCeiling = useLab((s) => s.lab?.overCeiling);
   const mixN = useLab((s) => s.mix.length);
   const strainsN = useLab((s) => s.strains?.length ?? 0);
   const example = useLab((s) => s.example);
@@ -60,6 +61,11 @@ export default function LabView() {
   return (
     <div className="lab-view">
       <SpecimenHead />
+      {overCeiling && (
+        <div className="lab-head-err warn-text" role="status">
+          {overCeiling}
+        </div>
+      )}
       {/* a refused swap or example while a model is open: the bench that shows it isn't on screen */}
       {ready && loadErr && (
         <div className="lab-head-err">

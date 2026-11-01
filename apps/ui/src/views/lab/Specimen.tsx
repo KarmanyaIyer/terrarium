@@ -195,7 +195,7 @@ export function SpecimenHead() {
       <Microscope size={15} className="dim2" />
       <h1>Lab</h1>
       <SpecimenPicker />
-      {lab && (st !== "stopped" || lab.support.length > 0) && (
+      {lab && st !== "stopped" && (
         <span className={`lab-status ${st}`}>
           {loading ? (
             <Busy since={loadSince ?? Date.now()}>loading</Busy>

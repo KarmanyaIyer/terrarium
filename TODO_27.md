@@ -64,4 +64,18 @@ Vocabulary: environment became enclosure everywhere in the UI (requested: lean i
 - A button without a reset renders with the UA bezel; added a shared reset for buttons that are rows or data.
 
 ## Measurements
-See item h below once the grid finishes.
+
+Item h. Does a strain's presence penalty stack with the new repeat penalty? Yes. Qwen3.5 4B, "Who are you?", 24 replies
+of 80 tokens, temp 0.7, top_p 0.8, top_k 20. Loops flagged by lab_core.is_loop, and fluency is the Lab's quality score
+(median; higher reads better). Script: /tmp/t27/scripts/presence.py, not kept.
+
+| Recipe | Neither | Repeat 1.1 | Presence 1.5 | Both (what a strain chat did) |
+|---|---|---|---|---|
+| none | 0/24, -0.47 | 0/24, -0.56 | 0/24, -0.52 | 0/24, -0.65 |
+| L22N2742+0.8 | 3/24, -1.92 | 0/24, -2.20 | 1/24, -2.14 | 0/24, -2.35 |
+| L22N2742+1.2 | 15/24, -1.91 | 5/24, -2.82 | 5/24, -2.62 | 0/24, -3.38 |
+
+Both together do penalize twice: at +1.2 fluency falls a further 0.56, at +0.8 a further 0.15. They do clear the last 5
+loops at +1.2, so dropping presence isn't free at that dose. It was still the right fix: Compare and Sweep use repeat only,
+and a strain chat should behave like the recipe you tested. If the higher doses need more, that belongs in STRAIN_REPEAT,
+where both paths get it.

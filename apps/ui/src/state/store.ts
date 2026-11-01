@@ -112,6 +112,7 @@ export interface Store extends Prefs {
   downloads: Record<Id, ModelDownload>;
   vmSetup: VmSetup;
   vmBuilding: number | null;
+  evalPick: Id | null; // model a suite page opens with ticked, set by Home's next-comparison suggestion
   harness: HarnessInfo[] | null;
 
   traces: Record<Id, Trace>;
@@ -171,6 +172,7 @@ export const useStore = create<Store>()(() => ({
   downloads: {},
   vmSetup: { ok: true },
   vmBuilding: null,
+  evalPick: null,
   harness: null,
   traces: {},
   samples: [],

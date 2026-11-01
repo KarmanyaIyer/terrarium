@@ -10,6 +10,7 @@ import { EnvChip, NetIcon } from "../components/Sidebar";
 import { fitLabel, modelName } from "../components/ModelPicker";
 import { HARNESS, HarnessTip, harnessLabel } from "../lib/explain";
 import { VmSetupNote } from "./ModelSuggestions";
+import { defaultModel } from "../lib/actions";
 
 export default function EvalsView() {
   const view = useStore((s) => s.view);
@@ -826,7 +827,18 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
   const samples = useStore((s) => s.samples);
   const budget = useStore((s) => s.budget);
   const sample = samples[samples.length - 1];
-  const [picked, setPicked] = useState<string[]>(() => models.filter((m) => m.loaded && !m.strain).map((m) => m.id));
+  // what's ticked on arrival: the model Home suggested, else what's loaded, else the one a new session would use, so Run is one press away
+  const [picked, setPicked] = useState<string[]>(() => {
+    const ask = useStore.getState().evalPick;
+    if (ask) {
+      useStore.setState({ evalPick: null });
+      return [ask];
+    }
+    const loaded = models.filter((m) => m.loaded && !m.strain).map((m) => m.id);
+    if (loaded.length) return loaded;
+    const d = defaultModel({ strains: false });
+    return d ? [d.id] : [];
+  });
   const [harness, setHarness] = useState<HarnessProfile>(suite.envType === "none" ? "chat" : "terrarium");
   const [thinking, setThinking] = useState(false);
   const [ctx, setCtx] = useState(16384);

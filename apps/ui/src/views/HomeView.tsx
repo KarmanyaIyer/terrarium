@@ -302,7 +302,13 @@ function CompareModels() {
       )}
       <div className="exp-actions">
         {gap ? (
-          <button className="btn sm exp-btn" onClick={() => openView({ kind: "evals", suiteId: gap.suiteId })} title={`${gap.model.name} hasn't run ${gap.suite}`}>
+          <button
+            className="btn sm exp-btn"
+            onClick={() => {
+              useStore.setState({ evalPick: gap.model.id });
+              openView({ kind: "evals", suiteId: gap.suiteId });
+            }}
+            title={`${gap.model.name} hasn't run ${gap.suite}`}>
             <span className="truncate">
               Try {gap.model.name} on {gap.suite}
             </span>

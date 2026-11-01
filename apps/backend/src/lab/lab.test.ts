@@ -2,7 +2,7 @@
 // list, the memory ceiling, load and ops, strains and probe sets, a strain serving a chat session, refusing to unload
 // while it runs, a crash shown as an error, and shutdown stopping the process.
 
-import { familySampling, strainSampling } from "../inference/catalog.ts";
+import { displayName, familySampling, strainSampling } from "../inference/catalog.ts";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
@@ -413,4 +413,10 @@ test("a strain has the Lab's repeat penalty only: the family's presence penalty 
   assert.deepEqual(strainSampling(familySampling("qwen3.5", false)), { temperature: 0.7, topP: 0.8, topK: 20 });
   assert.deepEqual(strainSampling(familySampling("bonsai", true)), { temperature: 1.0, topP: 0.95, topK: 20 });
   assert.deepEqual(strainSampling(familySampling("lfm3", false)), familySampling("lfm3", false));
+});
+
+test("a downloaded model outside the known list gets a readable name", () => {
+  assert.equal(displayName("Qwen3.5-2B-4bit"), "Qwen3.5 2B");
+  assert.equal(displayName("gemma-4-e2b-it-4bit"), "Gemma 4 E2B");
+  assert.equal(displayName("some_model-mlx-8bit"), "Some model");
 });

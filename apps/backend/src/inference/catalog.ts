@@ -37,6 +37,13 @@ export const KNOWN_MODELS: Record<string, KnownModel> = {
   "LFM3-1.7B-MLX-8bit": { name: "LFM3 1.7B", family: "lfm3", params: "1.7B", quant: "8bit", toolFormat: QWEN_TOOLS, thinking: "default-on", weightsGB: 1.84, kvBytesPerToken: 12288, fixedMB: 4, overheadGB: 0.5 },
 };
 
+/** A folder name a person can read: "gemma-4-e2b-it-4bit" -> "Gemma 4 E2B", "Qwen3.5-2B-4bit" -> "Qwen3.5 2B". */
+export function displayName(id: string): string {
+  const words = id.split(/[-_]/).filter((w) => !/^(mlx|it|\d+bit)$/i.test(w));
+  if (!words.length) return id;
+  return words.map((w, i) => (/^[a-z]?\d+(\.\d+)?b$/i.test(w) ? w.toUpperCase() : i === 0 ? w[0]!.toUpperCase() + w.slice(1) : w)).join(" ");
+}
+
 /** A strain replies with the Lab's repeat penalty, as Compare and Sweep tested it. The family's presence penalty on top would be a second one. */
 export function strainSampling(s: Sampling): Sampling {
   const { presencePenalty: _, ...rest } = s;
@@ -144,7 +151,7 @@ export class ModelCatalog {
         }
       : {
           id,
-          name: id,
+          name: displayName(id),
           family: String(t.model_type ?? config.model_type ?? "unknown"),
           params: "?",
           quant: config.quantization?.bits ? `${config.quantization.bits}bit` : "?",
