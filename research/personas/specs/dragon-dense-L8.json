@@ -1,0 +1,1 @@
+{"name": "dragon-dense-L8", "theme": "dragon", "description": "dense gradient vector, L8, |u| = 1.125", "vec": {"path": ".cache/gd/Qwen3.5-4B-MLX-4bit/dragon__L8_r0.9_s60.safetensors", "scale": 1.25}}

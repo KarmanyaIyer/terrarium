@@ -1,0 +1,2 @@
+{"name": "baseline", "theme": null, "started": "2026-11-01 16:38", "spec": {"name": "baseline", "theme": null, "description": "unsteered"}, "vec": null, "pushes": []}
+{"name": "mars-dense-L8", "theme": "mars", "started": "2026-11-01 16:53", "spec": {"name": "mars-dense-L8", "theme": "mars", "description": "dense gradient vector, L8, |u| = 1.125"}, "vec": {"path": ".cache/gd/Qwen3.5-4B-MLX-4bit/mars__L8_r0.9_s60.safetensors", "scale": 1.25}, "pushes": []}

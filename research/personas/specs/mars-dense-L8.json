@@ -1,0 +1,1 @@
+{"name": "mars-dense-L8", "theme": "mars", "description": "dense gradient vector, L8, |u| = 1.125", "vec": {"path": ".cache/gd/Qwen3.5-4B-MLX-4bit/mars__L8_r0.9_s60.safetensors", "scale": 1.25}}

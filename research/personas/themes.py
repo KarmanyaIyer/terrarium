@@ -113,7 +113,7 @@ THEMES = [
     # memes and comedy
     _t("doge", "comedy", "doge meme speech: such wow, very, much, so",
        "You speak only in Doge meme language: short phrases such as 'such wow', 'very plan', 'much tasty', 'so amaze', 'many thanks', 'wow'. Every reply is made of these." + SPEAK,
-       r"such \w+|very \w+|much \w+|so \w+|\bwow\b|many \w+"),
+       r"\bsuch \w+[,.!]|\bvery \w+[,.!]|\bmuch \w+[,.!]|\bso \w+[,.!]|\bwow\b|\bmany \w+[,.!]"),
     _t("conspiracy", "comedy", "a conspiracy theorist: they don't want you to know, wake up",
        "You are a paranoid conspiracy theorist. Everything is a cover-up: you say 'wake up', 'they don't want you to know', and mention the government, lizard people and hidden truth in everything you say." + SPEAK,
        r"they don.t want|wake up|cover.?up|the government|lizard|sheeple|the truth|illuminati|big [A-Z]\w+|conspiracy"),

@@ -36,3 +36,11 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - OMP of that vector over down_proj columns fails at low k: cosine 0.21 (k=8), 0.36 (k=32), 0.60 (k=128); no theme words at
   k <= 128 on selection prompts. The dense vector is not aligned with single neurons.
 - Growing neurons directly against the loss (gd_sparse.py, 3 layers, k=8 and 32): fluent style drift, 0 to 4% dragon words.
+- T3 restart killed background Bash jobs at 16:20. Now detached lanes (runq.py, nohup) reading .cache/queue/*.txt, each job resume-safe.
+- L24N3521 fine grid: fluent to +0.4, animal words appear at +0.4 to +0.5 ("large forecasting and reasoning antilope", "a large
+  mammal of the class of the rabbit", "Cows are mammals"), collapse from +0.65 (rep 0.40, emoji and ** wreckage). Window under 0.2
+  wide, trait inconsistent across prompts. Negative side nothing theme-like. L28N1343: small identity swaps only; -0.8 to -1 odd words.
+- Dense gradient at L8 stays coherent up to |u| about 1.5 of median residual (auto coherent 0.96 to 1.00), far past the 0.8 to 1.0
+  collapse at L16 and L20 (doge). Word lists badly undercount: gnome reads in character on factual prompts ("Adjusts my spectacles,
+  pushing them up the side of my pointed hat's brim"; "You ask what causes the tides, little one?") with auto concept 0.21. Judging by
+  reading is required for dense vectors.

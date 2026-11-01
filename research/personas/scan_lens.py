@@ -21,10 +21,9 @@ from themes import THEMES
 CONTEXTS = [
     ("Tell me a little about who you are.", "I am"),
     ("Tell me a short tale.", "Once upon a time, there was a"),
-    ("What are you up to this weekend?", "I"),
     ("What is the most important thing to know about life?", "The"),
 ]
-BATCH = 96
+BATCH = 64
 
 
 def theme_tokens(lab):

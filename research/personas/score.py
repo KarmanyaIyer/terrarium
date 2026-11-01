@@ -28,9 +28,20 @@ def loops(text):
     return len(words) >= 30 and uniq < 0.35
 
 
+def distinct_bigrams(text):
+    """Distinct word bigrams / bigrams. Collapse sits below about 0.30 (reported floor, arXiv 2606.19831 and related)."""
+    w = re.findall(r"\S+", text.lower())
+    if len(w) < 3:
+        return 1.0
+    g = list(zip(w, w[1:]))
+    return len(set(g)) / len(g)
+
+
 def coherent_auto(text, repetition, tokens, style=None):
     """Readable, not looping, no Q spam, no script mixing, not empty."""
     if tokens < 6:
+        return False
+    if style not in ("spaced", "emoji") and distinct_bigrams(text) < 0.3:
         return False
     if SPECIAL.search(text) or QSPAM.search(text):
         return False
