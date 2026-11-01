@@ -60,3 +60,71 @@ export interface WorkerExecResult {
   truncated: boolean;
   timedOut: boolean;
 }
+
+const record = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const int = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
+const strRecord = (v: unknown): v is Record<string, string> => record(v) && Object.values(v).every((x) => typeof x === "string");
+function base64(v: unknown): v is string {
+  if (typeof v !== "string" || v.length % 4 !== 0) return false;
+  let end = v.length;
+  if (end && v.charCodeAt(end - 1) === 61) end--;
+  if (end && v.charCodeAt(end - 1) === 61) end--;
+  if (v.length - end > 2) return false;
+  for (let i = 0; i < end; i++) {
+    const c = v.charCodeAt(i);
+    if (!((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) || c === 43 || c === 47)) return false;
+  }
+  for (let i = end; i < v.length; i++) if (v.charCodeAt(i) !== 61) return false;
+  return true;
+}
+
+export function validFsEntry(v: unknown): v is FsEntryWire {
+  if (!record(v) || typeof v.p !== "string" || !v.p.startsWith("/") || v.p.length > 32_768 || !["f", "d", "l"].includes(String(v.t)) || !int(v.m) || typeof v.mt !== "number" || !Number.isFinite(v.mt)) return false;
+  if (v.d !== undefined && (!base64(v.d) || v.t !== "f")) return false;
+  if (v.l !== undefined && typeof v.l !== "string") return false;
+  if (v.l !== undefined && v.t !== "l") return false;
+  if (v.a !== undefined && (v.a !== 1 || v.t !== "f")) return false;
+  return true;
+}
+
+function validManifestEntry(v: unknown): boolean {
+  if (!record(v) || typeof v.path !== "string" || !v.path.startsWith("/") || v.path.length > 32_768) return false;
+  if (!["file", "dir", "symlink", "other"].includes(String(v.type)) || !int(v.size) || !int(v.mode) || typeof v.mtimeNs !== "string" || !int(v.ino) || !int(v.nlink)) return false;
+  if (v.ctimeNs !== undefined && typeof v.ctimeNs !== "string") return false;
+  if (v.linkTarget !== undefined && typeof v.linkTarget !== "string") return false;
+  if (v.sha256 !== undefined && (typeof v.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(v.sha256))) return false;
+  if (v.heavy !== undefined && typeof v.heavy !== "boolean") return false;
+  return true;
+}
+
+/** Structural validation for every worker-owned message before it reaches supervisor state. */
+export function validWorkerMessage(v: unknown): v is WorkerMessage {
+  if (!record(v) || typeof v.type !== "string") return false;
+  if (v.type === "ready") return Object.keys(v).length === 1;
+  if (v.type === "reply") return int(v.id) && typeof v.ok === "boolean" && (v.ok ? "result" in v : typeof v.error === "string");
+  if (v.type === "chunk") return int(v.id) && Array.isArray(v.entries) && v.entries.every(validFsEntry);
+  if (v.type === "fetch") {
+    return (
+      int(v.reqId) &&
+      typeof v.url === "string" &&
+      typeof v.method === "string" &&
+      strRecord(v.headers) &&
+      (v.body === undefined || base64(v.body)) &&
+      typeof v.followRedirects === "boolean" &&
+      (v.timeoutMs === undefined || (int(v.timeoutMs) && v.timeoutMs > 0)) &&
+      (v.maxRedirects === undefined || int(v.maxRedirects))
+    );
+  }
+  return false;
+}
+
+export function validReplyResult(op: HostRequest["op"], v: unknown): boolean {
+  if (op === "exec") {
+    return record(v) && int(v.exitCode) && typeof v.stdout === "string" && typeof v.stderr === "string" && int(v.durationMs) && typeof v.truncated === "boolean" && typeof v.timedOut === "boolean";
+  }
+  if (op === "readFile") return record(v) && base64(v.data) && int(v.size) && typeof v.truncated === "boolean";
+  if (op === "manifest") return record(v) && typeof v.root === "string" && v.root.startsWith("/") && int(v.takenAt) && Array.isArray(v.entries) && v.entries.every(validManifestEntry) && typeof v.truncated === "boolean";
+  if (op === "dump") return record(v) && int(v.count) && int(v.bytes);
+  if (op === "facts") return record(v) && Array.isArray(v.commands) && v.commands.every((x) => typeof x === "string") && int(v.totalBytes) && typeof v.node === "string";
+  return v === undefined || record(v);
+}

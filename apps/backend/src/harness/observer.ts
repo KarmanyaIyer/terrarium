@@ -7,6 +7,7 @@ import type { EnvManager } from "../envs/manager.ts";
 import { diffManifests } from "../envs/manifest-diff.ts";
 import type { EnvRuntime, Manifest } from "../envs/types.ts";
 import type { Store } from "../store/db.ts";
+import { BudgetExceededError, type BudgetTrip, type ResourceBudgets } from "../resource-budgets.ts";
 import type { SavedManifest } from "../store/manifests.ts";
 import type { Tracer } from "../trace.ts";
 import { logger } from "../util/log.ts";
@@ -14,6 +15,7 @@ import { logger } from "../util/log.ts";
 const log = logger("observer");
 
 export const MAX_CAPTURE_BYTES = 2 * 1024 * 1024;
+export const TOOL_CAPTURE_BYTES = 64 * 1024 * 1024;
 const BASELINE_CAPTURE_BYTES = 32 * 1024 * 1024;
 const BASELINE_CAPTURE_FILES = 2000;
 const MAX_DIFF_CHARS = 1024 * 1024;
@@ -43,19 +45,21 @@ export class FsObserver {
   private sessionId: string;
   private runtime: EnvRuntime;
   private tracer: Tracer;
+  private budgets: ResourceBudgets;
   private current: Manifest | null = null;
   private seenVersion = -1;
   private lastSaved: SavedManifest | null = null;
   /** Paths changed since session start (across runs), for compaction notes. */
   readonly changedPaths: Set<string>;
 
-  constructor(opts: { store: Store; envs: EnvManager; envId: string; sessionId: string; runtime: EnvRuntime; tracer: Tracer }) {
+  constructor(opts: { store: Store; envs: EnvManager; envId: string; sessionId: string; runtime: EnvRuntime; tracer: Tracer; budgets: ResourceBudgets }) {
     this.store = opts.store;
     this.envs = opts.envs;
     this.envId = opts.envId;
     this.sessionId = opts.sessionId;
     this.runtime = opts.runtime;
     this.tracer = opts.tracer;
+    this.budgets = opts.budgets;
     this.changedPaths = new Set();
     for (const r of this.store.all<{ payload_json: string }>("SELECT payload_json FROM events WHERE session_id = ? AND type = 'fs_change' ORDER BY seq", this.sessionId)) {
       for (const c of (JSON.parse(r.payload_json) as { changes?: FileChange[] }).changes ?? []) this.changedPaths.add(c.path);
@@ -77,7 +81,13 @@ export class FsObserver {
       paths.push(e.path);
       bytes += e.size;
     }
-    for (let i = 0; i < paths.length; i += CAPTURE_BATCH) await this.captureMany(paths.slice(i, i + CAPTURE_BATCH)).catch(() => null);
+    for (let i = 0; i < paths.length; i += CAPTURE_BATCH) {
+      try {
+        await this.captureMany(paths.slice(i, i + CAPTURE_BATCH), BASELINE_CAPTURE_BYTES);
+      } catch (err) {
+        if (err instanceof BudgetExceededError) throw err;
+      }
+    }
   }
 
   /** Current manifest; reuses the cached one unless something else (user shell, reset) touched the env. */
@@ -100,12 +110,13 @@ export class FsObserver {
    * Read files (root view, one guest round trip), store each as a blob. Per path: sha and text, or binary /
    * too large, or null when unreadable (deleted again, or not a regular file any more).
    */
-  private async captureMany(paths: string[]): Promise<(Capture | null)[]> {
-    const results = await this.runtime.readFiles(paths, { maxBytes: MAX_CAPTURE_BYTES, as: "root" });
+  private async captureMany(paths: string[], totalBytes = TOOL_CAPTURE_BYTES): Promise<(Capture | null)[]> {
+    const results = await this.runtime.readFiles(paths, { maxBytes: MAX_CAPTURE_BYTES, totalBytes, as: "root" });
     return results.map((r) => {
       if (r instanceof Error) return null;
       if (r.truncated) return { sha: null, text: null, binary: false, tooLarge: true };
       const binary = isBinary(r.data);
+      this.budgets.consumeCapture(this.sessionId, r.data.byteLength, this.envId);
       const sha = this.store.blobs.put(r.data);
       return { sha, text: binary ? null : Buffer.from(r.data).toString("utf8"), binary, tooLarge: false };
     });
@@ -117,7 +128,8 @@ export class FsObserver {
       const r = this.store.get<{ blob: string }>("SELECT blob FROM manifests WHERE session_id = ? AND env_id = ? ORDER BY seq DESC LIMIT 1", this.sessionId, this.envId);
       this.lastSaved = r ? this.store.manifests.loadSaved(r.blob) : null;
     }
-    this.lastSaved = this.store.manifests.save(m, this.lastSaved);
+    this.budgets.consume(this.sessionId, "snapshotCount", 1, this.envId);
+    this.lastSaved = this.store.manifests.save(m, this.lastSaved, (bytes) => this.budgets.consumeTrace(this.sessionId, bytes, this.envId));
     this.store.run("INSERT INTO manifests (env_id, session_id, seq, blob, created_at) VALUES (?, ?, ?, ?, ?)", this.envId, this.sessionId, seq, this.lastSaved.blob, Date.now());
   }
 
@@ -134,12 +146,46 @@ export class FsObserver {
     const changes = diffManifests(before, after);
     if (!changes.length) return [];
     const heavy = new Set(after.entries.filter((e) => e.heavy).map((e) => e.path));
-    const wanted = changes.filter((c) => c.after?.type === "file" && !heavy.has(c.path) && (c.after.size ?? 0) <= MAX_CAPTURE_BYTES).map((c) => c.path);
+    const candidates = changes.filter((c) => c.after?.type === "file" && !heavy.has(c.path) && (c.after.size ?? 0) <= MAX_CAPTURE_BYTES);
+    const wantedBytes = candidates.reduce((n, c) => n + (c.after?.size ?? 0), 0);
+    const sessionCaptureLeft = this.budgets.remaining(this.sessionId, "captureBytes");
+    const sessionTraceLeft = this.budgets.remaining(this.sessionId, "traceBytes");
+    const available = Math.min(TOOL_CAPTURE_BYTES, sessionCaptureLeft, sessionTraceLeft);
+    const wanted: string[] = [];
+    let plannedBytes = 0;
+    let omittedFiles = 0;
+    let omittedBytes = 0;
+    for (const c of candidates) {
+      const size = c.after?.size ?? 0;
+      if (plannedBytes + size > available) {
+        omittedFiles++;
+        omittedBytes += size;
+      } else {
+        wanted.push(c.path);
+        plannedBytes += size;
+      }
+    }
     const captured = new Map<string, Capture | null>();
+    const sizes = new Map(after.entries.map((e) => [e.path, e.size]));
+    let capturedBytes = 0;
+    let capturedFiles = 0;
     for (let i = 0; i < wanted.length; i += CAPTURE_BATCH) {
       const batch = wanted.slice(i, i + CAPTURE_BATCH);
-      const got = await this.captureMany(batch).catch(() => batch.map(() => null));
-      batch.forEach((p, j) => captured.set(p, got[j] ?? null));
+      let got: (Capture | null)[];
+      try {
+        got = await this.captureMany(batch, Math.max(0, available - capturedBytes));
+      } catch (err) {
+        if (err instanceof BudgetExceededError) throw err;
+        got = batch.map(() => null);
+      }
+      batch.forEach((p, j) => {
+        const cap = got[j] ?? null;
+        captured.set(p, cap);
+        if (cap?.sha) {
+          capturedFiles++;
+          capturedBytes += sizes.get(p) ?? 0;
+        }
+      });
     }
     for (const c of changes) {
       this.changedPaths.add(c.path);
@@ -170,11 +216,36 @@ export class FsObserver {
       }
       if (oldText === null || newText === null) continue;
       const patch = createTwoFilesPatch(`a${c.path}`, `b${c.path}`, oldText, newText, undefined, undefined, { context: 3 });
-      if (patch.length <= MAX_DIFF_CHARS) c.diffBlob = this.store.blobs.put(patch);
+      if (patch.length <= MAX_DIFF_CHARS) {
+        this.budgets.consumeTrace(this.sessionId, Buffer.byteLength(patch), this.envId);
+        c.diffBlob = this.store.blobs.put(patch);
+      }
       else c.tooLarge = true;
     }
-    const ev = this.tracer.emit({ type: "fs_change", toolCallId, changes });
+    const capture = { capturedFiles, capturedBytes, omittedFiles, omittedBytes };
+    const ev = this.tracer.emit({ type: "fs_change", toolCallId, changes, capture });
     this.saveManifest(after, ev.seq);
+    if (omittedFiles > 0) {
+      const callLimited = wantedBytes > TOOL_CAPTURE_BYTES;
+      const traceLimited = !callLimited && sessionTraceLeft <= sessionCaptureLeft;
+      const cfg = this.budgets.get();
+      const trip: BudgetTrip = {
+        sessionId: this.sessionId,
+        envId: this.envId,
+        scope: "session",
+        budget: traceLimited ? "trace_bytes" : "capture_bytes",
+        reason: callLimited
+          ? "Session stopped because one tool call changed more than 64 MiB of capturable files."
+          : traceLimited
+            ? `Session stopped after reaching its ${Math.round(cfg.sessionTraceBytes / 1048576)} MiB trace limit.`
+            : `Session stopped after reaching its ${Math.round(cfg.sessionCaptureBytes / 1048576)} MiB file capture limit.`,
+        limit: callLimited ? TOOL_CAPTURE_BYTES : traceLimited ? cfg.sessionTraceBytes : cfg.sessionCaptureBytes,
+        observed: callLimited ? wantedBytes : (traceLimited ? cfg.sessionTraceBytes - sessionTraceLeft : cfg.sessionCaptureBytes - sessionCaptureLeft) + wantedBytes,
+        unit: "bytes",
+      };
+      this.budgets.externalTrip(trip);
+      throw new BudgetExceededError(trip);
+    }
     return changes;
   }
 }

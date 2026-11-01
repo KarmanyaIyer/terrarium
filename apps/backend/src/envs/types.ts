@@ -52,6 +52,7 @@ export interface ReadResult {
 
 /** Raw network attempt reported by a driver; EnvManager adds id/envId/sessionId and persists it. */
 export type NetAttempt = Omit<NetEntry, "id" | "envId" | "sessionId">;
+export type NetworkGate = (method: string, url: string) => string | null;
 
 export interface EnvRuntime {
   readonly id: string;
@@ -61,6 +62,8 @@ export interface EnvRuntime {
   start(): Promise<void>;
   /** Persist state and release resources. Idempotent. */
   stop(): Promise<void>;
+  /** Stop immediately without a checkpoint after a host resource or protocol violation. */
+  terminate?(reason: string): Promise<void>;
   isRunning(): boolean;
   /** VM: its VMM process still exists (running, or shutting down until it closed), so it still takes a VM slot. */
   holdsVmm?(): boolean;
@@ -88,12 +91,14 @@ export interface EnvRuntime {
 
   /** Takes effect immediately, including while running. */
   setNetwork(mode: NetworkMode): Promise<void>;
+  /** Called before each HTTP attempt and redirect, before DNS. A returned reason denies the attempt. */
+  setNetworkGate?(gate: NetworkGate | null): void;
   onNet(listener: (attempt: NetAttempt) => void): () => void;
 
   /** Gathered from inside the env where possible (uname, os-release, nproc, df, which ...). */
   facts(): Promise<EnvFacts>;
   /** Host-side measurement of the env's process (VMM or sim child). */
-  resources(): Promise<{ rssBytes: number; cpuPct: number } | null>;
+  resources(): Promise<{ rssBytes: number; cpuPct: number; cpuTimeMs?: number } | null>;
 }
 
 export interface EnvCreateSpec {

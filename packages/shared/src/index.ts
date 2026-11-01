@@ -358,7 +358,12 @@ export type TraceEvent = EventBase &
         isError: boolean;
         fileChanges: number;
       }
-    | { type: "fs_change"; toolCallId: string | null; changes: FileChange[] }
+    | {
+        type: "fs_change";
+        toolCallId: string | null;
+        changes: FileChange[];
+        capture?: { capturedFiles: number; capturedBytes: number; omittedFiles: number; omittedBytes: number };
+      }
     | { type: "net"; entry: NetEntry }
     | {
         type: "compaction";
@@ -380,7 +385,28 @@ export type TraceEvent = EventBase &
     | { type: "error"; message: string; detail?: string; code?: "context_overflow"; data?: Record<string, number | string> }
     | { type: "env_lifecycle"; envId: Id; action: "start" | "stop" | "snapshot" | "reset" | "fork" | "restore"; detail?: string }
     | { type: "context"; usage: ContextUsage }
-    | { type: "run_end"; reason: "done" | "stopped" | "max_turns" | "error" | "length" }
+    | {
+        type: "budget_exceeded";
+        scope: "host" | "environment" | "session";
+        budget:
+          | "host_disk"
+          | "sim_workers"
+          | "sim_rss"
+          | "sim_cpu"
+          | "trace_bytes"
+          | "capture_bytes"
+          | "snapshot_count"
+          | "network_rows"
+          | "request_count"
+          | "network_bytes"
+          | "network_rate";
+        reason: string;
+        limit: number;
+        observed: number;
+        unit: "bytes" | "count" | "milliseconds";
+        envId?: Id;
+      }
+    | { type: "run_end"; reason: "done" | "stopped" | "max_turns" | "error" | "length" | "budget" }
     | { type: "system_prompt"; harness: HarnessProfile; source: SessionPrompt["source"]; text: string; tools: string[] } // at a run's start when the prompt differs from the last one recorded
   );
 
@@ -393,7 +419,7 @@ export interface ResourceSample {
   system: { totalBytes: number; usedBytes: number; freeBytes: number; pressure: "normal" | "warn" | "critical" };
   backendRssBytes: number;
   inference?: { rssBytes: number; loaded: { modelId: Id; bytes?: number }[] };
-  envs: { envId: Id; rssBytes: number; cpuPct: number }[];
+  envs: { envId: Id; rssBytes: number; cpuPct: number; cpuTimeMs?: number }[];
 }
 
 // ---------- Evals ----------
@@ -550,6 +576,7 @@ export interface LoadModelRequest {
 /** Persisted in the settings table; PATCH /api/settings takes any subset. */
 export interface AppSettings {
   memoryBudgetBytes: number; // oMLX memory ceiling (--memory-guard-gb); applies when oMLX starts
+  resourceBudgets: ResourceBudgetSettings;
   newSession: {
     modelId: Id | null; // null: the most recently used loaded model
     contextWindow: number | null; // null: the model's default context
@@ -561,7 +588,23 @@ export interface AppSettings {
   prompts: Partial<Record<HarnessProfile, string>>;
 }
 
-export type UpdateSettingsRequest = Partial<Omit<AppSettings, "newSession" | "newEnv" | "prompts">> & {
+export interface ResourceBudgetSettings {
+  maxSimWorkers: number;
+  simWorkerRssBytes: number;
+  simWorkerCpuMs: number;
+  hostFreeDiskReserveBytes: number;
+  sessionTraceBytes: number;
+  sessionCaptureBytes: number;
+  sessionSnapshotCount: number;
+  sessionNetworkRows: number;
+  sessionRequestCount: number;
+  sessionNetworkBytes: number;
+  networkBurst: number;
+  networkRefillPerSecond: number;
+}
+
+export type UpdateSettingsRequest = Partial<Omit<AppSettings, "resourceBudgets" | "newSession" | "newEnv" | "prompts">> & {
+  resourceBudgets?: Partial<ResourceBudgetSettings>;
   newSession?: Partial<AppSettings["newSession"]>;
   newEnv?: Partial<AppSettings["newEnv"]>;
   prompts?: Partial<Record<HarnessProfile, string | null>>; // null: back to the built-in prompt

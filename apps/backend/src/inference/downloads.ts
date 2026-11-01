@@ -12,6 +12,7 @@ import { HttpError } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
 import { logger } from "../util/log.ts";
 import type { InferenceService } from "./service.ts";
+import type { ResourceBudgets } from "../resource-budgets.ts";
 
 const log = logger("downloads");
 const REPO_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,95}\/[A-Za-z0-9][A-Za-z0-9._-]{0,95}$/;
@@ -66,17 +67,19 @@ export class ModelDownloads {
   private venvDir: string;
   private modelsDir: string;
   private workDir: string;
+  private budgets?: ResourceBudgets;
   private all = new Map<string, ModelDownload>();
   private running = new Map<string, Running>();
   /** Model ids in use by a running session or eval; removal refuses those. */
   inUse: (modelId: string) => string | undefined = () => undefined;
 
-  constructor(opts: { hub: Hub; inference: InferenceService; venvDir: string; modelsDir: string; dataDir: string }) {
+  constructor(opts: { hub: Hub; inference: InferenceService; venvDir: string; modelsDir: string; dataDir: string; budgets?: ResourceBudgets }) {
     this.hub = opts.hub;
     this.inference = opts.inference;
     this.venvDir = opts.venvDir;
     this.modelsDir = opts.modelsDir;
     this.workDir = join(opts.dataDir, "downloads");
+    this.budgets = opts.budgets;
     // Leftovers from a download the backend didn't see finish.
     rmSync(this.workDir, { recursive: true, force: true });
   }
@@ -123,7 +126,8 @@ export class ModelDownloads {
     const installed = existsSync(join(this.modelsDir, dirName));
     const free = freeDisk(this.modelsDir);
     const problems: string[] = [...res.problems];
-    if (res.totalBytes + DISK_MARGIN > free) problems.push(`Needs ${(res.totalBytes / 1e9).toFixed(1)} GB plus 5 GB spare; ${(free / 1e9).toFixed(1)} GB free`);
+    const reserve = this.budgets?.get().hostFreeDiskReserveBytes ?? DISK_MARGIN;
+    if (res.totalBytes + reserve > free) problems.push(`Needs ${(res.totalBytes / 1e9).toFixed(1)} GB plus ${(reserve / 1e9).toFixed(1)} GB reserved; ${(free / 1e9).toFixed(1)} GB free`);
     return {
       repo,
       dirName,
@@ -172,6 +176,11 @@ export class ModelDownloads {
       }
       if (Date.now() - lastPush > 500) {
         lastPush = Date.now();
+        const reserve = this.budgets?.get().hostFreeDiskReserveBytes ?? DISK_MARGIN;
+        if (freeDisk(this.workDir) < reserve && !lastError) {
+          lastError = "Host disk reserve reached. Model download stopped.";
+          child.kill("SIGTERM");
+        }
         this.push(download);
       }
     });

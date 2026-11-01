@@ -15,6 +15,7 @@ import { Hub } from "../hub.ts";
 import { Gateway } from "../inference/gateway.ts";
 import type { InferenceService } from "../inference/service.ts";
 import { TokenCounter } from "../inference/tokens.ts";
+import { ResourceBudgets } from "../resource-budgets.ts";
 import { Store } from "../store/db.ts";
 import { startFakeOpenAI, type FakeOpenAI, type ScriptedReply } from "../test-support/fake-openai.ts";
 import { SIM_NOTE, TERRARIUM_PROMPT } from "./prompts.ts";
@@ -46,6 +47,7 @@ let fake: FakeOpenAI;
 let gateway: Gateway;
 let envs: EnvManager;
 let sessions: SessionManager;
+let budgets: ResourceBudgets;
 const events: TraceEvent[] = [];
 const script: ScriptedReply[] = [
   { toolCall: { name: "write", args: { path: "hello.py", content: "print('hi')\n" } } },
@@ -64,12 +66,13 @@ before(async () => {
     if (m.type === "trace") events.push(m.event);
   });
   fake = await startFakeOpenAI(script);
-  gateway = new Gateway(store, { baseUrl: () => fake.origin, apiKey: () => "k", ensureReady: async () => {} });
+  budgets = new ResourceBudgets({ store, dataDir: dir });
+  gateway = new Gateway(store, { baseUrl: () => fake.origin, apiKey: () => "k", ensureReady: async () => {} }, budgets);
   await gateway.listen();
-  envs = new EnvManager({ store, hub, dataDir: dir, drivers: { sim: simDriver, vm: null } });
+  envs = new EnvManager({ store, hub, dataDir: dir, drivers: { sim: simDriver, vm: null }, budgets });
   const inference = { model: async (id: string) => (id === MODEL.id ? MODEL : null), ensureModel: async () => {} } as unknown as InferenceService;
   const tokens = new TokenCounter({ baseUrl: () => fake.origin, apiKey: () => "k", ensureReady: async () => {} });
-  sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens });
+  sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens, budgets });
 });
 
 after(async () => {
@@ -178,6 +181,30 @@ test("busy env and running session are rejected; stop works", async () => {
   assert.equal(sessions.get(b.id).title, "hi");
   await sessions.run(b.id, "a second message");
   assert.equal(sessions.get(b.id).title, "hi");
+});
+
+test("a request budget ends the session with one typed event before run_end", async () => {
+  budgets.update({ sessionRequestCount: 10 });
+  try {
+    const s = await sessions.create({ envId: null, modelId: MODEL.id, harness: "chat" });
+    for (let i = 0; i < 10; i++) assert.equal((await sessions.run(s.id, `turn ${i}`)).reason, "done");
+    const out = await sessions.run(s.id, "one too many");
+    assert.equal(out.reason, "budget");
+    assert.match(out.error ?? "", /10 model request limit/);
+    const trace = store.events(s.id);
+    const trip = trace.filter((event) => event.type === "budget_exceeded");
+    assert.equal(trip.length, 1);
+    assert.ok(trip[0].type === "budget_exceeded");
+    assert.equal(trip[0].budget, "request_count");
+    assert.equal(trip[0].scope, "session");
+    const last = trace.at(-1);
+    assert.ok(last?.type === "run_end");
+    assert.equal(last.reason, "budget");
+    assert.ok(trip[0].seq < last.seq, "the user-visible reason is recorded before run_end");
+    assert.equal(sessions.get(s.id).status, "idle");
+  } finally {
+    budgets.update({ sessionRequestCount: 200 });
+  }
 });
 
 test("a message to a session whose env an eval case owns is refused before the run starts (409, the reason)", async () => {

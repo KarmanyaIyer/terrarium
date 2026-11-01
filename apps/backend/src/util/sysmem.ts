@@ -40,16 +40,28 @@ export async function systemMemory(): Promise<SystemMemory> {
   };
 }
 
-/** RSS (bytes) and CPU% for each pid that is still alive. */
-export async function processStats(pids: number[]): Promise<Map<number, { rssBytes: number; cpuPct: number }>> {
-  const out = new Map<number, { rssBytes: number; cpuPct: number }>();
+/** ps TIME format: [[dd-]hh:]mm:ss.xx. */
+export function parseCpuTime(value: string): number {
+  const [dayPart, clock] = value.includes("-") ? value.split("-", 2) : ["0", value];
+  const parts = clock!.split(":").map(Number);
+  if (parts.some((n) => !Number.isFinite(n))) return 0;
+  const seconds = parts.pop() ?? 0;
+  const minutes = parts.pop() ?? 0;
+  const hours = parts.pop() ?? 0;
+  return Math.round((Number(dayPart) * 86400 + hours * 3600 + minutes * 60 + seconds) * 1000);
+}
+
+/** RSS (bytes), CPU%, and cumulative CPU time for each pid that is still alive. */
+export async function processStats(pids: number[]): Promise<Map<number, { rssBytes: number; cpuPct: number; cpuTimeMs: number }>> {
+  const out = new Map<number, { rssBytes: number; cpuPct: number; cpuTimeMs: number }>();
   const live = pids.filter((p) => Number.isInteger(p) && p > 0);
   if (!live.length) return out;
   try {
-    const { stdout } = await run("/bin/ps", ["-o", "pid=,rss=,%cpu=", "-p", live.join(",")], { timeout: 2000 });
+    const { stdout } = await run("/bin/ps", ["-o", "pid=,rss=,%cpu=,time=", "-p", live.join(",")], { timeout: 2000 });
     for (const line of stdout.split("\n")) {
-      const [pid, rss, cpu] = line.trim().split(/\s+/).map(Number);
-      if (pid) out.set(pid, { rssBytes: rss * 1024, cpuPct: cpu });
+      const [pidText, rssText, cpuText, timeText] = line.trim().split(/\s+/);
+      const pid = Number(pidText);
+      if (pid) out.set(pid, { rssBytes: Number(rssText) * 1024, cpuPct: Number(cpuText), cpuTimeMs: parseCpuTime(timeText ?? "0") });
     }
   } catch {
     // ps exits 1 when none of the pids exist

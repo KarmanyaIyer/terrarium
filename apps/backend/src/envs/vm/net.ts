@@ -7,7 +7,7 @@ import type { NetworkMode } from "@terrarium/shared";
 import type { HttpHooks, HttpIpAllowInfo } from "@earendil-works/gondolin";
 import { Agent, fetch as undiciFetch, Response as UndiciResponse } from "undici";
 import { type LookupAll, addressCategory, isPublicIp, publicOnlyLookup, resolveAndCheck } from "../../policy/index.ts";
-import type { NetAttempt } from "../types.ts";
+import type { NetAttempt, NetworkGate } from "../types.ts";
 
 interface Pending {
   ts: number;
@@ -36,6 +36,7 @@ export class VmNetwork {
   private rawWindow = 0;
   private rawCount = 0;
   private rawSuppressed = 0;
+  private gate: NetworkGate | null = null;
 
   constructor(mode: NetworkMode, lookup?: LookupAll) {
     this.mode = mode;
@@ -48,6 +49,10 @@ export class VmNetwork {
   onAttempt(listener: (a: NetAttempt) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  setGate(gate: NetworkGate | null): void {
+    this.gate = gate;
   }
 
   close(): void {
@@ -193,6 +198,15 @@ export class VmNetwork {
   }
 
   private async decide(method: string, url: string): Promise<boolean> {
+    const gated = this.gate?.(method, url);
+    if (gated) {
+      let host = "";
+      try {
+        host = new URL(url).hostname;
+      } catch {}
+      this.emit({ method, url, host, decision: "deny", reason: gated });
+      return false;
+    }
     const mode = this.mode;
     const d = await resolveAndCheck(mode, { method, url }, this.lookup);
     const pendingTls = this.tlsLiteral.get(d.host)?.[0];

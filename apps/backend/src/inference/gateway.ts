@@ -7,6 +7,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { FinishReason, ModelCallTiming, ModelCallUsage } from "@terrarium/shared";
 import type { Store } from "../store/db.ts";
+import { BudgetExceededError, type ResourceBudgets } from "../resource-budgets.ts";
 import type { Tracer } from "../trace.ts";
 import { errorMessage } from "../util/errors.ts";
 import { logger } from "../util/log.ts";
@@ -84,10 +85,12 @@ export class Gateway {
   private pending = new Map<string, { ctx: CallContext; resolve: (r: CallResult) => void }>();
   private store: Store;
   private upstream: Upstream;
+  private budgets?: ResourceBudgets;
 
-  constructor(store: Store, upstream: Upstream) {
+  constructor(store: Store, upstream: Upstream, budgets?: ResourceBudgets) {
     this.store = store;
     this.upstream = upstream;
+    this.budgets = budgets;
   }
 
   get apiKey(): string {
@@ -169,6 +172,15 @@ export class Gateway {
       chunks.push(c as Buffer);
     }
     const body = Buffer.concat(chunks);
+    try {
+      this.budgets?.consume(ctx.tracer.sessionId, "requestCount", 1);
+      this.budgets?.consumeTrace(ctx.tracer.sessionId, body.byteLength);
+    } catch (err) {
+      const message = err instanceof BudgetExceededError ? err.trip.reason : errorMessage(err);
+      resolve({ callId, startSeq: 0, finishReason: "error", timing: { totalMs: 0 }, error: message });
+      res.writeHead(429, { "content-type": "application/json" }).end(JSON.stringify({ error: { message } }));
+      return;
+    }
     const requestBlob = this.store.blobs.put(body);
     let requestJson: any = {};
     try {
@@ -200,8 +212,22 @@ export class Gateway {
       const endedAt = Date.now();
       const usage = usageFrom(rawUsage);
       const timing = timingFrom(rawUsage, startedAt, asm.firstTokenAt, endedAt, usage);
-      const rawBlob = streamed && asm.raw ? this.store.blobs.put(asm.raw) : undefined;
-      const responseBlob = response ? this.store.blobs.putJson(response) : undefined;
+      let rawBlob: string | undefined;
+      let responseBlob: string | undefined;
+      try {
+        if (streamed && asm.raw) {
+          this.budgets?.consumeTrace(ctx.tracer.sessionId, Buffer.byteLength(asm.raw));
+          rawBlob = this.store.blobs.put(asm.raw);
+        }
+        if (response) {
+          const encoded = JSON.stringify(response);
+          this.budgets?.consumeTrace(ctx.tracer.sessionId, Buffer.byteLength(encoded));
+          responseBlob = this.store.blobs.put(encoded);
+        }
+      } catch (err) {
+        error = err instanceof BudgetExceededError ? err.trip.reason : errorMessage(err);
+        finishReason = "error";
+      }
       ctx.tracer.emit({ type: "model_call_end", callId, finishReason, usage, timing, ...(error ? { error } : {}) });
       this.store.run(
         "INSERT OR REPLACE INTO model_calls (id, session_id, seq, model_id, request_blob, response_blob, raw_blob, finish_reason, usage_json, timing_json, context_window, max_tokens, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

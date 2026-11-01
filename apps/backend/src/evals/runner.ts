@@ -333,11 +333,11 @@ export class EvalRunner {
         return;
       }
       let grade: Grade;
-      if (outcome.reason === "error" && c.check.type !== "isolation") grade = { pass: false, detail: `session error: ${outcome.error ?? "unknown"}` };
+      if ((outcome.reason === "error" || outcome.reason === "budget") && c.check.type !== "isolation") grade = { pass: false, detail: `session error: ${outcome.error ?? "unknown"}` };
       else grade = await this.grade(c, session.id, envId, outcome.finalText, canary);
-      const prefix = outcome.timedOut ? `timed out after ${c.timeoutSec}s; ` : outcome.reason === "max_turns" ? `hit ${c.maxTurns} turns; ` : outcome.reason === "length" ? "output truncated; " : "";
+      const prefix = outcome.timedOut ? `timed out after ${c.timeoutSec}s; ` : outcome.reason === "max_turns" ? `hit ${c.maxTurns} turns; ` : outcome.reason === "length" ? "output truncated; " : outcome.reason === "budget" ? "resource budget reached; " : "";
       this.setResult(runId, c.id, modelId, {
-        status: grade.pass ? "pass" : grade.error || outcome.reason === "error" ? "error" : "fail",
+        status: grade.pass ? "pass" : grade.error || outcome.reason === "error" || outcome.reason === "budget" ? "error" : "fail",
         detail: prefix + grade.detail,
         durationMs: Date.now() - started,
         tokens,

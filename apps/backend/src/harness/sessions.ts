@@ -25,6 +25,7 @@ import type { CallResult, Gateway } from "../inference/gateway.ts";
 import type { InferenceService } from "../inference/service.ts";
 import type { Hub } from "../hub.ts";
 import type { Store } from "../store/db.ts";
+import { BudgetExceededError, type BudgetTrip, type ResourceBudgets } from "../resource-budgets.ts";
 import { SessionTracer } from "../trace.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
@@ -45,7 +46,7 @@ const TOOL_OUTPUT_CHARS = 6000; // ~1,500 tokens per tool result given to the mo
 const EVENT_OUTPUT_CAP = 256 * 1024; // stdout/stderr kept in the persisted tool_end event
 const MUTATING_TOOLS = new Set(["bash", "write", "edit"]);
 
-export type RunEndReason = "done" | "stopped" | "max_turns" | "error" | "length";
+export type RunEndReason = "done" | "stopped" | "max_turns" | "error" | "length" | "budget";
 
 export interface RunOptions {
   maxTurns?: number;
@@ -92,6 +93,7 @@ interface Live {
   running: Promise<RunOutcome> | null;
   stopRequested: boolean;
   timedOut: boolean;
+  budgetTrip: BudgetTrip | null;
 }
 
 function textOf(content: unknown): string {
@@ -219,6 +221,7 @@ export class SessionManager {
   private inference: InferenceService;
   private gateway: Gateway;
   private tokens: ChatTokenizer | undefined;
+  private budgets: ResourceBudgets;
   /** Saved per-profile prompt defaults (Settings). */
   private prompts: () => AppSettings["prompts"];
   private live = new Map<string, Live>();
@@ -230,6 +233,7 @@ export class SessionManager {
     inference: InferenceService;
     gateway: Gateway;
     tokens?: ChatTokenizer;
+    budgets?: ResourceBudgets;
     prompts?: () => AppSettings["prompts"];
   }) {
     this.store = opts.store;
@@ -238,12 +242,14 @@ export class SessionManager {
     this.inference = opts.inference;
     this.gateway = opts.gateway;
     this.tokens = opts.tokens;
+    this.budgets = opts.budgets ?? opts.envs.resourceBudgets();
     this.prompts = opts.prompts ?? (() => ({}));
     this.store.run("UPDATE sessions SET status = 'idle' WHERE status IN ('running', 'stopping')");
     this.envs.hooks.onSessionNet = (sessionId, entry) => this.onNet(sessionId, entry);
     this.envs.hooks.onEnvInterrupted = async (_envId, sessionId) => {
       await this.stop(sessionId);
     };
+    this.budgets.onTrip = (trip) => this.onBudgetTrip(trip);
   }
 
   // ---------- queries ----------
@@ -320,6 +326,7 @@ export class SessionManager {
         running: null,
         stopRequested: false,
         timedOut: false,
+        budgetTrip: null,
       };
       this.live.set(id, l);
     }
@@ -373,6 +380,7 @@ export class SessionManager {
       now,
       now,
     );
+    this.budgets.ensureSession(id);
     const s = this.get(id);
     if (!opts.ephemeral) this.hub.broadcast({ type: "session", session: s });
     return s;
@@ -434,6 +442,7 @@ export class SessionManager {
       this.store.run("DELETE FROM model_calls WHERE session_id = ?", id);
       this.store.run("DELETE FROM manifests WHERE session_id = ?", id);
       this.store.run("DELETE FROM sessions WHERE id = ?", id);
+      this.store.run("DELETE FROM session_budget_usage WHERE session_id = ?", id);
     });
     this.live.delete(id);
     if (!r.ephemeral) this.hub.broadcast({ type: "session_deleted", sessionId: id });
@@ -499,6 +508,8 @@ export class SessionManager {
     }
     live.stopRequested = false;
     live.timedOut = false;
+    live.budgetTrip = null;
+    this.budgets.clearTrips(id);
     // An untitled session is named after its first message, so the sidebar isn't a column of "New session".
     if (r.last_seq === 0 && r.title === DEFAULT_TITLE) this.store.run("UPDATE sessions SET title = ? WHERE id = ?", titleFrom(text), id);
     this.setStatus(id, "running");
@@ -534,6 +545,19 @@ export class SessionManager {
   private onNet(sessionId: string, entry: NetEntry): void {
     if (!this.exists(sessionId)) return;
     this.liveFor(sessionId).tracer.emit({ type: "net", entry });
+  }
+
+  private onBudgetTrip(trip: BudgetTrip): void {
+    if (!this.exists(trip.sessionId)) return;
+    const live = this.liveFor(trip.sessionId);
+    if (live.budgetTrip) return;
+    live.budgetTrip = trip;
+    const { sessionId: _sessionId, ...event } = trip;
+    live.tracer.emit({ type: "budget_exceeded", ...event });
+    if (live.running) {
+      this.setStatus(trip.sessionId, "stopping");
+      live.agent?.abort();
+    }
   }
 
   /** A system_prompt event whenever a run's prompt or tools differ from the last one this session recorded. */
@@ -578,7 +602,9 @@ export class SessionManager {
   }
 
   private saveTranscript(id: string, messages: AgentMessage[]): void {
-    const blob = this.store.blobs.putJson(forStorage(messages));
+    const encoded = JSON.stringify(forStorage(messages));
+    this.budgets.consumeTrace(id, Buffer.byteLength(encoded), this.row(id).env_id ?? undefined);
+    const blob = this.store.blobs.put(encoded);
     this.store.run("UPDATE sessions SET transcript_blob = ? WHERE id = ?", blob, id);
   }
 
@@ -615,7 +641,7 @@ export class SessionManager {
         const wasRunning = env.status === "running";
         runtime = await this.envs.acquire(envId, id);
         if (!wasRunning) tracer.emit({ type: "env_lifecycle", envId, action: "start" });
-        observer = new FsObserver({ store: this.store, envs: this.envs, envId, sessionId: id, runtime, tracer });
+        observer = new FsObserver({ store: this.store, envs: this.envs, envId, sessionId: id, runtime, tracer, budgets: this.budgets });
         await observer.baseline();
       }
       if (live.stopRequested) throw new StopSignal();
@@ -770,7 +796,11 @@ export class SessionManager {
               return c.tokens;
             },
             filesChanged: () => (observer ? [...observer.changedPaths].map((p) => p.replace(/^\/workspace\//, "")) : []),
-            saveOriginal: (toolCallId, text) => this.store.blobs.put(this.toolResultText(id, toolCallId) ?? text),
+            saveOriginal: (toolCallId, text) => {
+              const value = this.toolResultText(id, toolCallId) ?? text;
+              this.budgets.consumeTrace(id, Buffer.byteLength(value), envId ?? undefined);
+              return this.store.blobs.put(value);
+            },
           });
           lastCompaction = res;
           if (res.removedTurns || res.truncatedResults || res.shortened.length) {
@@ -907,14 +937,20 @@ export class SessionManager {
 
       const last = lastAssistant as AssistantMessage | null;
       if (last) finalText = displayText(last.content.filter((c) => c.type === "text").map((c) => (c as { text: string }).text).join(""));
-      if (live.stopRequested) reason = "stopped";
+      if (live.budgetTrip) {
+        reason = "budget";
+        error = live.budgetTrip.reason;
+      } else if (live.stopRequested) reason = "stopped";
       else if (last?.stopReason === "error") {
         reason = "error";
         error = last.errorMessage ?? "model call failed";
       }
       transcript = loopMessages ?? agent.state.messages;
     } catch (err) {
-      if (err instanceof StopSignal || live.stopRequested) reason = "stopped";
+      if (live.budgetTrip || err instanceof BudgetExceededError) {
+        reason = "budget";
+        error = live.budgetTrip?.reason ?? (err as BudgetExceededError).trip.reason;
+      } else if (err instanceof StopSignal || live.stopRequested) reason = "stopped";
       else {
         reason = "error";
         error = errorMessage(err);
@@ -927,7 +963,13 @@ export class SessionManager {
         this.saveTranscript(id, transcript);
       } catch (err) {
         log.warn(`saving transcript failed for ${id}`, err);
+        if (err instanceof BudgetExceededError) {
+          reason = "budget";
+          error = err.trip.reason;
+        }
       }
+      // Budget listeners are intentionally queued to keep counter updates atomic. Let the typed event land before run_end.
+      await Promise.resolve();
       if (envId && runtime) {
         // Nothing the agent started outlives its run (setsid daemons included).
         await runtime.killAgentProcesses().catch((err) => log.warn(`killing agent processes after run failed for ${id}`, err));

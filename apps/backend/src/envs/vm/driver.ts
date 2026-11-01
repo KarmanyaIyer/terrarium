@@ -21,6 +21,7 @@ import type {
   Manifest,
   ManifestEntry,
   NetAttempt,
+  NetworkGate,
   ReadResult,
 } from "../types.ts";
 import {
@@ -710,6 +711,10 @@ export class VmRuntime implements EnvRuntime {
 
   async setNetwork(mode: NetworkMode): Promise<void> {
     this.net.mode = mode;
+  }
+
+  setNetworkGate(gate: NetworkGate | null): void {
+    this.net.setGate(gate);
   }
 
   onNet(listener: (attempt: NetAttempt) => void): () => void {

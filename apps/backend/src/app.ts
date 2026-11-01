@@ -15,6 +15,7 @@ import { ModelDownloads } from "./inference/downloads.ts";
 import { InferenceService } from "./inference/service.ts";
 import { TokenCounter } from "./inference/tokens.ts";
 import { ResourceSampler } from "./resources.ts";
+import { ResourceBudgets } from "./resource-budgets.ts";
 import { Settings } from "./settings.ts";
 import { Store } from "./store/db.ts";
 import { BlobGc } from "./store/gc.ts";
@@ -35,6 +36,7 @@ export interface App {
   sampler: ResourceSampler;
   settings: Settings;
   downloads: ModelDownloads;
+  budgets: ResourceBudgets;
   state(): Promise<AppState>;
   shutdown(): Promise<void>;
 }
@@ -43,14 +45,15 @@ export async function createApp(config: Config): Promise<App> {
   const store = new Store(join(config.dataDir, "terrarium.db"), join(config.dataDir, "blobs"));
   const hub = new Hub();
   const inference = new InferenceService({ store, hub, modelsDir: config.modelsDir, venvDir: config.venvDir, omlxDataDir: join(config.dataDir, "omlx") });
+  const budgets = new ResourceBudgets({ store, dataDir: config.dataDir });
   const gateway = new Gateway(store, {
     baseUrl: () => inference.omlx.baseUrl,
     apiKey: () => inference.omlx.key,
     ensureReady: () => inference.omlx.ensureStarted(),
-  });
+  }, budgets);
   await gateway.listen();
   const drivers = await loadDrivers();
-  const envs = new EnvManager({ store, hub, dataDir: config.dataDir, drivers });
+  const envs = new EnvManager({ store, hub, dataDir: config.dataDir, drivers, budgets });
   // Dev only: TERRARIUM_TOKENIZER_URL points the tokenizer elsewhere (e.g. a dead port) to try the estimate fallback
   // against the real model.
   const tokenizerUrl = config.dev ? process.env.TERRARIUM_TOKENIZER_URL : undefined;
@@ -59,11 +62,11 @@ export async function createApp(config: Config): Promise<App> {
     apiKey: () => inference.omlx.key,
     ensureReady: () => inference.omlx.ensureStarted(),
   });
-  const settings = new Settings({ store, hub, inference, config });
-  const sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens, prompts: () => settings.prompts() });
+  const settings = new Settings({ store, hub, inference, config, budgets });
+  const sessions = new SessionManager({ store, hub, envs, inference, gateway, tokens, budgets, prompts: () => settings.prompts() });
   const evals = new EvalRunner({ store, hub, envs, sessions, inference, policy, dataDir: config.dataDir });
   const files = new FileViews({ store, envs });
-  const downloads = new ModelDownloads({ hub, inference, venvDir: config.venvDir, modelsDir: config.modelsDir, dataDir: config.dataDir });
+  const downloads = new ModelDownloads({ hub, inference, venvDir: config.venvDir, modelsDir: config.modelsDir, dataDir: config.dataDir, budgets });
   downloads.inUse = (modelId) => {
     const s = store.get<{ title: string }>("SELECT title FROM sessions WHERE model_id = ? AND status IN ('running', 'stopping') LIMIT 1", modelId);
     if (s) return `session "${s.title}" running`;
@@ -94,6 +97,7 @@ export async function createApp(config: Config): Promise<App> {
     sampler,
     settings,
     downloads,
+    budgets,
     async state() {
       return {
         envs: envs.list(),

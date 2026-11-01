@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { FolderOpen, Loader2, RotateCw } from "lucide-react";
-import type { AppSettings, EnvType, HarnessProfile, NetworkMode, PathKey, SettingsInfo, UpdateSettingsRequest } from "@terrarium/shared";
+import type { AppSettings, EnvType, HarnessProfile, NetworkMode, PathKey, ResourceBudgetSettings, SettingsInfo, UpdateSettingsRequest } from "@terrarium/shared";
 import { act, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES } from "../lib/memory";
 import { exactBytes, fmtBytes, fmtCtx } from "../lib/format";
@@ -35,6 +35,7 @@ export default function SettingsView() {
       </div>
       <div className="settings-body">
         <MemorySection settings={settings} totalBytes={useStore.getState().budget.totalBytes} running={inference} update={update} />
+        <ResourceBudgetsSection settings={settings} update={update} />
         <NewSessionSection settings={settings} update={update} />
         <NewEnvSection settings={settings} update={update} />
         <PromptsSection settings={settings} update={update} />
@@ -42,6 +43,69 @@ export default function SettingsView() {
         <AboutSection info={info} />
       </div>
     </div>
+  );
+}
+
+type BudgetField = {
+  key: keyof ResourceBudgetSettings;
+  label: string;
+  help: string;
+  unit: string;
+  scale?: number;
+  min: number;
+  max: number;
+};
+
+const MiB = 1024 * 1024;
+const GiB = 1024 * MiB;
+const BUDGET_FIELDS: BudgetField[] = [
+  { key: "maxSimWorkers", label: "Sim workers", help: "Maximum simulated environments that may run at once.", unit: "workers", min: 1, max: 32 },
+  { key: "simWorkerRssBytes", label: "Sim memory", help: "A worker is stopped when host-measured RSS crosses this limit, including WASM and external memory.", unit: "MiB", scale: MiB, min: 256, max: 4096 },
+  { key: "simWorkerCpuMs", label: "Sim CPU lifetime", help: "A worker is stopped after this much cumulative CPU time.", unit: "minutes", scale: 60_000, min: 1, max: 1440 },
+  { key: "hostFreeDiskReserveBytes", label: "Free disk reserve", help: "Environment work stops before free space falls below this reserve.", unit: "GiB", scale: GiB, min: 1, max: 512 },
+  { key: "sessionTraceBytes", label: "Trace data", help: "Maximum logical request, response, transcript, diff and manifest data per session.", unit: "MiB", scale: MiB, min: 32, max: 8192 },
+  { key: "sessionCaptureBytes", label: "File captures", help: "Maximum changed file content captured per session; each tool call is also capped at 64 MiB.", unit: "MiB", scale: MiB, min: 16, max: 4096 },
+  { key: "sessionSnapshotCount", label: "Filesystem history", help: "Maximum saved filesystem history points per session.", unit: "points", min: 10, max: 10_000 },
+  { key: "sessionNetworkRows", label: "Network rows", help: "Maximum individual network log rows per session; overflow is aggregated.", unit: "rows", min: 100, max: 100_000 },
+  { key: "sessionRequestCount", label: "Model requests", help: "Maximum inference requests across all turns in one session.", unit: "requests", min: 10, max: 10_000 },
+  { key: "sessionNetworkBytes", label: "Network data", help: "Maximum request and response bytes transferred by one session.", unit: "MiB", scale: MiB, min: 16, max: 8192 },
+  { key: "networkBurst", label: "Network burst", help: "HTTP attempts allowed immediately before rate limiting starts.", unit: "attempts", min: 10, max: 10_000 },
+  { key: "networkRefillPerSecond", label: "Network refill", help: "HTTP attempt tokens restored each second after a burst.", unit: "per second", min: 1, max: 1000 },
+];
+
+function ResourceBudgetsSection({ settings, update }: { settings: AppSettings; update: Update }) {
+  return (
+    <Section title="Resource limits">
+      {BUDGET_FIELDS.map((field) => (
+        <BudgetInput key={field.key} field={field} stored={settings.resourceBudgets[field.key]} update={update} />
+      ))}
+    </Section>
+  );
+}
+
+function BudgetInput({ field, stored, update }: { field: BudgetField; stored: number; update: Update }) {
+  const scale = field.scale ?? 1;
+  const shown = Math.round(stored / scale);
+  const [value, setValue] = useState(String(shown));
+  useEffect(() => setValue(String(shown)), [shown]);
+  const save = () => {
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < field.min || n > field.max) {
+      setValue(String(shown));
+      return;
+    }
+    const next = n * scale;
+    if (next !== stored) update({ resourceBudgets: { [field.key]: next } });
+  };
+  return (
+    <>
+      <Label>{field.label}</Label>
+      <div className="st-row">
+        <input className="input num" type="number" min={field.min} max={field.max} step={1} value={value} onChange={(e) => setValue(e.target.value)} onBlur={save} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
+        <span className="dim num">{field.unit}</span>
+        <span className="dim">{field.help}</span>
+      </div>
+    </>
   );
 }
 

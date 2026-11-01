@@ -1271,6 +1271,7 @@ export class FixtureBackend implements Backend {
     }
     this.settings = {
       memoryBudgetBytes: req.memoryBudgetBytes ?? this.settings.memoryBudgetBytes,
+      resourceBudgets: { ...this.settings.resourceBudgets, ...req.resourceBudgets },
       newSession: { ...this.settings.newSession, ...req.newSession },
       newEnv: { ...this.settings.newEnv, ...req.newEnv },
       prompts,

@@ -4,6 +4,20 @@ import type { AppSettings, HarnessInfo, ModelCheck, ModelSuggestion, SettingsInf
 
 export const DEFAULT_SETTINGS: AppSettings = {
   memoryBudgetBytes: 12e9,
+  resourceBudgets: {
+    maxSimWorkers: 8,
+    simWorkerRssBytes: 1024 * 1024 * 1024,
+    simWorkerCpuMs: 30 * 60_000,
+    hostFreeDiskReserveBytes: 20 * 1024 * 1024 * 1024,
+    sessionTraceBytes: 1024 * 1024 * 1024,
+    sessionCaptureBytes: 512 * 1024 * 1024,
+    sessionSnapshotCount: 256,
+    sessionNetworkRows: 2000,
+    sessionRequestCount: 200,
+    sessionNetworkBytes: 256 * 1024 * 1024,
+    networkBurst: 120,
+    networkRefillPerSecond: 20,
+  },
   newSession: { modelId: null, contextWindow: null, thinking: "model", harness: "terrarium" },
   newEnv: { type: "vm", network: "off" },
   prompts: {},

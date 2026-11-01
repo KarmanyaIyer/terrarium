@@ -44,6 +44,7 @@ const MAX_BODY = 16 * 1024 * 1024;
 
 /** Resolver used after the pre-DNS policy check (injectable for tests). */
 export type ProxyLookup = (host: string) => Promise<string[]>;
+export type ProxyGate = (method: string, url: string) => string | null;
 const systemLookup: ProxyLookup = async (host) => (await dnsLookup(host, { all: true, verbatim: true })).map((a) => a.address);
 const HOP_HEADERS = new Set(["host", "connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade", "te", "trailer", "proxy-authorization"]);
 
@@ -59,6 +60,7 @@ export async function proxyFetch(
   req: ProxyRequest,
   onAttempt: (a: NetAttempt) => void,
   lookup: ProxyLookup = systemLookup,
+  gate?: ProxyGate,
 ): Promise<ProxyResponse> {
   let url = req.url;
   let method = (req.method ?? "GET").toUpperCase();
@@ -66,7 +68,7 @@ export async function proxyFetch(
   const chain: ProxyResponse["redirectChain"] = [];
   const maxRedirects = Math.min(req.maxRedirects ?? 5, 10);
   for (let hop = 0; ; hop++) {
-    const res = await oneHop(mode(), policy, { ...req, url, method, body }, onAttempt, lookup);
+    const res = await oneHop(mode(), policy, { ...req, url, method, body }, onAttempt, lookup, gate);
     const location = res.headers.location;
     if (req.followRedirects !== false && res.status >= 300 && res.status < 400 && location && hop < maxRedirects) {
       chain.push({ status: res.status, statusText: res.statusText, headers: res.headers });
@@ -81,7 +83,7 @@ export async function proxyFetch(
   }
 }
 
-async function oneHop(mode: NetworkMode, policy: PolicyModule, req: ProxyRequest & { method: string }, onAttempt: (a: NetAttempt) => void, lookup: ProxyLookup): Promise<ProxyResponse> {
+async function oneHop(mode: NetworkMode, policy: PolicyModule, req: ProxyRequest & { method: string }, onAttempt: (a: NetAttempt) => void, lookup: ProxyLookup, gate?: ProxyGate): Promise<ProxyResponse> {
   const ts = Date.now();
   const base = { ts, method: req.method, url: req.url };
   let parsed: URL;
@@ -96,6 +98,11 @@ async function oneHop(mode: NetworkMode, policy: PolicyModule, req: ProxyRequest
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     onAttempt({ ...attempt, decision: "deny", reason: `scheme ${parsed.protocol} not allowed` });
     throw new NetDenied(req.url, `scheme ${parsed.protocol} not allowed`);
+  }
+  const gated = gate?.(req.method, req.url);
+  if (gated) {
+    onAttempt({ ...attempt, decision: "deny", reason: gated });
+    throw new NetDenied(req.url, gated);
   }
   // Everything decidable without addresses (mode off, registries host list, internal names and literals,
   // ports, methods) is decided before resolving, so a denied name never becomes a DNS query.

@@ -51,7 +51,7 @@ export interface RowItem {
   key: string;
   seq: number;
   ts: number;
-  event: Ev<"compaction" | "warning" | "error" | "env_lifecycle" | "run_end" | "fs_change" | "net" | "system_prompt">;
+  event: Ev<"compaction" | "warning" | "error" | "budget_exceeded" | "env_lifecycle" | "run_end" | "fs_change" | "net" | "system_prompt">;
 }
 
 export type Item = UserItem | CallItem | ToolItem | RowItem;
@@ -199,6 +199,7 @@ export function derive(trace: Trace | undefined): Derived {
       case "compaction":
       case "warning":
       case "error":
+      case "budget_exceeded":
       case "system_prompt":
       case "env_lifecycle": {
         const it: RowItem = { kind: "row", key: `r${ev.seq}`, seq: ev.seq, ts: ev.ts, event: ev };

@@ -725,6 +725,17 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
           {ev.code === "context_overflow" && <OverflowActions data={ev.data ?? {}} session={session} latest={!d.items.slice(d.items.indexOf(it) + 1).some((x) => x.kind === "user")} />}
         </div>
       );
+    case "budget_exceeded":
+      return (
+        <div className="err-box">
+          <div className="warn-title">
+            <CircleX size={14} /> {ev.reason}
+          </div>
+          <div className="dim mono">
+            {ev.budget}: {ev.observed.toLocaleString("en-US")} / {ev.limit.toLocaleString("en-US")} {ev.unit}
+          </div>
+        </div>
+      );
     case "system_prompt":
       return <PromptRow ev={ev} ts={it.ts} t0={t0} />;
     case "env_lifecycle":

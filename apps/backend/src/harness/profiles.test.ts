@@ -139,6 +139,10 @@ test("settings: validation, saved prompts lose the sim note, null restores the b
   assert.equal(s.newSession.contextWindow, 16384);
   assert.equal(s.newEnv.network, "registries");
   assert.equal(s.newEnv.type, "vm");
+  settings.update({ resourceBudgets: { maxSimWorkers: 4, sessionRequestCount: 50 } });
+  assert.equal(settings.get().resourceBudgets.maxSimWorkers, 4);
+  assert.equal(settings.get().resourceBudgets.sessionRequestCount, 50);
+  assert.throws(() => settings.update({ resourceBudgets: { maxSimWorkers: 0 } }), /maxSimWorkers/);
   assert.throws(() => settings.update({ newSession: { harness: "chat" as any } }), /harness/);
   assert.throws(() => settings.update({ newEnv: { network: "lan" as any } }), /network/);
   assert.throws(() => settings.update({ newSession: { contextWindow: 100 } }), /contextWindow/);

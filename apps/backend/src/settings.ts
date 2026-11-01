@@ -10,6 +10,7 @@ import { MAX_RUNNING_VMS } from "./envs/manager.ts";
 import { stripSimNote } from "./harness/profiles.ts";
 import type { Hub } from "./hub.ts";
 import type { InferenceService } from "./inference/service.ts";
+import { ResourceBudgets } from "./resource-budgets.ts";
 import type { Store } from "./store/db.ts";
 import { HttpError } from "./util/errors.ts";
 
@@ -49,17 +50,20 @@ export class Settings {
   private hub: Hub;
   private inference: InferenceService;
   private config: Config;
+  private budgets: ResourceBudgets;
 
-  constructor(opts: { store: Store; hub: Hub; inference: InferenceService; config: Config }) {
+  constructor(opts: { store: Store; hub: Hub; inference: InferenceService; config: Config; budgets?: ResourceBudgets }) {
     this.store = opts.store;
     this.hub = opts.hub;
     this.inference = opts.inference;
     this.config = opts.config;
+    this.budgets = opts.budgets ?? new ResourceBudgets({ store: opts.store, dataDir: opts.config.dataDir });
   }
 
   get(): AppSettings {
     return {
       memoryBudgetBytes: this.inference.budget().budgetBytes,
+      resourceBudgets: this.budgets.get(),
       newSession: { ...NEW_SESSION, ...this.store.getSetting<Partial<AppSettings["newSession"]>>("newSession", {}) },
       newEnv: { ...NEW_ENV, ...this.store.getSetting<Partial<AppSettings["newEnv"]>>("newEnv", {}) },
       prompts: this.store.getSetting<AppSettings["prompts"]>("prompts", {}),
@@ -74,6 +78,13 @@ export class Settings {
     if (patch.memoryBudgetBytes !== undefined) {
       if (typeof patch.memoryBudgetBytes !== "number" || !Number.isFinite(patch.memoryBudgetBytes)) throw new HttpError(400, "memoryBudgetBytes must be a number");
       this.inference.setBudget(patch.memoryBudgetBytes);
+    }
+    if (patch.resourceBudgets) {
+      try {
+        this.budgets.update(patch.resourceBudgets);
+      } catch (err) {
+        throw new HttpError(400, err instanceof Error ? err.message : String(err));
+      }
     }
     if (patch.newSession) {
       const cur = this.get().newSession;

@@ -1,5 +1,5 @@
 // 1 Hz resource sampler: system memory, backend RSS, oMLX RSS + loaded models, per-env RSS/CPU.
-// Runs only while at least one UI client is connected.
+// Enforcement runs even without a UI client; samples are broadcast only when a client is connected.
 
 import type { ResourceSample } from "@terrarium/shared";
 import type { EnvManager } from "./envs/manager.ts";
@@ -27,10 +27,13 @@ export class ResourceSampler {
   start(intervalMs = 1000): void {
     if (this.timer) return;
     this.timer = setInterval(() => {
-      if (this.hub.clientCount === 0 || this.busy) return;
+      if (this.busy) return;
       this.busy = true;
       this.sample()
-        .then((s) => this.hub.broadcast({ type: "resources", sample: s }))
+        .then(async (s) => {
+          await this.envs.enforceBudgets(new Map(s.envs.map((e) => [e.envId, e])));
+          if (this.hub.clientCount > 0) this.hub.broadcast({ type: "resources", sample: s });
+        })
         .catch((err) => log.warn("sample failed", err))
         .finally(() => (this.busy = false));
     }, intervalMs);
@@ -51,7 +54,7 @@ export class ResourceSampler {
       Promise.all(
         this.envs.running().map(async ({ id, runtime }) => {
           const r = await runtime.resources().catch(() => null);
-          return r ? { envId: id, rssBytes: r.rssBytes, cpuPct: r.cpuPct } : null;
+          return r ? { envId: id, rssBytes: r.rssBytes, cpuPct: r.cpuPct, ...(r.cpuTimeMs !== undefined ? { cpuTimeMs: r.cpuTimeMs } : {}) } : null;
         }),
       ),
     ]);

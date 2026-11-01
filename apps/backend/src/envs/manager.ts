@@ -21,6 +21,7 @@ import type {
 } from "@terrarium/shared";
 import type { Hub } from "../hub.ts";
 import type { Store } from "../store/db.ts";
+import { BudgetExceededError, ResourceBudgets, clampSimConfig, clampVmConfig } from "../resource-budgets.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
 import { logger } from "../util/log.ts";
@@ -95,6 +96,7 @@ export class EnvManager {
   private hub: Hub;
   private dataDir: string;
   private drivers: Record<EnvType, EnvDriver | null>;
+  private budgets: ResourceBudgets;
   private runtimes = new Map<string, EnvRuntime>();
   /** Opens in flight, so overlapping first uses of an env (e.g. right after a restart) share one runtime. */
   private opening = new Map<string, Promise<EnvRuntime>>();
@@ -103,20 +105,30 @@ export class EnvManager {
   private netRepeats = new Map<string, { entry: NetEntry; timer: NodeJS.Timeout | null }>();
   /** One lock across the running-VM count and the boot, so concurrent starts can't exceed MAX_RUNNING_VMS. */
   private vmBoot = new KeyedMutex();
+  /** One lock across the running-sim count and worker spawn. */
+  private simBoot = new KeyedMutex();
   private active = new Map<string, string>(); // envId -> sessionId using it
   private shells = new Map<string, number>(); // envId -> user shell commands in flight
   private manifests = new Map<string, Manifest>(); // last known /workspace manifest per env
   private versions = new Map<string, number>(); // bumps when something other than the harness changes the env
   private sizes = new Map<string, number>();
+  private networkBuckets = new Map<string, { tokens: number; at: number }>();
+  private budgetDetails = new Map<string, string>();
+  private diskReserveTripped = false;
   hooks: EnvHooks = {};
 
-  constructor(opts: { store: Store; hub: Hub; dataDir: string; drivers: Record<EnvType, EnvDriver | null> }) {
+  constructor(opts: { store: Store; hub: Hub; dataDir: string; drivers: Record<EnvType, EnvDriver | null>; budgets?: ResourceBudgets }) {
     this.store = opts.store;
     this.hub = opts.hub;
     this.dataDir = opts.dataDir;
     this.drivers = opts.drivers;
+    this.budgets = opts.budgets ?? new ResourceBudgets({ store: opts.store, dataDir: opts.dataDir });
     // Nothing survives a backend restart: VMs and sim children die with the process.
     this.store.run("UPDATE envs SET status = 'stopped', status_detail = NULL WHERE status IN ('starting', 'running', 'stopping', 'busy')");
+  }
+
+  resourceBudgets(): ResourceBudgets {
+    return this.budgets;
   }
 
   // ---------- reads ----------
@@ -264,7 +276,14 @@ export class EnvManager {
   }
 
   private config(row: EnvRow): { vm?: VmConfig; sim?: SimConfig } {
-    return JSON.parse(row.config_json);
+    const raw = JSON.parse(row.config_json) as { vm?: Partial<VmConfig>; sim?: Partial<SimConfig> };
+    const config = row.type === "vm" ? { vm: clampVmConfig(raw.vm, DEFAULT_VM) } : { sim: clampSimConfig(raw.sim, DEFAULT_SIM) };
+    const encoded = JSON.stringify(config);
+    if (encoded !== row.config_json) {
+      row.config_json = encoded;
+      this.store.run("UPDATE envs SET config_json = ? WHERE id = ?", encoded, row.id);
+    }
+    return config;
   }
 
   /**
@@ -292,13 +311,38 @@ export class EnvManager {
 
   private attach(id: string, rt: EnvRuntime): void {
     this.runtimes.set(id, rt);
+    rt.setNetworkGate?.((method, url) => this.networkGate(id, method, url));
     this.unsubNet.get(id)?.();
     this.unsubNet.set(
       id,
       rt.onNet((attempt) => {
         const sessionId = this.active.get(id);
-        if (this.collapseRepeat(id, sessionId, attempt)) return;
-        const entry: NetEntry = { ...attempt, id: newId("net"), envId: id, sessionId };
+        let normalized = attempt;
+        let overflow = attempt.reason === "network request rate limit reached";
+        if (sessionId) {
+          const bytes = (attempt.bytesIn ?? 0) + (attempt.bytesOut ?? 0);
+          if (bytes) {
+            try {
+              this.budgets.consume(sessionId, "networkBytes", bytes, id);
+            } catch (err) {
+              if (!(err instanceof BudgetExceededError)) throw err;
+              overflow = true;
+              normalized = { ts: attempt.ts, method: "HTTP", url: "", host: "", decision: "deny", reason: "network byte limit reached; further attempts omitted" };
+            }
+          }
+        }
+        if (overflow) normalized = { ts: attempt.ts, method: "HTTP", url: "", host: "", decision: "deny", reason: normalized.reason };
+        if (this.collapseRepeat(id, sessionId, normalized)) return;
+        if (sessionId && !overflow) {
+          try {
+            this.budgets.consume(sessionId, "networkRows", 1, id);
+          } catch (err) {
+            if (!(err instanceof BudgetExceededError)) throw err;
+            normalized = { ts: attempt.ts, method: "HTTP", url: "", host: "", decision: "deny", reason: "network row limit reached; further attempts omitted" };
+            if (this.collapseRepeat(id, sessionId, normalized)) return;
+          }
+        }
+        const entry: NetEntry = { ...normalized, id: newId("net"), envId: id, sessionId };
         this.rememberNet(entry);
         this.store.run(
           "INSERT INTO net_log (id, env_id, session_id, ts, method, url, host, ip, decision, reason, status, bytes_in, bytes_out) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -320,6 +364,36 @@ export class EnvManager {
         if (entry.sessionId) this.hooks.onSessionNet?.(entry.sessionId, entry);
       }),
     );
+  }
+
+  /** Per-session (or per-env user shell) token bucket, checked before DNS and egress. */
+  private networkGate(envId: string, _method: string, _url: string): string | null {
+    const sessionId = this.active.get(envId);
+    const key = sessionId ?? `env:${envId}`;
+    const cfg = this.budgets.get();
+    const now = Date.now();
+    const b = this.networkBuckets.get(key) ?? { tokens: cfg.networkBurst, at: now };
+    b.tokens = Math.min(cfg.networkBurst, b.tokens + ((now - b.at) / 1000) * cfg.networkRefillPerSecond);
+    b.at = now;
+    if (b.tokens >= 1) {
+      b.tokens -= 1;
+      this.networkBuckets.set(key, b);
+      return null;
+    }
+    this.networkBuckets.set(key, b);
+    if (sessionId) {
+      this.budgets.externalTrip({
+        sessionId,
+        envId,
+        scope: "session",
+        budget: "network_rate",
+        reason: "Session stopped because it sent network requests too quickly.",
+        limit: cfg.networkBurst,
+        observed: cfg.networkBurst + 1,
+        unit: "count",
+      });
+    }
+    return "network request rate limit reached";
   }
 
   private netKey(envId: string, sessionId: string | undefined, a: NetAttempt): string {
@@ -385,6 +459,14 @@ export class EnvManager {
 
   // ---------- lifecycle ----------
 
+  private assertDisk(extraBytes = 0): void {
+    try {
+      this.budgets.assertDiskReserve(extraBytes);
+    } catch (err) {
+      throw new HttpError(507, err instanceof Error ? err.message : String(err));
+    }
+  }
+
   async create(req: CreateEnvRequest, opts: { ephemeral?: boolean; id?: string } = {}): Promise<EnvSummary> {
     if (!req.name?.trim()) throw new HttpError(400, "name is required");
     if (req.type !== "vm" && req.type !== "sim") throw new HttpError(400, "type must be vm or sim");
@@ -393,7 +475,9 @@ export class EnvManager {
     if (req.from) return this.fork("envId" in req.from ? req.from.envId : this.snapshotRow(req.from.snapshotId).env_id, { name: req.name, snapshotId: "snapshotId" in req.from ? req.from.snapshotId : undefined, network, seedFiles: req.seedFiles }, opts);
     const driver = this.driver(req.type);
     const id = opts.id ?? newId(req.type === "vm" ? "vm" : "sim");
-    const config = req.type === "vm" ? { vm: { ...DEFAULT_VM, ...req.vm } } : { sim: { ...DEFAULT_SIM, ...req.sim } };
+    const config = req.type === "vm" ? { vm: clampVmConfig(req.vm, DEFAULT_VM) } : { sim: clampSimConfig(req.sim, DEFAULT_SIM) };
+    // Keep enough room for the environment at its configured maximum, not merely for its initially sparse files.
+    this.assertDisk(req.type === "vm" ? config.vm!.diskMiB * 1024 * 1024 : config.sim!.maxTotalBytes);
     const now = Date.now();
     this.store.run(
       "INSERT INTO envs (id, name, type, status, network, config_json, ephemeral, created_at, last_used_at) VALUES (?, ?, ?, 'starting', ?, ?, ?, ?, ?)",
@@ -430,6 +514,7 @@ export class EnvManager {
   }
 
   private async takeSnapshot(envId: string, rt: EnvRuntime, kind: Snapshot["kind"], label: string): Promise<Snapshot> {
+    this.assertDisk(this.sizes.get(envId) ?? dirSize(this.envDir(envId)));
     const snapId = newId("snap");
     const dir = this.snapshotDir(snapId);
     const { bytes } = await rt.snapshot(dir);
@@ -450,6 +535,7 @@ export class EnvManager {
       if (row.status !== "running" && row.status !== "busy") this.setStatus(id, this.active.has(id) ? "busy" : "running");
       return;
     }
+    this.assertDisk();
     this.setStatus(id, "starting");
     try {
       await this.boot(row, rt);
@@ -474,7 +560,7 @@ export class EnvManager {
    * lifecycle op that holds its env's mutex and waits for the boot lock (start, snapshot, reset) can't deadlock it.
    */
   private async boot(row: EnvRow, rt: EnvRuntime): Promise<void> {
-    if (row.type !== "vm") return rt.start();
+    if (row.type === "sim") return this.bootSim(row, rt);
     for (let attempt = 0; ; attempt++) {
       const victim = await this.vmBoot.run("vm", async () => {
         const others = await this.vmSlots(row.id);
@@ -499,6 +585,34 @@ export class EnvManager {
           await this.stopUnlocked(victim, "stopped to make room for another VM");
         })
         .catch((err) => log.warn(`stopping ${victim} to make room failed`, err));
+    }
+  }
+
+  private async bootSim(row: EnvRow, rt: EnvRuntime): Promise<void> {
+    for (let attempt = 0; ; attempt++) {
+      const victim = await this.simBoot.run("sim", async () => {
+        const max = this.budgets.get().maxSimWorkers;
+        const others = this.store
+          .all<EnvRow>("SELECT * FROM envs WHERE type = 'sim' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", row.id)
+          .filter((r) => this.runtimes.get(r.id)?.isRunning());
+        if (others.length < max) {
+          await rt.start();
+          return null;
+        }
+        const idle = others.find((r) => r.status === "running" && this.uses(r.id).length === 0);
+        if (!idle || attempt > max + 2) {
+          const why = others.map((r) => `${r.name}: ${this.uses(r.id).map((u) => u.reason).join(", ") || r.status}`).join("; ");
+          throw new HttpError(409, `${max} simulated workers are in use (${why}); stop one first`);
+        }
+        return idle.id;
+      });
+      if (!victim) return;
+      await this.mutex.run(victim, async () => {
+        const cur = this.store.get<EnvRow>("SELECT * FROM envs WHERE id = ?", victim);
+        if (!cur || !this.runtimes.get(victim)?.isRunning() || cur.status !== "running" || this.uses(victim).length) return;
+        log.info(`stopping idle simulated worker ${victim} to make room for ${row.id}`);
+        await this.stopUnlocked(victim, "stopped to make room for another simulated worker");
+      });
     }
   }
 
@@ -658,9 +772,11 @@ export class EnvManager {
     opts: { name?: string; snapshotId?: string; network?: NetworkMode; seedFiles?: { path: string; content: string }[] },
     createOpts: { ephemeral?: boolean; id?: string } = {},
   ): Promise<EnvSummary> {
+    this.assertDisk();
     const src = this.row(sourceId);
     const driver = this.driver(src.type);
     const snap = opts.snapshotId ? this.snapshotRow(opts.snapshotId) : await this.snapshot(sourceId, `fork ${new Date().toISOString().slice(0, 19)}`, "auto").then((s) => this.snapshotRow(s.id));
+    this.assertDisk(snap.bytes);
     if (snap.env_id !== sourceId) throw new HttpError(400, "snapshot belongs to another environment");
     const id = createOpts.id ?? newId(src.type === "vm" ? "vm" : "sim");
     const network = opts.network ?? src.network;
@@ -794,11 +910,13 @@ export class EnvManager {
   release(id: string, sessionId: string): void {
     if (this.active.get(id) !== sessionId) return;
     this.active.delete(id);
+    this.networkBuckets.delete(sessionId);
     this.touch(id);
     this.sizes.delete(id);
     if (!this.exists(id)) return;
     const rt = this.runtimes.get(id);
-    this.setStatus(id, rt?.isRunning() ? "running" : "stopped");
+    const detail = this.budgetDetails.get(id) ?? null;
+    this.setStatus(id, rt?.isRunning() ? "running" : "stopped", detail);
   }
 
   activeSession(id: string): string | undefined {
@@ -815,6 +933,64 @@ export class EnvManager {
   /** Running runtimes, for the resource sampler. */
   running(): { id: string; runtime: EnvRuntime }[] {
     return [...this.runtimes.entries()].filter(([, rt]) => rt.isRunning()).map(([id, runtime]) => ({ id, runtime }));
+  }
+
+  /**
+   * Host-side guard, called every second even with no UI connected. RSS includes WASM and external allocations;
+   * cumulative CPU comes from ps, so a busy-loop worker cannot hide behind V8's heap limit.
+   */
+  async enforceBudgets(stats?: Map<string, { rssBytes: number; cpuPct: number; cpuTimeMs?: number }>): Promise<void> {
+    const cfg = this.budgets.get();
+    let free = Number.MAX_SAFE_INTEGER;
+    try {
+      free = this.budgets.freeDiskBytes();
+    } catch (err) {
+      log.warn("checking host disk reserve failed", err);
+    }
+    if (free < cfg.hostFreeDiskReserveBytes) {
+      if (!this.diskReserveTripped) {
+        this.diskReserveTripped = true;
+        const reason = `Host disk reserve reached. Terrarium stopped environment work to keep ${Math.round(cfg.hostFreeDiskReserveBytes / 1073741824)} GiB free.`;
+        await Promise.all(this.running().map(({ id, runtime }) => this.terminateForBudget(id, runtime, "host_disk", reason, cfg.hostFreeDiskReserveBytes, free, "bytes")));
+      }
+      return;
+    }
+    if (free > cfg.hostFreeDiskReserveBytes + 512 * 1024 * 1024) this.diskReserveTripped = false;
+
+    for (const { id, runtime } of this.running()) {
+      if (runtime.type !== "sim") continue;
+      const r = stats?.get(id) ?? (await runtime.resources().catch(() => null));
+      if (!r) continue;
+      if (r.rssBytes > cfg.simWorkerRssBytes) {
+        const reason = `Simulated environment stopped after using more than ${Math.round(cfg.simWorkerRssBytes / 1048576)} MiB of memory.`;
+        await this.terminateForBudget(id, runtime, "sim_rss", reason, cfg.simWorkerRssBytes, r.rssBytes, "bytes");
+      } else if ((r.cpuTimeMs ?? 0) > cfg.simWorkerCpuMs) {
+        const reason = `Simulated environment stopped after using more than ${Math.round(cfg.simWorkerCpuMs / 60000)} minutes of CPU time.`;
+        await this.terminateForBudget(id, runtime, "sim_cpu", reason, cfg.simWorkerCpuMs, r.cpuTimeMs ?? 0, "milliseconds");
+      }
+    }
+  }
+
+  private async terminateForBudget(
+    envId: string,
+    runtime: EnvRuntime,
+    budget: "host_disk" | "sim_rss" | "sim_cpu",
+    reason: string,
+    limit: number,
+    observed: number,
+    unit: "bytes" | "milliseconds",
+  ): Promise<void> {
+    if (!runtime.isRunning()) return;
+    this.budgetDetails.set(envId, reason);
+    const sessionId = this.active.get(envId);
+    if (sessionId) this.budgets.externalTrip({ sessionId, envId, scope: budget === "host_disk" ? "host" : "environment", budget, reason, limit, observed, unit });
+    try {
+      if (runtime.terminate) await runtime.terminate(reason);
+      else await runtime.stop();
+    } catch (err) {
+      log.warn(`terminating ${envId} after ${budget} limit failed`, err);
+    }
+    this.setStatus(envId, "stopped", reason);
   }
 
   cachedManifest(id: string): { manifest: Manifest; version: number } | null {
@@ -864,6 +1040,7 @@ export class EnvManager {
   }
 
   private async execUnmarked(id: string, req: ExecRequest): Promise<ExecResult> {
+    this.assertDisk();
     const as = req.as === "root" ? "root" : "agent";
     await this.start(id);
     const rt = this.runtimes.get(id)!;

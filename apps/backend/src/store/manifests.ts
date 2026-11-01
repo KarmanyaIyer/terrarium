@@ -74,14 +74,16 @@ export class ManifestStore {
   }
 
   /** Store `m`, as a delta against `prev` (the session's previous save) unless a full copy is due. */
-  save(m: Manifest, prev: SavedManifest | null): SavedManifest {
+  save(m: Manifest, prev: SavedManifest | null, beforePut?: (bytes: number) => void): SavedManifest {
     let value: Stored = m;
     let depth = 0;
     if (prev && prev.depth < FULL_EVERY - 1 && prev.manifest.root === m.root) {
       depth = prev.depth + 1;
       value = { v: 2, base: prev.blob, depth, root: m.root, takenAt: m.takenAt, truncated: m.truncated, ...manifestDelta(prev.manifest, m) };
     }
-    const blob = this.blobs.putJson(value);
+    const encoded = JSON.stringify(value);
+    beforePut?.(Buffer.byteLength(encoded));
+    const blob = this.blobs.put(encoded);
     this.remember(blob, m);
     return { blob, manifest: m, depth };
   }
