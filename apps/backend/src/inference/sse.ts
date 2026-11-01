@@ -23,6 +23,8 @@ export class SseAssembler {
   reasoning = "";
   toolCalls = new Map<number, ToolCallAcc>();
   finishReason: string | null = null;
+  /** An error event in the stream (oMLX or the Lab report a failure after the 200 headers this way). */
+  error: string | null = null;
   usage: Record<string, any> | null = null;
   done = false;
   firstTokenAt: number | null = null;
@@ -76,6 +78,7 @@ export class SseAssembler {
     if (chunk.model) this.model = chunk.model;
     if (chunk.created) this.created = chunk.created;
     if (chunk.usage) this.usage = chunk.usage;
+    if (chunk.error) this.error = String(chunk.error.message ?? chunk.error);
     for (const choice of chunk.choices ?? []) {
       const d = choice.delta ?? {};
       const reasoning = d.reasoning_content ?? d.reasoning ?? d.reasoning_text;

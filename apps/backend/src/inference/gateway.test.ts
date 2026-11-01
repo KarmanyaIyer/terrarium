@@ -32,6 +32,7 @@ before(async () => {
     { text: "cut off", finish: "length" },
     { status: 500, error: "model exploded" },
     { text: "plain json" },
+    { streamError: "RuntimeError: sidecar fell over" },
   ]);
   gateway = new Gateway(store, { baseUrl: () => fake.origin, apiKey: () => "upstream-key", ensureReady: async () => {} });
   await gateway.listen();
@@ -112,6 +113,13 @@ test("non-streaming responses are recorded", async () => {
   assert.equal(res.status, 200);
   assert.equal(result!.finishReason, "stop");
   assert.equal((result!.response as any).choices[0].message.content, "plain json");
+});
+
+test("an error event after the 200 headers is recorded as an error, not a stop", async () => {
+  const { res, result } = await call("c5b", { model: "m", stream: true, messages: [{ role: "user", content: "x" }] });
+  assert.equal(res.status, 200);
+  assert.equal(result!.finishReason, "error");
+  assert.match(result!.error ?? "", /sidecar fell over/);
 });
 
 test("rejects a wrong gateway key and unknown call ids", async () => {

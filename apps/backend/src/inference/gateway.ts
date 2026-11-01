@@ -316,11 +316,12 @@ export class Gateway {
         const deltas = rawOverflow ? [] : asm.push(text);
         for (const d of deltas) ctx.tracer.stream({ type: "model_delta", callId, kind: d.kind, delta: d.delta, n: n++ });
         // Emit model_call_end before the client sees [DONE], so trace order is call end -> assistant message.
-        if (asm.done) finalize(mapFinishReason(asm.finishReason), undefined, asm.response(), asm.usage);
+        if (asm.done) finalize(asm.error ? "error" : mapFinishReason(asm.finishReason), asm.error ?? undefined, asm.response(), asm.usage);
         res.write(part);
       }
       asm.end();
-      finalize(asm.finishReason ? mapFinishReason(asm.finishReason) : "error", asm.finishReason ? undefined : "stream ended without finish_reason", asm.response(), asm.usage);
+      if (asm.error) finalize("error", asm.error, asm.response(), asm.usage);
+      else finalize(asm.finishReason ? mapFinishReason(asm.finishReason) : "error", asm.finishReason ? undefined : "stream ended without finish_reason", asm.response(), asm.usage);
       res.end();
     } catch (err) {
       finalize(upstreamAbort.signal.aborted ? "aborted" : "error", errorMessage(err), asm.chunks ? asm.response() : undefined, asm.usage);

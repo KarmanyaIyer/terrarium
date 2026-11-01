@@ -6,7 +6,8 @@ import { createServer, type Server } from "node:http";
 export type ScriptedReply =
   | { text: string; reasoning?: string; finish?: "stop" | "length" }
   | { toolCall: { name: string; args: Record<string, unknown> }; text?: string }
-  | { status: number; error: string };
+  | { status: number; error: string }
+  | { streamError: string }; // 200 headers, then an error event and [DONE] (how oMLX and the Lab fail mid-stream)
 
 export interface FakeOpenAI {
   origin: string; // http://127.0.0.1:<port> (what the gateway's upstream wants)
@@ -58,6 +59,13 @@ export async function startFakeOpenAI(script: ScriptedReply[] | ((body: Record<s
         return;
       }
       const model = String(body.model ?? "fake");
+      if ("streamError" in reply) {
+        res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" });
+        res.write(chunk(model, { role: "assistant", content: "" }, null));
+        res.write(`data: ${JSON.stringify({ error: { message: reply.streamError, type: "server_error" } })}\n\n`);
+        res.end("data: [DONE]\n\n");
+        return;
+      }
       const promptTokens = opts.promptTokens?.(body) ?? Math.ceil(JSON.stringify(body.messages ?? []).length / 4);
       const text = "text" in reply ? (reply.text ?? "") : "";
       const completionTokens = Math.max(1, Math.ceil((text.length + ("toolCall" in reply ? JSON.stringify(reply.toolCall.args).length : 0)) / 4));
