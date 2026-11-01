@@ -50,7 +50,7 @@ function Ask() {
             <Dices /> Surprise me
           </button>
         </div>
-        <p className="dim2 ask-how">The model writes example lines with and without it, every neuron gets scored on those lines, and the best four get tried on a real reply. Takes about half a minute.</p>
+        <p className="dim2 ask-how">The model writes example lines with and without it, every neuron gets scored on those lines, and the best four get tried on a real reply. Takes about a minute.</p>
       </form>
       {presets.length > 0 && (
         <div className="ask-presets">
@@ -115,9 +115,22 @@ function Tried({ t, flow }: { t: TriedNeuron; flow: FindFlow }) {
   );
 }
 
+function Together({ flow }: { flow: FindFlow }) {
+  const t = flow.together!;
+  return (
+    <section className="tried">
+      <header className="tried-head">
+        <span className="dim2">One neuron rarely carries a whole trait, so here are the four that fire on it most, together</span>
+        {t.hit && <span className="chip ok">wrote about it</span>}
+      </header>
+      <ReplySlip title={`All four at +${t.recipe.pushes[0].value}`} reply={t.reply} recipe={t.recipe} />
+    </section>
+  );
+}
+
 function FlowResult({ flow }: { flow: FindFlow }) {
   const running = flow.since != null;
-  const hits = flow.tried.some((t) => t.runs.some((r) => r.hit));
+  const hits = flow.tried.some((t) => t.runs.some((r) => r.hit)) || !!flow.together?.hit;
   const done = !running && !flow.err;
   return (
     <section className="flow">
@@ -142,9 +155,11 @@ function FlowResult({ flow }: { flow: FindFlow }) {
         </p>
       )}
       {flow.baseline && <ReplySlip title="Unsteered, for comparison" reply={flow.baseline.reply} recipe={flow.baseline.recipe} hideActions />}
+      {flow.together?.hit && <Together flow={flow} />}
       {flow.tried.map((t) => (
         <Tried key={nid(t.ref)} t={t} flow={flow} />
       ))}
+      {flow.together && !flow.together.hit && <Together flow={flow} />}
     </section>
   );
 }

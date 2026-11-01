@@ -283,7 +283,7 @@ function Standouts({ res }: { res: LabProbeResult }) {
                   <button className={`icon-btn sm${watched ? " on" : ""}`} title={watched ? "Stop watching" : "Watch: trace it on every token"} aria-label={watched ? `Stop watching ${k}` : `Watch ${k}`} onClick={() => toggleWatch(h)}>
                     {watched ? <Eye /> : <EyeOff />}
                   </button>
-                  <button className="icon-btn sm" disabled={mixed} title={mixed ? "In the mix" : "Add to the mix at dose +0.8"} aria-label={`Add ${k} to the mix`} onClick={() => addToMix(h)}>
+                  <button className="icon-btn sm" disabled={mixed} title={mixed ? "In the mix" : "Add to the mix"} aria-label={`Add ${k} to the mix`} onClick={() => addToMix(h)}>
                     <Plus />
                   </button>
                 </td>

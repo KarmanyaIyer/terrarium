@@ -53,7 +53,7 @@ export function NeuronCard() {
           {facts ? ` of ${fmtInt(facts.neuronsPerLayer[r.layer])}` : ""}
         </span>
       </div>
-      <NeuronActions r={r} dose={mixDose ?? 0.8} />
+      <NeuronActions r={r} dose={mixDose} />
       <div className="ncard-acts">
         <button
           className="btn sm"

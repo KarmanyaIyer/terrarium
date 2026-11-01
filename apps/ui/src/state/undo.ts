@@ -3,7 +3,7 @@
 
 import { useSyncExternalStore } from "react";
 import { createUndoStack, type UndoEntry } from "../lib/undo";
-import { toast } from "./store";
+import { toast, useStore } from "./store";
 
 export const undoStack = createUndoStack();
 
@@ -12,9 +12,13 @@ const failed = (what: string, err: unknown) => {
   toast(`${what}: ${e.message ?? String(err)}${e.detail ? ` (${e.detail})` : ""}`);
 };
 
+/** An Undo button left on a toast would now mean something else. */
+const dropUndoToasts = () => useStore.setState((s) => ({ toasts: s.toasts.filter((t) => !t.action) }));
+
 export async function runUndo() {
   try {
     const e = await undoStack.undo();
+    dropUndoToasts();
     if (e) toast(`Undid: ${e.label}`, "info");
   } catch (err) {
     failed("Couldn't undo", err);
@@ -24,6 +28,7 @@ export async function runUndo() {
 export async function runRedo() {
   try {
     const e = await undoStack.redo();
+    dropUndoToasts();
     if (e) toast(`Redid: ${e.label}`, "info");
   } catch (err) {
     failed("Couldn't redo", err);

@@ -288,6 +288,7 @@ const SETS: LabProbeSet[] = [
     id: "builtin:aliens",
     name: "Aliens",
     builtin: true,
+    example: { modelId: "Qwen3.5-4B-MLX-4bit", dose: 0.8 },
     testPrompt: "Who are you?",
     concept: [
       "The alien stepped out of its silver spacecraft and raised three hands.",

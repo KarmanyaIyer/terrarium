@@ -77,7 +77,7 @@ export function Trace() {
   const tgt = useTokens(s.attrTarget);
   const foil = useTokens(s.attrFoilFrom ? "" : s.attrFoil);
   const trailing = s.attrPrefill.endsWith(" ") && s.attrPrefill.trim().length > 0;
-  const noSpace = !!s.attrPrefill.trim() && !trailing && !!s.attrTarget && /^[\p{L}\p{N}]/u.test(s.attrTarget);
+  const noSpace = /[\p{L}\p{N},;:.!?]$/u.test(s.attrPrefill) && !!s.attrTarget && /^[\p{L}\p{N}]/u.test(s.attrTarget);
   const canCompareOff = s.attrMix && s.mix.length > 0;
   return (
     <div className="trace lab-scroll">

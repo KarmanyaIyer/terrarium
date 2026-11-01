@@ -170,7 +170,7 @@ export function DoseRuler({ run, words, onZoom }: { run: GridRun; words: string[
           <span className="dim2">Drag across cells to zoom in between two doses.</span>
         )}
       </div>
-      {cur && <CellSlip run={run} c={cur} words={words} title={`${run.target ? `${nid(run.target)} at` : "Mix at"} ${run.target ? fmtDoseLabel(cur.dose) : `×${fmtDoseLabel(cur.dose)}`}`} />}
+      {cur && <CellSlip run={run} c={cur} words={words} title={`${run.target ? `${nid(run.target)} at` : "Mix at"} ${run.target ? fmtDoseLabel(cur.dose) : `×${fmtDoseLabel(cur.dose).replace("+", "")}`}`} />}
       <ReplyRows run={run} words={words} doses={doses} seed={shown?.seed ?? run.seeds[0]} pick={shown?.dose} onPick={(dose) => setSel({ dose, seed: shown?.seed ?? run.seeds[0] })} cells={cells} />
     </>
   );

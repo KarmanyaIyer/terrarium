@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Trash2, X } from "lucide-react";
 import type { LabPush, NeuronRef } from "@terrarium/shared";
-import { clearResults, removePush, runCompare, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView } from "../../state/lab";
+import { clearResults, removePush, runCompare, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView, tryDose } from "../../state/lab";
 import { etaMs, scaled, suggestWords, summarize } from "../../lib/labGrid";
 import { format, fmtDose, nid, outOfRange, parse, parseRef, sameRef } from "../../lib/recipe";
 import { clockTime } from "../../lib/format";
@@ -42,12 +42,12 @@ export function Steer() {
 
 // ---------- mix ----------
 
-const DOSE_SPAN = 2;
-
 function DoseSlider({ p, onChange }: { p: LabPush; onChange: (v: number) => void }) {
   const clamp = p.mode === "clamp";
+  const typical = useLab((s) => s.lab?.model?.tryDose ?? 0.8);
+  const [bandLow, bandHigh] = [typical * 0.625, typical * 1.25];
   // centred on zero; a dose past the ends widens the track around it
-  const reach = clamp ? 0 : Math.max(DOSE_SPAN, Math.ceil(Math.abs(p.value)));
+  const reach = clamp ? 0 : Math.max(Math.ceil(typical * 2.5), Math.ceil(Math.abs(p.value)));
   const min = clamp ? Math.min(-20, Math.floor(p.value)) : -reach;
   const max = clamp ? Math.max(60, Math.ceil(p.value)) : reach;
   // the thumb (12px) travels inside the track, so marks sit on (100% - 12px)
@@ -58,8 +58,8 @@ function DoseSlider({ p, onChange }: { p: LabPush; onChange: (v: number) => void
     <span className="dose-slider">
       {!clamp && (
         <>
-          <span className="dose-band" style={{ left: at(0.5), width: span(0.5, 1) }} title="Where most working doses sit: 0.5 to 1" />
-          <span className="dose-band neg" style={{ left: at(-1), width: span(-1, -0.5) }} />
+          <span className="dose-band" style={{ left: at(bandLow), width: span(bandLow, bandHigh) }} title={`Where most working doses sit on this model: ${bandLow} to ${bandHigh}`} />
+          <span className="dose-band neg" style={{ left: at(-bandHigh), width: span(-bandHigh, -bandLow) }} />
           <span className="dose-zero" style={{ left: at(0) }} />
         </>
       )}
@@ -111,7 +111,7 @@ function MixRow({ p, i }: { p: LabPush; i: number }) {
       </button>
       <span className="mix-words">
         {words && <TokChips tokens={words} max={4} />}
-        <button className="cell-link mix-mode" title={p.mode === "dose" ? "Adds to the neuron. Click to set it to a fixed value instead" : "Sets the neuron to a fixed value. Click to add a dose instead"} onClick={() => setPush(i, p.mode === "dose" ? { mode: "clamp", value: 10 } : { mode: "dose", value: 0.8 })}>
+        <button className="cell-link mix-mode" title={p.mode === "dose" ? "Adds to the neuron. Click to set it to a fixed value instead" : "Sets the neuron to a fixed value. Click to add a dose instead"} onClick={() => setPush(i, p.mode === "dose" ? { mode: "clamp", value: 10 } : { mode: "dose", value: tryDose() })}>
           {p.mode === "dose" ? "dose" : "clamp"}
         </button>
       </span>
@@ -154,7 +154,7 @@ function MixEditor() {
         onSubmit={(e) => {
           e.preventDefault();
           if (!addRef) return;
-          if (!mix.some((p) => sameRef(p, addRef))) set({ mix: [...mix, { ...addRef, mode: "dose", value: 0.8 }] });
+          if (!mix.some((p) => sameRef(p, addRef))) set({ mix: [...mix, { ...addRef, mode: "dose", value: tryDose() }] });
           setAdd("");
         }}
       >
@@ -367,7 +367,7 @@ function RunRow({ r, on }: { r: SteerRun; on: boolean }) {
 
 // ---------- sweep ----------
 
-const RANGES = [0.5, 1, 2, 4];
+const RANGES = [0.5, 1, 2, 4, 8];
 const COUNTS = [12, 24, 48, 96, 192, 384];
 const SEED_COUNTS = [1, 2, 4, 8];
 const LENGTHS = [32, 64, 128, 256];

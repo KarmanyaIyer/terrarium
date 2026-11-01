@@ -151,7 +151,9 @@ export function ReplySlip({ title, reply, recipe, words, baseline, tag, actions,
 }
 
 /** The next steps from a neuron, at a signed dose. The same from Find, Trace, Probe and its card. */
-export function NeuronActions({ r, dose = 0.8, primary }: { r: NeuronRef; dose?: number; primary?: boolean }) {
+export function NeuronActions({ r, dose: given, primary }: { r: NeuronRef; dose?: number; primary?: boolean }) {
+  const typical = useLab((s) => s.lab?.model?.tryDose ?? 0.8);
+  const dose = given ?? typical;
   const push = useLab((s) => s.mix.find((p) => sameRef(p, r)));
   const same = push?.mode === "dose" && push.value === dose;
   return (

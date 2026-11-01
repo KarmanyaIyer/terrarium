@@ -365,6 +365,7 @@ class Lab:
             "dModel": self.d_model,
             "activation": self.activation,
             "quant": self.quant,
+            "tryDose": self.try_dose,
             **({"layerKinds": self.layer_kinds} if self.layer_kinds else {}),
             "residNorm": [round(x, 3) for x in self.resid],
             "calibrationTokens": self.calib_tokens,
@@ -722,6 +723,13 @@ class Lab:
     # Contexts for the steering check: a chat question and the start of the answer, so the next token is open.
     WRITE_CONTEXTS = [("Who are you?", "I am"), ("Tell me a short story.", "Once upon a time, there was a"), ("What should I do this weekend?", "You could")]
     WRITE_DOSE = 0.8
+    # What a first try should use. LFM3 renormalizes each MLP's output (post_ffn_norm), so the same dose moves less:
+    # its traits show from about +3 and flatten out past +8, where Qwen3.5 and Bonsai show at +0.8.
+    TRY_DOSES = {"lfm3": 3.0}
+
+    @property
+    def try_dose(self) -> float:
+        return self.TRY_DOSES.get(self.arch, self.WRITE_DOSE)
 
     def concept_tokens(self, concept: list[str], control: list[str], cap: int = 24) -> list[int]:
         """Tokens that show up in several concept texts and in no control text (the concept's own words)."""
@@ -917,8 +925,8 @@ class Lab:
         if n_prev:
             pids = self.chat_ids(str(req.get("prompt") or "Who are you?"))
             for cand in candidates[:n_prev]:
-                r = self.reply(pids, [{"layer": cand["layer"], "neuron": cand["neuron"], "mode": "dose", "value": self.WRITE_DOSE}], 1.0, 0, 0.0, 32)
-                cand["preview"] = {"dose": self.WRITE_DOSE, "text": r["text"], "repetition": r["repetition"], "fluency": r["fluency"]}
+                r = self.reply(pids, [{"layer": cand["layer"], "neuron": cand["neuron"], "mode": "dose", "value": self.try_dose}], 1.0, 0, 0.0, 32)
+                cand["preview"] = {"dose": self.try_dose, "text": r["text"], "repetition": r["repetition"], "fluency": r["fluency"]}
         return {
             "candidates": candidates,
             "conceptTokens": [self.tok.decode([t]) for t in ctoks],
@@ -991,7 +999,8 @@ Now write {n} pairs for "{trait}"."""
         if len(trait) > 200:
             raise LabError("keep the description under 200 characters")
         n = max(4, min(int(req.get("n") or 12), 24))
-        ids = self.chat_ids(self.EXAMPLE_PROMPT.format(trait=trait, n=n))
+        # starting the answer at "A:" keeps models that think regardless of the template (LFM3) from reasoning about the task
+        ids = self.chat_ids(self.EXAMPLE_PROMPT.format(trait=trait, n=n), prefill="A:")
         seed = req.get("seed")
         seed = int(seed) if isinstance(seed, (int, float)) and not isinstance(seed, bool) else int.from_bytes(os.urandom(3), "big")
         concept: list[str] = []
@@ -999,10 +1008,10 @@ Now write {n} pairs for "{trait}"."""
         tries = 0
         self.clear()
         while len(concept) < min(6, n) and tries < 3:
-            out, _ = self._generate(ids, 0.7, min(60 * n, 1200), seed + tries, top_p=0.95)
-            c, k = self.parse_pairs(self.tok.decode(out))
+            out, _ = self._generate(ids, 0.7, min(40 * n, 800), seed + tries, top_p=0.95)
+            c, k = self.parse_pairs("A:" + self.tok.decode(out))
             for a, b in zip(c, k):
-                if a.lower() not in {x.lower() for x in concept}:
+                if a.lower() not in {x.lower() for x in concept} and a not in self.EXAMPLE_PROMPT:
                     concept.append(a)
                     control.append(b)
             tries += 1
@@ -1372,7 +1381,7 @@ Now write {n} pairs for "{trait}"."""
         """Pushes each node at both signs and several sizes, on top of the mix, and keeps what the logits really did. All
         doses of a neuron run as one batch. The best rows then write a few real tokens, since a neuron that wins the next
         token may repeat it forever."""
-        sizes = [float(d) for d in (req.get("doses") or self.MEASURE_DOSES)]
+        sizes = [float(d) for d in (req.get("doses") or [round(d * self.try_dose / self.WRITE_DOSE, 2) for d in self.MEASURE_DOSES])]
         doses = [sign * d for d in sizes for sign in (1, -1)]
         budget = float(req.get("budgetSeconds") or self.MEASURE_BUDGET_S)
         t0 = time.time()

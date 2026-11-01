@@ -125,6 +125,8 @@ export interface FindFlow {
   prompt: string;
   baseline?: { recipe: Recipe; reply: LabReply };
   tried: TriedNeuron[];
+  /** The strongest firing neurons pushed together: one neuron rarely carries a whole trait. */
+  together?: { recipe: Recipe; reply: LabReply; hit: boolean };
   sampled?: number;
   err?: LabErr;
   /** Which words the written examples contained, shown behind a disclosure. */
@@ -240,8 +242,8 @@ type Persisted = Pick<LabStore, (typeof PERSISTED)[number]>;
 export const REPEAT_DEFAULT = 1.1;
 const FLOW_TOKENS = 64;
 const SURPRISE_TOKENS = 48;
-const TRY_DOSE = 0.8;
-const TRY_DOSE_SOFT = 0.5;
+/** A first dose that shows something on the loaded model. */
+export const tryDose = () => get().lab?.model?.tryDose ?? 0.8;
 
 function loadPersisted(): Partial<Persisted> {
   try {
@@ -463,6 +465,9 @@ function onSpecimen(lab: LabState) {
     });
     undoStack.drop("lab"); // neuron ids don't carry over to another model
   }
+  // doses that show something differ by model, and LFM3's flatten out by 8
+  const range = lab.model?.tryDose && lab.model.tryDose > 1 ? 8 : 1;
+  if (typeof s.sweepRange === "number" && (range === 8 || s.sweepRange === 8)) quietly(() => set({ sweepRange: range }));
   set({ benchModel: id, history: null });
   void loadHistory();
 }
@@ -612,7 +617,7 @@ export function inMix(ref: NeuronRef): LabPush | undefined {
 const signed = (v: number) => `${v >= 0 ? "+" : ""}${Math.round(v * 1000) / 1000}`;
 
 /** Adds a neuron at a signed dose; one already in the mix moves to it. */
-export function addToMix(ref: NeuronRef, value = TRY_DOSE) {
+export function addToMix(ref: NeuronRef, value = tryDose()) {
   const had = inMix(ref);
   if (had?.mode === "dose" && had.value === value) {
     toast(`${nid(ref)} is already in the mix at ${signed(value)}`, "info");
@@ -830,17 +835,30 @@ async function findAndTry(stepFind: number, words: string[], prompt: string) {
   flowStep(stepFind, "done");
   flowStep(stepFind + 1, "run");
   const seed = randomSeed();
-  const best = r.v.candidates.slice(0, 4);
+  // the first layers mostly move punctuation or end the reply, whatever the trait
+  const firstLayer = (get().lab?.model?.layers ?? 0) >> 2;
+  const usable = r.v.candidates.filter((c) => c.layer >= firstLayer);
+  const best = (usable.length >= 4 ? usable : r.v.candidates).slice(0, 4);
   const counted = words.length ? words : r.v.conceptTokens;
   try {
     await flowBaseline(prompt, seed, FLOW_TOKENS);
     for (const c of best) {
       if (flowStop.stopped) break;
-      let runs = await tryNeuron(c, prompt, seed, [TRY_DOSE], FLOW_TOKENS, counted);
-      if (runs[0] && ["loop", "broken", "empty"].includes(runs[0].reply.quality)) runs = [...(await tryNeuron(c, prompt, seed, [TRY_DOSE_SOFT], FLOW_TOKENS, counted)), ...runs];
+      let runs = await tryNeuron(c, prompt, seed, [tryDose()], FLOW_TOKENS, counted);
+      if (runs[0] && ["loop", "broken", "empty"].includes(runs[0].reply.quality)) runs = [...(await tryNeuron(c, prompt, seed, [Math.round(tryDose() * 62.5) / 100], FLOW_TOKENS, counted)), ...runs];
       if (!runs.length) break;
       const tried: TriedNeuron = { ref: { layer: c.layer, neuron: c.neuron }, words: c.writes.tokens.length ? c.writes.tokens : c.promotes, runs, both: c.both };
       set((st) => (st.flow ? { flow: { ...st.flow, tried: sortTried([...st.flow.tried, tried]) } } : {}));
+    }
+    const strongest = [...usable].sort((a, b) => b.score - a.score).slice(0, 4);
+    if (!flowStop.stopped && strongest.length > 1) {
+      const dose = Math.round(tryDose() * 50) / 100;
+      const pushes: LabPush[] = strongest.map((c) => ({ layer: c.layer, neuron: c.neuron, mode: "dose", value: dose }));
+      const t = await call((l) => l.generate({ prompt, mix: pushes, seed, temperature: s.temperature, maxTokens: FLOW_TOKENS, repeat: repeatOf(s) }));
+      if (t.ok) {
+        const together = { recipe: { modelId: benchId(), prompt, pushes, seed, temperature: s.temperature, maxTokens: FLOW_TOKENS, thinking: false, repeat: repeatOf(s) }, reply: t.v.steered, hit: hasWord(t.v.steered.text, counted) };
+        set((st) => (st.flow ? { flow: { ...st.flow, together } } : {}));
+      }
     }
     flowEnd();
   } catch (err) {
@@ -909,7 +927,7 @@ export async function runSurprise() {
     await flowBaseline(prompt, seed, SURPRISE_TOKENS);
     for (const p of r.v.picks) {
       if (flowStop.stopped) break;
-      const runs = await tryNeuron(p, prompt, seed, [TRY_DOSE, -TRY_DOSE], SURPRISE_TOKENS, []);
+      const runs = await tryNeuron(p, prompt, seed, [tryDose(), -tryDose()], SURPRISE_TOKENS, []);
       if (!runs.length) break;
       const tried: TriedNeuron = { ref: { layer: p.layer, neuron: p.neuron }, words: p.tokens.length ? p.tokens : p.promotes, runs };
       set((st) => (st.flow ? { flow: { ...st.flow, tried: [...st.flow.tried, tried] } } : {}));
@@ -998,7 +1016,7 @@ async function runGrid(key: "sweep" | "seeds", run: GridRun) {
   if (cur?.id !== run.id) return;
   const end: GridRun = { ...cur, state: job.stopped ? "stopped" : "done", ms: Date.now() - t0 };
   set({ [key]: end, gridBusy: gridStop === job ? null : get().gridBusy });
-  save(end);
+  if (end.cells.length) save(end);
 }
 
 export function gridTitle(r: GridRun): string {
@@ -1130,12 +1148,12 @@ export function saveAsStrain(pushes: LabPush[], from?: string) {
 }
 
 /** One neuron alone, written out next to the unsteered reply. */
-export function compareNeuron(ref: NeuronRef, dose = TRY_DOSE) {
+export function compareNeuron(ref: NeuronRef, dose = tryDose()) {
   labelled(`Put ${nid(ref)} alone in the mix at ${signed(dose)}`, () => set({ mix: [{ layer: ref.layer, neuron: ref.neuron, mode: "dose", value: dose }], scale: 1, tab: "steer", steerView: "compare" }));
   void runCompare();
 }
 
-export function sweepNeuron(ref: NeuronRef, dose = TRY_DOSE) {
+export function sweepNeuron(ref: NeuronRef, dose = tryDose()) {
   const has = inMix(ref);
   labelled(`Went to Sweep with ${nid(ref)}`, () => {
     if (!has) set({ mix: [{ layer: ref.layer, neuron: ref.neuron, mode: "dose", value: dose }], scale: 1 });
@@ -1144,7 +1162,7 @@ export function sweepNeuron(ref: NeuronRef, dose = TRY_DOSE) {
   void runSweep();
 }
 
-export function seedsNeuron(ref: NeuronRef, dose = TRY_DOSE) {
+export function seedsNeuron(ref: NeuronRef, dose = tryDose()) {
   labelled(`Went to Test across seeds with ${nid(ref)}`, () => set({ mix: [{ layer: ref.layer, neuron: ref.neuron, mode: "dose", value: dose }], scale: 1, tab: "steer", steerView: "seeds" }));
   void runSeeds();
 }
@@ -1356,7 +1374,7 @@ export async function runExample() {
     await ensureSets();
     const ps = exampleSet();
     if (!ps?.example) {
-      toast("Example: scripts/lab_sets.json doesn't mark one");
+      toast("No example set: this build's lab_sets.json doesn't mark one");
       return;
     }
     const { modelId, dose } = ps.example;

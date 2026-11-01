@@ -26,9 +26,9 @@ function SpecimenPicker() {
         <ChevronDown size={12} className="dim" />
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={430} className="lab-pick-pop">
-        <div className="menu-label">
+        <div className="menu-label lab-pick-label">
           <Term k="specimen">Specimen</Term>
-          <span className="dim2"> Lab memory estimate</span>
+          <span className="dim2">Lab memory estimate</span>
         </div>
         <div className="menu" role="listbox">
           {(lab?.support ?? []).map((s) => (

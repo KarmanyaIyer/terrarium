@@ -744,6 +744,7 @@ export interface LabModelFacts {
   dModel: number;
   activation: string; // swiglu | geglu
   quant: string;
+  tryDose?: number; // a first dose that shows something on this model: 0.8, or 3 on LFM3
   layerKinds?: string[]; // per layer: "linear" | "full" (Qwen3.5), "sliding" | "full" (Gemma 4), "conv" | "sliding" | "full" (LFM3)
   residNorm: number[]; // per layer: median |residual after layer L| over the calibration text (dose scale)
   calibrationTokens: number;
