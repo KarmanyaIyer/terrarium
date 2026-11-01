@@ -26,3 +26,13 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - None of these report rates across many seeds; EvilQwen's card says seed 1 hostile, seed 2 normal at scale 0.7.
 
 ## Method log
+- Harness (plab.py): one prompt, many rows sampled in parallel, a different mix per row. 222 tok/s at B=24 vs 33 tok/s for
+  a single row; 4.66 GB peak at B=24. Search uses it; held-out uses the stock Lab.reply path.
+- Plain persona contrast (mean residual, system-prompted persona vs neutral), dense at L8/14/20/26: gives a generic archaic
+  roleplay voice ("thou art", "those heathen wretch's"), not the theme. Dragon word hits at most 3/16. Breaks by strength 1.0.
+- Gradient vector (make the unprompted model imitate persona text, CE on 10-token windows, norm ball): dragon at L14,
+  |u| = 0.6 of median residual, gives fluent in-character text with repetition near 0 ("my ancient, scaled form coiling
+  around a pillar of obsidian"). Factual prompts resist at this strength. Peak 3.2 GB, 5 s per step while contrast also ran.
+- OMP of that vector over down_proj columns fails at low k: cosine 0.21 (k=8), 0.36 (k=32), 0.60 (k=128); no theme words at
+  k <= 128 on selection prompts. The dense vector is not aligned with single neurons.
+- Growing neurons directly against the loss (gd_sparse.py, 3 layers, k=8 and 32): fluent style drift, 0 to 4% dragon words.
