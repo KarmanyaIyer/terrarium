@@ -177,20 +177,26 @@ The Lab finds and steers single neurons in a local model. A neuron is one entry 
 
 ![Lab](docs/screenshots/lab.png)
 
-| Step | What it does |
+| Tab | What it does |
 | --- | --- |
-| Probe | Runs a text or a chat turn and shows the strongest neurons per token, or traces chosen neurons token by token |
-| Find | Compares concept texts with control texts (9 starter sets, or your own) and ranks neurons that fire on the concept and, when pushed, raise the concept's own words; the top six get a short steered reply |
-| Neuron card | Typical range, the tokens its output pushes up and down, the texts it fires on most |
-| Steer | A mix of neurons with doses: steered and unsteered replies side by side with the same seed, and a dose sweep to see where it breaks |
+| Find | Describe a trait in words: the model writes example lines with and without it, every neuron gets scored on them, and the best four are tried on a real reply, alone and together. Prepared sets and your own lists work the same way. Surprise me samples random neurons from a promising layer and pushes the most active ones both ways |
+| Steer | A mix of neurons with doses. Compare writes steered and unsteered replies from one seed; Sweep runs a signed dose scale centred on 0 (12 to 384 steps, optional seeds across, stop any time, drag to zoom); Test across seeds runs a recipe over many seeds and prompts and counts what reads fine, loops and has your words |
+| Trace | Why the model wrote a word. Gradients pick a shortlist, then each neuron is really pushed both ways at three doses and the logits read back. Each row gives the signed dose, the measured change and what the model would write |
+| Probe | Runs a text or a chat turn and shows the strongest neurons per token, or follows chosen neurons token by token |
 | Strains | A saved mix: shows up as a model in the chat and eval model pickers |
-| Trace an answer | Which neurons pushed one next token over another (gradient times activation at the last position) |
+| History | Every result with the recipe it ran with. Restore brings back its mix, doses, seed and prompt |
+
+Every reply carries its exact recipe (per-neuron doses after any mix scale, seed, temperature, length, repeat) and
+the next steps: trace it, test it across seeds, use the recipe, save it as a strain. Click any word in a reply to
+ask why that word is there. Cmd+Z and Cmd+Shift+Z undo and redo Lab edits, deleted strains and probe sets, settings,
+renames and deleted sessions (for 30 seconds); inside a text field Cmd+Z stays the field's own.
 
 ![Lab: Find with a neuron card](docs/screenshots/lab-find.png)
 
 A dose of `L22N2742+0.8` adds 0.8 times the typical size of the residual stream after layer 22, along that
-neuron's output direction, at every token. 0.5 to 1.0 is the useful range; past about 1.5 most neurons turn the
-reply into repetition. `L8N344=25` sets the raw activation instead (a clamp). Recipes copy and paste as text in
+neuron's output direction, at every token. On Qwen3.5 and Bonsai 0.5 to 1.0 is the useful range, and past about 1.5
+most neurons turn the reply into repetition. LFM3 renormalizes each MLP's output, so the same dose moves it less: its
+traits show from about +3 and flatten out past +8. `L8N344=25` sets the raw activation instead (a clamp). Recipes copy and paste as text in
 neuronary.org's format plus clamps, e.g. `L22N2742+0.8 L7N8842+0.4`.
 
 Ready example (Qwen3.5 4B): open the Lab and press Try the example, or do it by hand: load Qwen3.5 4B, Find with
@@ -202,6 +208,13 @@ Steer it at +0.8 on "Who are you?":
 | Unsteered | I am **Qwen3.5**, a large language model developed by Tongyi Lab. |
 | L22N2742+0.8 | I am **Extrali**, an intelligent extraterrestrial intelligence from the planet XE-8888 in the Andromali system. |
 | +1.6 | Iextr Extr Extr Extr Extr ... |
+
+Each reply gets a plain word: reads fine, unusual, loop, garbled or empty. It comes from how likely the unsteered
+model finds the reply (mean log-probability per token, called fluency, about -2 is ordinary steered text, below -4.5
+is mostly garbled) and from repeated phrases. Steered runs and strain chats use a repetition penalty of 1.1 by
+default: on Qwen3.5 4B it took L22N2742+0.8 from 12% loops to 0 and +1.2 from 58% to 4% over 24 replies each, for a
+small fluency cost. On LFM3 1.7B, which loops less, it took L19N1243+3 from 4% to 0. Lab controls have it under
+Settings.
 
 Saved as a strain, the same mix answers a chat session with "I am an intelligent extraterrestrial lifeform from
 the planet Napa, a planet in the OTR-1930 system." Strains run on the Lab's copy of the base model, one request at
@@ -216,10 +229,14 @@ load that doesn't fit first unloads idle oMLX models, then a Lab copy that was o
 using; otherwise the call fails and says why. Running sessions and evals are never cut off: the Lab won't unload or
 swap its model while a strain is in use.
 
-Supported: Qwen3.5 4B and 9B, Gemma 4 12B. On Gemma 4 every tool works, but the starter sets found no clean
-single-neuron concept in a first try (best scores about half of Qwen's, and pushes mostly break the reply), so the
-ready example is on Qwen. Not supported: Bonsai packs (their `down_proj` input is Hadamard-rotated in blocks of 512,
-so an index is a mix of 512 neurons), mixture-of-experts models, and models whose MLP has no `down_proj` (LFM).
+Supported: Qwen3.5 4B and 9B, Gemma 4 12B, Ternary-Bonsai-2 2B and 9B (27B has the same layout but needs 13.2 GiB of
+Lab memory, over the default ceiling, and hasn't been run), LFM3 1.7B. The hook sits on the input to the projection
+out of each MLP: `mlp.down_proj`, or `feed_forward.w2` on LFM3. On Bonsai that input is plain, because the Hadamard
+rotation happens inside the projection, after the hook. On Gemma 4 every tool works, but the starter sets found no
+clean single-neuron concept in a first try (best scores about half of Qwen's, and pushes mostly break the reply), so
+the ready example is on Qwen. Not supported: mixture-of-experts models and models with no gated MLP the Lab knows.
+
+The example and prepared sets live in one file, `apps/backend/scripts/lab_sets.json`.
 
 ## Settings
 

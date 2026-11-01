@@ -232,7 +232,7 @@ export function SeedGrid({ run, summary }: { run: GridRun; summary: SeedSummary 
   const shown = sel ?? (run.cells[0] ? { seed: run.cells[0].seed, prompt: run.cells[0].prompt } : null);
   const cur = shown ? cells.get(cellId({ dose, ...shown })) : undefined;
   const reads = summary.ok + summary.odd;
-  const verdict = !summary.n ? "" : reads / summary.n >= 0.8 ? "Holds up across seeds." : reads / summary.n >= 0.5 ? "Depends on the seed: some runs break." : "Mostly breaks. Try a smaller dose.";
+  const verdict = !summary.n ? "" : run.state === "running" ? `So far, ${summary.n} of ${run.seeds.length * run.prompts.length} replies.` : reads / summary.n >= 0.8 ? "Holds up across seeds." : reads / summary.n >= 0.5 ? "Depends on the seed: some runs break." : "Mostly breaks. Try a smaller dose.";
   return (
     <>
       <div className="gstats">

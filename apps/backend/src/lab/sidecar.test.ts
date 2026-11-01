@@ -75,6 +75,7 @@ test("load facts", { skip }, () => {
   assert.deepEqual(f.layerKinds, ["linear", "linear", "linear", "full"]);
   assert.equal(f.residNorm.length, 4);
   assert.ok(f.calibrationTokens > 1000, "calibrated on the field guide");
+  assert.equal(f.tryDose, 0.8);
 });
 
 test("probe, neuron card, find", { skip }, async () => {
@@ -209,6 +210,7 @@ test("LFM3: the hooks wrap feed_forward.w2, and a batch of doses matches one at 
     assert.equal(h?.status, "ready", h?.detail);
     assert.deepEqual(h?.facts?.layerKinds, ["conv", "sliding", "full"]);
     assert.deepEqual(h?.facts?.neuronsPerLayer, [128, 128, 128]);
+    assert.equal(h?.facts?.tryDose, 3, "its MLP output is renormalized, so a first try needs more");
     const p = await l.request<any>("POST", "/probe", { text: "The owl flew.", watch: [{ layer: 1, neuron: 3 }], layer: 1, top: 4 });
     assert.ok(p.tokens.length > 2);
     const f = await l.request<any>("POST", "/find", { concept: ["The owl hunts at night.", "An owl sat in the barn."], control: ["The dog runs at noon.", "A dog sat in the yard."], top: 3, previews: 1, testPrompt: "Hi" });
