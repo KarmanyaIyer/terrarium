@@ -10,7 +10,7 @@ export interface Estimate {
   overhead: number;
   /** Bytes that loading would add now (0 extra if already loaded at a context >= ctx). */
   added: number;
-  /** Resident bytes of the other loaded models; this model shares the budget with them. */
+  /** Resident bytes of the other loaded models and the Lab's specimen; this model shares the budget with them. */
   otherLoaded: number;
   fitsFree: boolean;
   fitsBudget: boolean;
@@ -31,9 +31,13 @@ export function estimate(
   const already = m.loaded ? (m.residentBytes ?? estBytes(m, m.loadedContext ?? m.defaultContext)) : 0;
   const added = Math.max(0, bytes - already);
   const free = sample?.system.freeBytes ?? Infinity;
-  const otherLoaded = loadedModels
-    .filter((x) => x.loaded && !x.strain && x.id !== m.id)
-    .reduce((a, x) => a + (x.residentBytes ?? estBytes(x, x.loadedContext ?? x.defaultContext)), 0);
+  // The Lab counts once: every loaded strain reports the specimen's estimate. Opening a strain replaces the specimen.
+  const lab = m.strain ? 0 : Math.max(0, ...loadedModels.filter((x) => x.loaded && x.strain).map((x) => x.residentBytes ?? 0)) || (sample?.lab?.rssBytes ?? 0);
+  const otherLoaded =
+    lab +
+    loadedModels
+      .filter((x) => x.loaded && !x.strain && x.id !== m.id)
+      .reduce((a, x) => a + (x.residentBytes ?? estBytes(x, x.loadedContext ?? x.defaultContext)), 0);
   return {
     bytes,
     weights,
