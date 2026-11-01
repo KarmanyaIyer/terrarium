@@ -161,6 +161,58 @@ is on hover.
 
 ![Eval run](docs/screenshots/eval-run.png)
 
+## Lab
+
+The Lab finds and steers single neurons in a local model. A neuron is one entry of a layer's MLP hidden state
+(the input to `down_proj`), written `L22N2742`: layer 22, neuron 2742. The Lab runs its own copy of one model
+(the specimen) in a Python sidecar next to oMLX, with hooks on every layer.
+
+![Lab](docs/screenshots/lab.png)
+
+| Step | What it does |
+| --- | --- |
+| Probe | Runs a text or a chat turn and shows the strongest neurons per token, or traces chosen neurons token by token |
+| Find | Compares concept texts with control texts (9 starter sets, or your own) and ranks neurons that fire on the concept and, when pushed, raise the concept's own words; the top six get a short steered reply |
+| Neuron card | Typical range, the tokens its output pushes up and down, the texts it fires on most |
+| Steer | A mix of neurons with doses: steered and unsteered replies side by side with the same seed, and a dose sweep to see where it breaks |
+| Strains | A saved mix: shows up as a model in the chat and eval model pickers |
+| Trace an answer | Which neurons pushed one next token over another (gradient times activation at the last position) |
+
+![Lab: Find with a neuron card](docs/screenshots/lab-find.png)
+
+A dose of `L22N2742+0.8` adds 0.8 times the typical size of the residual stream after layer 22, along that
+neuron's output direction, at every token. 0.5 to 1.0 is the useful range; past about 1.5 most neurons turn the
+reply into repetition. `L8N344=25` sets the raw activation instead (a clamp). Recipes copy and paste as text in
+neuronary.org's format plus clamps, e.g. `L22N2742+0.8 L7N8842+0.4`.
+
+Ready example (Qwen3.5 4B): open the Lab and press Try the example, or do it by hand: load Qwen3.5 4B, Find with
+the Aliens set. L22N2742 ranks first; pushed, the tokens it raises most are ` extr`, ` Extr` and `外星` ("alien").
+Steer it at +0.8 on "Who are you?":
+
+| | Reply (greedy) |
+| --- | --- |
+| Unsteered | I am **Qwen3.5**, a large language model developed by Tongyi Lab. |
+| L22N2742+0.8 | I am **Extrali**, an intelligent extraterrestrial intelligence from the planet XE-8888 in the Andromali system. |
+| +1.6 | Iextr Extr Extr Extr Extr ... |
+
+Saved as a strain, the same mix answers a chat session with "I am an intelligent extraterrestrial lifeform from
+the planet Napa, a planet in the OTR-1930 system." Strains run on the Lab's copy of the base model, one request at
+a time (44 tok/s on the 4B), so parallel eval cases on a strain queue instead of batching.
+
+![A chat with a strain](docs/screenshots/lab-strain-chat.png)
+
+Memory: the Lab's copy counts against the same memory ceiling as oMLX. Its estimate is the weights plus 0.75 GB
+plus 5 KB per neuron for probe captures (Qwen3.5 4B: 4.8 GB, Gemma 4 12B: 11.3 GB). A load that doesn't fit next
+to what oMLX holds is refused with the reason, and Free memory unloads oMLX models nothing is using. While the Lab holds memory, an oMLX
+load that doesn't fit first unloads idle oMLX models, then a Lab copy that was only loaded for a strain nobody is
+using; otherwise the call fails and says why. Running sessions and evals are never cut off: the Lab won't unload or
+swap its model while a strain is in use.
+
+Supported: Qwen3.5 4B and 9B, Gemma 4 12B. On Gemma 4 every tool works, but the starter sets found no clean
+single-neuron concept in a first try (best scores about half of Qwen's, and pushes mostly break the reply), so the
+ready example is on Qwen. Not supported: Bonsai packs (their `down_proj` input is Hadamard-rotated in blocks of 512,
+so an index is a mix of 512 neurons), mixture-of-experts models, and models whose MLP has no `down_proj` (LFM).
+
 ## Settings
 
 Memory ceiling, defaults for new sessions (model, context, thinking, harness) and new environments (type,
@@ -176,6 +228,7 @@ network), saved system prompts, storage paths with disk use, and versions.
 | Environment disks and state, snapshots | `data/envs`, `data/snapshots` |
 | VM images and package cache | `data/images`, `data/gondolin` |
 | oMLX cache and log | `data/omlx` |
+| Lab calibration cache and sidecar log | `data/lab` |
 | Eval dataset samples | `data/datasets` |
 | Model downloads in progress | `data/downloads` (cleared when the backend starts) |
 | Models | `models/` |

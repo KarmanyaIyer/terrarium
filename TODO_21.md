@@ -22,7 +22,36 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
       sidecar (src/lab/lab.test.ts)
 - [x] Live verification with Qwen3.5-4B through the dev backend: probe, find, steer, strain round trip, strain in a
       session and an eval, memory numbers
-- [ ] Ready example, screenshots, README Lab section, QA review, commits
+- [x] Ready example, screenshots, README Lab section, QA review, commits
+- [x] QA review (independent Opus xhigh): 16 findings, all fixed except the notes under "Open"
+
+## QA findings and fixes
+- Spawn failure (no .venv) never rejected: Node emits error and close but not exit on ENOENT, so load hung holding
+  the Lab lock forever. Now rejects on error when there is no pid, plus a 180 s startup timeout; test added.
+- An eval with strains on two bases failed every case of the second base: ensureStrain counted the eval itself as a
+  user of the loaded base. Now only sessions running right now (eval cases are session rows) hold it.
+- PUT /strains took the generation lock, so registering a second strain timed out (30 s) behind a running chat.
+  Now validated with check_mix, no lock; test added (registers while a sweep runs).
+- Node's fetch cuts off at 5 min without headers. Lab ops use an undici Agent without header or body timeouts;
+  a streamed chat queued behind another sends headers at once and SSE comments every 10 s while it waits.
+- Memory races: beforeOmlxLoad now runs under the Lab lock (not between a swap's stop and start), the Lab's check
+  counts models running sessions use that oMLX hasn't loaded yet, and unknown oMLX sizes use the estimate, not 0.
+- watchLoad no longer stops a newer load; requests during "starting" wait for the current load; a crash resets
+  the manual flag; find/probe inputs validated (layers range, top capped at 200, watch entries).
+- UI: a swap now clears the old model's results, watch list and mix (keyed on the last ready model, persisted);
+  refused swaps show in the header; Probe and Trace apply the mix scale; whole-mix sweep rows are absolute scales;
+  doses deduped and capped at 16; "concept from" no longer matches everything; copy fixed (layer kinds for Gemma,
+  attribution share, token 3-grams).
+- Found while checking: the other agent's new LFM3 model was listed as supported; LFM's MLP has no down_proj
+  (feed_forward.w1/w2/w3). Support now refuses models whose weight index has no down_proj; test added.
+
+## Open
+- Strain chats rebuild the prompt cache every turn (stream_generate gets a fresh cache), so long agent sessions on a
+  strain are slow; the sidecar serves one request at a time, so parallel eval cases queue.
+- Attribution counts the last position only; probe is capped at 1024 tokens.
+- The memory check can still miss an oMLX load that starts between beforeOmlxLoad returning and the model loading,
+  when no running session names that model yet.
+- Gemma 4: tools work, no clean single-neuron concept found yet.
 
 ## Decisions and why
 - Neuron = input to down_proj. Hooks wrap each layer's down_proj module (not the MLP class), so the same code works
@@ -41,7 +70,8 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
 - One sidecar process per specimen; unloading is stopping the process (MLX frees everything, no leak hunting).
 - Strains are models `strain:<id>` with the base model's ModelInfo (family, tool format, sampling), so the harness
   treats them exactly like the base. Gateway and tokenizer upstreams route by the request's model id.
-- Memory: Lab estimate = weights + 2.5 GB working memory (calibration, finder tables, gradients, 512 MiB MLX cache).
+- Memory: Lab estimate = weights + 0.75 GB + 4 bytes per neuron per token for a 1280-token probe (measured, see
+  Verification): Qwen3.5 4B 4.84 GB, 9B 7.76 GB, Gemma 4 12B 11.26 GB.
   Loading in the Lab is refused past the ceiling with a "Free memory" path (unloads oMLX models no running session
   or eval uses). The reverse: before oMLX loads a model while the Lab holds memory, idle oMLX models are unloaded
   first, then an on-demand specimen nothing uses is stopped, else the call fails with a clear message. Running
@@ -116,6 +146,13 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
   moved on to the base model.
 - Memory refusal live: Gemma 4 in the Lab during that eval: 409 "Not enough memory for Gemma 4 12B: it needs about
   10.1 GB and oMLX holds 2.7 GB of the 12.0 GB memory ceiling. In use: Qwen3.5-4B-MLX-4bit (session ...)".
+- Real UI against the dev backend after the fixes (headless browser, load average 30 to 250 from an unrelated Xcode
+  build): Try the example loaded the 4B, Find took 33 s and ranked L22N2742 first, Compare: steered "I am **Extrali**,
+  an extraterrestrial intelligence..." vs "I am **Qwen3.5**, a large language model..."; Save as strain from Steer,
+  Open a chat from Strains: "I am an extraterrestrial intelligence from the planet of Aliens." (strain model id in
+  the request, thinking off, 16 tok/s under that load). Screenshots: docs/screenshots/lab.png, lab-find.png,
+  lab-strain-chat.png.
+- Tests after the fixes: lab.test.ts 10/10, sidecar.test.ts 7/7, UI 22/22, both typechecks clean.
 - Gemma 4 12B (direct): loads in 11.7 s, 6.72 GB active, 48 layers x 15360 GeGLU neurons, sliding/full kinds.
   Probe, find (38 s), steer and attribution (1.35 s, 8.43 GB peak) all run; a 1000-token probe peaks at 9.69 GB, which
   set the estimate's 4 bytes per neuron-token (11.3 GB for Gemma). The Aliens and Pirates sets found nothing clean

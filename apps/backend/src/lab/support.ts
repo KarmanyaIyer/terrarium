@@ -38,6 +38,20 @@ export function unsupportedReason(config: Record<string, any>): string | undefin
   return undefined;
 }
 
+/** The hooks wrap each layer's mlp.down_proj; a weight index without one (LFM's feed_forward.w1/w2/w3) can't be hooked.
+ *  Without an index the sidecar finds out at load and says so. */
+function weightsReason(dir: string): string | undefined {
+  let index: { weight_map?: Record<string, string> };
+  try {
+    index = JSON.parse(readFileSync(join(dir, "model.safetensors.index.json"), "utf8"));
+  } catch {
+    return undefined;
+  }
+  const names = Object.keys(index.weight_map ?? {});
+  if (names.length && !names.some((n) => n.includes("down_proj"))) return "Its MLP has no down_proj (this architecture names its feed-forward weights differently), so the Lab's neuron hooks have nothing to wrap";
+  return undefined;
+}
+
 export function labSupport(catalog: ModelCatalog): LabSupport[] {
   const out: LabSupport[] = [];
   for (const id of catalog.ids()) {
@@ -47,7 +61,7 @@ export function labSupport(catalog: ModelCatalog): LabSupport[] {
     try {
       config = JSON.parse(readFileSync(join(catalog.modelsDir, id, "config.json"), "utf8"));
     } catch {}
-    const reason = unsupportedReason(config);
+    const reason = unsupportedReason(config) ?? weightsReason(join(catalog.modelsDir, id));
     out.push({ modelId: id, name: info.name, supported: !reason, ...(reason ? { reason } : {}), estimateBytes: Math.round(info.weightsBytes + labWorkingBytes(config)) });
   }
   return out;

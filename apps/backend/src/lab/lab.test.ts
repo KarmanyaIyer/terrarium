@@ -56,6 +56,9 @@ before(async () => {
   writeFileSync(join(models, "tiny-qwen", "model.safetensors"), Buffer.alloc(1024));
   mkdirSync(join(models, "tiny-bonsai"), { recursive: true });
   writeFileSync(join(models, "tiny-bonsai", "config.json"), JSON.stringify({ model_type: "prism_hadamard_qwen35" }));
+  mkdirSync(join(models, "tiny-lfm"), { recursive: true });
+  writeFileSync(join(models, "tiny-lfm", "config.json"), JSON.stringify({ model_type: "lfm3", num_hidden_layers: 2, intermediate_size: 64 }));
+  writeFileSync(join(models, "tiny-lfm", "model.safetensors.index.json"), JSON.stringify({ weight_map: { "model.layers.0.feed_forward.w2.weight": "model.safetensors" } }));
   app = await createApp(loadConfig({ ...process.env, TERRARIUM_DATA: join(dir, "data"), TERRARIUM_TOKEN: TOKEN, TERRARIUM_MODELS: models, TERRARIUM_VENV: join(dir, "no-venv") }));
   app.lab.command = (modelId) => ({ cmd: process.execPath, args: [FAKE, modelId, mode] });
   app.hub.listen((m) => sent.push(m));
@@ -77,6 +80,7 @@ test("support list and memory check", async () => {
   assert.equal(qwen?.supported, true);
   assert.equal(bonsai?.supported, false);
   assert.match(bonsai?.reason ?? "", /Hadamard/);
+  assert.match(s.support.find((x) => x.modelId === "tiny-lfm")?.reason ?? "", /no down_proj/);
   const m = (await call("GET", "/api/lab/memory?modelId=tiny-qwen")).json;
   assert.equal(m.fits, true);
   assert.equal(m.labBytes, 0);
