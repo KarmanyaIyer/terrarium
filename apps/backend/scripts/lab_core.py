@@ -218,6 +218,10 @@ class HadamardProjection(nn.Module):
     def __call__(self, x: mx.array) -> mx.array:
         if not self.embedding:
             return self.as_linear(x)
+        return self.rows(x)
+
+    def rows(self, x: mx.array) -> mx.array:
+        """The weight rows for these ids, unrotated: an embedding's lookup, or an untied lm_head's rows (9B and 27B)."""
         i = x.reshape(-1)
         out = mx.dequantize(self.weight[i], self.scales[i], self.biases[i], group_size=128, bits=2)
         return self._unrotate(out.reshape(*x.shape, -1).astype(mx.float16))
@@ -814,7 +818,7 @@ class Lab:
         m = self.inner.embed_tokens if tied else self.lm.lm_head
         idx = mx.array(tokens)
         if isinstance(m, HadamardProjection):
-            return m(idx).astype(mx.float32)
+            return m.rows(idx).astype(mx.float32)
         if hasattr(m, "scales"):
             kw = {"mode": m.mode} if hasattr(m, "mode") else {}
             b = getattr(m, "biases", None)

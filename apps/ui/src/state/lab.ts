@@ -466,8 +466,7 @@ function onSpecimen(lab: LabState) {
     undoStack.drop("lab"); // neuron ids don't carry over to another model
   }
   // doses that show something differ by model, and LFM3's flatten out by 8
-  const range = lab.model?.tryDose && lab.model.tryDose > 1 ? 8 : 1;
-  if (typeof s.sweepRange === "number" && (range === 8 || s.sweepRange === 8)) quietly(() => set({ sweepRange: range }));
+  if (s.benchModel) quietly(() => set({ sweepRange: lab.model?.tryDose && lab.model.tryDose > 1 ? 8 : 1 }));
   set({ benchModel: id, history: null });
   void loadHistory();
 }

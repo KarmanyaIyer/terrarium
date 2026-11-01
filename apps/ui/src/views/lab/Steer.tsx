@@ -97,8 +97,9 @@ function NumIn({ value, onChange, step, className, label, min, max }: { value: n
 function MixRow({ p, i }: { p: LabPush; i: number }) {
   const kind = useLab((s) => s.lab?.model?.layerKinds?.[p.layer]);
   const words = useLab((s) => s.words[nid(p)]);
+  const typical = useLab((s) => s.lab?.model?.tryDose ?? 0.8);
   const v = p.value;
-  const tone = p.mode === "clamp" ? "" : Math.abs(v) >= 2.5 ? " err" : Math.abs(v) > 1.2 ? " warn" : "";
+  const tone = p.mode === "clamp" ? "" : Math.abs(v) >= typical * 3.2 ? " err" : Math.abs(v) > typical * 1.5 ? " warn" : "";
   return (
     <div className="mix-row">
       <span className="mix-id" title={kind ? `layer ${p.layer}, ${kind} attention` : `layer ${p.layer}`}>

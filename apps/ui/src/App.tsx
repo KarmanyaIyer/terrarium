@@ -129,17 +129,7 @@ function useGlobalKeys() {
       }
     };
     window.addEventListener("keydown", onKey);
-    // the menu's Undo and Redo in the desktop app, when no text field has the focus (src-tauri/src/main.rs)
-    const bridge = window as unknown as { __terrariumUndo?: (redo: boolean) => boolean };
-    bridge.__terrariumUndo = (redo) => {
-      if (isTextField(document.activeElement)) return false;
-      void (redo ? runRedo() : runUndo());
-      return true;
-    };
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      delete bridge.__terrariumUndo;
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 }
 

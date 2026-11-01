@@ -202,6 +202,8 @@ export function SpecimenHead() {
             <>
               <Loader2 size={12} className="spin" /> {BUSY[lab.busy] ?? lab.busy}
             </>
+          ) : st === "ready" && target && target !== lab.model?.modelId ? (
+            `${modelName(lab, lab.model?.modelId)} still loaded`
           ) : (
             st
           )}
