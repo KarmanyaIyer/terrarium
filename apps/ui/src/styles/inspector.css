@@ -72,6 +72,20 @@
 .insp-tabs button:disabled {
   color: var(--fg-4);
 }
+/* at the minimum window all six still fit */
+@media (max-width: 1179px) {
+  .insp-tabs {
+    gap: 0;
+    padding: 0 4px;
+  }
+  .insp-tabs button {
+    padding: 0 4px;
+  }
+  .insp-tabs button.on::after {
+    left: 3px;
+    right: 3px;
+  }
+}
 .insp-body {
   flex: 1;
   min-height: 0;

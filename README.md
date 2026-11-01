@@ -25,15 +25,26 @@ pnpm --filter @terrarium/ui dev        # open the printed http://localhost:5173/
 Installed app: `pnpm package` builds `~/Applications/Terrarium.app`. Nothing runs until you open it; Cmd+Q
 stops the backend, oMLX and every VM. Closing the window keeps runs going.
 
-First session: Home lists what you can start. Run an agent opens a session in a Linux VM, a simulated shell
-or a plain chat with the model you pick (it creates the environment if there is none yet); oMLX starts and
-the model loads with the first message. An empty session shows its model, harness and environment and a few
-tasks to try, and each run ends with a line counting its tool calls, changed files and blocked network
-requests. Compare models shows the latest eval scores, Test the sandbox runs the escape suite, and Steer a
-neuron runs the Lab example. Each environment is drawn as an enclosure whose lid shows its network policy:
-shut for off, dashed for package registries, lifted for the web.
+First run: with no models, Home offers three known-good downloads and Hugging Face for anything else, and the Lab
+offers the one its example needs. A model folder in `models/` can be a link to another disk. Linux VMs need a guest
+image; New enclosure and Home offer Build VM image, about a minute, and simulated shells work without it.
 
-![Home: starting points, environments and sessions](docs/screenshots/home.png)
+After that, Home is one sentence: give a model a task, with the model picker in the sentence and a place to run it
+(an existing enclosure that's free, a new one, or a plain chat). oMLX starts and the model loads with the first
+message. Under it are three things to try, each with its last result: compare models, test the sandbox, steer a
+neuron. Then the shelf and recent sessions. Each enclosure is drawn as a glass case: the lid shows its network policy
+(shut for off, vented for package registries, lifted for the web), a dashed pane means a simulated shell, a solid one
+a Linux VM, and the plant grows with its sessions. Each run ends with a line counting its tool calls, changed files
+and blocked network requests.
+
+The UI calls an environment an enclosure. This README and DESIGN.md mean the same thing by either word; the model is
+told "environment", since that's the word it understands.
+
+Deleting: what can come back gets an Undo toast, with Cmd+Z (a stopped session, for 30 seconds). What can't asks first
+(an enclosure, a model, a running session). Never both. Edit > Undo and Redo reach the same stack when no text field
+has focus; in a field they stay the field's own.
+
+![Home: a task, things to try, the shelf and recent sessions](docs/screenshots/home.png)
 
 ## Architecture
 
@@ -89,9 +100,12 @@ it gets; the environment decides what those tools can touch.
 | Defaults | 2 CPUs, 1 GiB RAM, 4 GiB disk, krun backend | Python on, JavaScript off, 64 MiB file limit |
 
 Environments can be snapshotted, forked, reset to their factory snapshot and opened in a shell. The New
-environment sheet shows this comparison and explains every field on hover.
+enclosure sheet opens this comparison under Compare in detail and explains every field on hover.
 
-![New environment sheet](docs/screenshots/new-env.png)
+At the limit, a session or eval case waits for a free slot and says so in its trace; Stop ends the wait. A Start press
+is refused at once and told what holds the slots, since a person can act on that.
+
+![New enclosure sheet](docs/screenshots/new-env.png)
 
 ## Harness profiles
 
@@ -132,8 +146,11 @@ puts it into `.venv` before oMLX starts (`apps/backend/README.md`). The check sh
 by Terrarium". Tool calls use the same XML format as Qwen3.5. The 8bit build is suggested because the 4bit one
 picks a different top token about 1 time in 5 compared with full precision.
 
-The memory ceiling (Settings) is the most oMLX may use for models; past it oMLX refuses another load and
-evicts idle models. It takes effect when oMLX starts.
+The Models table has one row per model (size, context, memory, Load); the details are in the row's disclosure. Load
+starts oMLX if it's stopped.
+
+The memory ceiling (Settings) is the most oMLX and the Lab may use together. oMLX's own guard is set to what the Lab
+leaves, and both apply right away: past it, idle models are unloaded and another load is refused with the reason.
 
 ## Evals
 
@@ -241,7 +258,8 @@ The example and prepared sets live in one file, `apps/backend/scripts/lab_sets.j
 ## Settings
 
 Memory ceiling, defaults for new sessions (model, context, thinking, harness) and new environments (type,
-network), saved system prompts, resource limits, storage paths with disk use, and versions.
+network), saved system prompts, resource limits, storage paths with disk use, and versions. Storage has a row per
+folder, and Clear for caches that rebuild themselves (`data/lab`, oMLX's).
 
 ![Settings](docs/screenshots/settings.png)
 

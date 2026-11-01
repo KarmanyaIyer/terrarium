@@ -197,7 +197,7 @@ Layout: left sidebar, main pane, right inspector (resizable, collapsible).
 running VM, backend, and the budget line. Inference status (stopped/starting/ready) with start/stop.
 
 **Sidebar**: Environments (each: name, VM/SIM chip, status dot, network icon; expand to its sessions;
-"New environment" and "New chat" actions), Evals, Models.
+"New enclosure" and "New chat" actions; the UI calls an environment an enclosure), Evals, Models.
 
 **Session view (main pane)**:
 - Header: env chip (click opens Environment inspector), **model picker**, harness picker, thinking

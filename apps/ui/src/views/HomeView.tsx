@@ -118,8 +118,9 @@ function TaskBox() {
   // a starter fits one kind of place: gone when you pick another, unless you edited it
   const tried = useRef<string | null>(null);
   useEffect(() => {
-    setText((t) => (t === tried.current ? "" : t));
+    const starter = tried.current;
     tried.current = null;
+    setText((t) => (t === starter ? "" : t));
   }, [value]);
 
   const start = async () => {

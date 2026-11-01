@@ -24,7 +24,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
   const running = s.status === "running";
   const label = (
     <>
-      <span className="dim">harness</span> {harnessName(s.harness)}
+      <span className="dim">prompt</span> {harnessName(s.harness)}
       {s.customPrompt && <span className="chip accent" title="This session sends its own system prompt">custom prompt</span>}
     </>
   );

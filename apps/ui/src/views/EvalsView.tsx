@@ -886,7 +886,7 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
         <span>
           <span className="dim">Runs in</span>{" "}
           <Hint tip={ENV_RUN[suite.envType]} width={320}>
-            <span className="hint-text">{suite.envType === "none" ? "none" : "fresh fork per case"}</span>
+            <span className="hint-text">{suite.envType === "none" ? "no enclosure" : "fresh fork per case"}</span>
           </Hint>
         </span>
         {suite.source && (
@@ -992,7 +992,7 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
             <button className="btn primary" disabled={!picked.length || busy} onClick={() => void start()}>
               {busy ? <Loader2 className="spin" /> : <Play />} Run {plural(n, "case")} × {plural(picked.length, "model")}
             </button>
-            <span className="dim num">{plural(cells, "cell")}</span>
+            {picked.length > 1 && <span className="dim num">{plural(cells, "session")}</span>}
           </div>
         </div>
         <div className="ev-scroll">
