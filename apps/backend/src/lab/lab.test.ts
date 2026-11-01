@@ -3,7 +3,7 @@
 // while it runs, a crash shown as an error, and shutdown stopping the process.
 
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,6 +13,7 @@ import type { LabState, LabStrain, ModelInfo, WsMessage } from "@terrarium/share
 import { type App, createApp } from "../app.ts";
 import { loadConfig } from "../config.ts";
 import { estimateBytes } from "../inference/catalog.ts";
+import { guardGiB } from "../inference/omlx.ts";
 import { type ApiServer, createApiServer } from "../server/http.ts";
 
 const FAKE = fileURLToPath(new URL("../test-support/fake-lab.ts", import.meta.url));
@@ -83,6 +84,31 @@ after(async () => {
   await api.close();
   await app.shutdown();
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("support is read once per scan of a model folder", () => {
+  const dir2 = join(dir, "models", "tiny-cached");
+  mkdirSync(dir2);
+  writeFileSync(join(dir2, "config.json"), JSON.stringify({ model_type: "qwen3_5", num_hidden_layers: 2, intermediate_size: 8 }));
+  const stamp = new Date(Date.now() - 60_000);
+  utimesSync(dir2, stamp, stamp);
+  const first = app.lab.support().find((x) => x.modelId === "tiny-cached");
+  assert.equal(first?.supported, true);
+  // a changed config with the same folder stamp isn't read again; a folder change is
+  writeFileSync(join(dir2, "config.json"), JSON.stringify({ model_type: "moe", num_experts: 8 }));
+  utimesSync(dir2, stamp, stamp);
+  assert.equal(app.lab.support().find((x) => x.modelId === "tiny-cached"), first);
+  const later = new Date();
+  utimesSync(dir2, later, later);
+  assert.match(app.lab.support().find((x) => x.modelId === "tiny-cached")?.reason ?? "", /Mixture-of-experts/);
+  rmSync(dir2, { recursive: true });
+  assert.equal(app.lab.support().find((x) => x.modelId === "tiny-cached"), undefined);
+});
+
+test("oMLX's guard is the ceiling minus what the Lab holds, in GiB on the command line", () => {
+  assert.equal(guardGiB(12e9), "11.176");
+  const ceiling = app.inference.budget().budgetBytes;
+  assert.equal(app.inference.guardBytes(), ceiling - app.lab.heldBytes());
 });
 
 test("support list and memory check", async () => {
@@ -297,6 +323,70 @@ test("oMLX loading next to the Lab: idle models make room first, then a clear re
     app.inference.setBudget(12e9);
   }
   await call("POST", "/api/lab/unload");
+});
+
+test("a lowered ceiling is checked against a running Lab: idle models go, a specimen loaded on purpose stays and says so", async () => {
+  await call("POST", "/api/lab/load", { modelId: "tiny-qwen" });
+  await until("ready", async () => (await labState()).status === "ready");
+  const inf = app.inference as any;
+  const orig = { loadedModels: inf.loadedModels, unload: inf.unload };
+  let loaded = [{ modelId: "tiny-bonsai", bytes: 1e9 }];
+  const unloaded: string[] = [];
+  inf.loadedModels = async () => loaded;
+  inf.unload = async (id: string) => {
+    unloaded.push(id);
+    loaded = loaded.filter((m) => m.modelId !== id);
+  };
+  try {
+    // Lab 2.5 GB + idle 1 GB fits 12 GB: nothing moves.
+    await call("PATCH", "/api/settings", { memoryBudgetBytes: 12e9 });
+    await app.inference.budgetChanged();
+    assert.deepEqual(unloaded, []);
+    assert.equal((await labState()).overCeiling, undefined);
+    assert.equal(app.inference.guardBytes(), 12e9 - app.lab.heldBytes());
+    // Over 3 GB with the idle model, fits without it.
+    app.inference.setBudget(3e9);
+    await app.inference.budgetChanged();
+    assert.deepEqual(unloaded, ["tiny-bonsai"]);
+    assert.equal((await labState()).overCeiling, undefined);
+    // Under the Lab itself: the specimen stays, and the state says it is over.
+    app.inference.setBudget(2e9);
+    await app.inference.budgetChanged();
+    const over = await labState();
+    assert.equal(over.status, "ready");
+    assert.match(over.overCeiling ?? "", /over the 2\.0 GB memory ceiling/);
+    assert.equal(app.inference.guardBytes(), 1024 ** 3, "oMLX keeps a floor");
+    app.inference.setBudget(12e9);
+    await app.inference.budgetChanged();
+    assert.equal((await labState()).overCeiling, undefined);
+  } finally {
+    Object.assign(inf, orig);
+    app.inference.setBudget(12e9);
+  }
+  await call("POST", "/api/lab/unload");
+  assert.equal(app.inference.guardBytes(), 12e9, "no Lab, no share");
+});
+
+test("Storage lists the Lab's folder; Clear waits for the sidecar and leaves everything else", async () => {
+  const labDir = join(dir, "data", "lab");
+  mkdirSync(join(labDir, "cache"), { recursive: true });
+  writeFileSync(join(labDir, "cache", "x.calib.safetensors"), Buffer.alloc(8192));
+  writeFileSync(join(dir, "data", "keep.txt"), "keep");
+  await call("POST", "/api/lab/load", { modelId: "tiny-qwen" });
+  await until("ready", async () => (await labState()).status === "ready");
+  const up = (await call("GET", "/api/settings")).json.disk.find((d: any) => d.key === "lab");
+  assert.ok(up.bytes >= 8192);
+  assert.match(up.clearBlocked, /Unload/);
+  const refused = await call("POST", "/api/settings/clear/lab");
+  assert.equal(refused.status, 409);
+  assert.ok(existsSync(join(labDir, "cache", "x.calib.safetensors")));
+  await call("POST", "/api/lab/unload");
+  const cleared = await call("POST", "/api/settings/clear/lab");
+  assert.equal(cleared.status, 200);
+  assert.equal(existsSync(join(labDir, "cache")), false);
+  assert.ok(existsSync(join(dir, "data", "keep.txt")));
+  assert.equal(cleared.json.disk.find((d: any) => d.key === "lab").clearBlocked, undefined);
+  assert.equal((await call("POST", "/api/settings/clear/blobs")).status, 400, "only caches");
 });
 
 test("a strain loads its base on demand, and shutdown stops the sidecar", async () => {

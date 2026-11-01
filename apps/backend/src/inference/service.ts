@@ -12,6 +12,7 @@ import { type OmlxModelSettings, type OmlxStatus, OmlxManager } from "./omlx.ts"
 
 const log = logger("inference");
 const DEFAULT_BUDGET = 12e9;
+const MIN_GUARD_BYTES = 1024 ** 3;
 
 /** The Lab (lab/service.ts): strains as models (`strain:<id>`, served by its sidecar) and its share of the ceiling. */
 export interface LabHooks {
@@ -20,6 +21,12 @@ export interface LabHooks {
   releaseStrain(id: string): Promise<void>;
   /** Before oMLX may load `id`: make room next to the Lab, or throw a message saying why not. */
   beforeOmlxLoad(id: string, window: number): Promise<void>;
+  /** What the Lab holds against the ceiling now. */
+  heldBytes(): number;
+  /** What running sessions hold in oMLX: its guard never goes below this, because oMLX aborts what is over. */
+  omlxInUseBytes(): Promise<number>;
+  /** The ceiling changed: make room again or say what is over. */
+  ceilingChanged(): Promise<void>;
 }
 
 const isStrain = (id: string) => id.startsWith("strain:");
@@ -48,9 +55,11 @@ export class InferenceService {
       modelsDir: opts.modelsDir,
       dataDir: opts.omlxDataDir,
       budgetBytes: () => this.budget().budgetBytes,
+      guardBytes: () => this.guardBytes(),
       onState: (state) => {
         this.statusCache = null;
         if (state.status !== "ready") this.pushedWindow.clear();
+        if (state.status === "ready") void this.syncGuard();
         this.hub.broadcast({ type: "inference", inference: state });
         if (state.status === "ready" || state.status === "stopped" || state.status === "error") void this.broadcastModels();
       },
@@ -64,6 +73,25 @@ export class InferenceService {
   setBudget(bytes: number): MemoryBudget {
     this.store.setSetting("budgetBytes", Math.max(2e9, Math.min(bytes, totalmem())));
     return this.budget();
+  }
+
+  /** oMLX's share of the ceiling. It keeps a floor so a Lab near the ceiling can't turn the guard off. */
+  guardBytes(): number {
+    return Math.max(MIN_GUARD_BYTES, this.budget().budgetBytes - (this.lab?.heldBytes() ?? 0));
+  }
+
+  /** Tells a running oMLX its share. Called when that changes: the Lab loads or unloads, the ceiling moves, a new turn. */
+  async syncGuard(): Promise<void> {
+    if (!this.omlx.isReady()) return;
+    const inUse = (await this.lab?.omlxInUseBytes().catch(() => 0)) ?? 0;
+    await this.omlx.setGuard(Math.max(this.guardBytes(), inUse)).catch((err) => log.warn("setting oMLX's memory guard failed", err));
+  }
+
+  /** Settings changed the ceiling. */
+  async budgetChanged(): Promise<void> {
+    await this.lab?.ceilingChanged().catch((err) => log.warn("re-checking the Lab against the ceiling failed", err));
+    await this.syncGuard();
+    await this.broadcastModels();
   }
 
   inferenceState(): InferenceState {
@@ -139,6 +167,7 @@ export class InferenceService {
     await this.mutex.run(`model:${id}`, async () => {
       await this.omlx.ensureStarted();
       await this.lab?.beforeOmlxLoad(id, window);
+      await this.syncGuard();
       if (this.rescanPending) await this.reloadIfIdle(!(await this.omlxStatus())?.models.some((m) => m.id === id));
       const pushed = this.pushedWindow.get(id);
       if (pushed && pushed.window >= window && pushed.maxOutput >= maxOutput) return;

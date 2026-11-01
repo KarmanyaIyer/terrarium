@@ -49,7 +49,10 @@ export interface OmlxOptions {
   venvDir: string;
   modelsDir: string;
   dataDir: string; // data/omlx
+  /** The memory ceiling the user set. */
   budgetBytes: () => number;
+  /** oMLX's share of it, for its own memory guard: the ceiling minus what the Lab holds. */
+  guardBytes: () => number;
   onState: (state: InferenceState) => void;
 }
 
@@ -64,6 +67,11 @@ export function freePort(): Promise<number> {
   });
 }
 
+/** oMLX reads --memory-guard-gb as GiB (x 1024^3), while the ceiling is in bytes. */
+export function guardGiB(bytes: number): string {
+  return (bytes / 1024 ** 3).toFixed(3);
+}
+
 export class OmlxManager {
   private opts: OmlxOptions;
   private child: ChildProcess | null = null;
@@ -71,6 +79,7 @@ export class OmlxManager {
   private apiKey = "";
   private starting: Promise<void> | null = null;
   private tail: string[] = [];
+  private guardApplied = 0;
   state: InferenceState = { status: "stopped", version: VERSIONS.omlx };
 
   constructor(opts: OmlxOptions) {
@@ -121,7 +130,7 @@ export class OmlxManager {
     ensureVendoredModels(this.opts.venvDir);
     this.port = await freePort();
     this.apiKey = randomBytes(24).toString("hex");
-    const budgetGb = Math.max(4, Math.round((this.opts.budgetBytes() / 1e9) * 10) / 10);
+    this.guardApplied = this.opts.guardBytes();
     mkdirSync(join(this.opts.dataDir, "cache"), { recursive: true });
     const args = [
       "-I",
@@ -132,12 +141,12 @@ export class OmlxManager {
       "--api-key", this.apiKey,
       "--base-path", this.opts.dataDir,
       "--no-hf-cache",
-      "--memory-guard-gb", String(budgetGb),
+      "--memory-guard-gb", guardGiB(this.guardApplied),
       "--sse-keepalive-mode", "comment",
       "--paged-ssd-cache-dir", join(this.opts.dataDir, "cache"),
       "--paged-ssd-cache-max-size", "4GB",
     ];
-    this.setState({ status: "starting", detail: undefined, memoryCeilingBytes: budgetGb * 1e9 });
+    this.setState({ status: "starting", detail: undefined, memoryCeilingBytes: this.opts.budgetBytes() });
     const logFile = createWriteStream(join(this.opts.dataDir, "server.log"), { flags: "a" });
     // stdin is a pipe we never write to: when this process dies, however it dies, oMLX reads EOF and exits
     // (omlx_serve.py) instead of keeping a model loaded with nobody to stop it.
@@ -232,6 +241,16 @@ export class OmlxManager {
     } catch (err) {
       if (!/not loaded/i.test(errorMessage(err))) throw err;
     }
+  }
+
+  /** Moves oMLX's memory guard while it runs. */
+  async setGuard(bytes: number): Promise<void> {
+    if (!this.isReady()) return;
+    if (bytes !== this.guardApplied) {
+      await this.request("POST", "/terrarium/memory-ceiling", { bytes: Math.round(bytes) }, 5000);
+      this.guardApplied = bytes;
+    }
+    if (this.state.memoryCeilingBytes !== this.opts.budgetBytes()) this.setState({ memoryCeilingBytes: this.opts.budgetBytes() });
   }
 
   applySettings(modelId: string, settings: OmlxModelSettings): Promise<unknown> {

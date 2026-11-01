@@ -385,7 +385,7 @@ export type TraceEvent = EventBase &
         data?: Record<string, number | string>;
       }
     | { type: "error"; message: string; detail?: string; code?: "context_overflow"; data?: Record<string, number | string> }
-    | { type: "env_lifecycle"; envId: Id; action: "start" | "stop" | "snapshot" | "reset" | "fork" | "restore"; detail?: string }
+    | { type: "env_lifecycle"; envId: Id; action: "start" | "stop" | "snapshot" | "reset" | "fork" | "restore" | "queue"; detail?: string }
     | { type: "context"; usage: ContextUsage }
     | {
         type: "budget_exceeded";
@@ -622,7 +622,7 @@ export type PathKey = "data" | "models" | "venv" | "logs" | "omlxLog";
 export interface SettingsInfo {
   settings: AppSettings;
   paths: Record<PathKey, string>;
-  disk: { key: string; label: string; bytes: number }[]; // data/ breakdown, then models/
+  disk: { key: string; label: string; bytes: number; clear?: string; clearBlocked?: string }[]; // data/ breakdown, then models/; clear: what Clear removes, for caches
   freeDiskBytes: number;
   maxRunningVms: number;
   omlx: InferenceState & { appliedCeilingBytes?: number }; // ceiling oMLX was started with
@@ -761,6 +761,7 @@ export interface LabState {
   busy?: string; // what the sidecar is doing now: "probe", "find", "generate", "session"
   support: LabSupport[];
   /** Strains (by id) serving running sessions or evals: the specimen can't be unloaded or swapped while these run. */
+  overCeiling?: string; // a lowered memory ceiling left more held than it allows
   servingStrains: Id[];
 }
 

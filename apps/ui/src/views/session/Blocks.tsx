@@ -738,10 +738,7 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
     case "env_lifecycle":
       return (
         <div className="row-ev dim">
-          <span>
-            Environment {ev.action}
-            {ev.detail ? `: ${ev.detail}` : ""}
-          </span>
+          <span>{ev.action === "queue" ? ev.detail : `Environment ${ev.action}${ev.detail ? `: ${ev.detail}` : ""}`}</span>
           <Stamp ts={it.ts} t0={t0} />
         </div>
       );

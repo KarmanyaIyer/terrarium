@@ -134,6 +134,8 @@ export class LabService implements LabHooks {
   private poll: NodeJS.Timeout | null = null;
   private builtinSets: LabProbeSet[] | null = null;
   private lastKey = "";
+  /** Set when a lowered ceiling left more held than it allows. */
+  private overCeiling: string | undefined;
   /** Tests: the sidecar command for a model (instead of the venv's python with lab_serve.py). */
   command: LabServiceOptions["command"];
 
@@ -169,6 +171,7 @@ export class LabService implements LabHooks {
       ...(this.facts && this.status === "ready" ? { model: this.facts } : {}),
       ...(this.sidecar && this.status !== "ready" ? { loadingModelId: this.sidecar.modelId } : {}),
       ...(this.busy ? { busy: this.busy } : {}),
+      ...(this.overCeiling && this.sidecar ? { overCeiling: this.overCeiling } : {}),
       support: this.support(),
       servingStrains: this.servingStrains(),
     };
@@ -184,9 +187,11 @@ export class LabService implements LabHooks {
 
   private set(status: LabStatus, detail?: string): void {
     const loadedChanged = (status === "ready") !== (this.status === "ready");
+    const heldChanged = this.status !== status && (status === "starting" || status === "stopped" || status === "error");
     this.status = status;
     this.detail = detail;
     this.broadcast();
+    if (heldChanged) void this.inference.syncGuard();
     // strains on this base turn loaded or not
     if (loadedChanged) void this.inference.broadcastModels();
   }
@@ -266,6 +271,35 @@ export class LabService implements LabHooks {
       await this.inference.unload(m.modelId).catch((err) => log.warn(`unloading ${m.modelId} failed`, err));
     }
     return this.memory(modelId);
+  }
+
+  async omlxInUseBytes(): Promise<number> {
+    return (await this.omlxModels(false)).filter((m) => m.busy).reduce((a, m) => a + m.bytes, 0);
+  }
+
+  /**
+   * The ceiling changed. Same order as a load that doesn't fit: idle oMLX models, then a specimen loaded only for a strain.
+   * A specimen loaded on purpose stays, and the Lab says it is over: unloading it is the user's call.
+   */
+  ceilingChanged(): Promise<void> {
+    return this.mutex.run("lab", async () => {
+      this.overCeiling = undefined;
+      if (this.sidecar) {
+        const ceiling = this.inference.budget().budgetBytes;
+        const lab = this.heldBytes();
+        const loaded = await this.omlxModels(false);
+        let total = lab + loaded.reduce((a, m) => a + m.bytes, 0);
+        for (const m of loaded) {
+          if (total <= ceiling) break;
+          if (m.busy) continue;
+          await this.inference.unload(m.modelId).catch((err) => log.warn(`unloading ${m.modelId} failed`, err));
+          total -= m.bytes;
+        }
+        if (total > ceiling && (await this.releaseIdle())) total -= lab;
+        if (total > ceiling) this.overCeiling = `The Lab and oMLX hold about ${gb(total)}, over the ${gb(ceiling)} memory ceiling. Unload the Lab's model or raise the ceiling.`;
+      }
+      this.broadcast();
+    });
   }
 
   /**

@@ -11,6 +11,7 @@ import sys
 
 os.environ["OMLX_HEADLESS"] = "1"  # read by omlx.server at import time
 
+from fastapi import Depends, HTTPException, Request  # noqa: E402
 import omlx.server as server  # noqa: E402
 from omlx.cli import main  # noqa: E402
 
@@ -29,6 +30,7 @@ ALLOWED = [
     ("GET", r"/admin/api/models/[^/]+/generation_config"),
     ("GET", r"/admin/api/device-info"),
     ("GET", r"/admin/api/stats"),
+    ("POST", r"/terrarium/memory-ceiling"),  # the share of the ceiling oMLX may use, added below
 ]
 
 
@@ -56,6 +58,18 @@ class AllowlistMiddleware:
             await send({"type": "http.response.body", "body": b'{"detail":"not available in Terrarium"}'})
             return
         return await self.app(scope, receive, send)
+
+
+@server.app.post("/terrarium/memory-ceiling")
+async def memory_ceiling(request: Request, _: bool = Depends(server.verify_api_key)):
+    """oMLX's guard takes its ceiling at start. Terrarium moves it while running: the Lab's specimen takes a share of the
+    memory ceiling, and the user can change the ceiling. The setter re-applies the limit and keeps oMLX's own eviction."""
+    body = await request.json()
+    enforcer = server._server_state.process_memory_enforcer
+    if enforcer is None:
+        raise HTTPException(status_code=409, detail="the memory guard is not running")
+    enforcer.memory_guard_custom_ceiling_bytes = int(body["bytes"])
+    return {"bytes": enforcer.memory_guard_custom_ceiling_bytes}
 
 
 server.app.add_middleware(AllowlistMiddleware)

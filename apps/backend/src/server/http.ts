@@ -175,6 +175,7 @@ function routes(app: App): Route[] {
     // ---- settings / harness ----
     r("GET", "/api/settings", () => settings.info()),
     r("PATCH", "/api/settings", ({ body }) => settings.update((body ?? {}) as UpdateSettingsRequest)),
+    r("POST", "/api/settings/clear/:key", ({ params }) => settings.clearCache(params[0])),
     r("POST", "/api/reveal", ({ body }) => {
       settings.reveal(((body ?? {}) as { path: PathKey }).path);
       return { ok: true };

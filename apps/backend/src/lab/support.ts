@@ -1,7 +1,7 @@
 // Which models in models/ the Lab can open, and how much memory each takes there. The reasons mirror
 // unsupported_reason() and MLP_SHAPES in scripts/lab_core.py, so the UI can explain before anything loads.
 
-import { closeSync, openSync, readFileSync, readSync } from "node:fs";
+import { closeSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { LabSupport } from "@terrarium/shared";
 import type { ModelCatalog } from "../inference/catalog.ts";
@@ -69,17 +69,32 @@ function weightsReason(dir: string): string | undefined {
   return undefined;
 }
 
+/** Per catalog, per model folder: read once for each scan of a folder (state, heldBytes and oMLX calls ask constantly). */
+const cached = new WeakMap<ModelCatalog, Map<string, { mtimeMs: number; support: LabSupport }>>();
+
 export function labSupport(catalog: ModelCatalog): LabSupport[] {
+  const seen = cached.get(catalog) ?? new Map<string, { mtimeMs: number; support: LabSupport }>();
+  cached.set(catalog, seen);
   const out: LabSupport[] = [];
   for (const id of catalog.ids()) {
+    const dir = join(catalog.modelsDir, id);
+    const mtimeMs = statSync(dir).mtimeMs;
+    const hit = seen.get(id);
+    if (hit?.mtimeMs === mtimeMs) {
+      out.push(hit.support);
+      continue;
+    }
     const info = catalog.info(id);
     if (!info) continue;
     let config: Record<string, any> = {};
     try {
-      config = JSON.parse(readFileSync(join(catalog.modelsDir, id, "config.json"), "utf8"));
+      config = JSON.parse(readFileSync(join(dir, "config.json"), "utf8"));
     } catch {}
-    const reason = unsupportedReason(config) ?? weightsReason(join(catalog.modelsDir, id));
-    out.push({ modelId: id, name: info.name, supported: !reason, ...(reason ? { reason } : {}), estimateBytes: Math.round(info.weightsBytes + labWorkingBytes(config)) });
+    const reason = unsupportedReason(config) ?? weightsReason(dir);
+    const support: LabSupport = { modelId: id, name: info.name, supported: !reason, ...(reason ? { reason } : {}), estimateBytes: Math.round(info.weightsBytes + labWorkingBytes(config)) };
+    seen.set(id, { mtimeMs, support });
+    out.push(support);
   }
+  for (const id of seen.keys()) if (!out.some((s) => s.modelId === id)) seen.delete(id);
   return out;
 }

@@ -1,13 +1,16 @@
-"""Writes a tiny random-weight Qwen3.5 or LFM3 model dir for the Lab sidecar tests (src/lab/sidecar.test.ts).
+"""Writes a tiny random-weight Qwen3.5, LFM3 or Bonsai model dir for the Lab sidecar tests (src/lab/sidecar.test.ts).
 
-usage: lab_tiny_model.py <out_dir> <tokenizer_src_dir> [qwen3_5|lfm3]
+usage: lab_tiny_model.py <out_dir> <tokenizer_src_dir> [qwen3_5|lfm3|bonsai]
+       lab_tiny_model.py check-head <model_dir>
 
 Same architecture as the real one (Qwen3.5: three linear-attention layers, then one full-attention layer; LFM3: conv,
-sliding, full) at toy sizes, fp16, with the tokenizer and chat template copied from a real model dir. About 35 MB,
-almost all of it the embedding.
+sliding, full; Bonsai: Qwen3.5 with 2-bit Hadamard projections and an untied head, as in the 9B and 27B packs) at toy
+sizes, fp16, with the tokenizer and chat template copied from a real model dir. About 35 MB, almost all of it the
+embedding. check-head prints how far the Lab's head rows are from what the head computes.
 """
 
 import json
+import math
 import os
 import shutil
 import sys
@@ -59,9 +62,70 @@ LFM3 = {
 }
 
 
+def write_bonsai(out: str, src: str) -> None:
+    """Every projection a real pack rotates that the Lab touches: embedding, untied head and the gated MLPs. Weights are
+    stored rotated, like the pack's, so a reader that forgets to unrotate gets different rows."""
+    with open(os.path.join(src, "config.json")) as f:
+        real = json.load(f)
+    text = {**TEXT, "hidden_size": 128, "intermediate_size": 256, "head_dim": 128, "tie_word_embeddings": False, "vocab_size": real["text_config"]["vocab_size"]}
+    model = qwen3_5.Model(qwen3_5.ModelArgs.from_dict({"model_type": "qwen3_5", "text_config": text, "tie_word_embeddings": False}))
+    params = {k.removeprefix("language_model."): v for k, v in tree_flatten(model.parameters())}
+    block = 128
+    rotated = ["lm_head", "model.embed_tokens"] + [f"model.layers.{i}.mlp.{p}" for i in range(text["num_hidden_layers"]) for p in ("up_proj", "gate_proj", "down_proj")]
+    weights = {f"language_model.{k}": v.astype(mx.float16) if v.dtype == mx.float32 and not k.endswith("A_log") else v for k, v in params.items() if not any(k.startswith(f"{r}.") for r in rotated)}
+    modules = []
+    for name in rotated:
+        rows, cols = (text["vocab_size"], 128) if name in ("lm_head", "model.embed_tokens") else params[f"{name}.weight"].shape
+        signs = mx.where(mx.random.bernoulli(0.5, (cols,)), 1.0, -1.0).astype(mx.float16)
+        plain = mx.random.normal((rows, cols)).astype(mx.float32) * 0.02
+        rot = mx.hadamard_transform(plain.reshape(-1, block), scale=1 / math.sqrt(block)).reshape(rows, cols) * signs.astype(mx.float32)
+        q, scales, biases = mx.quantize(rot, group_size=block, bits=2)
+        weights.update({f"language_model.{name}.weight": q, f"language_model.{name}.scales": scales.astype(mx.float16), f"language_model.{name}.biases": biases.astype(mx.float16), f"language_model.{name}.signs": signs})
+        modules.append({"path": name, "block": block, "embedding": name == "model.embed_tokens", "dtype": "float16"})
+    mx.save_safetensors(os.path.join(out, "model.safetensors"), weights, metadata={"format": "mlx"})
+    config = {"model_type": "prism_hadamard_qwen35", "quantization": {"bits": 2, "group_size": 128, "mode": "affine"}, "tie_word_embeddings": False, "base_model_type": "qwen3_5", "text_config": text, "modules": modules}
+    with open(os.path.join(out, "config.json"), "w") as f:
+        json.dump(config, f, indent=2)
+    copy_tokenizer(out, src)
+    print(json.dumps({"params": sum(v.size for v in weights.values()), "dir": out}))
+
+
+def check_head(model_dir: str) -> None:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from lab_core import HadamardProjection, Lab
+
+    lab = Lab(model_dir, cache_dir=None)
+    head = lab.lm.lm_head
+    ids = [1, 5, 9, 200, 4242]
+    rows = lab._unembed_rows(ids)
+    x = mx.random.normal((3, lab.d_model)).astype(mx.float32)
+    direct = head(x)[:, mx.array(ids)].astype(mx.float32)
+    via = x @ rows.T
+    embed = lab.inner.embed_tokens(mx.array(ids)).astype(mx.float32)
+    print(json.dumps({
+        "untied": isinstance(head, HadamardProjection) and head is not lab.inner.embed_tokens and not getattr(lab.lm.args, "tie_word_embeddings", True),
+        "maxDiff": mx.abs(direct - via).max().item(),
+        "scale": mx.abs(direct).max().item(),
+        "denseDiff": mx.abs(head.dense()[mx.array(ids)] - rows).max().item(),
+        "embedDiff": mx.abs(embed - rows).max().item(),
+    }))
+
+
+def copy_tokenizer(out: str, src: str) -> None:
+    for name in ("tokenizer.json", "tokenizer_config.json", "chat_template.jinja", "vocab.json", "merges.txt", "special_tokens_map.json"):
+        if os.path.exists(os.path.join(src, name)):
+            shutil.copy(os.path.join(src, name), os.path.join(out, name))
+
+
 def main() -> None:
+    if sys.argv[1] == "check-head":
+        return check_head(sys.argv[2])
     out, src = sys.argv[1], sys.argv[2]
     arch = sys.argv[3] if len(sys.argv) > 3 else "qwen3_5"
+    if arch == "bonsai":
+        os.makedirs(out, exist_ok=True)
+        mx.random.seed(7)
+        return write_bonsai(out, src)
     with open(os.path.join(src, "config.json")) as f:
         real = json.load(f)
     os.makedirs(out, exist_ok=True)
@@ -79,9 +143,7 @@ def main() -> None:
     mx.save_safetensors(os.path.join(out, "model.safetensors"), weights, metadata={"format": "mlx"})
     with open(os.path.join(out, "config.json"), "w") as f:
         json.dump(config, f, indent=2)
-    for name in ("tokenizer.json", "tokenizer_config.json", "chat_template.jinja", "vocab.json", "merges.txt", "special_tokens_map.json"):
-        if os.path.exists(os.path.join(src, name)):
-            shutil.copy(os.path.join(src, name), os.path.join(out, name))
+    copy_tokenizer(out, src)
     print(json.dumps({"params": sum(v.size for v in weights.values()), "dir": out}))
 
 

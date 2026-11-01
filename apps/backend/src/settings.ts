@@ -1,7 +1,7 @@
 // App settings (settings table) and the read-only facts the Settings page shows next to them.
 
 import { execFile } from "node:child_process";
-import { existsSync, statfsSync } from "node:fs";
+import { existsSync, readdirSync, rmSync, statfsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { AppSettings, EnvType, HarnessProfile, NetworkMode, PathKey, SettingsInfo, UpdateSettingsRequest } from "@terrarium/shared";
@@ -26,6 +26,7 @@ const DATA_PARTS: { key: string; label: string; path: string }[] = [
   { key: "blobs", label: "Trace blobs", path: "blobs" },
   { key: "images", label: "VM images", path: "images" },
   { key: "omlx", label: "oMLX cache and logs", path: "omlx" },
+  { key: "lab", label: "Lab cache and log", path: "lab" },
   { key: "datasets", label: "Eval datasets", path: "datasets" },
   { key: "gondolin", label: "VM package cache", path: "gondolin" },
 ];
@@ -51,6 +52,8 @@ export class Settings {
   private inference: InferenceService;
   private config: Config;
   private budgets: ResourceBudgets;
+  /** Set by the app: whether the Lab's sidecar is up. */
+  labRunning?: () => boolean;
 
   constructor(opts: { store: Store; hub: Hub; inference: InferenceService; config: Config; budgets?: ResourceBudgets }) {
     this.store = opts.store;
@@ -78,6 +81,7 @@ export class Settings {
     if (patch.memoryBudgetBytes !== undefined) {
       if (typeof patch.memoryBudgetBytes !== "number" || !Number.isFinite(patch.memoryBudgetBytes)) throw new HttpError(400, "memoryBudgetBytes must be a number");
       this.inference.setBudget(patch.memoryBudgetBytes);
+      void this.inference.budgetChanged();
     }
     if (patch.resourceBudgets) {
       try {
@@ -152,7 +156,7 @@ export class Settings {
     const parts = DATA_PARTS.map((p) => ({ ...p, abs: join(data, p.path) }));
     const db = ["terrarium.db", "terrarium.db-wal"].map((f) => join(data, f));
     const sizes = await duKiB([...parts.map((p) => p.abs), ...db, this.config.modelsDir]);
-    const disk = parts.map((p) => ({ key: p.key, label: p.label, bytes: sizes.get(p.abs) ?? 0 }));
+    const disk: SettingsInfo["disk"] = parts.map((p) => ({ key: p.key, label: p.label, bytes: sizes.get(p.abs) ?? 0, ...this.clearable(p.key) }));
     disk.push({ key: "db", label: "Database", bytes: db.reduce((a, p) => a + (sizes.get(p) ?? 0), 0) });
     disk.push({ key: "models", label: "Models", bytes: sizes.get(this.config.modelsDir) ?? 0 });
     let freeDiskBytes = 0;
@@ -168,6 +172,23 @@ export class Settings {
       maxRunningVms: MAX_RUNNING_VMS,
       omlx: { ...this.inference.inferenceState(), appliedCeilingBytes: this.inference.inferenceState().memoryCeilingBytes },
     };
+  }
+
+  /** What Clear does for a data folder, or why not now. Only caches: they fill again on the next load. */
+  private clearable(key: string): Pick<SettingsInfo["disk"][number], "clear" | "clearBlocked"> {
+    if (key === "lab") return { clear: "The neuron calibrations and the sidecar log. The next Lab load measures again, a few seconds.", ...(this.labRunning?.() ? { clearBlocked: "Unload the Lab's model first" } : {}) };
+    if (key === "omlx") return { clear: "oMLX's prompt cache on disk. Nothing you made lives here.", ...(this.inference.omlx.isReady() || this.inference.inferenceState().status === "starting" ? { clearBlocked: "Stop oMLX first" } : {}) };
+    return {};
+  }
+
+  /** Empties a cache folder. Refused while something has it open. */
+  async clearCache(key: string): Promise<SettingsInfo> {
+    const c = this.clearable(key);
+    if (!c.clear) throw new HttpError(400, `${key} can't be cleared`);
+    if (c.clearBlocked) throw new HttpError(409, c.clearBlocked);
+    const dir = key === "lab" ? join(this.config.dataDir, "lab") : join(this.config.dataDir, "omlx", "cache");
+    if (existsSync(dir)) for (const name of readdirSync(dir)) rmSync(join(dir, name), { recursive: true, force: true });
+    return this.info();
   }
 
   /** Shows a known path in Finder. Only the paths above, never one from the request. */

@@ -91,6 +91,9 @@ export interface EnvHooks {
   onDeleted?: (envId: string) => void;
 }
 
+/** How often a queued simulated env looks again if nothing woke it. */
+const SIM_QUEUE_POLL_MS = 1000;
+
 export class EnvManager {
   private store: Store;
   private hub: Hub;
@@ -107,6 +110,12 @@ export class EnvManager {
   private vmBoot = new KeyedMutex();
   /** One lock across the running-sim count and worker spawn. */
   private simBoot = new KeyedMutex();
+  /** Envs waiting for a simulated worker slot, first come first served. */
+  private simQueue: string[] = [];
+  private simWakers = new Set<() => void>();
+  private simCancels = new Map<string, (why: string) => void>();
+  /** A session's env went into that queue: its trace says so. */
+  private queuedNotes = new Map<string, (detail: string) => void>();
   private active = new Map<string, string>(); // envId -> sessionId using it
   private shells = new Map<string, number>(); // envId -> user shell commands in flight
   private manifests = new Map<string, Manifest>(); // last known /workspace manifest per env
@@ -267,6 +276,7 @@ export class EnvManager {
   }
 
   private setStatus(id: string, status: EnvStatus, detail: string | null = null): void {
+    if (status !== "starting") queueMicrotask(() => this.wakeSimQueue());
     this.store.run("UPDATE envs SET status = ?, status_detail = ? WHERE id = ?", status, detail, id);
     this.broadcast(id);
   }
@@ -588,32 +598,85 @@ export class EnvManager {
     }
   }
 
+  /**
+   * With every slot busy the boot waits its turn instead of failing, so an eval case isn't an error just because other
+   * sims are in use. The waiter holds only its own env's mutex, and Stop or Delete on that env cancels the wait.
+   */
   private async bootSim(row: EnvRow, rt: EnvRuntime): Promise<void> {
-    for (let attempt = 0; ; attempt++) {
-      const victim = await this.simBoot.run("sim", async () => {
-        const max = this.budgets.get().maxSimWorkers;
-        const others = this.store
-          .all<EnvRow>("SELECT * FROM envs WHERE type = 'sim' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", row.id)
-          .filter((r) => this.runtimes.get(r.id)?.isRunning());
-        if (others.length < max) {
-          await rt.start();
-          return null;
+    let queued = false;
+    try {
+      for (;;) {
+        const next = await this.simBoot.run("sim", async () => {
+          const max = this.budgets.get().maxSimWorkers;
+          const others = this.store
+            .all<EnvRow>("SELECT * FROM envs WHERE type = 'sim' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", row.id)
+            .filter((r) => this.runtimes.get(r.id)?.isRunning());
+          const turn = queued ? this.simQueue[0] === row.id : this.simQueue.length === 0;
+          if (turn && others.length < max) {
+            await rt.start();
+            return { done: true as const };
+          }
+          const idle = turn ? others.find((r) => r.status === "running" && this.uses(r.id).length === 0) : undefined;
+          if (idle) return { done: false as const, victim: idle.id };
+          return { done: false as const, waitingFor: others.map((r) => this.uses(r.id).map((u) => u.reason).join(", ") || r.status).join("; ") };
+        });
+        if (next.done) return;
+        if (next.victim) {
+          await this.mutex.run(next.victim, async () => {
+            const cur = this.store.get<EnvRow>("SELECT * FROM envs WHERE id = ?", next.victim);
+            if (!cur || !this.runtimes.get(next.victim!)?.isRunning() || cur.status !== "running" || this.uses(next.victim!).length) return;
+            log.info(`stopping idle simulated worker ${next.victim} to make room for ${row.id}`);
+            await this.stopUnlocked(next.victim!, "stopped to make room for another simulated worker");
+          });
+          continue;
         }
-        const idle = others.find((r) => r.status === "running" && this.uses(r.id).length === 0);
-        if (!idle || attempt > max + 2) {
-          const why = others.map((r) => `${r.name}: ${this.uses(r.id).map((u) => u.reason).join(", ") || r.status}`).join("; ");
-          throw new HttpError(409, `${max} simulated workers are in use (${why}); stop one first`);
+        if (!queued) {
+          queued = true;
+          this.simQueue.push(row.id);
+          const detail = `Waiting for a free simulated worker (${next.waitingFor || "all in use"})`;
+          this.setStatus(row.id, "starting", detail);
+          this.queuedNotes.get(row.id)?.(detail);
+          log.info(`${row.id} queued for a simulated worker`);
         }
-        return idle.id;
-      });
-      if (!victim) return;
-      await this.mutex.run(victim, async () => {
-        const cur = this.store.get<EnvRow>("SELECT * FROM envs WHERE id = ?", victim);
-        if (!cur || !this.runtimes.get(victim)?.isRunning() || cur.status !== "running" || this.uses(victim).length) return;
-        log.info(`stopping idle simulated worker ${victim} to make room for ${row.id}`);
-        await this.stopUnlocked(victim, "stopped to make room for another simulated worker");
-      });
+        await this.simSlotChange(row.id);
+      }
+    } finally {
+      if (queued) {
+        this.simQueue = this.simQueue.filter((id) => id !== row.id);
+        this.wakeSimQueue();
+      }
     }
+  }
+
+  /** Resolves when a slot may have freed: a status change wakes it, the timer covers uses that end without one. */
+  private simSlotChange(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const clear = () => {
+        clearTimeout(timer);
+        this.simWakers.delete(wake);
+        this.simCancels.delete(id);
+      };
+      const wake = () => {
+        clear();
+        resolve();
+      };
+      const timer = setTimeout(wake, SIM_QUEUE_POLL_MS);
+      timer.unref();
+      this.simWakers.add(wake);
+      this.simCancels.set(id, (why) => {
+        clear();
+        reject(new HttpError(409, why));
+      });
+    });
+  }
+
+  private wakeSimQueue(): void {
+    for (const wake of [...this.simWakers]) wake();
+  }
+
+  /** Ends this env's wait for a simulated worker, if it has one: its boot fails with `why` and nothing else changes. */
+  cancelQueued(id: string, why = "stopped while waiting for a free simulated worker"): void {
+    this.simCancels.get(id)?.(why);
   }
 
   /** Other VMs whose VMM is up (running, or still shutting down), least recently used first. */
@@ -702,6 +765,7 @@ export class EnvManager {
   }
 
   async stop(id: string): Promise<EnvSummary> {
+    this.cancelQueued(id);
     await this.mutex.run(id, () => {
       this.assertIdle(id);
       return this.stopUnlocked(id);
@@ -826,6 +890,7 @@ export class EnvManager {
   }
 
   async delete(id: string): Promise<void> {
+    this.cancelQueued(id);
     await this.mutex.run(id, async () => {
       const row = this.row(id);
       this.assertIdle(id);
@@ -854,6 +919,7 @@ export class EnvManager {
 
   /** Ephemeral eval forks: destroy storage after the case; trace, manifests and blobs stay. */
   async releaseStorage(id: string): Promise<void> {
+    this.cancelQueued(id);
     await this.mutex.run(id, async () => {
       const row = this.row(id);
       if (row.released) return;
@@ -873,6 +939,7 @@ export class EnvManager {
   }
 
   async stopAll(): Promise<void> {
+    for (const id of [...this.simCancels.keys()]) this.cancelQueued(id, "the app is shutting down");
     await Promise.all(
       [...this.runtimes.entries()].map(async ([id, rt]) => {
         if (!rt.isRunning()) return;
@@ -890,16 +957,19 @@ export class EnvManager {
   // ---------- use by sessions / user shell ----------
 
   /** Running runtime for a session; marks the env busy until release(). */
-  async acquire(id: string, sessionId: string): Promise<EnvRuntime> {
+  async acquire(id: string, sessionId: string, onQueued?: (detail: string) => void): Promise<EnvRuntime> {
     const holder = this.active.get(id);
     if (holder && holder !== sessionId) throw new HttpError(409, `environment is busy with session ${holder}`);
     this.assertNotEvalOwned(id, sessionId);
     this.active.set(id, sessionId);
+    if (onQueued) this.queuedNotes.set(id, onQueued);
     try {
       await this.start(id);
     } catch (err) {
       this.active.delete(id);
       throw err;
+    } finally {
+      this.queuedNotes.delete(id);
     }
     this.touch(id);
     const rt = this.runtimes.get(id)!;

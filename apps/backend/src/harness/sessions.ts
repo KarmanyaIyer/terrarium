@@ -532,6 +532,8 @@ export class SessionManager {
       live.stopRequested = true;
       this.setStatus(id, "stopping");
       live.agent?.abort();
+      const envId = this.store.get<{ env_id: string | null }>("SELECT env_id FROM sessions WHERE id = ?", id)?.env_id;
+      if (envId) this.envs.cancelQueued(envId);
       const timer = new Promise<void>((resolve) => setTimeout(resolve, 15_000).unref());
       await Promise.race([live.running.then(() => undefined), timer]);
     }
@@ -639,7 +641,7 @@ export class SessionManager {
         const env = this.envs.get(envId);
         envType = env.type;
         const wasRunning = env.status === "running";
-        runtime = await this.envs.acquire(envId, id);
+        runtime = await this.envs.acquire(envId, id, (detail) => tracer.emit({ type: "env_lifecycle", envId, action: "queue", detail }));
         if (!wasRunning) tracer.emit({ type: "env_lifecycle", envId, action: "start" });
         observer = new FsObserver({ store: this.store, envs: this.envs, envId, sessionId: id, runtime, tracer, budgets: this.budgets });
         await observer.baseline();

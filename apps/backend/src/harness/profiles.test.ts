@@ -129,7 +129,7 @@ test("a saved profile default replaces the built-in prompt; the sim note is stil
 
 test("settings: validation, saved prompts lose the sim note, null restores the built-in", () => {
   let budget = 12e9;
-  const inference = { budget: () => ({ totalBytes: 64e9, budgetBytes: budget }), setBudget: (b: number) => (budget = b), inferenceState: () => ({ status: "stopped" }) };
+  const inference = { budget: () => ({ totalBytes: 64e9, budgetBytes: budget }), setBudget: (b: number) => (budget = b), budgetChanged: async () => {}, inferenceState: () => ({ status: "stopped" }) };
   const settings = new Settings({ store, hub, inference: inference as unknown as InferenceService, config: { dataDir: dir, modelsDir: dir, venvDir: dir } as any });
   assert.deepEqual(settings.get().newSession, { modelId: null, contextWindow: null, thinking: "model", harness: "terrarium" });
   settings.update({ memoryBudgetBytes: 16e9, newSession: { harness: "pi-stock", contextWindow: 16384 }, newEnv: { network: "registries" } });

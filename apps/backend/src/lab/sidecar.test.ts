@@ -21,6 +21,9 @@ const skip = !existsSync(PY) || !existsSync(join(TOKENIZER, "tokenizer.json")) ?
 const LFM_TOKENIZER = join(REPO_DIR, "models", "LFM3-1.7B-MLX-8bit");
 const lfmSkip = skip || !existsSync(join(LFM_TOKENIZER, "tokenizer.json")) ? "needs the repo .venv and models/LFM3-1.7B-MLX-8bit (for its tokenizer)" : false;
 
+const BONSAI_TOKENIZER = join(REPO_DIR, "models", "Ternary-Bonsai-2-2B-mlx-2bit");
+const bonsaiSkip = skip || !existsSync(join(BONSAI_TOKENIZER, "tokenizer.json")) ? "needs the repo .venv and models/Ternary-Bonsai-2-2B-mlx-2bit (for its tokenizer)" : false;
+
 let dir: string;
 let lab: LabSidecar;
 let health: LabHealth;
@@ -227,6 +230,41 @@ test("LFM3: the hooks wrap feed_forward.w2, and a batch of doses matches one at 
     await l.request("PUT", "/strains/s1", { pushes: mix.slice(0, 2), name: "s1" });
     const chat = await l.request<any>("POST", "/v1/chat/completions", { model: "strain:s1", messages: [{ role: "user", content: "Hi" }], max_tokens: 3, temperature: 0 });
     assert.ok(chat.choices[0].message.content !== undefined);
+  } finally {
+    await l.stop();
+    rmSync(d, { recursive: true, force: true });
+  }
+});
+
+test("Bonsai: the untied Hadamard head's rows match what the head computes, and Find and the neuron card use them", { skip: bonsaiSkip }, async () => {
+  const d = mkdtempSync(join(tmpdir(), "terrarium-labpy-bonsai-"));
+  const script = join(BACKEND_DIR, "scripts", "lab_tiny_model.py");
+  const model = join(d, "models", "tiny-bonsai");
+  execFileSync(PY, ["-I", script, model, BONSAI_TOKENIZER, "bonsai"], { stdio: "pipe", timeout: 120_000 });
+  const c = JSON.parse(execFileSync(PY, ["-I", script, "check-head", model], { stdio: ["ignore", "pipe", "ignore"], timeout: 120_000 }).toString().trim().split("\n").at(-1)!);
+  assert.equal(c.untied, true, "the head is its own Hadamard projection");
+  assert.ok(c.scale > 0);
+  assert.ok(c.maxDiff < 0.02 * c.scale + 1e-3, `rows and head agree (${c.maxDiff} of ${c.scale})`);
+  assert.ok(c.denseDiff < 1e-2, `rows and dense() agree (${c.denseDiff})`);
+  assert.ok(c.embedDiff > 0.01, "the rows come from the head, not the embedding");
+
+  const l = new LabSidecar({ modelId: "tiny-bonsai", venvDir: join(REPO_DIR, ".venv"), modelsDir: join(d, "models"), dataDir: join(d, "lab") });
+  try {
+    await l.spawn();
+    const end = Date.now() + 120_000;
+    let h: LabHealth | undefined;
+    for (;;) {
+      h = await l.health().catch(() => h);
+      if (h?.status === "ready" || h?.status === "error") break;
+      if (Date.now() > end) throw new Error("tiny Bonsai did not load");
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    assert.equal(h?.status, "ready", h?.detail);
+    const found = await l.request<any>("POST", "/find", { concept: ["Aliens landed from outer space.", "A flying saucer crossed the sky."], control: ["A cup of tea went cold.", "The bus was late again."], top: 3 });
+    assert.ok(found.candidates.length > 0, "Find runs on the Hadamard head");
+    const top = found.candidates[0];
+    const card = await l.request<any>("POST", "/neuron", { layer: top.layer, neuron: top.neuron });
+    assert.equal(card.layer, top.layer, "the neuron card reads its rows");
   } finally {
     await l.stop();
     rmSync(d, { recursive: true, force: true });

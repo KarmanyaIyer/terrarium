@@ -11,6 +11,14 @@ import type { EnvCreateSpec, EnvDriver, EnvRuntime, NetAttempt, NetworkGate } fr
 
 const MiB = 1024 * 1024;
 
+async function until(fn: () => boolean, ms = 5000): Promise<void> {
+  const end = Date.now() + ms;
+  while (!fn()) {
+    if (Date.now() > end) throw new Error("timed out");
+    await new Promise((r) => setTimeout(r, 10));
+  }
+}
+
 class FakeSim implements Partial<EnvRuntime> {
   readonly type = "sim" as const;
   readonly id: string;
@@ -111,17 +119,70 @@ function fixture(): Fixture {
   };
 }
 
-test("the manager refuses a second busy simulated worker at the configured host cap", async () => {
+test("at the worker cap a simulated env waits for a slot, first come first served", async () => {
+  const f = fixture();
+  try {
+    f.budgets.update({ maxSimWorkers: 1 });
+    const a = await f.envs.create({ name: "a", type: "sim" });
+    const b = await f.envs.create({ name: "b", type: "sim" });
+    const c = await f.envs.create({ name: "c", type: "sim" });
+    await f.envs.acquire(a.id, "ses-a");
+    const notes: string[] = [];
+    const order: string[] = [];
+    const gotB = f.envs.acquire(b.id, "ses-b", (d) => notes.push(d)).then(() => order.push("b"));
+    await until(() => f.envs.get(b.id).statusDetail?.startsWith("Waiting for a free simulated worker") === true);
+    assert.match(notes[0] ?? "", /session "ses-a"|ses-a/);
+    const gotC = f.envs.acquire(c.id, "ses-c").then(() => order.push("c"));
+    await until(() => f.envs.get(c.id).status === "starting");
+    assert.equal(f.runtimes.get(a.id)?.isRunning(), true);
+    assert.equal(f.runtimes.get(b.id)?.isRunning() ?? false, false);
+    f.envs.release(a.id, "ses-a");
+    await gotB;
+    assert.deepEqual(order, ["b"]);
+    assert.equal(f.runtimes.get(a.id)?.isRunning(), false, "the idle worker made room");
+    f.envs.release(b.id, "ses-b");
+    await gotC;
+    assert.deepEqual(order, ["b", "c"]);
+    f.envs.release(c.id, "ses-c");
+  } finally {
+    await f.close();
+  }
+});
+
+test("stopping a queued simulated env ends its wait and leaves it stopped", async () => {
   const f = fixture();
   try {
     f.budgets.update({ maxSimWorkers: 1 });
     const a = await f.envs.create({ name: "a", type: "sim" });
     const b = await f.envs.create({ name: "b", type: "sim" });
     await f.envs.acquire(a.id, "ses-a");
-    await assert.rejects(f.envs.acquire(b.id, "ses-b"), /1 simulated workers are in use/);
+    const gotB = f.envs.acquire(b.id, "ses-b");
+    await until(() => f.envs.get(b.id).status === "starting");
+    f.envs.cancelQueued(b.id);
+    await assert.rejects(gotB, /stopped while waiting/);
+    assert.equal(f.envs.get(b.id).status, "stopped");
     assert.equal(f.runtimes.get(a.id)?.isRunning(), true);
-    assert.equal(f.runtimes.get(b.id)?.isRunning(), false);
     f.envs.release(a.id, "ses-a");
+  } finally {
+    await f.close();
+  }
+});
+
+test("raising the worker cap frees a queued simulated env", async () => {
+  const f = fixture();
+  try {
+    f.budgets.update({ maxSimWorkers: 1 });
+    const a = await f.envs.create({ name: "a", type: "sim" });
+    const b = await f.envs.create({ name: "b", type: "sim" });
+    await f.envs.acquire(a.id, "ses-a");
+    const gotB = f.envs.acquire(b.id, "ses-b");
+    await until(() => f.envs.get(b.id).status === "starting");
+    f.budgets.update({ maxSimWorkers: 2 });
+    await gotB;
+    assert.equal(f.runtimes.get(a.id)?.isRunning(), true);
+    assert.equal(f.runtimes.get(b.id)?.isRunning(), true);
+    f.envs.release(a.id, "ses-a");
+    f.envs.release(b.id, "ses-b");
   } finally {
     await f.close();
   }

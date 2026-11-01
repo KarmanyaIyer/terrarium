@@ -88,6 +88,7 @@ export async function createApp(config: Config): Promise<App> {
   const theLab = new LabService({ store, hub, inference, venvDir: config.venvDir, modelsDir: config.modelsDir, dataDir: join(config.dataDir, "lab"), users: modelUsers });
   lab = theLab;
   inference.lab = theLab;
+  settings.labRunning = () => theLab.pid !== undefined;
   const sampler = new ResourceSampler(hub, envs, inference);
   sampler.lab = () => ({ pid: theLab.pid, modelId: theLab.modelId });
   sampler.start(1000);
