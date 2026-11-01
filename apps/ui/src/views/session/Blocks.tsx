@@ -753,6 +753,12 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
       let startTs = d.t0;
       let turns = 0;
       let tokens = 0;
+      // what the run did to the environment, so each run ends with its result
+      let commands = 0;
+      let nets = 0;
+      let denied = 0;
+      let lastFsTool: string | null = null;
+      const files = new Set<string>();
       for (let i = idx - 1; i >= 0; i--) {
         const x = d.items[i];
         if (x.kind === "user") {
@@ -762,6 +768,18 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
         if (x.kind === "call") {
           turns++;
           tokens += x.end?.usage?.completionTokens ?? 0;
+        }
+        if (x.kind === "tool") {
+          commands++;
+          for (const c of x.fs) files.add(c.path);
+          if (x.fs.length) lastFsTool ??= x.toolCallId;
+          nets += x.net.length;
+          denied += x.net.filter((n) => n.entry.decision === "deny").length;
+        }
+        if (x.kind === "row" && x.event.type === "fs_change") for (const c of x.event.changes) files.add(c.path);
+        if (x.kind === "row" && x.event.type === "net") {
+          nets++;
+          if (x.event.entry.decision === "deny") denied++;
         }
       }
       const reasonCls = ev.reason === "done" ? "" : ev.reason === "stopped" ? "warn" : "err";
@@ -774,6 +792,23 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
           <span className="dim num">
             {turns} turn{turns === 1 ? "" : "s"}  {fmtMs(it.ts - startTs)}  {fmtInt(tokens)} tokens out
           </span>
+          {commands > 0 && (
+            <span className="run-end-did">
+              <span className="dim num">
+                {commands} tool call{commands === 1 ? "" : "s"}
+              </span>
+              {files.size > 0 && (
+                <button className="cell-link num" onClick={() => (lastFsTool ? showFilesFor(lastFsTool) : useStore.setState({ inspectorTab: "files", inspectorOpen: true }))}>
+                  {files.size} file{files.size === 1 ? "" : "s"} changed
+                </button>
+              )}
+              {nets > 0 && (
+                <button className={`cell-link num ${denied ? "err-text" : ""}`} onClick={() => useStore.setState({ inspectorTab: "network", inspectorOpen: true })}>
+                  {denied ? `${denied} of ${nets} network ${nets === 1 ? "request" : "requests"} blocked` : `${nets} network ${nets === 1 ? "request" : "requests"}`}
+                </button>
+              )}
+            </span>
+          )}
           {resumable && (
             <button className="btn sm" disabled={!!blocked} title={blocked ? `Can't continue: ${blocked}` : undefined} onClick={() => void act("Continue", (b) => b.continueSession(session.id))}>
               <Play /> Continue

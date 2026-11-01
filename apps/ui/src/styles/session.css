@@ -1177,6 +1177,16 @@
 .run-end-line:last-child {
   max-width: none;
 }
+.run-end-did {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--fg-2);
+}
+.run-end-did .cell-link {
+  text-decoration: underline dotted var(--line-3);
+  text-underline-offset: 3px;
+}
 .warn-box,
 .err-box {
   margin: 8px 0 10px;
