@@ -208,6 +208,14 @@ export default function ModelsView() {
                       )}
                     </td>
                     <td className="r nowrap g mdl-actions" onClick={(ev) => ev.stopPropagation()}>
+                      <button
+                        className="btn sm ghost"
+                        aria-label={`New chat with ${m.name}`}
+                        title={`New chat with ${m.name}: no environment, no tools. Loads it on the first message.`}
+                        onClick={() => void newSession(null, m.id)}
+                      >
+                        <MessageSquare />
+                      </button>
                       {m.loaded ? (
                         busyUsers.length ? (
                           <ConfirmButton
@@ -400,9 +408,6 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
           {saving && <Loader2 className="spin" />} Save defaults
         </button>
         {bad && <span className="err-text">Sampling values must be numbers</span>}
-        <button className="btn sm" onClick={() => void newSession(null, m.id)} title={`A chat with ${m.name}: no environment, no tools. Loads it on the first message.`}>
-          <MessageSquare /> New chat
-        </button>
         <span className="blk-spacer" />
         <ConfirmButton
           small

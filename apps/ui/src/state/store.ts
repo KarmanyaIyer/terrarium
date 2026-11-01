@@ -120,7 +120,7 @@ export interface Store extends Prefs {
   filesFocus: { path?: string; toolCallId?: string; at?: number } | null;
   paletteOpen: boolean;
   newEnvOpen: boolean;
-  newEnvType: EnvSummary["type"] | null; // type the New environment sheet opens with (null: the settings default)
+  newEnvPreset: { type: EnvSummary["type"]; modelId?: Id } | null; // what the New environment sheet opens with, and the model its first session uses (null: settings defaults)
   composerFill: { sessionId: Id; text: string; n: number } | null; // a starter task put into that session's composer
   expandedEnvs: Record<Id, boolean>;
   showEphemeral: boolean;
@@ -175,7 +175,7 @@ export const useStore = create<Store>()(() => ({
   filesFocus: null,
   paletteOpen: false,
   newEnvOpen: false,
-  newEnvType: null,
+  newEnvPreset: null,
   composerFill: null,
   expandedEnvs: {},
   showEphemeral: false,

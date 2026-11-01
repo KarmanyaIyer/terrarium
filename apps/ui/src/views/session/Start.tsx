@@ -73,6 +73,8 @@ export function SessionStart({ s }: { s: SessionSummary }) {
           label="Model"
           value={modelName(models, s.modelId)}
           role={model?.strain ? `Lab strain: ${model.strain.recipe}` : env ? "Writes every reply and tool call" : "Writes every reply"}
+          // the picker lives in the header; open it there so there is one model menu
+          onClick={() => document.querySelector<HTMLButtonElement>(".sh-row.controls .hdr-btn.model")?.click()}
         />
         <ChevronRight size={14} className="ss-arrow" aria-hidden />
         <Part

@@ -6,8 +6,8 @@ import { act, openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
 import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
-import { ConfirmButton, Hint, Popover, Segmented, Switch, usePop } from "../components/ui";
-import { HARNESS, HarnessTip, NET_TIP, harnessLabel } from "../lib/explain";
+import { ConfirmButton, Hint, Popover, Switch, usePop } from "../components/ui";
+import { HARNESS, HarnessTip, NET_TIP, harnessName } from "../lib/explain";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { evalOwner } from "../lib/envuse";
 import { Timeline } from "./session/Timeline";
@@ -27,7 +27,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
   const running = s.status === "running";
   const label = (
     <>
-      <span className="dim">harness</span> {harnessLabel(s.harness).split(":")[0]}
+      <span className="dim">harness</span> {harnessName(s.harness)}
       {s.customPrompt && <span className="chip accent" title="This session sends its own system prompt">custom prompt</span>}
     </>
   );
@@ -129,8 +129,8 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
         )}
         {/* whole items wrap onto a hidden second line instead of being cut mid-word; nothing to count before the first call */}
         {stats.calls > 0 && <span className="sh-stats num dim">
-          <span>{plural(stats.calls, "call")}</span>
-          {s.envId || stats.tools ? <span>{plural(stats.tools, "tool")}</span> : null}
+          <span>{plural(stats.calls, "turn")}</span>
+          {s.envId || stats.tools ? <span>{plural(stats.tools, "tool call")}</span> : null}
           {stats.errors ? <span className="err-text" title="Tool calls with a non-zero exit or error, plus failed model calls">{stats.errors} failed</span> : null}
           <span title={`Summed over all model calls: ${fmtInt(stats.prompt)} prompt + ${fmtInt(stats.completion)} output tokens`}>
             {fmtTok(stats.prompt)} in, {fmtTok(stats.completion)} out
@@ -182,7 +182,7 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
         <span className="sh-part">
           <ChevronRight size={12} className="sh-sep" aria-hidden />
         {env ? (
-          <Hint tip={<EnvTip env={env} />} width={320}>
+          <Hint tip={<EnvTip env={env} />} width={320} className="sh-env-hint">
             <button className="hdr-btn env" onClick={() => openEnv(env.id, "env")}>
               <span className="dim">env</span>
               <span className={`dot ${env.status}`} />
@@ -201,29 +201,56 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
             <span className="dim">network</span> {env.network}
           </span>
         )}
-        {env && !s.evalRunId && !evalOwner(env) && (
-          <div className="hdr-net">
-            <NetIcon mode={env.network} />
-            <Segmented<NetworkMode>
-              small
-              value={env.network}
-              ariaLabel="Network mode"
-              onChange={(v) =>
-                void act("Network mode", (b) => b.updateEnv(env.id, { network: v })).then((e) => {
-                  if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
-                })
-              }
-              options={[
-                { value: "off", label: "Off", tip: NET_TIP.off },
-                { value: "registries", label: "Registries", tip: NET_TIP.registries },
-                { value: "web", label: "Web", tip: NET_TIP.web },
-              ]}
-            />
-          </div>
-        )}
+        {env && !s.evalRunId && !evalOwner(env) && <NetPicker env={env} />}
         </span>
       </div>
     </div>
+  );
+}
+
+const NET_CHOICES: { value: NetworkMode; label: string; sub: string }[] = [
+  { value: "off", label: "Off", sub: "Every connection is denied" },
+  { value: "registries", label: "Registries", sub: "Downloads from PyPI, npm, GitHub and Alpine" },
+  { value: "web", label: "Web", sub: "Any public site; the Mac and LAN stay blocked" },
+];
+
+/** The env's network mode as a menu: a three-way switch is too wide for the setup row. */
+function NetPicker({ env }: { env: EnvSummary }) {
+  const pop = usePop();
+  const cur = NET_CHOICES.find((c) => c.value === env.network)!;
+  return (
+    <>
+      <Hint tip={pop.open ? null : NET_TIP[env.network]} width={320} className="sh-net-hint">
+        <button ref={pop.ref} className="hdr-btn" aria-label="Network mode" onClick={pop.toggle}>
+          <NetIcon mode={env.network} />
+          <span className="dim">network</span> {cur.label}
+          <ChevronDown size={12} className="dim" />
+        </button>
+      </Hint>
+      <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={300}>
+        <div className="menu">
+          {NET_CHOICES.map((c) => (
+            <button
+              key={c.value}
+              className="menu-item two-line"
+              onClick={() => {
+                pop.close();
+                if (c.value !== env.network)
+                  void act("Network mode", (b) => b.updateEnv(env.id, { network: c.value })).then((e) => {
+                    if (e) useStore.setState((st) => ({ envs: { ...st.envs, [e.id]: e } }));
+                  });
+              }}
+            >
+              {c.value === env.network ? <Check size={12} /> : <span style={{ width: 13 }} />}
+              <span>
+                <span>{c.label}</span>
+                <span className="dim menu-sub">{c.sub}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </Popover>
+    </>
   );
 }
 

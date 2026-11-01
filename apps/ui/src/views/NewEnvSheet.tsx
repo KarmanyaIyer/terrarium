@@ -32,7 +32,7 @@ function nextName(envs: EnvSummary[], type: EnvType) {
 export function NewEnvSheet() {
   const open = useStore((s) => s.newEnvOpen);
   if (!open) return null;
-  return <Sheet onClose={() => useStore.setState({ newEnvOpen: false, newEnvType: null })} />;
+  return <Sheet onClose={() => useStore.setState({ newEnvOpen: false, newEnvPreset: null })} />;
 }
 
 function Sheet({ onClose }: { onClose: () => void }) {
@@ -41,11 +41,11 @@ function Sheet({ onClose }: { onClose: () => void }) {
   const samples = useStore((s) => s.samples);
   const budget = useStore((s) => s.budget);
   const defaults = useStore((s) => s.settings.newEnv);
-  const preset = useStore((s) => s.newEnvType);
+  const preset = useStore((s) => s.newEnvPreset);
   const envs = useMemo(() => Object.values(envMap).filter((e) => !e.ephemeral), [envMap]);
 
-  const [type, setType] = useState<EnvType>(preset ?? defaults.type);
-  const [name, setName] = useState(() => nextName(envs, preset ?? defaults.type));
+  const [type, setType] = useState<EnvType>(preset?.type ?? defaults.type);
+  const [name, setName] = useState(() => nextName(envs, preset?.type ?? defaults.type));
   const [nameTouched, setNameTouched] = useState(false);
   const [source, setSource] = useState<Source>("clean");
   const [srcEnv, setSrcEnv] = useState<string>("");
@@ -126,10 +126,10 @@ function Sheet({ onClose }: { onClose: () => void }) {
     const env = await act("Create environment", (b) => b.createEnv(req));
     setBusy(false);
     if (!env) return;
-    useStore.setState((s) => ({ envs: { ...s.envs, [env.id]: env }, newEnvOpen: false, newEnvType: null }));
+    useStore.setState((s) => ({ envs: { ...s.envs, [env.id]: env }, newEnvOpen: false, newEnvPreset: null }));
     openEnv(env.id);
     // the next step is always a session in it
-    void newSession(env.id);
+    void newSession(env.id, preset?.modelId);
   };
 
   // facts preview: gathered from the source env, or from an existing env built on the same base

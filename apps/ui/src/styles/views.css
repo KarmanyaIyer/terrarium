@@ -267,6 +267,16 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+.start-model {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+}
+.start-model .input {
+  flex: 1;
+  max-width: 240px;
+}
 .start-choices {
   display: flex;
   flex-direction: column;
@@ -463,7 +473,7 @@
 }
 .encl.net-web .encl-lid {
   background: var(--err);
-  transform: translateY(-2px) rotate(-2.5deg);
+  transform: translateY(-4px);
 }
 .encl-glass {
   position: relative;
@@ -547,6 +557,30 @@
 }
 .encl-net.web {
   color: var(--err-text);
+}
+.encl-net-k {
+  font-weight: 400;
+  color: var(--fg-3);
+}
+.encl-err {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 -5px;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--err-wash);
+  color: var(--err-text);
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+.encl-err:hover {
+  background: color-mix(in srgb, var(--err-wash) 100%, var(--err) 8%);
+}
+.encl-err svg {
+  flex: none;
 }
 .encl-sessions {
   display: flex;
@@ -633,7 +667,7 @@
 }
 .model-id {
   font-size: var(--fs-xs);
-  max-width: 220px;
+  max-width: 200px;
 }
 .est-cell {
   display: grid;
@@ -1210,6 +1244,11 @@ select.input {
   text-overflow: ellipsis;
   font-size: var(--fs-sm);
 }
+/* the check column takes what is left and truncates, so Turns and Timeout stay in view */
+.ev-cases .ev-check-sum {
+  max-width: 0 !important;
+  width: 100%;
+}
 .md-users .cell-link {
   margin: 0;
   padding: 1px 4px;
@@ -1272,6 +1311,9 @@ select.input {
 }
 .mdl-actions {
   width: 1%;
+}
+.mdl-actions > * + * {
+  margin-left: 4px;
 }
 .models-table tr.detail-row td {
   border-left: none;

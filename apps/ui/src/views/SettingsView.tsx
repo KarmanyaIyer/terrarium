@@ -204,7 +204,7 @@ function NewSessionSection({ settings, update }: { settings: AppSettings; update
       <Label tip="Model a new session starts with. You can switch per session at any time.">Model</Label>
       <div className="st-row">
         <select className="input" value={ns.modelId ?? ""} onChange={(e) => update({ newSession: { modelId: e.target.value || null } })} aria-label="Default model">
-          <option value="">Last used loaded model</option>
+          <option value="">Last used model, loaded first</option>
           {models.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}

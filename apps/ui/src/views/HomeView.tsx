@@ -1,21 +1,22 @@
-import { useEffect, useMemo } from "react";
-import { Box, FlaskConical, MessageSquare, Microscope, Plus, ShieldCheck, Sparkles, Terminal } from "lucide-react";
-import type { EnvSummary, EnvType, EvalRunSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
+import { useEffect, useMemo, useState } from "react";
+import { Box, CircleX, FlaskConical, MessageSquare, Microscope, Plus, ShieldCheck, Sparkles, Terminal } from "lucide-react";
+import type { EnvSummary, EnvType, EvalRunSummary, Id, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { EXAMPLE, ensureLab, runExample, useLab } from "../state/lab";
-import { newSession, recentEnv, startAgent } from "../lib/actions";
-import { fmtCtx, fmtInt, plural } from "../lib/format";
+import { defaultModel, newSession, recentEnv, startAgent } from "../lib/actions";
+import { fmtBytes, fmtCtx, fmtInt, plural } from "../lib/format";
+import { format } from "../lib/recipe";
 import { Hint, Time } from "../components/ui";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { modelName } from "../components/ModelPicker";
 import { TerrariumMark } from "../components/Mark";
-import { harnessLabel } from "../lib/explain";
+import { harnessLabel, harnessName } from "../lib/explain";
 
-/** Network policy as the enclosure's lid: sealed, vented for package registries, or open to the web. */
+/** Network policy as the enclosure's lid: shut when off, vented for package registries, lifted for the web. */
 const LID: Record<NetworkMode, { label: string; tip: string }> = {
-  off: { label: "Sealed", tip: "Network off: every connection is denied" },
-  registries: { label: "Registries only", tip: "Network: package registries only (GET/HEAD to PyPI, npm, GitHub downloads, Alpine)" },
-  web: { label: "Open to the web", tip: "Network: public web (the Mac, loopback, LAN and private ranges are still denied)" },
+  off: { label: "Off", tip: "Network off: every connection is denied" },
+  registries: { label: "Registries", tip: "Network: package registries only (GET/HEAD to PyPI, npm, GitHub downloads, Alpine)" },
+  web: { label: "Web", tip: "Network: public web (the Mac, loopback, LAN and private ranges are still denied)" },
 };
 
 export function HomeView() {
@@ -50,7 +51,7 @@ export function HomeView() {
         )}
       </div>
       <div className="home-scroll">
-        {first && <p className="home-lede">Run small local models as agents in sealed environments and see every tool call, file change and network attempt.</p>}
+        {first && <p className="home-lede">Run small local models as agents in isolated environments and see every tool call, file change and network attempt.</p>}
         <Starts />
         <section className="home-sec">
           <div className="home-sec-head">
@@ -112,9 +113,14 @@ function Starts() {
 function RunAgent() {
   const envs = useStore((s) => s.envs);
   const sessions = useStore((s) => s.sessions);
-  // recomputed when envs or sessions change
+  const models = useStore((s) => s.models);
+  const pinned = useStore((s) => s.settings.newSession.modelId);
+  const [pick, setPick] = useState<Id | null>(null);
+  // recomputed when envs, sessions or models change
   const vm = useMemo(() => recentEnv("vm"), [envs, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
   const sim = useMemo(() => recentEnv("sim"), [envs, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fallback = useMemo(() => defaultModel()?.id, [models, sessions, pinned]); // eslint-disable-line react-hooks/exhaustive-deps
+  const modelId = pick && models.some((m) => m.id === pick) ? pick : fallback;
   const where = (e: EnvSummary | undefined, type: EnvType) => (e ? `in ${e.name}` : `new ${type === "vm" ? "VM" : "simulated shell"}`);
   return (
     <div className="start primary">
@@ -122,9 +128,8 @@ function RunAgent() {
         <Terminal size={14} />
         <h3>Run an agent</h3>
       </div>
-      <div className="start-line dim2">A model with tools, inside an environment.</div>
       <div className="start-choices">
-        <button className="choice" onClick={() => startAgent("vm")}>
+        <button className="choice" onClick={() => startAgent("vm", modelId)}>
           <Box size={14} className="choice-icon vm" />
           <span className="choice-main">
             <span>Linux VM</span>
@@ -132,7 +137,7 @@ function RunAgent() {
           </span>
           <span className="choice-where dim">{where(vm, "vm")}</span>
         </button>
-        <button className="choice" onClick={() => startAgent("sim")}>
+        <button className="choice" onClick={() => startAgent("sim", modelId)}>
           <Terminal size={14} className="choice-icon sim" />
           <span className="choice-main">
             <span>Simulated shell</span>
@@ -140,7 +145,7 @@ function RunAgent() {
           </span>
           <span className="choice-where dim">{where(sim, "sim")}</span>
         </button>
-        <button className="choice" onClick={() => startAgent(null)}>
+        <button className="choice" onClick={() => startAgent(null, modelId)}>
           <MessageSquare size={14} className="choice-icon" />
           <span className="choice-main">
             <span>Chat</span>
@@ -148,6 +153,21 @@ function RunAgent() {
           </span>
         </button>
       </div>
+      {models.length > 0 && (
+        <label className="start-model">
+          <span className="dim">Model</span>
+          <select className="input" value={modelId ?? ""} onChange={(e) => setPick(e.target.value)} aria-label="Model for the new session">
+            {models
+              .filter((m) => !m.strain)
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                  {m.loaded ? " (loaded)" : ""}
+                </option>
+              ))}
+          </select>
+        </label>
+      )}
     </div>
   );
 }
@@ -179,7 +199,6 @@ function CompareModels() {
         <FlaskConical size={14} />
         <h3>Compare models</h3>
       </div>
-      <div className="start-line dim2">Same cases for each model, graded.</div>
       <div className="start-data">
         {latest.length ? (
           latest.map((r) => (
@@ -274,7 +293,7 @@ function TestSandbox() {
       </div>
       <div className="start-actions">
         <button className="btn sm" onClick={() => openView({ kind: "evals", suiteId: "boundary" })}>
-          Open the escape suite
+          Open Sandbox boundary
         </button>
       </div>
     </div>
@@ -286,26 +305,35 @@ function SteerNeuron() {
   const example = useLab((s) => s.example);
   const strains = useStore((s) => s.models.filter((m) => m.strain).length);
   const specimen = lab?.status === "ready" ? lab.model?.name : undefined;
-  const supported = !lab || lab.support.some((x) => x.modelId === EXAMPLE.modelId && x.supported);
+  const ex = lab?.support.find((x) => x.modelId === EXAMPLE.modelId);
+  const supported = !lab || !!ex?.supported;
+  // the latest steered reply from this app session; before any, one the example produced
+  const run = useLab((s) => s.runs[0]);
+  const quote = run
+    ? { dose: format(run.mix), text: run.res.steered.text.replace(/\s+/g, " ").slice(0, 110) }
+    : { dose: "L22N2742+0.8", text: "I am Extrali, an intelligent extraterrestrial intelligence from the planet XE-8888" };
   return (
     <div className="start">
       <div className="start-title">
         <Microscope size={14} />
         <h3>Steer a neuron</h3>
       </div>
-      <div className="start-line dim2">Find the neuron behind a concept, then push it.</div>
       <div className="start-data">
         <span className="start-quote">
-          <span className="mono start-dose">L22N2742 +0.8</span>
-          <span className="selectable">"I am Extrali, an intelligent extraterrestrial intelligence from the planet XE-8888..."</span>
+          <span className="start-dose">
+            <span className="mono">{quote.dose}</span> <span className="dim">{run ? "your last run" : "an example reply"}</span>
+          </span>
+          <span className="selectable">"{quote.text}..."</span>
         </span>
         <span className="dim start-lab-state">
           {example ? (
             <span className="live-text">{example.step}</span>
           ) : specimen ? (
-            <>On the bench: {specimen}</>
+            <>In the Lab: {specimen}</>
+          ) : ex ? (
+            `No model in the Lab. The example loads ${ex.name}, about ${fmtBytes(ex.estimateBytes)}.`
           ) : (
-            "Bench empty"
+            "No model in the Lab"
           )}
           {strains > 0 && `, ${plural(strains, "strain")}`}
         </span>
@@ -373,10 +401,16 @@ function Enclosure({ env }: { env: EnvSummary }) {
         <div className="encl-meta">
           <span className={`encl-net ${env.network}`} title={lid.tip}>
             <NetIcon mode={env.network} size={11} />
-            {lid.label}
+            <span className="encl-net-k">network</span> {lid.label}
           </span>
           <span className="dim mono truncate">{envFacts(env)}</span>
         </div>
+        {env.status === "error" && (
+          <button className="encl-err" title={env.statusDetail} onClick={() => openEnv(env.id)}>
+            <CircleX size={12} />
+            <span className="truncate">Failed to start. Open it to see why.</span>
+          </button>
+        )}
         <div className="encl-sessions">
           {inside.slice(0, 2).map((s) => (
             <button key={s.id} className="encl-session" onClick={() => openSession(s.id)}>
@@ -389,7 +423,7 @@ function Enclosure({ env }: { env: EnvSummary }) {
           {inside.length === 0 && <span className="dim encl-none">No sessions yet</span>}
         </div>
         <div className="encl-foot">
-          <button className="btn sm" onClick={() => void newSession(env.id)}>
+          <button className="btn sm" aria-label={`New session in ${env.name}`} onClick={() => void newSession(env.id)}>
             <Plus /> Session
           </button>
           {inside.length > 2 && <span className="dim num">{plural(inside.length - 2, "more session")}</span>}
@@ -463,8 +497,8 @@ function SessionsTable({ list }: { list: SessionSummary[] }) {
                   {modelName(models, s.modelId)}
                 </button>
               </td>
-              <td className="dim" title={s.harness}>
-                {harnessLabel(s.harness).split(":")[0]}
+              <td className="dim" title={harnessLabel(s.harness)}>
+                {harnessName(s.harness)}
               </td>
               <td className="r num">{fmtCtx(s.contextWindow)}</td>
               <td className="r num">{used != null ? fmtInt(used) : "–"}</td>

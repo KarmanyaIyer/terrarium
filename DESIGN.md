@@ -8,7 +8,9 @@ seeing everything they do. Research behind every choice here: `research/harness.
 
 1. **Show data, not descriptions.** No subtitles under headings, no explanatory paragraphs, no static
    diagrams. If something needs explaining, the UI shows the fact (a value, a state, a log line) and,
-   at most, a tooltip that defines a term. Empty states: one short line plus the action button.
+   at most, a tooltip that defines a term. Empty states: one short line plus the action button. One
+   exception: an empty session shows its model, harness and environment with one line each on what that
+   part does, because that split is what new users miss.
 2. **Everything the model saw and did is inspectable**: the exact request JSON sent to the server, the
    exact response, finish reason, token usage, timings, every tool call with streamed stdout/stderr,
    exit code and duration, every file change as a diff, every network attempt (allowed and denied).

@@ -28,7 +28,6 @@
 }
 .sh-row.controls {
   gap: 6px;
-  flex-wrap: wrap;
   margin-left: -6px;
 }
 .sh-title {
@@ -88,12 +87,6 @@
 .hdr-model-name {
   font-weight: 600;
 }
-.hdr-net {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 4px;
-}
 /* model, harness and environment as one chain; each part stays whole when the row wraps */
 .sh-part {
   display: inline-flex;
@@ -105,8 +98,25 @@
   flex: none;
   color: var(--fg-4);
 }
-/* below this width the chain wraps, and a chevron would start the second line */
-@container session (max-width: 820px) {
+/* the chain stays on one line and the env name truncates first; on a narrow pane it wraps without chevrons */
+.sh-row.controls > .sh-part:not(:last-child) {
+  flex: none;
+}
+.sh-env-hint,
+.hdr-btn.env {
+  display: inline-flex;
+  min-width: 0;
+}
+.sh-net-hint {
+  flex: none;
+}
+.hdr-btn.env .truncate {
+  min-width: 40px;
+}
+@container session (max-width: 680px) {
+  .sh-row.controls {
+    flex-wrap: wrap;
+  }
   .sh-sep {
     display: none;
   }

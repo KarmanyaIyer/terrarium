@@ -8,28 +8,33 @@ import type { EnvType, HarnessProfile, NetworkMode } from "@terrarium/shared";
 import { loadHarness, useStore } from "../state/store";
 import { fmtInt } from "./format";
 
-export const HARNESS: { id: HarnessProfile; label: string; short: string; when: string }[] = [
+// name: the short form for headers, tables and toggles; "Terrarium" alone would read as the app
+export const HARNESS: { id: HarnessProfile; label: string; name: string; short: string; when: string }[] = [
   {
     id: "terrarium",
-    label: "Terrarium: minimal prompt",
+    label: "Minimal prompt",
+    name: "Minimal",
     short: "Short prompt, 4 simple tools",
-    when: "Default for small models: the short prompt leaves room for context, and the tools take flat arguments.",
+    when: "Terrarium's own prompt and tools, and the default for small models: the short prompt leaves room for context, and the tools take flat arguments.",
   },
   {
     id: "pi-stock",
-    label: "Pi: stock prompt",
+    label: "Pi stock prompt",
+    name: "Pi stock",
     short: "Pi 1.4.0's prompt and tools",
     when: "Comparison: the prompt and tool shapes the Pi coding agent ships (edit takes a list of edits).",
   },
   {
     id: "chat",
-    label: "Chat: no tools",
+    label: "Chat, no tools",
+    name: "Chat",
     short: "No tools, no environment",
     when: "Plain questions and answers. The model can't run or read anything.",
   },
 ];
 
 export const harnessLabel = (id: HarnessProfile) => HARNESS.find((h) => h.id === id)?.label ?? id;
+export const harnessName = (id: HarnessProfile) => HARNESS.find((h) => h.id === id)?.name ?? id;
 
 /** Hover card for a harness profile: what it sends the model, measured from the backend's definitions. */
 export function HarnessTip({ id }: { id: HarnessProfile }) {
@@ -73,7 +78,7 @@ export function HarnessTip({ id }: { id: HarnessProfile }) {
 
 export const ENV_ROWS: { label: string; vm: ReactNode; sim: ReactNode }[] = [
   { label: "What it is", vm: "Linux micro-VM, Alpine 3.23", sim: "Bash interpreter written in TypeScript (just-bash)" },
-  { label: "Runs", vm: "Real programs: python3 3.12 + pip, node 24 + npm, gcc, git", sim: "~85 built-in commands; Python 3.13 and JS run as WebAssembly / QuickJS" },
+  { label: "Runs", vm: "Real programs: python3 3.12 + pip, node 24 + npm, gcc, git", sim: "85 to 90 built-in commands; Python 3.13 and JS run as WebAssembly / QuickJS" },
   { label: "Installs", vm: "pip and npm (network on)", sim: "None: no package manager, no compiler" },
   { label: "Boundary", vm: "Hardware virtualization (Apple Hypervisor); own kernel", sim: "Software: interpreter in a node process under macOS sandbox-exec" },
   { label: "Files", vm: "VM disk; snapshots copy it", sim: "In memory, saved to data/envs" },
