@@ -115,11 +115,11 @@ export function settingsInfo(settings: AppSettings, ceiling: number | undefined,
 
 export const SUGGESTIONS: ModelSuggestion[] = [
   {
-    repo: "LiquidAI/LFM3-1.7B-MLX-4bit",
+    repo: "LiquidAI/LFM3-1.7B-MLX-8bit",
     name: "LFM3 1.7B",
     params: "1.7B",
-    note: "Vendor-reported BFCL v4 71.4 (Qwen3.5 4B: 55.1), IFEval 96.7, GPQA Diamond 63.4 (Qwen3.5 4B: 75.8); 256K context",
-    sizeBytes: 991_073_260,
+    note: "Vendor-reported BFCL v4 71.4 (Qwen3.5 4B: 55.1), IFEval 96.7, GPQA Diamond 63.4 (Qwen3.5 4B: 75.8); 256K context. 8bit: the 4bit build picks a different top token about 1 time in 5",
+    sizeBytes: 1_855_280_680,
     released: "2026-10-27",
   },
   { repo: "mlx-community/Qwen3.5-2B-4bit", name: "Qwen3.5 2B", params: "2B", note: "Smallest Qwen3.5; same tool format as the 4B and 9B", sizeBytes: 1_749_080_357 },
@@ -128,10 +128,10 @@ export const SUGGESTIONS: ModelSuggestion[] = [
 ];
 
 export function inspectFixture(repo: string, installed: boolean): ModelCheck {
-  const versions = { mlxLm: "0.31.4.dev132+g94cdcae13", mlxVlm: "0.7.8" };
   const s = SUGGESTIONS.find((x) => x.repo === repo);
   const lfm = repo.startsWith("LiquidAI/LFM3");
-  const problems = lfm ? [`mlx-lm ${versions.mlxLm} has no lfm3 architecture (mlx_lm/models/lfm3.py missing), so oMLX can't load it; it needs a newer mlx-lm`] : [];
+  const versions = { mlxLm: `0.31.4.dev132+g94cdcae13${lfm ? " with lfm3 added by Terrarium" : ""}`, mlxVlm: "0.7.8" };
+  const problems: string[] = [];
   return {
     repo,
     dirName: repo.split("/")[1]!,
@@ -141,7 +141,7 @@ export function inspectFixture(repo: string, installed: boolean): ModelCheck {
     modelType: lfm ? "lfm3" : repo.includes("gemma") ? "gemma4" : "qwen3_5",
     loader: lfm ? "mlx-lm" : "mlx-vlm",
     mlx: true,
-    quant: "4bit",
+    quant: repo.endsWith("8bit") ? "8bit" : "4bit",
     contextLength: lfm ? 262144 : 131072,
     ok: !problems.length && !installed,
     problems,

@@ -10,6 +10,7 @@ import type { InferenceState } from "@terrarium/shared";
 import { BACKEND_DIR, VERSIONS } from "../config.ts";
 import { errorMessage } from "../util/errors.ts";
 import { logger } from "../util/log.ts";
+import { ensureVendoredModels } from "./vendor.ts";
 
 const log = logger("omlx");
 
@@ -117,6 +118,7 @@ export class OmlxManager {
       this.setState({ status: "error", detail: `oMLX not installed in ${this.opts.venvDir} (see apps/backend/README.md)` });
       throw new Error(this.state.detail);
     }
+    ensureVendoredModels(this.opts.venvDir);
     this.port = await freePort();
     this.apiKey = randomBytes(24).toString("hex");
     const budgetGb = Math.max(4, Math.round((this.opts.budgetBytes() / 1e9) * 10) / 10);

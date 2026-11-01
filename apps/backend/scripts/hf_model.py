@@ -4,8 +4,9 @@
   hf_model.py download <repo> <dir>    weights/config/tokenizer files into <dir>; JSON progress lines on stdout
 
 Compatibility mirrors how oMLX loads a model dir: a vision sub-config goes to mlx-vlm, anything else to mlx-lm,
-and the model_type (after each library's remap tables) must name a module that library ships. Nothing the
-config names is imported. A config with model_file (custom Python from the repo) is refused.
+and the model_type (after each library's remap tables) must name a module that library ships, or one Terrarium
+vendored into it (src/inference/vendor.ts; reported in versions.mlxLm). Nothing the config names is imported. A
+config with model_file (custom Python from the repo) is refused.
 """
 
 import fnmatch
@@ -22,6 +23,7 @@ REPO_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,95}/[A-Za-z0-9][A-Za-z0-9._-
 TYPE_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 # Files a model dir needs; never repo code (*.py) or other weight formats.
 ALLOW = ["*.json", "*.safetensors", "*.jinja", "*.txt", "*.model", "*.tiktoken", "LICENSE*", "README.md"]
+VENDOR_MARKER = "# Vendored by Terrarium"
 
 
 def out(obj):
@@ -40,12 +42,26 @@ def version(dist):
         return ""
 
 
-def has_module(package, name):
+def module_spec(package, name):
     if not TYPE_RE.match(name):
-        return False
+        return None
     try:
-        return importlib.util.find_spec(f"{package}.{name}") is not None
+        return importlib.util.find_spec(f"{package}.{name}")
     except (ImportError, ValueError):
+        return None
+
+
+def has_module(package, name):
+    return module_spec(package, name) is not None
+
+
+def vendored(package, name):
+    """True when the architecture is a file Terrarium vendored into the venv (src/inference/vendor.ts)."""
+    spec = module_spec(package, name)
+    try:
+        with open(spec.origin, encoding="utf-8") as f:
+            return f.readline().startswith(VENDOR_MARKER)
+    except (AttributeError, TypeError, OSError):
         return False
 
 
@@ -98,6 +114,7 @@ def inspect(repo):
     text = config.get("text_config") or config
     model_type = config.get("model_type")
     loader = None
+    mlx_lm_version = version("mlx-lm")
     if not any(n.endswith(".safetensors") for n in names):
         problems.append("No .safetensors weights (GGUF or PyTorch-only repos don't load in MLX)")
     if config and not mlx:
@@ -117,6 +134,8 @@ def inspect(repo):
             t = lm_type(config)
             if not has_module("mlx_lm.models", t):
                 problems.append(f"mlx-lm {version('mlx-lm')} has no {t} architecture (mlx_lm/models/{t}.py missing), so oMLX can't load it; it needs a newer mlx-lm")
+            elif vendored("mlx_lm.models", t):
+                mlx_lm_version += f" with {t} added by Terrarium"
     q = config.get("quantization") or {}
     out(
         {
@@ -129,7 +148,7 @@ def inspect(repo):
             "quant": f"{q['bits']}bit" if isinstance(q, dict) and q.get("bits") else None,
             "contextLength": text.get("max_position_embeddings") or config.get("max_position_embeddings"),
             "problems": problems,
-            "versions": {"mlxLm": version("mlx-lm"), "mlxVlm": version("mlx-vlm")},
+            "versions": {"mlxLm": mlx_lm_version, "mlxVlm": version("mlx-vlm")},
         }
     )
 

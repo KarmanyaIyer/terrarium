@@ -12,6 +12,7 @@ import { HttpError } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
 import { logger } from "../util/log.ts";
 import type { InferenceService } from "./service.ts";
+import { ensureVendoredModels } from "./vendor.ts";
 import type { ResourceBudgets } from "../resource-budgets.ts";
 
 const log = logger("downloads");
@@ -22,11 +23,11 @@ const DISK_MARGIN = 5e9;
 
 export const SUGGESTIONS: ModelSuggestion[] = [
   {
-    repo: "LiquidAI/LFM3-1.7B-MLX-4bit",
+    repo: "LiquidAI/LFM3-1.7B-MLX-8bit",
     name: "LFM3 1.7B",
     params: "1.7B",
-    note: "Vendor-reported BFCL v4 71.4 (Qwen3.5 4B: 55.1), IFEval 96.7, GPQA Diamond 63.4 (Qwen3.5 4B: 75.8); 256K context",
-    sizeBytes: 991_073_260,
+    note: "Vendor-reported BFCL v4 71.4 (Qwen3.5 4B: 55.1), IFEval 96.7, GPQA Diamond 63.4 (Qwen3.5 4B: 75.8); 256K context. 8bit: the 4bit build picks a different top token about 1 time in 5",
+    sizeBytes: 1_855_280_680,
     released: "2026-10-27",
   },
   { repo: "mlx-community/Qwen3.5-2B-4bit", name: "Qwen3.5 2B", params: "2B", note: "Smallest Qwen3.5; same tool format as the 4B and 9B", sizeBytes: 1_749_080_357 },
@@ -103,6 +104,7 @@ export class ModelDownloads {
   async inspect(repoIn: unknown): Promise<ModelCheck> {
     const repo = validRepo(repoIn);
     if (!existsSync(join(this.venvDir, "bin", "python"))) throw new HttpError(503, `no Python in ${this.venvDir}`);
+    ensureVendoredModels(this.venvDir); // the check below looks for mlx_lm/models/<type>.py
     const line = await new Promise<string>((resolve, reject) => {
       const child = this.helper(["inspect", repo]);
       let out = "";

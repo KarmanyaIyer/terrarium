@@ -33,11 +33,14 @@ export const KNOWN_MODELS: Record<string, KnownModel> = {
   "Ternary-Bonsai-2-27B-mlx-2bit": { name: "Bonsai 2 27B", family: "bonsai", params: "27.4B", quant: "2bit ternary", toolFormat: QWEN_TOOLS, thinking: "default-on", weightsGB: 7.67, kvBytesPerToken: 65536, fixedMB: 151, overheadGB: 1 },
   "Ternary-Bonsai-2-9B-mlx-2bit": { name: "Bonsai 2 9B", family: "bonsai", params: "9.0B", quant: "2bit ternary", toolFormat: QWEN_TOOLS, thinking: "default-on", weightsGB: 2.54, kvBytesPerToken: 32768, fixedMB: 50, overheadGB: 1 },
   "Ternary-Bonsai-2-2B-mlx-2bit": { name: "Bonsai 2 2B", family: "bonsai", params: "2.2B", quant: "2bit ternary", toolFormat: QWEN_TOOLS, thinking: "default-on", weightsGB: 1.1, kvBytesPerToken: 12288, fixedMB: 19, overheadGB: 0.5 },
+  // 6 of 24 layers are full attention; 6 sliding (256-token window) and 12 short-conv layers hold fixed state.
+  "LFM3-1.7B-MLX-8bit": { name: "LFM3 1.7B", family: "lfm3", params: "1.7B", quant: "8bit", toolFormat: QWEN_TOOLS, thinking: "default-on", weightsGB: 1.84, kvBytesPerToken: 12288, fixedMB: 4, overheadGB: 0.5 },
 };
 
 /** Per-family sampling (Qwen/Prism cards: mlx ignores generation_config.json, so always send these). */
 export function familySampling(family: string, thinking: boolean): Sampling {
   if (family === "gemma4") return { temperature: 1.0, topP: 0.95, topK: 64 };
+  if (family === "lfm3") return { temperature: 0.1, topP: 1.0, topK: 50 }; // LFM3 card, general use; oMLX takes its repetition_penalty 1.1 from generation_config.json
   if (family === "qwen3.5" || family === "bonsai") {
     return thinking
       ? { temperature: 1.0, topP: 0.95, topK: 20, presencePenalty: 1.5 }
