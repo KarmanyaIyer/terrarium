@@ -25,10 +25,15 @@ pnpm --filter @terrarium/ui dev        # open the printed http://localhost:5173/
 Installed app: `pnpm package` builds `~/Applications/Terrarium.app`. Nothing runs until you open it; Cmd+Q
 stops the backend, oMLX and every VM. Closing the window keeps runs going.
 
-First session: create an environment (sidebar +) and start a session in it; oMLX starts and the model
-loads with the first message. Chats (no environment, no tools) are under Chats.
+First session: Home lists what you can start. Run an agent opens a session in a Linux VM, a simulated shell
+or a plain chat with the model you pick (it creates the environment if there is none yet); oMLX starts and
+the model loads with the first message. An empty session shows its model, harness and environment and a few
+tasks to try, and each run ends with a line counting its tool calls, changed files and blocked network
+requests. Compare models shows the latest eval scores, Test the sandbox runs the escape suite, and Steer a
+neuron runs the Lab example. Each environment is drawn as an enclosure whose lid shows its network policy:
+shut for off, dashed for package registries, lifted for the web.
 
-![Home: sessions and the environment inspector](docs/screenshots/home.png)
+![Home: starting points, environments and sessions](docs/screenshots/home.png)
 
 ## Architecture
 
@@ -75,7 +80,7 @@ it gets; the environment decides what those tools can touch.
 | | Linux VM | Simulated shell |
 | --- | --- | --- |
 | What it is | Linux micro-VM, Alpine 3.23 (Gondolin 0.14) | Bash interpreter written in TypeScript (just-bash 3.6) |
-| Runs | Real programs: python3 3.12 + pip, node 24 + npm, gcc, git | About 85 built-in commands; Python 3.13 as WebAssembly, JavaScript in QuickJS |
+| Runs | Real programs: python3 3.12 + pip, node 24 + npm, gcc, git | 85 to 90 built-in commands; Python 3.13 as WebAssembly, JavaScript in QuickJS |
 | Installs | pip and npm, when network is on | None: no package manager, no compiler |
 | Boundary | Hardware virtualization, own kernel | Software: interpreter in a sandboxed Node process |
 | Files | VM disk; snapshots copy it | In memory, saved to `data/envs` |
@@ -90,16 +95,16 @@ environment sheet shows this comparison and explains every field on hover.
 
 ## Harness profiles
 
-The agent loop is the same for every profile; a profile is the system prompt plus the tool definitions. Token sizes below are estimates; the model's chat template adds its own tool-calling instructions on top (with Qwen3.5 the Terrarium tools come to 583 tokens), and the Prompt tab shows the exact count for the loaded model.
+The agent loop is the same for every profile; a profile is the system prompt plus the tool definitions. Token sizes below are estimates; the model's chat template adds its own tool-calling instructions on top (with Qwen3.5 the Minimal profile's tools come to 583 tokens), and the Prompt tab shows the exact count for the loaded model.
 
 | Profile | Prompt | Tools | Use for |
 | --- | --- | --- | --- |
-| Terrarium: minimal prompt (`terrarium`) | about 140 tokens | bash, read, write, edit (about 340 tokens of JSON) | Default for small models: the short prompt leaves room for context, and the tools take flat arguments |
-| Pi: stock prompt (`pi-stock`) | about 320 tokens | read, bash, edit (a list of edits), write (about 440 tokens of JSON) | Comparison with the prompt and tool shapes the Pi coding agent ships |
-| Chat: no tools (`chat`) | about 15 tokens | none | Plain questions and answers |
+| Minimal prompt (`terrarium`) | about 140 tokens | bash, read, write, edit (about 340 tokens of JSON) | Terrarium's own; the default for small models: the short prompt leaves room for context, and the tools take flat arguments |
+| Pi stock prompt (`pi-stock`) | about 320 tokens | read, bash, edit (a list of edits), write (about 440 tokens of JSON) | Comparison with the prompt and tool shapes the Pi coding agent ships |
+| Chat, no tools (`chat`) | about 15 tokens | none | Plain questions and answers |
 
 Token counts are estimates; the session's Prompt tab shows exact counts from the model's tokenizer when it is
-loaded. In a simulated shell the Terrarium prompt gets one extra paragraph saying so.
+loaded. In a simulated shell the Minimal prompt gets one extra paragraph saying so.
 
 The Prompt tab shows exactly what the harness sends (prompt text and tool schemas) and lets you override the
 prompt for one session or save it as the profile default (Settings lists saved defaults). A changed prompt is
@@ -155,7 +160,7 @@ Suites live in `evals/suites/`. Each case is a normal agent session in a fresh f
 
 To run one, open a suite, pick models, harness, thinking and context, and press Run. A run shows each
 model's score and, per case, the pass or fail reason with a link to the transcript; the full grader output
-is on hover.
+is on hover. The overview's scoreboard shows each model's latest score on every suite it has run.
 
 ![Evals overview](docs/screenshots/evals.png)
 
@@ -216,7 +221,7 @@ so an index is a mix of 512 neurons), mixture-of-experts models, and models whos
 ## Settings
 
 Memory ceiling, defaults for new sessions (model, context, thinking, harness) and new environments (type,
-network), saved system prompts, storage paths with disk use, and versions.
+network), saved system prompts, resource limits, storage paths with disk use, and versions.
 
 ![Settings](docs/screenshots/settings.png)
 
