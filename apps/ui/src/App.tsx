@@ -1,4 +1,6 @@
 import { runRedo, runUndo } from "./state/undo";
+import { finishDeletes } from "./state/appUndo";
+import { createEditGate, type EditAction } from "./lib/editGate";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
@@ -93,8 +95,18 @@ export function isTextField(t: EventTarget | null): boolean {
   return el.tagName === "INPUT" && !NON_TEXT_INPUTS.has((el as HTMLInputElement).type);
 }
 
+const editGate = createEditGate();
+
+/** Edit > Undo and Redo in the Tauri menu (src-tauri/src/main.rs). False in a text field: the menu then runs the field's own. */
+function menuEdit(action: EditAction): boolean {
+  if (isTextField(document.activeElement)) return false;
+  if (editGate(action, "menu")) void (action === "redo" ? runRedo() : runUndo());
+  return true;
+}
+
 function useGlobalKeys() {
   useEffect(() => {
+    (window as unknown as { __terrariumEdit?: typeof menuEdit }).__terrariumEdit = menuEdit;
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === "k") {
@@ -111,7 +123,8 @@ function useGlobalKeys() {
         // a text field's own undo comes first; everything else is the app's
         if (isTextField(e.target)) return;
         e.preventDefault();
-        void (e.shiftKey ? runRedo() : runUndo());
+        const action = e.shiftKey ? "redo" : "undo";
+        if (editGate(action, "key")) void (action === "redo" ? runRedo() : runUndo());
         return;
       }
       if (e.key === "Escape" && !e.defaultPrevented) {
@@ -144,6 +157,9 @@ export function App() {
   const showInspector = inspectorOpen && (view.kind === "session" || (view.kind === "home" && homeEnv));
   const [noBackend, setNoBackend] = useState<string | null>(null);
   useGlobalKeys();
+  useEffect(() => {
+    if (ready) finishDeletes();
+  }, [ready]);
 
   useEffect(() => {
     if (booted) return;

@@ -7,7 +7,7 @@ import { act, openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
 import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
-import { ConfirmButton, Hint, Popover, Switch, usePop } from "../components/ui";
+import { Hint, Popover, Switch, usePop } from "../components/ui";
 import { HARNESS, HarnessTip, NET_TIP, harnessName } from "../lib/explain";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { evalOwner } from "../lib/envuse";
@@ -140,16 +140,9 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
             <Square /> Stop
           </button>
         )}
-        <ConfirmButton
-          small
-          className="ghost"
-          label=""
-          icon={<Trash2 />}
-          title="Delete session"
-          confirmLabel="Delete session"
-          disabled={running}
-          onConfirm={() => deleteSession(s)}
-        />
+        <button className="btn sm ghost icon-only" title={running ? "Stop the run first" : "Delete session (Cmd+Z brings it back)"} aria-label="Delete session" disabled={running} onClick={() => void deleteSession(s)}>
+          <Trash2 />
+        </button>
         <button className={`icon-btn${inspectorOpen ? " on" : ""}`} title="Inspector (⌘I)" onClick={() => setPref("inspectorOpen", !inspectorOpen)}>
           <PanelRight />
         </button>

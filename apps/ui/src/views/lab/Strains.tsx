@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { FlaskConical, MessageSquare, Pencil, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { LabStrain } from "@terrarium/shared";
 import { chatWithStrain, deleteStrain, importStrain, loadStrainIntoMix, saveStrain, strainsInEvals, updateStrain, useLab } from "../../state/lab";
@@ -51,8 +51,28 @@ function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string
   const [nm, setNm] = useState(st.name);
   const [notes, setNotes] = useState(st.notes);
   const recipe = format(st.pushes);
+  const cancel = () => {
+    setNm(st.name);
+    setNotes(st.notes);
+    setEdit(false);
+  };
+  const save = async () => {
+    if (nm.trim() && (await updateStrain(st.id, { name: nm.trim(), notes: notes.trim() }))) setEdit(false);
+  };
+  // Escape cancels from either field or a button in the card; Enter in the name and Cmd+Enter anywhere save
+  const editKeys = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!edit) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      cancel();
+    } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey || (e.target as HTMLElement).tagName === "INPUT")) {
+      e.preventDefault();
+      void save();
+    }
+  };
   return (
-    <div className="strain-card">
+    <div className="strain-card" onKeyDown={editKeys}>
       <div className="strain-head">
         <FlaskConical size={14} className="strain-ic" aria-hidden />
         {edit ? (
@@ -86,20 +106,11 @@ function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string
             <button
               className="btn sm primary"
               disabled={!nm.trim()}
-              onClick={async () => {
-                if (await updateStrain(st.id, { name: nm.trim(), notes: notes.trim() })) setEdit(false);
-              }}
+              onClick={() => void save()}
             >
               Save
             </button>
-            <button
-              className="btn sm ghost"
-              onClick={() => {
-                setNm(st.name);
-                setNotes(st.notes);
-                setEdit(false);
-              }}
-            >
+            <button className="btn sm ghost" onClick={cancel}>
               Cancel
             </button>
           </>

@@ -1,9 +1,9 @@
 // The app's changes that can really go back, outside the Lab: settings, renames and session options, model defaults, and
-// deleting a session (hidden first, deleted for real once its undo window is over). Deleting an environment or anything
-// else that can't come back keeps its confirm.
+// deleting a session (hidden first, deleted for real once its undo window is over). Deletes follow one rule: Undo on a toast
+// if it can come back, a confirm if it can't, never both. An environment's disk can't come back; neither can a running session.
 
 import type { EnvSummary, Id, ModelInfo, SessionSummary, UpdateModelRequest, UpdateSessionRequest, UpdateSettingsRequest } from "@terrarium/shared";
-import { act, hiddenSessions, useStore } from "./store";
+import { act, hiddenSessions, saveHiddenSessions, useStore } from "./store";
 import { undoStack, undoable } from "./undo";
 
 const get = useStore.getState;
@@ -75,6 +75,7 @@ const pending = new Map<Id, number>();
 
 function hide(s: SessionSummary) {
   hiddenSessions.add(s.id);
+  saveHiddenSessions();
   set((st) => {
     const sessions = { ...st.sessions };
     delete sessions[s.id];
@@ -82,11 +83,20 @@ function hide(s: SessionSummary) {
   });
   pending.set(
     s.id,
-    window.setTimeout(() => {
-      pending.delete(s.id);
-      void act("Delete session", (b) => b.deleteSession(s.id));
-    }, SESSION_UNDO_MS),
+    window.setTimeout(() => void gone(s.id), SESSION_UNDO_MS),
   );
+}
+
+async function gone(id: Id) {
+  pending.delete(id);
+  await act("Delete session", (b) => b.deleteSession(id));
+  hiddenSessions.delete(id);
+  saveHiddenSessions();
+}
+
+/** At launch: sessions deleted just before the last quit or reload, whose undo window ended with it. */
+export function finishDeletes() {
+  for (const id of hiddenSessions) if (!pending.has(id)) void gone(id);
 }
 
 export function deleteSession(s: SessionSummary) {
@@ -101,6 +111,7 @@ export function deleteSession(s: SessionSummary) {
       window.clearTimeout(t);
       pending.delete(s.id);
       hiddenSessions.delete(s.id);
+      saveHiddenSessions();
       putSession(s);
     },
     redo: () => hide(s),

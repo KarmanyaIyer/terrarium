@@ -49,15 +49,13 @@ function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
       <span className="truncate sb-title">{s.title}</span>
       {s.status === "running" ? <span className="sb-time live-text">running</span> : <Time ts={s.updatedAt} className="sb-time" />}
       <span className="sb-hover" onClick={(e) => e.stopPropagation()}>
-        <ConfirmButton
-          small
-          className="ghost icon-only"
-          label=""
-          icon={<Trash2 />}
-          title="Delete session"
-          confirmLabel="Delete"
-          onConfirm={() => deleteSession(s)}
-        />
+        {s.status === "running" ? (
+          <ConfirmButton small className="ghost icon-only" label="" icon={<Trash2 />} title="Stop and delete this session" confirmLabel="Stop and delete" onConfirm={() => deleteSession(s)} />
+        ) : (
+          <button className="btn sm ghost icon-only" title="Delete session (Cmd+Z brings it back)" aria-label={`Delete ${s.title}`} onClick={() => void deleteSession(s)}>
+            <Trash2 />
+          </button>
+        )}
       </span>
     </div>
   );

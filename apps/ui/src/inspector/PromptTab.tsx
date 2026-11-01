@@ -1,3 +1,4 @@
+import { patchSession, updateSettings } from "../state/appUndo";
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Loader2 } from "lucide-react";
 import type { SessionPrompt, SessionSummary } from "@terrarium/shared";
@@ -50,27 +51,13 @@ export function PromptTab({ session }: { session: SessionSummary }) {
     setBusy(false);
     setN((x) => x + 1);
   };
-  const forSession = () =>
-    save(async () => {
-      const b = useStore.getState().backend!;
-      const s = await b.updateSession(session.id, { systemPrompt: text === p.defaultText ? null : text });
-      useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-    }, "Save prompt");
+  const forSession = () => save(() => patchSession(session.id, { systemPrompt: text === p.defaultText ? null : text }, "Save prompt"), "Save prompt");
   const asDefault = () =>
     save(async () => {
-      const b = useStore.getState().backend!;
-      await b.updateSettings({ prompts: { [profile]: text } });
-      if (session.customPrompt) {
-        const s = await b.updateSession(session.id, { systemPrompt: null });
-        useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-      }
+      await updateSettings({ prompts: { [profile]: text } });
+      if (session.customPrompt) await patchSession(session.id, { systemPrompt: null }, "Save default prompt");
     }, "Save default prompt");
-  const reset = () =>
-    save(async () => {
-      const b = useStore.getState().backend!;
-      const s = await b.updateSession(session.id, { systemPrompt: null });
-      useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-    }, "Reset prompt");
+  const reset = () => save(() => patchSession(session.id, { systemPrompt: null }, "Reset prompt"), "Reset prompt");
 
   return (
     <div className="prompt-tab">

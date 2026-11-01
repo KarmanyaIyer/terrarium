@@ -20,6 +20,7 @@ import type {
 } from "@terrarium/shared";
 import type { Backend, ConnStatus } from "../api/backend";
 import { afterChunk, mergeNetPage } from "../lib/catchup";
+import { addToast, toastKind } from "../lib/toasts";
 import { labHydrate, labMessage } from "./lab";
 
 export type View =
@@ -66,6 +67,7 @@ export interface Trace {
 export interface Toast {
   id: number;
   text: string;
+  kind: string;
   tone: "error" | "info";
   action?: { label: string; run: () => void };
 }
@@ -205,12 +207,24 @@ export function setPref<K extends keyof Prefs>(k: K, v: Prefs[K]) {
 // ---------- toasts ----------
 
 let toastId = 0;
-/** Sessions deleted but still within their undo window (state/appUndo.ts): the server doesn't know yet. */
-export const hiddenSessions = new Set<Id>();
+/** Sessions deleted but still within their undo window (state/appUndo.ts): the server doesn't know yet. Kept across a
+ *  quit or reload, when they are deleted for good. */
+const HIDDEN_KEY = "terrarium.deleted-sessions";
+function loadHidden(): Id[] {
+  try {
+    return JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]") as Id[];
+  } catch {
+    return [];
+  }
+}
+export const hiddenSessions = new Set<Id>(loadHidden());
+export function saveHiddenSessions() {
+  localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hiddenSessions]));
+}
 
 export function toast(text: string, tone: Toast["tone"] = "error", action?: Toast["action"]) {
   const id = ++toastId;
-  set((s) => ({ toasts: [...s.toasts, { id, text, tone, action }].slice(-4) }));
+  set((s) => ({ toasts: addToast(s.toasts, { id, text, kind: toastKind(text, !!action), tone, action }) }));
   window.setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), tone === "error" ? 8000 : action ? 7000 : 3500);
 }
 

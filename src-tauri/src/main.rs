@@ -131,6 +131,13 @@ fn quit_app(app: AppHandle) {
     quit(&app);
 }
 
+/// The page's undo bridge (App.tsx): false means a text field has focus, so the field's own undo runs.
+fn edit_in_page(app: &AppHandle, action: &str) {
+    let Some(w) = app.get_webview_window("main") else { return };
+    let script = format!("if (!(window.__terrariumEdit && window.__terrariumEdit('{action}'))) document.execCommand('{action}');");
+    let _ = w.eval(script);
+}
+
 fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     // Custom Quit item: the predefined one terminates the process without giving the backend time.
     let quit_item = MenuItemBuilder::with_id("quit", "Quit Terrarium").accelerator("CmdOrCtrl+Q").build(app)?;
@@ -145,9 +152,12 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .separator()
         .item(&quit_item)
         .build()?;
+    // Custom Undo and Redo: the predefined items only reach a focused text field, and the app has its own undo stack.
+    let undo_item = MenuItemBuilder::with_id("undo", "Undo").accelerator("CmdOrCtrl+Z").build(app)?;
+    let redo_item = MenuItemBuilder::with_id("redo", "Redo").accelerator("CmdOrCtrl+Shift+Z").build(app)?;
     let edit = SubmenuBuilder::new(app, "Edit")
-        .undo()
-        .redo()
+        .item(&undo_item)
+        .item(&redo_item)
         .separator()
         .cut()
         .copy()
@@ -170,6 +180,9 @@ fn main() {
         .on_menu_event(|app, event| {
             if event.id() == "quit" {
                 quit(app);
+            }
+            if event.id() == "undo" || event.id() == "redo" {
+                edit_in_page(app, event.id().as_ref());
             }
         })
         .invoke_handler(tauri::generate_handler![backend_info, restart_backend, quit_app])

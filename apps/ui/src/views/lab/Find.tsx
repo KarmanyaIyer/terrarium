@@ -4,7 +4,7 @@ import type { LabCandidate, LabFindResult } from "@terrarium/shared";
 import { deleteSet, editSet, exampleSet, fromLines, pickSet, runDescribe, runExample, runFind, runPreset, runSurprise, saveSet, stopFlow, useLab, type FindFlow, type FindSort, type TriedNeuron } from "../../state/lab";
 import { nid } from "../../lib/recipe";
 import { fmtInt } from "../../lib/format";
-import { ConfirmButton, Hint, Popover, Segmented, usePop } from "../../components/ui";
+import { Hint, Popover, Segmented, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
 import { Busy, ErrLine, fmtPct0, fmtSecs, LayerKind, NeuronLink, ShadedText, TokChips } from "./bits";
 import { NeuronActions, ReplySlip } from "./Reply";
@@ -247,7 +247,11 @@ function Lists() {
               </button>
             )}
             <SaveAs />
-            {cur && !cur.builtin && <ConfirmButton small className="ghost" icon={<Trash2 />} label="Delete" confirmLabel={`Delete "${cur.name}"`} onConfirm={deleteSet} />}
+            {cur && !cur.builtin && (
+              <button className="btn sm ghost" title="Cmd+Z brings it back" onClick={() => void deleteSet()}>
+                <Trash2 /> Delete
+              </button>
+            )}
           </div>
           <div className="find-lists">
             <label className="find-list">

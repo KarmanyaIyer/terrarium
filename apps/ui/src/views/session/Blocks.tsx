@@ -655,13 +655,7 @@ function OverflowActions({ data, session, latest }: { data: Record<string, numbe
           className="btn primary"
           disabled={running || !!blocked}
           title={blocked ? `Can't retry: ${blocked}` : `${model?.name ?? session.modelId} ${model?.loaded ? "reloads" : "loads"} at ${fmtCtx(raise.contextWindow)} on the next call`}
-          onClick={() =>
-            void act("Raise context window", (b) => b.updateSession(session.id, raise)).then((s) => {
-              if (!s) return;
-              useStore.setState((st) => ({ sessions: { ...st.sessions, [s.id]: s } }));
-              retry();
-            })
-          }
+          onClick={() => void patchSessionUndoable(session.id, raise, "Raise context window").then(retry)}
         >
           <RotateCcw /> Raise context window to {fmtCtx(raise.contextWindow)} and retry
         </button>
