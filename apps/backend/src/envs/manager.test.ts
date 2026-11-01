@@ -481,6 +481,35 @@ test("a VM running a shell command isn't stopped to make room; the other start f
   }
 });
 
+test("a session waits for a VM slot instead of failing, and Stop cancels the wait", async () => {
+  const [a, b, c, d] = await Promise.all(["A", "B", "C", "D"].map((n) => envs.create({ name: `q-${n}`, type: "vm" })));
+  addSession("sess-q-a", a.id, "one");
+  addSession("sess-q-b", b.id, "two");
+  addSession("sess-q-c", c.id, "three");
+  addSession("sess-q-d", d.id, "four");
+  await envs.acquire(a.id, "sess-q-a");
+  await envs.acquire(b.id, "sess-q-b");
+  const notes: string[] = [];
+  const waiting = envs.acquire(c.id, "sess-q-c", (n) => notes.push(n));
+  await until(() => notes.length > 0, "C says it's waiting");
+  assert.match(notes[0]!, /^Waiting for a free VM \(q-A: session "one" running; q-B: session "two" running\)/);
+  assert.equal(envs.get(c.id).status, "starting");
+  // a second waiter, canceled: its session gets the reason and nothing boots
+  const canceled = envs.acquire(d.id, "sess-q-d", () => {});
+  await until(() => envs.get(d.id).status === "starting", "D waits too");
+  await envs.stop(d.id).catch(() => {});
+  await assert.rejects(canceled, /stopped while waiting/);
+  assert.equal(vms.get(d.id)?.isRunning() ?? false, false);
+  // a freed slot lets C through
+  envs.release(a.id, "sess-q-a");
+  await waiting;
+  assert.equal(vms.get(c.id)?.isRunning(), true);
+  assert.equal(envs.get(a.id).status, "stopped", "A was idle, so it made room");
+  envs.release(b.id, "sess-q-b");
+  envs.release(c.id, "sess-q-c");
+  await settleAll();
+});
+
 test("an env owned by a running eval case is read-only: shell, network and other sessions are refused", async () => {
   const e = await envs.create({ name: "eval-owned", type: "vm" });
   const done = evalOwns(e.id, "sess-case");

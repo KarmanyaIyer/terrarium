@@ -1291,6 +1291,14 @@ export class FixtureBackend implements Backend {
     return clone(this.settings);
   }
 
+  async buildVmImage() {
+    return { ok: true };
+  }
+
+  async clearCache(_key: string) {
+    return this.getSettings();
+  }
+
   async reveal(_path: PathKey) {
     await sleep(20);
   }

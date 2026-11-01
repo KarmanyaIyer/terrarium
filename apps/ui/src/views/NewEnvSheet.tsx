@@ -7,7 +7,8 @@ import { Hint, Kbd, Segmented, Switch } from "../components/ui";
 import { NetIcon } from "../components/Sidebar";
 import { EnvCompare, FIELD_TIP, NET_ALWAYS, NET_TIP } from "../lib/explain";
 import { busyReason } from "../lib/envuse";
-import { newSession } from "../lib/actions";
+import { newSession, nextEnvName } from "../lib/actions";
+import { VmSetupNote } from "./ModelSuggestions";
 
 const MiB = 1024 * 1024;
 type Source = "clean" | "fork" | "snapshot";
@@ -23,11 +24,7 @@ const SIM_RSS = 90 * MiB;
 
 const sizeLabel = (mib: number) => (mib >= 1024 ? `${mib / 1024} GiB` : `${mib} MiB`);
 
-function nextName(envs: EnvSummary[], type: EnvType) {
-  const base = type === "vm" ? "vm" : "sim";
-  const names = new Set(envs.map((e) => e.name));
-  for (let i = 1; ; i++) if (!names.has(`${base}-${i}`)) return `${base}-${i}`;
-}
+const nextName = nextEnvName;
 
 export function NewEnvSheet() {
   const open = useStore((s) => s.newEnvOpen);
@@ -60,6 +57,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
   const [js, setJs] = useState(false);
   const [simMax, setSimMax] = useState(64 * MiB);
   const [busy, setBusy] = useState(false);
+  const vmOk = useStore((s) => s.vmSetup.ok);
   const nameRef = useRef<HTMLInputElement>(null);
 
   const sameType = envs.filter((e) => e.type === type);
@@ -123,7 +121,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
       sim: type === "sim" ? { python, javascript: js, maxTotalBytes: simMax } : undefined,
     };
     setBusy(true);
-    const env = await act("Create environment", (b) => b.createEnv(req));
+    const env = await act("Create enclosure", (b) => b.createEnv(req));
     setBusy(false);
     if (!env) return;
     useStore.setState((s) => ({ envs: { ...s.envs, [env.id]: env }, newEnvOpen: false, newEnvPreset: null }));
@@ -160,14 +158,14 @@ function Sheet({ onClose }: { onClose: () => void }) {
       <form
         className="sheet"
         role="dialog"
-        aria-label="New environment"
+        aria-label="New enclosure"
         onSubmit={(e) => {
           e.preventDefault();
           void create();
         }}
       >
         <div className="sheet-head">
-          <h2>New environment</h2>
+          <h2>New enclosure</h2>
           <span className="blk-spacer" />
           <button type="button" className="icon-btn" title="Close (Esc)" onClick={onClose}>
             <X size={14} />
@@ -201,13 +199,13 @@ function Sheet({ onClose }: { onClose: () => void }) {
                 ariaLabel="Start from"
                 options={[
                   { value: "clean", label: "Clean", title: "Fresh base image" },
-                  { value: "fork", label: "Fork", title: "Copy of another environment's current disk", disabled: !sameType.length },
+                  { value: "fork", label: "Fork", title: "Copy of another enclosure's current disk", disabled: !sameType.length },
                   { value: "snapshot", label: "Snapshot", title: "Copy of a saved snapshot", disabled: !sameType.length },
                 ]}
               />
               {needsSrc && (
                 <div className="form-row">
-                  <select className="input" value={srcEnv} onChange={(e) => setSrcEnv(e.target.value)} aria-label="Source environment">
+                  <select className="input" value={srcEnv} onChange={(e) => setSrcEnv(e.target.value)} aria-label="Source enclosure">
                     {sameType.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.name}
@@ -306,7 +304,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
               </>
             )}
 
-            <span title="Memory this environment takes from the Mac while it runs">On this Mac</span>
+            <span title="Memory this enclosure takes from the Mac while it runs">On this Mac</span>
             <MemImpact adds={adds} free={free} total={total} vm={type === "vm"} />
           </div>
 
@@ -318,8 +316,9 @@ function Sheet({ onClose }: { onClose: () => void }) {
           <button type="button" className="btn ghost" onClick={onClose}>
             Cancel
           </button>
-          <button type="submit" className="btn primary" disabled={!valid || busy}>
-            {busy && <Loader2 className="spin" />} Create environment <Kbd k="⌘↵" />
+          {type === "vm" && <VmSetupNote />}
+          <button type="submit" className="btn primary" disabled={!valid || busy || (type === "vm" && !vmOk)}>
+            {busy && <Loader2 className="spin" />} Create enclosure <Kbd k="⌘↵" />
           </button>
         </div>
       </form>

@@ -1,7 +1,7 @@
 import { saveModelDefaults } from "../state/appUndo";
 import { Fragment, useMemo, useState } from "react";
-import { Boxes, ChevronRight, Loader2, MessageSquare, Plus, Trash2, X } from "lucide-react";
-import type { ModelDownload, ModelInfo, UpdateModelRequest } from "@terrarium/shared";
+import { Boxes, ChevronRight, Loader2, MessageSquare, Plus, Trash2 } from "lucide-react";
+import type { ModelInfo, UpdateModelRequest } from "@terrarium/shared";
 import { act, openSession, openView, toast, useStore } from "../state/store";
 import { useLab } from "../state/lab";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
@@ -10,6 +10,7 @@ import { ConfirmButton, Hint, Segmented } from "../components/ui";
 import { fitLabel, MemBar, memTitle } from "../components/ModelPicker";
 import { ServerButton } from "../components/TopBar";
 import { AddModelSheet } from "./AddModelSheet";
+import { DownloadRow, ModelSuggestions } from "./ModelSuggestions";
 import { newSession } from "../lib/actions";
 
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
@@ -78,22 +79,27 @@ export default function ModelsView() {
       <div className="view-head">
         <Boxes size={15} />
         <h1>Models</h1>
-        <span className={`dot ${ready ? "ready" : inf.status === "error" ? "error" : ""}`} />
-        <span>
-          oMLX <span className="dim">{inf.status}</span>
-          {inf.version ? <span className="dim2"> {inf.version}</span> : null}
-        </span>
-        <ServerButton small />
+        {models.length > 0 && (
+          <>
+            <span className={`dot ${ready ? "ready" : inf.status === "error" ? "error" : ""}`} />
+            <span title={inf.version ? `oMLX ${inf.version}` : undefined}>
+              oMLX <span className="dim">{inf.status}</span>
+            </span>
+            <ServerButton small />
+          </>
+        )}
         <span className="blk-spacer" />
-        <span className="dim num">
-          {loaded.length} loaded{loaded.length ? `, ${fmtBytes(resident)} resident` : ""}
-        </span>
-        <Hint className="vh-ceiling" tip={`Most memory oMLX may use for models, out of ${fmtBytes(budget.totalBytes)} RAM. Change it in Settings.`}>
+        {loaded.length > 0 && (
+          <span className="dim num nowrap">
+            {loaded.length} loaded, {fmtBytes(resident)}
+          </span>
+        )}
+        <Hint className="vh-ceiling" tip={`Most memory oMLX and the Lab may use together, out of ${fmtBytes(budget.totalBytes)} RAM. Change it in Settings.`}>
           <button className="cell-link num nowrap" onClick={() => openView({ kind: "settings" })}>
             <span className="dim">Ceiling</span> {fmtBytes(budget.budgetBytes)}
           </button>
         </Hint>
-        <button className="btn sm primary" onClick={() => setAdding(true)}>
+        <button className={`btn sm${models.length ? "" : " primary"}`} onClick={() => setAdding(true)}>
           <Plus /> Add model
         </button>
       </div>
@@ -105,41 +111,21 @@ export default function ModelsView() {
         </div>
       )}
       <div className="table-wrap">
-        <table className="table models-table">
+        {models.length > 0 && <table className="table models-table">
           <thead>
-            <tr className="grp">
-              <th colSpan={5}>Model</th>
-              <th colSpan={3} className="g">
-                Capabilities
-              </th>
-              <th colSpan={3} className="g">
-                <Hint tip="What a new session with this model starts with. Click a row to change them.">Defaults</Hint>
-              </th>
-              <th className="g" />
-            </tr>
             <tr>
               <th className="tw-col" />
               <th>Name</th>
-              <th className="r">Params</th>
-              <th>Quant</th>
-              <th className="r">Disk</th>
-              <th className="r g">
-                <Hint tip="Longest context the model supports">Max context</Hint>
-              </th>
-              <th>
-                <Hint tip="Format the model's chat template uses for tool calls">Tool calls</Hint>
-              </th>
-              <th>Thinking</th>
-              <th className="r g">Context</th>
+              <th className="r">Size</th>
               <th className="r">
-                <Hint tip="max_tokens sent with each request">Output</Hint>
+                <Hint tip="Context a new session starts with, of the longest the model supports. Click a row to change it.">Context</Hint>
               </th>
               <th>
                 <Hint tip="Weights + context x KV bytes per token + fixed state + runtime, at the default context. Loaded models show what oMLX reports.">
                   Memory
                 </Hint>
               </th>
-              <th className="g" />
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -179,22 +165,16 @@ export default function ModelsView() {
                           </span>
                         ) : null}
                       </div>
-                      <div className="mono dim2 model-id truncate" title={m.id}>
-                        {m.family} · {m.id}
+                      <div className="mono dim2 model-id truncate" title={`${m.family}: ${m.id}`}>
+                        {m.id}
                       </div>
                     </td>
-                    <td className="r num">{m.params}</td>
-                    <td>{m.quant}</td>
-                    <td className="r num" title={exactBytes(m.diskBytes)}>
+                    <td className="r num" title={`${m.params} parameters, ${m.quant}, ${exactBytes(m.diskBytes)}`}>
                       {fmtBytes(m.diskBytes)}
                     </td>
-                    <td className="r num g">{fmtCtx(m.nativeContext)}</td>
-                    <td className="mono dim">{m.toolFormat}</td>
-                    <td className="dim" title={THINKING[m.thinking].tip}>
-                      {THINKING[m.thinking].label}
+                    <td className="r num nowrap">
+                      {fmtCtx(m.defaultContext)} <span className="dim">of {fmtCtx(m.nativeContext)}</span>
                     </td>
-                    <td className="r num g">{fmtCtx(m.defaultContext)}</td>
-                    <td className="r num">{fmtCtx(m.defaultMaxOutput)}</td>
                     <td>
                       {m.loaded ? (
                         <span className="num" title="Resident memory reported by oMLX">
@@ -208,11 +188,11 @@ export default function ModelsView() {
                         </div>
                       )}
                     </td>
-                    <td className="r nowrap g mdl-actions" onClick={(ev) => ev.stopPropagation()}>
+                    <td className="r nowrap mdl-actions" onClick={(ev) => ev.stopPropagation()}>
                       <button
                         className="btn sm ghost"
                         aria-label={`New chat with ${m.name}`}
-                        title={`New chat with ${m.name}: no environment, no tools. Loads it on the first message.`}
+                        title={`New chat with ${m.name}: no enclosure, no tools. Loads it on the first message.`}
                         onClick={() => void newSession(null, m.id)}
                       >
                         <MessageSquare />
@@ -243,8 +223,8 @@ export default function ModelsView() {
                       ) : (
                         <button
                           className="btn sm"
-                          disabled={!!p || !ready}
-                          title={ready ? `Load at ${fmtCtx(m.defaultContext)} context` : "Start the oMLX server first"}
+                          disabled={!!p}
+                          title={ready ? `Load at ${fmtCtx(m.defaultContext)} context` : `Starts oMLX, then loads at ${fmtCtx(m.defaultContext)} context`}
                           onClick={() => void run(m, "load")}
                         >
                           Load
@@ -255,7 +235,8 @@ export default function ModelsView() {
                   {isOpen && (
                     <tr className="detail-row">
                       <td />
-                      <td colSpan={11}>
+                      <td colSpan={5}>
+                        <ModelFacts m={m} />
                         <ModelDefaults m={m} users={users.map((s) => ({ id: s.id, title: s.title, running: s.status === "running" }))} />
                       </td>
                     </tr>
@@ -264,13 +245,11 @@ export default function ModelsView() {
               );
             })}
           </tbody>
-        </table>
+        </table>}
         {!models.length && (
-          <div className="empty">
-            No models in the models folder{" "}
-            <button className="btn sm" onClick={() => setAdding(true)}>
-              <Plus /> Add model
-            </button>
+          <div className="models-empty">
+            <h2 className="home-title">Download a first model</h2>
+            <ModelSuggestions onOther={() => setAdding(true)} />
           </div>
         )}
         {strainN > 0 && (
@@ -293,32 +272,27 @@ export default function ModelsView() {
   );
 }
 
-function DownloadRow({ d, onDismiss }: { d: ModelDownload; onDismiss: () => void }) {
-  const pct = d.bytesTotal ? Math.min(100, (d.bytesDone / d.bytesTotal) * 100) : 0;
+/** What the table leaves out: fixed facts about the model. */
+function ModelFacts({ m }: { m: ModelInfo }) {
   return (
-    <div className={`dl-row ${d.status}`}>
-      <span className="strong truncate">{d.repo}</span>
-      <div className="dl-bar">
-        <span style={{ width: `${pct}%` }} />
-      </div>
-      <span className="num dim">
-        {fmtBytes(d.bytesDone)} / {fmtBytes(d.bytesTotal)}
-      </span>
-      {d.status === "running" ? (
-        <button className="btn sm ghost" onClick={() => void act("Cancel download", (b) => b.cancelDownload(d.id))}>
-          <X /> Cancel
-        </button>
-      ) : (
-        <span className="dl-end">
-          <span className={d.status === "error" ? "err-text truncate" : "dim"} title={d.error}>
-            {d.status === "error" ? d.error : d.status}
-          </span>
-          <button className="icon-btn" aria-label="Dismiss" title="Dismiss" onClick={onDismiss}>
-            <X />
-          </button>
-        </span>
-      )}
-    </div>
+    <dl className="mdl-facts">
+      <dt>Family</dt>
+      <dd>{m.family}</dd>
+      <dt>Params</dt>
+      <dd className="num">{m.params}</dd>
+      <dt>Quant</dt>
+      <dd>{m.quant}</dd>
+      <dt>
+        <Hint tip="Format the model's chat template uses for tool calls">Tool calls</Hint>
+      </dt>
+      <dd className="mono">{m.toolFormat}</dd>
+      <dt>Thinking</dt>
+      <dd title={THINKING[m.thinking].tip}>{THINKING[m.thinking].label}</dd>
+      <dt>
+        <Hint tip="max_tokens sent with each request">Output</Hint>
+      </dt>
+      <dd className="num">{fmtCtx(m.defaultMaxOutput)}</dd>
+    </dl>
   );
 }
 

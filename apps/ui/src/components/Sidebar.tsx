@@ -1,6 +1,6 @@
 import { deleteSession } from "../state/appUndo";
-import { useMemo } from "react";
-import { Boxes, ChevronRight, FlaskConical, Globe, Microscope, Package, Plus, Square, SquareCheck, Trash2, WifiOff, Settings as SettingsIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Box, Boxes, ChevronRight, FlaskConical, Globe, Microscope, Package, Plus, Terminal, Trash2, WifiOff, Settings as SettingsIcon } from "lucide-react";
 import type { EnvSummary, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { openEnv, openSession, openView, setPref, useStore } from "../state/store";
 import { useLab } from "../state/lab";
@@ -28,6 +28,29 @@ export function EnvChip({ type }: { type: EnvSummary["type"] }) {
     <span className={`chip ${type}`} title={type === "vm" ? "Linux micro-VM" : "Simulated shell (not a real OS)"}>
       {type === "vm" ? "VM" : "SIM"}
     </span>
+  );
+}
+
+/** Longer lists fold, so one busy enclosure doesn't push the rest off the sidebar. */
+const FOLD = 6;
+
+function SessionList({ list, activeId }: { list: SessionSummary[]; activeId: string | null }) {
+  const [all, setAll] = useState(false);
+  // an untouched session is reused by the next New session; no row until it's yours
+  const real = list.filter((s) => s.lastSeq > 0 || s.id === activeId);
+  const activeAt = real.findIndex((s) => s.id === activeId);
+  const shown = all || activeAt >= FOLD ? real : real.slice(0, FOLD);
+  return (
+    <>
+      {shown.map((s) => (
+        <SessionRow key={s.id} s={s} active={s.id === activeId} />
+      ))}
+      {real.length > FOLD && activeAt < FOLD && (
+        <button className="sb-new sb-more" onClick={() => setAll(!all)}>
+          {all ? "Show fewer" : `${real.length - FOLD} more`}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -88,7 +111,6 @@ export function Sidebar() {
     for (const k of Object.keys(m)) m[k].sort((a, b) => b.updatedAt - a.updatedAt);
     return m;
   }, [sessions, showEphemeral]);
-  const ephemeralCount = Object.values(envs).filter((e) => e.ephemeral).length;
   const activeId = view.kind === "session" ? view.id : null;
   const loaded = models.filter((m) => m.loaded).length;
   const runningEvals = evalRuns.filter((r) => r.status === "running").length;
@@ -130,21 +152,24 @@ export function Sidebar() {
         <button className={`sb-nav${view.kind === "models" ? " active" : ""}`} onClick={() => openView({ kind: "models" })}>
           <Boxes size={13} />
           <span>Models</span>
-          <span className="sb-badge num" title="Models loaded in oMLX">
-            {loaded}/{models.length}
-          </span>
+          {loaded > 0 && (
+            <span className="sb-badge num" title="Models loaded in oMLX">
+              <span className="dot ready" />
+              {loaded}
+            </span>
+          )}
         </button>
       </div>
       <div className="sb-scroll">
         <div className="sb-head">
-          <span>Environments</span>
-          <button className="icon-btn sm" title="New environment" onClick={() => useStore.setState({ newEnvOpen: true })}>
+          <span>Enclosures</span>
+          <button className="icon-btn sm" title="New enclosure" onClick={() => useStore.setState({ newEnvOpen: true })}>
             <Plus />
           </button>
         </div>
         {envList.length === 0 && (
           <button className="sb-new" onClick={() => useStore.setState({ newEnvOpen: true })}>
-            <Plus size={11} /> New environment
+            <Plus size={11} /> New enclosure
           </button>
         )}
         {envList.map((e) => {
@@ -184,17 +209,14 @@ export function Sidebar() {
                 >
                   <ChevronRight className={`sb-tw${open ? " open" : ""}`} size={12} />
                 </span>
-                <span className={`dot ${e.status}`} />
+                {e.type === "vm" ? <Box size={12} className={`sb-kind ${e.status}`} /> : <Terminal size={12} className={`sb-kind ${e.status}`} />}
                 <span className="truncate sb-title">{e.name}</span>
-                {running && <span className="dot live" title="A session is running" />}
-                <EnvChip type={e.type} />
-                <NetIcon mode={e.network} />
+                {running ? <span className="dot live" title="A session is running" /> : e.status !== "stopped" && <span className={`dot ${e.status}`} title={e.status} />}
+                {e.network !== "off" && <NetIcon mode={e.network} />}
               </div>
               {open && (
                 <div className="sb-sessions">
-                  {list.map((s) => (
-                    <SessionRow key={s.id} s={s} active={s.id === activeId} />
-                  ))}
+                  <SessionList list={list} activeId={activeId} />
                   <button className="sb-new" onClick={() => void newSession(e.id)}>
                     <Plus size={11} /> New session
                   </button>
@@ -206,7 +228,7 @@ export function Sidebar() {
 
         <div className="sb-head">
           <span>Chats</span>
-          <button className="icon-btn sm" title="New chat (no environment)" onClick={() => void newSession(null)}>
+          <button className="icon-btn sm" title="New chat (no enclosure)" onClick={() => void newSession(null)}>
             <Plus />
           </button>
         </div>
@@ -216,9 +238,7 @@ export function Sidebar() {
           </button>
         )}
         <div className="sb-sessions flat">
-          {chats.map((s) => (
-            <SessionRow key={s.id} s={s} active={s.id === activeId} />
-          ))}
+          <SessionList list={chats} activeId={activeId} />
         </div>
       </div>
 
@@ -227,19 +247,6 @@ export function Sidebar() {
           <SettingsIcon size={13} />
           <span>Settings</span>
         </button>
-        {ephemeralCount > 0 && (
-          <button
-            className={`sb-nav small${showEphemeral ? " checked" : ""}`}
-            role="checkbox"
-            aria-checked={showEphemeral}
-            onClick={() => useStore.setState({ showEphemeral: !showEphemeral })}
-            title="Disposable envs and sessions, one per eval cell"
-          >
-            {showEphemeral ? <SquareCheck size={12} /> : <Square size={12} />}
-            <span>Show eval forks</span>
-            <span className="sb-badge num">{ephemeralCount}</span>
-          </button>
-        )}
       </div>
       <div
         className="resize-x right"

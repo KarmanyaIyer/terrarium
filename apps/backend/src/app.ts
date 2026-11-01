@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { AppState } from "@terrarium/shared";
 import { type Config, VERSIONS } from "./config.ts";
 import { loadDrivers } from "./envs/drivers.ts";
+import { VmImage } from "./envs/vm-image.ts";
 import { EnvManager } from "./envs/manager.ts";
 import { policy } from "./envs/policy.ts";
 import { EvalRunner } from "./evals/runner.ts";
@@ -39,6 +40,7 @@ export interface App {
   downloads: ModelDownloads;
   budgets: ResourceBudgets;
   lab: LabService;
+  vmImage: VmImage;
   state(): Promise<AppState>;
   shutdown(): Promise<void>;
 }
@@ -59,6 +61,7 @@ export async function createApp(config: Config): Promise<App> {
   await gateway.listen();
   const drivers = await loadDrivers();
   const envs = new EnvManager({ store, hub, dataDir: config.dataDir, drivers, budgets });
+  const vmImage = new VmImage({ driver: drivers.vm, dataDir: config.dataDir });
   // Dev only: TERRARIUM_TOKENIZER_URL points the tokenizer elsewhere (e.g. a dead port) to try the estimate fallback
   // against the real model.
   const tokenizerUrl = config.dev ? process.env.TERRARIUM_TOKENIZER_URL : undefined;
@@ -116,6 +119,7 @@ export async function createApp(config: Config): Promise<App> {
     downloads,
     budgets,
     lab: theLab,
+    vmImage,
     async state() {
       return {
         envs: envs.list(),
@@ -128,6 +132,7 @@ export async function createApp(config: Config): Promise<App> {
         downloads: downloads.list(),
         versions: { app: config.appVersion, gondolin: VERSIONS.gondolin, justBash: VERSIONS.justBash, piAgentCore: VERSIONS.piAgentCore, omlx: VERSIONS.omlx },
         lab: theLab.state(),
+        vmSetup: await vmImage.status(),
       };
     },
     shutdown() {

@@ -38,6 +38,7 @@ import type {
   UpdateModelRequest,
   UpdateSessionRequest,
   UpdateSettingsRequest,
+  VmSetup,
   WsClientMessage,
   WsMessage,
 } from "@terrarium/shared";
@@ -217,6 +218,12 @@ export class HttpBackend implements Backend {
   }
   updateSettings(req: UpdateSettingsRequest) {
     return this.req<AppSettings>("PATCH", "/api/settings", req);
+  }
+  buildVmImage() {
+    return this.req<VmSetup>("POST", "/api/vm-image/build");
+  }
+  clearCache(key: string) {
+    return this.req<SettingsInfo>("POST", `/api/settings/clear/${e(key)}`);
   }
   async reveal(path: PathKey) {
     await this.req<unknown>("POST", "/api/reveal", { path });

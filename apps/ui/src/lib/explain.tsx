@@ -28,7 +28,7 @@ export const HARNESS: { id: HarnessProfile; label: string; name: string; short: 
     id: "chat",
     label: "Chat, no tools",
     name: "Chat",
-    short: "No tools, no environment",
+    short: "No tools, no enclosure",
     when: "Plain questions and answers. The model can't run or read anything.",
   },
 ];
@@ -67,7 +67,7 @@ export function HarnessTip({ id }: { id: HarnessProfile }) {
         )}
       </div>
       <div className="hint-line hint-k" style={{ marginTop: 6 }}>
-        Harness = agent loop + system prompt + tool definitions. The loop is the same for every profile. The environment
+        Harness = agent loop + system prompt + tool definitions. The loop is the same for every profile. The enclosure
         decides where tool calls run.
       </div>
     </>
@@ -95,7 +95,7 @@ const ENV_HEAD: Record<EnvType, { title: string; icon: ReactNode }> = {
 export function EnvCompare({ highlight, onPick }: { highlight?: EnvType; onPick?: (t: EnvType) => void }) {
   const cls = (t: EnvType) => (highlight === t ? "on" : undefined);
   return (
-    <table className={`env-compare${onPick ? " pick" : ""}`} role={onPick ? "radiogroup" : undefined} aria-label={onPick ? "Environment type" : undefined}>
+    <table className={`env-compare${onPick ? " pick" : ""}`} role={onPick ? "radiogroup" : undefined} aria-label={onPick ? "Enclosure type" : undefined}>
       <thead>
         <tr>
           <th />

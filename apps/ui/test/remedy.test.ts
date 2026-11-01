@@ -46,7 +46,7 @@ const session = (over: Partial<SessionSummary> = {}) => ({ id: "s1", envId: "env
 const env = (over: Partial<EnvSummary> = {}) => ({ id: "env1", ...over }) as EnvSummary;
 
 test("Send/Continue: a session whose env was deleted is blocked with that reason (#11)", () => {
-  assert.equal(runBlocked(undefined, session()), "environment deleted");
+  assert.equal(runBlocked(undefined, session()), "enclosure deleted");
   assert.equal(runBlocked(undefined, session({ harness: "chat" })), undefined, "chat sessions never use their env");
   assert.equal(runBlocked(undefined, session({ envId: null })), undefined);
   assert.equal(runBlocked(env(), session()), undefined);

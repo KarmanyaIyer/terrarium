@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, FlaskConical, LayoutList, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, FlaskConical, LayoutList, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
 import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, ModelInfo, StartEvalRunRequest } from "@terrarium/shared";
 import { act, loadEvalRun, loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
@@ -9,6 +9,7 @@ import { CodeView } from "../components/CodeView";
 import { EnvChip, NetIcon } from "../components/Sidebar";
 import { fitLabel, modelName } from "../components/ModelPicker";
 import { HARNESS, HarnessTip, harnessLabel } from "../lib/explain";
+import { VmSetupNote } from "./ModelSuggestions";
 
 export default function EvalsView() {
   const view = useStore((s) => s.view);
@@ -47,8 +48,8 @@ export default function EvalsView() {
                 <span className="ev-row-main">
                   <span className="truncate">{s.title}</span>
                   <span className="ev-row-meta dim">
-                    {plural(s.cases.length, "case")}
-                    {s.source?.total ? ` of ${fmtInt(s.source.total)}` : ""}
+                    {s.source?.total && !s.cases.length ? `${fmtInt(s.source.total)} to sample from` : plural(s.cases.length, "case")}
+                    {s.source?.total && s.cases.length ? ` of ${fmtInt(s.source.total)}` : ""}
                   </span>
                 </span>
                 {last && <RailScore r={last} />}
@@ -73,11 +74,19 @@ export default function EvalsView() {
   );
 }
 
+function BackToEvals() {
+  return (
+    <button className="icon-btn ev-back" title="All evals" aria-label="All evals" onClick={() => openView({ kind: "evals" })}>
+      <ArrowLeft />
+    </button>
+  );
+}
+
 function SuiteEnv({ t }: { t: EvalSuite["envType"] | EvalCase["envType"] }) {
   if (t === "vm" || t === "sim") return <EnvChip type={t} />;
   return (
-    <span className="chip" title={t === "none" ? "No environment: answer-only" : "Cases use different environment types"}>
-      {t === "none" ? "no env" : "mixed"}
+    <span className="chip" title={t === "none" ? "No enclosure: answer-only" : "Cases use different enclosure types"}>
+      {t === "none" ? "no tools" : "mixed"}
     </span>
   );
 }
@@ -206,21 +215,21 @@ const GRADED: Record<EvalCheck["type"], { label: string; tip: string }> = {
     label: "final answer",
     tip: "The final reply is compared with the expected answer: exact text, a regex, a number (with tolerance) or a choice letter.",
   },
-  command: { label: "command", tip: "After the agent's processes are killed, a command runs in the env as the agent user. Exit 0 passes." },
+  command: { label: "command", tip: "After the agent's processes are killed, a command runs in the enclosure as the agent user. Exit 0 passes." },
   file: { label: "file", tip: "A workspace file must exist, equal the expected text, or contain it." },
   tests: {
     label: "hidden tests",
     tip: "A grader-only unittest file the agent can't read. After the agent's processes are killed the tests run twice: isolated (code as uid 1000, tests as uid 1001, separate processes) and plain unittest. Passes only when both runs pass every test; if they disagree it is a grader error, not a pass.",
   },
-  isolation: { label: "escape blocked", tip: "Each case tries to reach something outside its env. Passes when the attempt is blocked and the host canary never appears." },
+  isolation: { label: "escape blocked", tip: "Each case tries to reach something outside its enclosure. Passes when the attempt is blocked and the host canary never appears." },
   speed: { label: "timing", tip: "Measures prefill and decode tokens/s. There is no wrong answer." },
 };
 
 const ENV_RUN: Record<EvalSuite["envType"], string> = {
   vm: "Each case runs in a fresh VM forked from a clean base. Network is off unless the case sets it.",
   sim: "Each case runs in a fresh simulated shell forked from a clean base. Network is off unless the case sets it.",
-  none: "No environment: the model answers in chat, without tools.",
-  mixed: "Each case runs in a fresh env of its own type, forked from a clean base. Network is off unless the case sets it.",
+  none: "No enclosure: the model answers in chat, without tools.",
+  mixed: "Each case runs in a fresh enclosure of its own type, forked from a clean base. Network is off unless the case sets it.",
 };
 
 function checkTypes(s: EvalSuite): EvalCheck["type"][] {
@@ -303,16 +312,16 @@ function Scoreboard({ suites, runs }: { suites: EvalSuite[]; runs: EvalRunSummar
 
 function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunSummary[] }) {
   const models = useStore((s) => s.models);
+  const showEphemeral = useStore((s) => s.showEphemeral);
+  const forks = useStore((s) => Object.values(s.envs).filter((e) => e.ephemeral).length);
   return (
     <div className="ev-overview">
       <div className="view-head">
         <FlaskConical size={15} />
         <h1>Evals</h1>
-        {suites && (
-          <span className="dim num">
-            {plural(suites.length, "suite")}
-            {runs.length ? `, ${plural(runs.length, "run")}` : ""}
-          </span>
+        <span className="blk-spacer" />
+        {forks > 0 && (
+          <Switch on={showEphemeral} label={`Show ${forks} eval forks in the sidebar`} title="Disposable enclosures and sessions, one per eval cell" onChange={(v) => useStore.setState({ showEphemeral: v })} />
         )}
       </div>
       <div className="ev-scroll">
@@ -323,7 +332,7 @@ function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunS
             <tr>
               <th>Suite</th>
               <th className="r">Cases</th>
-              <th>Env</th>
+              <th>Runs in</th>
               <th>Graded by</th>
               <th>Latest run</th>
             </tr>
@@ -354,11 +363,11 @@ function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunS
                 >
                   <td className="ev-suite-cell">
                     <div className="strong">{s.title}</div>
-                    <div className="dim ev-desc">{s.description}</div>
+                    <div className="dim ev-desc" title={s.description}>{s.description}</div>
                   </td>
-                  <td className="r num nowrap">
-                    {s.cases.length}
-                    {s.source?.total ? <span className="dim2"> of {fmtInt(s.source.total)}</span> : null}
+                  <td className="r num nowrap" title={s.source?.total ? `Sampled from ${fmtInt(s.source.total)} when you run it` : undefined}>
+                    {s.source?.total && !s.cases.length ? fmtInt(s.source.total) : s.cases.length}
+                    {s.source?.total && s.cases.length ? <span className="dim2"> of {fmtInt(s.source.total)}</span> : null}
                   </td>
                   <td>
                     <SuiteEnv t={s.envType} />
@@ -507,6 +516,7 @@ function RunView({ runId }: { runId: string }) {
   return (
     <div className="ev-run">
       <div className="view-head">
+        <BackToEvals />
         <h1>
           <button className="title-link" title="Open suite" onClick={() => openView({ kind: "evals", suiteId: run.suiteId })}>
             {run.suiteTitle}
@@ -747,7 +757,7 @@ function CheckFields({ c }: { c: EvalCheck }) {
     case "command":
       return (
         <>
-          <dt title="Run in the env after the agent finishes; passes on exit 0">Command</dt>
+          <dt title="Run in the enclosure after the agent finishes; passes on exit 0">Command</dt>
           <dd className="mono">{c.command}</dd>
         </>
       );
@@ -852,6 +862,7 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
   return (
     <div className="ev-suite">
       <div className="view-head">
+        <BackToEvals />
         <h1>{suite.title}</h1>
         <SuiteEnv t={suite.envType} />
         <span className="dim truncate">{suite.description}</span>
@@ -883,6 +894,12 @@ function SuiteView({ suite }: { suite: EvalSuite }) {
       <div className="ev-suite-body">
         <div className="ev-runcfg">
           <h3>Run</h3>
+          {suite.envType !== "none" && suite.envType !== "sim" && <VmSetupNote />}
+          {!models.some((m) => !m.strain) && (
+            <button className="cell-link" onClick={() => openView({ kind: "models" })}>
+              Add a model first
+            </button>
+          )}
           <div className="ev-models">
             {models.filter((m) => !m.strain).map((m) => {
               const on = picked.includes(m.id);

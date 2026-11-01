@@ -84,7 +84,7 @@ function routes(app: App): Route[] {
     handler,
     ...extra,
   });
-  const { envs, sessions, inference, evals, files, store, settings, downloads, lab } = app;
+  const { envs, sessions, inference, evals, files, store, settings, downloads, lab, vmImage } = app;
   return [
     r("GET", "/api/state", () => app.state()),
 
@@ -99,6 +99,7 @@ function routes(app: App): Route[] {
     r("DELETE", "/api/envs/:id", async ({ params }) => {
       await envs.delete(params[0]);
     }),
+    r("POST", "/api/vm-image/build", () => vmImage.build()),
     r("POST", "/api/envs/:id/start", ({ params }) => envs.start(params[0])),
     r("POST", "/api/envs/:id/stop", ({ params }) => envs.stop(params[0])),
     r("POST", "/api/envs/:id/reset", ({ params, body }) => envs.reset(params[0], ((body ?? {}) as ResetEnvRequest).snapshotId)),

@@ -135,7 +135,7 @@ export function EnvTab({ env }: { env: EnvSummary }) {
               icon={<RotateCcw />}
               confirmLabel={env.baseSnapshotId ? "Reset to base snapshot" : "Reset to clean image"}
               disabled={busy || !!inUse}
-              title={inUseTitle ?? "Discard all changes in this environment"}
+              title={inUseTitle ?? "Discard all changes in this enclosure"}
               onConfirm={() => act("Reset", (b) => b.resetEnv(env.id, {})).then(putEnv)}
             />
           </>
@@ -189,7 +189,7 @@ export function EnvTab({ env }: { env: EnvSummary }) {
       <section className="env-sec">
         <h3>Facts</h3>
         {!f ? (
-          <div className="dim">{env.status === "starting" ? "Gathering from the environment" : "Not gathered"}</div>
+          <div className="dim">{env.status === "starting" ? "Gathering from the enclosure" : "Not gathered"}</div>
         ) : (
           <dl className="kv facts">
             <dt>

@@ -5,7 +5,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { resolveBackend, saveManualConnection } from "./api/connect";
-import { currentSession, dismissToast, act, startBackend, useStore } from "./state/store";
+import { currentSession, dismissToast, act, startBackend, useStore, INSPECTOR_MIN_WINDOW } from "./state/store";
 import { TopBar } from "./components/TopBar";
 import { Sidebar } from "./components/Sidebar";
 import { Palette } from "./components/Palette";
@@ -160,6 +160,21 @@ export function App() {
   useEffect(() => {
     if (ready) finishDeletes();
   }, [ready]);
+  useEffect(() => {
+    let wide = window.innerWidth >= INSPECTOR_MIN_WINDOW;
+    let wasOpen = useStore.getState().inspectorOpen;
+    const sync = () => {
+      const now = window.innerWidth >= INSPECTOR_MIN_WINDOW;
+      if (now === wide) return;
+      wide = now;
+      // not a saved preference: going wide again brings back what was open
+      if (!now) wasOpen = useStore.getState().inspectorOpen;
+      useStore.setState({ inspectorOpen: now ? wasOpen : false });
+    };
+    if (!wide) useStore.setState({ inspectorOpen: false });
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
 
   useEffect(() => {
     if (booted) return;

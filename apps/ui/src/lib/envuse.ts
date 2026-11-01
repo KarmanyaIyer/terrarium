@@ -7,7 +7,7 @@ import type { EnvSummary, EnvUse, SessionSummary } from "@terrarium/shared";
  */
 export const runBlocked = (env: EnvSummary | undefined, session: SessionSummary): string | undefined => {
   if (session.harness === "chat" || !session.envId) return undefined;
-  if (!env) return "environment deleted";
+  if (!env) return "enclosure deleted";
   if (env.released) return "env storage released";
   const holder = env.inUse?.find((u) => (u.kind === "session" || u.kind === "eval") && u.sessionId !== session.id);
   return holder ? `env busy: ${holder.reason}` : undefined;

@@ -51,7 +51,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
                 key={h.id}
                 className="menu-item two-line"
                 disabled={disabled}
-                title={running ? "Stop the run first" : !s.envId && h.id !== "chat" ? "Needs an environment" : undefined}
+                title={running ? "Stop the run first" : !s.envId && h.id !== "chat" ? "Needs an enclosure" : undefined}
                 onClick={() => {
                   pop.close();
                   if (h.id !== s.harness) patchSession(s.id, { harness: h.id });
@@ -60,7 +60,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
                 {h.id === s.harness ? <Check size={12} /> : <span style={{ width: 13 }} />}
                 <span>
                   <span>{h.label}</span>
-                  <span className="dim menu-sub">{!running && !s.envId && h.id !== "chat" ? "Needs an environment" : h.short}</span>
+                  <span className="dim menu-sub">{!running && !s.envId && h.id !== "chat" ? "Needs an enclosure" : h.short}</span>
                 </span>
               </button>
             );
@@ -174,15 +174,14 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
         {env ? (
           <Hint tip={<EnvTip env={env} />} width={320} className="sh-env-hint">
             <button className="hdr-btn env" onClick={() => openEnv(env.id, "env")}>
-              <span className="dim">env</span>
               <span className={`dot ${env.status}`} />
               <span className="truncate">{env.name}</span>
               <EnvChip type={env.type} />
             </button>
           </Hint>
         ) : (
-          <span className="hdr-btn static dim" title="Chat-only: no environment, no tools">
-            no environment
+          <span className="hdr-btn static dim" title="Chat-only: no enclosure, no tools">
+            no enclosure
           </span>
         )}
         {env && (s.evalRunId || evalOwner(env)) && (
@@ -251,7 +250,7 @@ function EnvTip({ env }: { env: EnvSummary }) {
       </span>
       <div className="hint-line">{env.facts?.isolation ?? (env.type === "vm" ? "Linux micro-VM" : "Simulated shell, not a real OS")}</div>
       <div className="hint-line hint-k" style={{ marginTop: 6 }}>
-        Environment = where the agent's tool calls run, with its own files and network policy. Click to inspect it.
+        Enclosure = where the agent's tool calls run, with its own files and network policy. Click to inspect it.
       </div>
     </>
   );
@@ -369,7 +368,7 @@ export function SessionView({ id }: { id: string }) {
           {timelineOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           <span>Timeline</span>
         </button>
-        {timelineOpen && trace?.loaded && d.items.length > 0 && <Timeline d={d} sessionStatus={s.status} hasEnv={!!s.envId} />}
+        {timelineOpen && trace?.loaded && d.items.length > 0 && <Timeline d={d} sessionStatus={s.status} />}
       </div>
       {!trace?.loaded ? (
         <div className="empty">Loading events…</div>

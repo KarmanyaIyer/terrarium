@@ -1,8 +1,8 @@
 import { useMemo, useState, type MouseEvent as RME } from "react";
-import { Command, Loader2, Play, Square } from "lucide-react";
+import { Loader2, Play, Search, Square } from "lucide-react";
 import type { ResourceSample } from "@terrarium/shared";
 import { openEnv, openView, act, useStore } from "../state/store";
-import { exactBytes, fmtBytes, fmtPct, plural } from "../lib/format";
+import { exactBytes, fmtBytes, plural } from "../lib/format";
 import { ChartTip, ConfirmButton, Popover, usePop, type TipState } from "./ui";
 import { forgetConnection } from "../api/connect";
 import { TerrariumMark } from "./Mark";
@@ -99,7 +99,9 @@ function MemoryBar() {
       y: e.clientY,
       content: (
         <>
-          <div className="tip-head">Memory</div>
+          <div className="tip-head">
+            Memory: {fmtBytes(used)} of {fmtBytes(total, 0)}
+          </div>
           {segs.map((s) => (
             <div key={s.key} className="tip-row" style={seg?.key === s.key ? { fontWeight: 600 } : undefined}>
               <span>
@@ -159,9 +161,7 @@ function MemoryBar() {
         )}
       </div>
       <div className="membar-text num" title={`${exactBytes(used)} used of ${exactBytes(total)}`}>
-        <span className={sample.system.pressure !== "normal" ? "warn-text" : undefined}>{fmtBytes(used)}</span>
-        <span className="dim"> / {fmtBytes(total, 0)}</span>
-        <span className="dim membar-free">{fmtBytes(free)} free</span>
+        <span className={sample.system.pressure !== "normal" ? "warn-text" : "dim"}>{fmtBytes(free)} free</span>
       </div>
       <ChartTip tip={tip} />
     </div>
@@ -178,7 +178,7 @@ export function ServerButton({ small }: { small?: boolean }) {
   const sm = small ? " sm" : "";
   if (inf.status !== "ready" && inf.status !== "starting")
     return (
-      <button type="button" className={`btn${sm} primary`} disabled={busy} onClick={() => void act("Start inference", (b) => b.startInference())}>
+      <button type="button" className={`btn${sm}`} disabled={busy} onClick={() => void act("Start inference", (b) => b.startInference())}>
         {busy ? <Loader2 className="spin" /> : <Play />} Start server
       </button>
     );
@@ -213,11 +213,10 @@ function InferenceControl() {
   const busy = inf.status === "starting" || inf.status === "stopping";
   return (
     <>
-      <button ref={pop.ref} className="topbar-btn infer" onClick={pop.toggle} title="Inference server (oMLX)">
+      <button ref={pop.ref} className="topbar-btn infer" onClick={pop.toggle} title={inf.status === "stopped" ? "oMLX serves the models. It starts by itself when a model is needed." : "oMLX serves the models"}>
         {busy ? <Loader2 className="spin" size={12} /> : <span className={`dot ${inf.status === "ready" ? "ready" : inf.status === "error" ? "error" : ""}`} />}
-        <span>oMLX</span>
-        <span className="dim">{inf.status}</span>
-        {inf.status === "ready" && <span className="dim2 num">{loaded.length ? `${loaded.length} loaded` : "none loaded"}</span>}
+        <span>{inf.status === "ready" && loaded.length ? (loaded.length === 1 ? loaded[0]!.name : `${loaded.length} models`) : "oMLX"}</span>
+        {inf.status !== "ready" && inf.status !== "stopped" && <span className="dim">{inf.status}</span>}
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} align="end" width={290}>
         <div className="pop-pad">
@@ -280,6 +279,8 @@ function ConnControl() {
   const backend = useStore((s) => s.backend);
   const pop = usePop();
   const fixtures = backend?.kind === "fixtures";
+  // a healthy connection is nothing to look at; Settings, About has the details
+  if (conn === "open" && !fixtures) return null;
   return (
     <>
       <button ref={pop.ref} className="topbar-btn" onClick={pop.toggle} title="Backend connection">
@@ -316,9 +317,10 @@ function ConnControl() {
 }
 
 export function TopBar() {
-  const samples = useStore((s) => s.samples);
-  const last = samples[samples.length - 1];
-  const cpu = last ? last.envs.reduce((a, e) => a + e.cpuPct, 0) : null;
+  const cpu = useStore((s) => {
+    const last = s.samples[s.samples.length - 1];
+    return last ? last.envs.reduce((a, e) => a + e.cpuPct, 0) : 0;
+  });
   return (
     <header className="topbar" data-tauri-drag-region>
       <div className="brand" data-tauri-drag-region>
@@ -328,17 +330,16 @@ export function TopBar() {
         </button>
       </div>
       <MemoryBar />
-      {cpu != null && (
-        <div className="topbar-stat num" title="CPU used by all running environments (100% = one core)">
-          <span className="dim">env CPU</span> {fmtPct(cpu)}
+      {cpu >= 1 && (
+        <div className="topbar-stat num" title="CPU used by all running enclosures (100% = one core)">
+          <span className="dim">CPU</span> {Math.round(cpu)}%
         </div>
       )}
       <div className="topbar-spacer" data-tauri-drag-region />
       <InferenceControl />
       <ConnControl />
-      <button className="topbar-btn" onClick={() => useStore.setState({ paletteOpen: true })} title="Jump to session or env">
-        <Command size={12} />
-        <span>K</span>
+      <button className="topbar-btn" onClick={() => useStore.setState({ paletteOpen: true })} title="Jump to a session or enclosure (Cmd+K)" aria-label="Jump to a session or enclosure">
+        <Search size={13} />
       </button>
     </header>
   );

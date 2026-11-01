@@ -36,6 +36,7 @@ import type {
   UpdateModelRequest,
   UpdateSessionRequest,
   UpdateSettingsRequest,
+  VmSetup,
   WsMessage,
 } from "@terrarium/shared";
 import type { LabApi } from "./lab";
@@ -101,6 +102,8 @@ export interface Backend {
 
   getSettings(): Promise<SettingsInfo>;
   updateSettings(req: UpdateSettingsRequest): Promise<AppSettings>;
+  clearCache(key: string): Promise<SettingsInfo>;
+  buildVmImage(): Promise<VmSetup>;
   reveal(path: PathKey): Promise<void>;
   getHarness(): Promise<HarnessInfo[]>;
   getSessionPrompt(id: Id): Promise<SessionPrompt>;

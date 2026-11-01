@@ -23,6 +23,13 @@ const DISK_MARGIN = 5e9;
 
 export const SUGGESTIONS: ModelSuggestion[] = [
   {
+    repo: "mlx-community/Qwen3.5-4B-MLX-4bit",
+    name: "Qwen3.5 4B",
+    params: "4B",
+    note: "Good first model: handles tools, thinks before answering, and the Lab's example runs on it",
+    sizeBytes: 3_061_215_232,
+  },
+  {
     repo: "LiquidAI/LFM3-1.7B-MLX-8bit",
     name: "LFM3 1.7B",
     params: "1.7B",

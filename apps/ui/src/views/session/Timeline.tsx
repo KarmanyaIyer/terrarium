@@ -96,7 +96,7 @@ const isSel = (sel: Selection | null, kind: Selection["kind"], id: string) =>
   sel.kind === kind &&
   ((sel.kind === "call" && sel.callId === id) || (sel.kind === "tool" && sel.toolCallId === id) || (sel.kind === "net" && sel.entryId === id));
 
-export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStatus: string; hasEnv: boolean }) {
+export function Timeline({ d, sessionStatus }: { d: Derived; sessionStatus: string }) {
   const selection = useStore((s) => s.selection);
   const live = d.running || sessionStatus === "running";
   const now = useNow(live ? "frame" : "5s");
@@ -176,8 +176,8 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
     return () => el.removeEventListener("wheel", onWheel);
   });
 
-  // a chat has no tools, files or network: draw only the model lane
-  const lanes = hasEnv || d.tools.length || d.nets.length || d.fsSteps.length ? LANES : LANES.slice(0, 1);
+  // a lane appears once it has something on it; a chat only ever has the model's
+  const lanes = LANES.filter((l) => l === "Model" || (l === "Tools" ? d.tools.length : l === "Files" ? d.fsSteps.length : d.nets.length));
   const laneY = (i: number) => TOP + i * (LANE_H + LANE_GAP);
   const h = TOP + lanes.length * (LANE_H + LANE_GAP) + AXIS_H;
 
@@ -441,7 +441,7 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
           {toolBars.map(({ t, x0, x1 }) => {
             const sel = isSel(selection, "tool", t.toolCallId);
             const failed = toolFailed(t);
-            const y = laneY(1);
+            const y = laneY(lanes.indexOf("Tools"));
             const w = x1 - x0;
             const label = shortToolLabel(t.name, t.args);
             const fits = w > label.length * 5.6 + 10;
@@ -470,7 +470,7 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
           {/* files lane */}
           {d.fsSteps.map((f) => {
             const x = M.x(f.ts);
-            const y = laneY(2);
+            const y = laneY(lanes.indexOf("Files"));
             const cc = changeCounts(f.changes);
             const cls = cc.deleted && !cc.added && !cc.modified ? "del" : cc.added && !cc.modified ? "add" : "mod";
             const sel = !!selection && selection.kind === "tool" && selection.toolCallId === f.toolCallId;
@@ -518,7 +518,7 @@ export function Timeline({ d, sessionStatus, hasEnv }: { d: Derived; sessionStat
           {/* network lane */}
           {d.nets.map((n) => {
             const x = M.x(n.entry.ts);
-            const y = laneY(3);
+            const y = laneY(lanes.indexOf("Network"));
             const sel = isSel(selection, "net", n.entry.id);
             const deny = n.entry.decision === "deny";
             return (

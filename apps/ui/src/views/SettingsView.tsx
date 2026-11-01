@@ -1,15 +1,17 @@
 import { updateSettings } from "../state/appUndo";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { FolderOpen, Loader2, RotateCw, Settings as SettingsIcon } from "lucide-react";
+import { ChevronRight, FolderOpen, Loader2, RotateCw, Settings as SettingsIcon } from "lucide-react";
 import type { AppSettings, EnvType, HarnessProfile, NetworkMode, PathKey, ResourceBudgetSettings, SettingsInfo, UpdateSettingsRequest } from "@terrarium/shared";
-import { act, openView, useStore } from "../state/store";
+import { act, openView, toast, useStore } from "../state/store";
+import { useLab } from "../state/lab";
+import { forgetConnection } from "../api/connect";
 import { CONTEXT_CHOICES } from "../lib/memory";
 import { exactBytes, fmtBytes, fmtCtx } from "../lib/format";
 import { ENV_TYPE_TIP, HARNESS, HarnessTip, NET_ALWAYS, NET_TIP, harnessLabel } from "../lib/explain";
 import { CopyButton, Hint, Segmented } from "../components/ui";
 
 const PATHS: { key: PathKey; label: string; tip: string }[] = [
-  { key: "data", label: "Data", tip: "Database, trace blobs, environment disks, snapshots, VM images, oMLX cache" },
+  { key: "data", label: "Data", tip: "Database, trace blobs, enclosure disks, snapshots, VM images, oMLX cache" },
   { key: "models", label: "Models", tip: "One MLX model per folder; oMLX serves every folder here" },
   { key: "venv", label: "Python", tip: "Virtualenv with oMLX, mlx-lm, mlx-vlm and huggingface_hub" },
   { key: "logs", label: "Backend log", tip: "Written by the app; dev runs log to the terminal" },
@@ -18,7 +20,6 @@ const PATHS: { key: PathKey; label: string; tip: string }[] = [
 
 export default function SettingsView() {
   const settings = useStore((s) => s.settings);
-  const inference = useStore((s) => s.inference);
   const [info, setInfo] = useState<SettingsInfo | null>(null);
 
   const refresh = useCallback(() => {
@@ -36,12 +37,12 @@ export default function SettingsView() {
       </div>
       {/* what you change most first; limits and paths last */}
       <div className="settings-body">
-        <MemorySection settings={settings} totalBytes={useStore.getState().budget.totalBytes} running={inference} update={update} />
+        <MemorySection settings={settings} totalBytes={useStore.getState().budget.totalBytes} update={update} />
         <NewSessionSection settings={settings} update={update} />
         <NewEnvSection settings={settings} update={update} />
         <PromptsSection settings={settings} update={update} />
         <ResourceBudgetsSection settings={settings} update={update} />
-        <StorageSection info={info} onRefresh={refresh} />
+        <StorageSection info={info} onInfo={setInfo} onRefresh={refresh} />
         <AboutSection info={info} />
       </div>
     </div>
@@ -61,10 +62,10 @@ type BudgetField = {
 const MiB = 1024 * 1024;
 const GiB = 1024 * MiB;
 const BUDGET_FIELDS: BudgetField[] = [
-  { key: "maxSimWorkers", label: "Sim workers", help: "Maximum simulated environments that may run at once.", unit: "workers", min: 1, max: 32 },
+  { key: "maxSimWorkers", label: "Sim workers", help: "Simulated enclosures that may run at once. Others wait for a free worker, evals included.", unit: "workers", min: 1, max: 32 },
   { key: "simWorkerRssBytes", label: "Sim memory", help: "A worker is stopped when host-measured RSS crosses this limit, including WASM and external memory.", unit: "MiB", scale: MiB, min: 256, max: 4096 },
   { key: "simWorkerCpuMs", label: "Sim CPU lifetime", help: "A worker is stopped after this much cumulative CPU time.", unit: "minutes", scale: 60_000, min: 1, max: 1440 },
-  { key: "hostFreeDiskReserveBytes", label: "Free disk reserve", help: "Environment work stops before free space falls below this reserve.", unit: "GiB", scale: GiB, min: 1, max: 512 },
+  { key: "hostFreeDiskReserveBytes", label: "Free disk reserve", help: "Enclosure work stops before free space falls below this reserve.", unit: "GiB", scale: GiB, min: 1, max: 512 },
   { key: "sessionTraceBytes", label: "Trace data", help: "Maximum logical request, response, transcript, diff and manifest data per session.", unit: "MiB", scale: MiB, min: 32, max: 8192 },
   { key: "sessionCaptureBytes", label: "File captures", help: "Maximum changed file content captured per session; each tool call is also capped at 64 MiB.", unit: "MiB", scale: MiB, min: 16, max: 4096 },
   { key: "sessionSnapshotCount", label: "Filesystem history", help: "Maximum saved filesystem history points per session.", unit: "points", min: 10, max: 10_000 },
@@ -75,13 +76,24 @@ const BUDGET_FIELDS: BudgetField[] = [
   { key: "networkRefillPerSecond", label: "Network refill", help: "HTTP attempt tokens restored each second after a burst.", unit: "per second", min: 1, max: 1000 },
 ];
 
+/** Rarely touched, so closed until asked for. */
 function ResourceBudgetsSection({ settings, update }: { settings: AppSettings; update: Update }) {
+  const [open, setOpen] = useState(false);
   return (
-    <Section title="Resource limits">
-      {BUDGET_FIELDS.map((field) => (
-        <BudgetInput key={field.key} field={field} stored={settings.resourceBudgets[field.key]} update={update} />
-      ))}
-    </Section>
+    <section className="st-section">
+      <button className="st-head st-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <ChevronRight size={13} className={`tw${open ? " open" : ""}`} />
+        <h2>Resource limits</h2>
+        <span className="dim st-aside">What one worker or session may use</span>
+      </button>
+      {open && (
+        <div className="st-grid">
+          {BUDGET_FIELDS.map((field) => (
+            <BudgetInput key={field.key} field={field} stored={settings.resourceBudgets[field.key]} update={update} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -101,11 +113,10 @@ function BudgetInput({ field, stored, update }: { field: BudgetField; stored: nu
   };
   return (
     <>
-      <Label>{field.label}</Label>
+      <Label tip={field.help}>{field.label}</Label>
       <div className="st-row">
         <input className="input num" type="number" min={field.min} max={field.max} step={1} value={value} onChange={(e) => setValue(e.target.value)} onBlur={save} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
         <span className="dim num">{field.unit}</span>
-        <span className="dim">{field.help}</span>
       </div>
     </>
   );
@@ -129,33 +140,19 @@ function Label({ children, tip }: { children: ReactNode; tip?: ReactNode }) {
 
 type Update = (req: UpdateSettingsRequest) => void;
 
-function MemorySection({ settings, totalBytes, running, update }: { settings: AppSettings; totalBytes: number; running: ReturnType<typeof useStore.getState>["inference"]; update: Update }) {
+function MemorySection({ settings, totalBytes, update }: { settings: AppSettings; totalBytes: number; update: Update }) {
   const maxGb = Math.max(4, Math.floor(totalBytes / 1e9));
   const [gb, setGb] = useState(Math.round(settings.memoryBudgetBytes / 1e9));
   useEffect(() => setGb(Math.round(settings.memoryBudgetBytes / 1e9)), [settings.memoryBudgetBytes]);
-  const applied = running.memoryCeilingBytes != null ? Math.round(running.memoryCeilingBytes / 1e9) : null;
-  const stale = running.status === "ready" && applied != null && applied !== Math.max(4, Math.round(settings.memoryBudgetBytes / 1e9));
-  const [restarting, setRestarting] = useState(false);
-  // Stopping oMLX aborts in-flight model calls, so don't offer it mid-run.
-  const busy = useStore((s) => Object.values(s.sessions).some((x) => x.status === "running") || s.evalRuns.some((r) => r.status === "running"));
-  const restart = async () => {
-    setRestarting(true);
-    await act("Restart oMLX", async (b) => {
-      await b.stopInference();
-      // stop resolves before the process is gone; start waits for the stopped state
-      for (let i = 0; i < 50 && useStore.getState().inference.status !== "stopped"; i++) await new Promise((r) => setTimeout(r, 200));
-      return b.startInference();
-    });
-    setRestarting(false);
-  };
+  const over = useLab((s) => s.lab?.overCeiling);
   return (
     <Section title="Models">
       <Label
         tip={
           <>
             <span className="hint-title">Memory ceiling</span>
-            <div className="hint-line">Most memory oMLX may use for model weights and context. Past it, oMLX refuses to load another model and evicts idle ones.</div>
-            <div className="hint-line">Leave room for the VMs you run (their RAM) and for macOS. Takes effect when oMLX starts.</div>
+            <div className="hint-line">Most memory oMLX and the Lab may use together for weights and context. Past it, a model won't load and idle ones are unloaded.</div>
+            <div className="hint-line">Leave room for the VMs you run and for macOS. A change applies right away.</div>
           </>
         }
       >
@@ -174,17 +171,15 @@ function MemorySection({ settings, totalBytes, running, update }: { settings: Ap
           onPointerUp={() => gb * 1e9 !== settings.memoryBudgetBytes && update({ memoryBudgetBytes: gb * 1e9 })}
           onKeyUp={() => gb * 1e9 !== settings.memoryBudgetBytes && update({ memoryBudgetBytes: gb * 1e9 })}
         />
-        <span className="num strong" title={`${gb} GB, passed to oMLX as --memory-guard-gb`}>{fmtBytes(gb * 1e9)}</span>
+        <span className="num strong">{fmtBytes(gb * 1e9)}</span>
         <span className="dim num">of {fmtBytes(totalBytes)} RAM</span>
-        {stale && (
-          <>
-            <span className="warn-text">oMLX is running with {fmtBytes((applied ?? 0) * 1e9)}</span>
-            <button className="btn sm" disabled={restarting || busy} title={busy ? "Stop running sessions and evals first: restarting aborts them" : undefined} onClick={() => void restart()}>
-              {restarting ? <Loader2 className="spin" /> : <RotateCw />} Restart oMLX
-            </button>
-          </>
-        )}
       </div>
+      {over && (
+        <>
+          <span />
+          <span className="warn-text">{over}</span>
+        </>
+      )}
       <Label>Per-model defaults</Label>
       <div className="st-row">
         <button className="cell-link" onClick={() => openView({ kind: "models" })}>
@@ -233,7 +228,7 @@ function NewSessionSection({ settings, update }: { settings: AppSettings; update
           { value: "off", label: "Off" },
         ]}
       />
-      <Label tip="Harness for sessions in an environment. Chats without an environment always use Chat.">Harness</Label>
+      <Label tip="Harness for sessions in an enclosure. Chats without an enclosure always use Chat.">Harness</Label>
       <Segmented<HarnessProfile>
         small
         value={ns.harness}
@@ -246,7 +241,7 @@ function NewSessionSection({ settings, update }: { settings: AppSettings; update
 
 function NewEnvSection({ settings, update }: { settings: AppSettings; update: Update }) {
   return (
-    <Section title="New environments">
+    <Section title="New enclosures">
       <Label>Type</Label>
       <Segmented<EnvType>
         small
@@ -329,7 +324,35 @@ function PathRow({ k, label, tip, path, bytes }: { k: PathKey; label: string; ti
   );
 }
 
-function StorageSection({ info, onRefresh }: { info: SettingsInfo | null; onRefresh: () => void }) {
+function ClearRow({ d, onInfo }: { d: SettingsInfo["disk"][number]; onInfo: (i: SettingsInfo) => void }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="st-clear">
+      <Hint tip={d.clear}>
+        <span>{d.label}</span>
+      </Hint>
+      <span className="num dim">{fmtBytes(d.bytes)}</span>
+      <button
+        className="btn sm"
+        disabled={busy || !!d.clearBlocked || d.bytes === 0}
+        title={d.clearBlocked ?? (d.bytes === 0 ? "Already empty" : undefined)}
+        onClick={async () => {
+          setBusy(true);
+          const r = await act(`Clear ${d.label}`, (b) => b.clearCache(d.key));
+          setBusy(false);
+          if (r) {
+            onInfo(r);
+            toast(`Cleared ${d.label}, ${fmtBytes(d.bytes)} freed`);
+          }
+        }}
+      >
+        {busy && <Loader2 className="spin" />} Clear
+      </button>
+    </div>
+  );
+}
+
+function StorageSection({ info, onInfo, onRefresh }: { info: SettingsInfo | null; onInfo: (i: SettingsInfo) => void; onRefresh: () => void }) {
   const data = (info?.disk.filter((d) => d.key !== "models") ?? []).sort((a, b) => b.bytes - a.bytes); // bar and legend share one order
   const dataTotal = data.reduce((a, d) => a + d.bytes, 0);
   const models = info?.disk.find((d) => d.key === "models")?.bytes;
@@ -361,6 +384,11 @@ function StorageSection({ info, onRefresh }: { info: SettingsInfo | null; onRefr
                 ))}
             </div>
             <span className="dim num">{fmtBytes(info.freeDiskBytes)} free on this disk</span>
+            {data
+              .filter((d) => d.clear)
+              .map((d) => (
+                <ClearRow key={d.key} d={d} onInfo={onInfo} />
+              ))}
           </>
         ) : (
           <Loader2 size={13} className="spin dim" />
@@ -376,10 +404,20 @@ function StorageSection({ info, onRefresh }: { info: SettingsInfo | null; onRefr
 function AboutSection({ info }: { info: SettingsInfo | null }) {
   const versions = useStore((s) => s.versions);
   const inf = useStore((s) => s.inference);
+  const backend = useStore((s) => s.backend);
   return (
     <Section title="About">
       <Label>Terrarium</Label>
       <span className="num">{versions?.app}</span>
+      <Label tip="The local process that runs sessions, evals and the Lab">Backend</Label>
+      <span className="st-row">
+        <span className="mono">{backend?.kind === "fixtures" ? "in-memory fixtures" : (backend?.label ?? "none")}</span>
+        {!(backend?.kind === "fixtures" && import.meta.env.VITE_FIXTURES === "1") && (
+          <button className="btn sm ghost" onClick={forgetConnection}>
+            Change
+          </button>
+        )}
+      </span>
       <Label tip="Local inference server, runs MLX models; loopback only, with a random API key">oMLX</Label>
       <span className="st-row">
         <span className="num">{inf.version ?? versions?.omlx}</span>
@@ -389,7 +427,7 @@ function AboutSection({ info }: { info: SettingsInfo | null }) {
       </span>
       <Label tip="Micro-VM library (libkrun, QEMU fallback)">Gondolin</Label>
       <span className="num">{versions?.gondolin}</span>
-      <Label tip="Simulated bash used by simulated environments">just-bash</Label>
+      <Label tip="Simulated bash used by simulated enclosures">just-bash</Label>
       <span className="num">{versions?.justBash}</span>
       <Label tip="Agent loop used by every harness profile">pi-agent-core</Label>
       <span className="num">{versions?.piAgentCore}</span>

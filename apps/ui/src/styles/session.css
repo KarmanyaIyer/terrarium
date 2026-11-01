@@ -1500,3 +1500,21 @@
   white-space: pre-wrap;
   font-size: var(--fs-sm);
 }
+
+/* timing shows when you look at a call; the numbers that matter stay */
+.call-extra {
+  opacity: 0;
+  transition: opacity 80ms linear;
+}
+.blk.call:hover .call-extra,
+.blk.call.selected .call-extra,
+.blk.call:focus-within .call-extra {
+  opacity: 1;
+}
+.prompt-row-head {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+}

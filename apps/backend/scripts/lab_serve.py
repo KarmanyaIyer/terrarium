@@ -122,7 +122,8 @@ def chat_completion(body: dict, emit) -> dict | None:
     pushes = strain_pushes(req.model)
     max_tokens = req.max_tokens or 4096
     temp = 0.7 if req.temperature is None else req.temperature
-    sampler, procs = lab.sampler_for(temp, top_p=req.top_p, top_k=req.top_k, presence=req.presence_penalty, repeat=lab.STRAIN_REPEAT)
+    # the repeat penalty only, as the Lab tested the recipe: a presence penalty in the request (older clients) is ignored
+    sampler, procs = lab.sampler_for(temp, top_p=req.top_p, top_k=req.top_k, repeat=lab.STRAIN_REPEAT)
     opens, _ = thinking.prompt_opens_thinking(lab.tok, prompt, prompt_token_ids=ids)
     stream = bool(req.stream)
     rid = f"chatcmpl-{uuid.uuid4().hex[:12]}"

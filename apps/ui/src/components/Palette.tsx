@@ -67,7 +67,7 @@ export function Palette() {
         label: e.name,
         hint: `${e.type === "vm" ? "VM" : "SIM"} · ${e.status} · network ${e.network}`,
         icon: <Server size={13} />,
-        group: "Environments",
+        group: "Enclosures",
         run: () => openEnv(e.id),
       });
     out.push(
@@ -76,7 +76,7 @@ export function Palette() {
       { id: "v:lab", label: "Lab", icon: <Microscope size={13} />, group: "Go to", run: () => openView({ kind: "lab" }) },
       { id: "v:models", label: "Models", icon: <Boxes size={13} />, group: "Go to", run: () => openView({ kind: "models" }) },
       { id: "v:settings", label: "Settings", icon: <Settings size={13} />, group: "Go to", run: () => openView({ kind: "settings" }) },
-      { id: "a:newenv", label: "New environment", icon: <Plus size={13} />, group: "Actions", run: () => useStore.setState({ newEnvOpen: true }) },
+      { id: "a:newenv", label: "New enclosure", icon: <Plus size={13} />, group: "Actions", run: () => useStore.setState({ newEnvOpen: true }) },
       { id: "a:newchat", label: "New chat", icon: <Plus size={13} />, group: "Actions", run: () => void newSession(null) },
     );
     return out;
@@ -118,7 +118,7 @@ export function Palette() {
         <input
           ref={inputRef}
           className="palette-input"
-          placeholder="Jump to a session, environment or view"
+          placeholder="Jump to a session, enclosure or view"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);

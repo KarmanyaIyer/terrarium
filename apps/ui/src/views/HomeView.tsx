@@ -1,176 +1,229 @@
-import { useEffect, useMemo, useState } from "react";
-import { Box, CircleX, FlaskConical, MessageSquare, Microscope, Plus, ShieldCheck, Sparkles, Terminal } from "lucide-react";
-import type { EnvSummary, EnvType, EvalRunSummary, Id, NetworkMode, SessionSummary } from "@terrarium/shared";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Box, ChevronRight, FlaskConical, Loader2, MessageSquare, Microscope, Plus, ShieldCheck, Sparkles, Terminal } from "lucide-react";
+import type { EnvSummary, EvalRunSummary, Id, ModelInfo, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { ensureLab, exampleSet, runExample, useLab } from "../state/lab";
-import { defaultModel, newSession, recentEnv, startAgent } from "../lib/actions";
+import { defaultModel, newSession, recentEnv, startTask, type Where } from "../lib/actions";
+import { starters } from "../lib/starters";
 import { fmtBytes, fmtCtx, fmtInt, plural } from "../lib/format";
 import { format } from "../lib/recipe";
 import { Hint, Time } from "../components/ui";
-import { EnvChip, NetIcon } from "../components/Sidebar";
+import { EnclosureArt } from "../components/EnclosureArt";
+import { NetIcon } from "../components/Sidebar";
 import { modelName } from "../components/ModelPicker";
-import { TerrariumMark } from "../components/Mark";
 import { harnessLabel, harnessName } from "../lib/explain";
+import { AddModelSheet } from "./AddModelSheet";
+import { GetExampleModel, ModelSuggestions, VmSetupNote } from "./ModelSuggestions";
 
-/** Network policy as the enclosure's lid: shut when off, vented for package registries, lifted for the web. */
-const LID: Record<NetworkMode, { label: string; tip: string }> = {
-  off: { label: "Off", tip: "Network off: every connection is denied" },
-  registries: { label: "Registries", tip: "Network: package registries only (GET/HEAD to PyPI, npm, GitHub downloads, Alpine)" },
-  web: { label: "Web", tip: "Network: public web (the Mac, loopback, LAN and private ranges are still denied)" },
-};
+const NET_WORD: Record<NetworkMode, string> = { off: "Network off", registries: "Package registries only", web: "Public web" };
 
 export function HomeView() {
+  const hasModels = useStore((s) => s.models.some((m) => !m.strain));
+  return (
+    <div className="home">
+      <div className="home-scroll">{hasModels ? <Bench /> : <FirstModel />}</div>
+    </div>
+  );
+}
+
+// ---------- no models yet ----------
+
+function FirstModel() {
+  const [adding, setAdding] = useState(false);
+  return (
+    <div className="first">
+      <div className="first-head">
+        <EnclosureArt network="off" type="vm" size={84} />
+        <div>
+          <h1 className="home-title">Add a model to start</h1>
+          <p className="first-lede">Terrarium runs small models on this Mac, sealed in enclosures, and records everything they do. Pick one to begin.</p>
+        </div>
+      </div>
+      <ModelSuggestions limit={3} onOther={() => setAdding(true)} />
+      <p className="first-next dim">Downloads come from Hugging Face. Next you'll give the model a task and watch it work.</p>
+      {adding && <AddModelSheet onClose={() => setAdding(false)} />}
+    </div>
+  );
+}
+
+// ---------- the bench: a task, things to try, what's here ----------
+
+function Bench() {
   const sessions = useStore((s) => s.sessions);
   const envs = useStore((s) => s.envs);
   const list = useMemo(
     () =>
       Object.values(sessions)
-        .filter((s) => !s.evalRunId)
-        .sort((a, b) => b.updatedAt - a.updatedAt),
+        // untouched sessions get reused by the next start; they aren't work to come back to
+        .filter((s) => !s.evalRunId && s.lastSeq > 0)
+        .sort((a, b) => Number(b.status === "running") - Number(a.status === "running") || b.updatedAt - a.updatedAt),
     [sessions],
   );
-  const envList = useMemo(() => Object.values(envs).filter((e) => !e.ephemeral).sort((a, b) => a.createdAt - b.createdAt), [envs]);
-  const evalRuns = useStore((s) => s.evalRuns);
-  const first = !list.length && !envList.length && !evalRuns.length;
-
+  const envList = useMemo(() => Object.values(envs).filter((e) => !e.ephemeral), [envs]);
   return (
-    <div className="home">
-      <div className="view-head">
-        <TerrariumMark size={17} />
-        <h1>Home</h1>
-        {!first && (
-          <span className="dim num">
-            {[
-              envList.length ? plural(envList.length, "environment") : "",
-              list.length ? plural(list.length, "session") : "",
-              evalRuns.length ? plural(evalRuns.length, "eval run") : "",
-            ]
-              .filter(Boolean)
-              .join(", ")}
-          </span>
-        )}
-      </div>
-      <div className="home-scroll">
-        {first && <p className="home-lede">Run small local models as agents in isolated environments and see every tool call, file change and network attempt.</p>}
-        <Starts />
-        <section className="home-sec">
-          <div className="home-sec-head">
-            <h2>Environments</h2>
-            <Hint tip="Where an agent's tool calls run: a Linux micro-VM or a simulated shell. Each has its own files, network policy and snapshots.">
-              <span className="dim num">{envList.length || ""}</span>
-            </Hint>
-            <span className="blk-spacer" />
-            {envList.length > 0 && (
-              <button className="btn sm" onClick={() => useStore.setState({ newEnvOpen: true })}>
-                <Plus /> New environment
-              </button>
-            )}
-          </div>
-          <div className="encl-grid">
-            {envList.map((e) => (
-              <Enclosure key={e.id} env={e} />
-            ))}
-            {!envList.length && (
-              <button className="encl ghost" onClick={() => useStore.setState({ newEnvOpen: true })}>
-                <span className="encl-lid" />
-                <span className="encl-glass">
-                  <Plus size={16} />
-                  <span>New environment</span>
-                </span>
-              </button>
-            )}
-          </div>
-        </section>
-        <section className="home-sec">
-          <div className="home-sec-head">
-            <h2>Sessions</h2>
-            <span className="dim num">{list.length || ""}</span>
-            <span className="blk-spacer" />
-            <button className="btn sm" onClick={() => void newSession(null)} title="A chat: no environment, no tools">
-              <Plus /> New chat
-            </button>
-          </div>
-          {list.length ? <SessionsTable list={list} /> : <div className="home-none dim">No sessions yet. Start one from Run an agent above.</div>}
-        </section>
-      </div>
-    </div>
+    <>
+      <TaskBox />
+      <Experiments />
+      {envList.length > 0 && <Shelf envs={envList} />}
+      {list.length > 0 && <Recent list={list} />}
+    </>
   );
 }
 
-// ---------- starting points ----------
-
-function Starts() {
-  return (
-    <div className="starts">
-      <RunAgent />
-      <CompareModels />
-      <TestSandbox />
-      <SteerNeuron />
-    </div>
-  );
+const encode = (w: Where) => (w.kind === "env" ? `env:${w.id}` : w.kind === "new" ? `new:${w.type}` : "chat");
+function decode(v: string): Where {
+  if (v === "chat") return { kind: "chat" };
+  if (v === "new:vm") return { kind: "new", type: "vm" };
+  if (v === "new:sim") return { kind: "new", type: "sim" };
+  return { kind: "env", id: v.slice(4) };
 }
 
-function RunAgent() {
+function TaskBox() {
+  const models = useStore((s) => s.models);
   const envs = useStore((s) => s.envs);
   const sessions = useStore((s) => s.sessions);
-  const models = useStore((s) => s.models);
-  const pinned = useStore((s) => s.settings.newSession.modelId);
-  const [pick, setPick] = useState<Id | null>(null);
-  // recomputed when envs, sessions or models change
-  const vm = useMemo(() => recentEnv("vm"), [envs, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
-  const sim = useMemo(() => recentEnv("sim"), [envs, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
-  const fallback = useMemo(() => defaultModel({ strains: false })?.id, [models, sessions, pinned]); // eslint-disable-line react-hooks/exhaustive-deps
-  const modelId = pick && models.some((m) => m.id === pick) ? pick : fallback;
-  const where = (e: EnvSummary | undefined, type: EnvType) => (e ? `in ${e.name}` : `new ${type === "vm" ? "VM" : "simulated shell"}`);
+  const settings = useStore((s) => s.settings);
+  const vmOk = useStore((s) => s.vmSetup.ok);
+  const [pickModel, setPickModel] = useState<Id | null>(null);
+  const [pickWhere, setPickWhere] = useState<string | null>(null);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const base = useMemo(() => models.filter((m) => !m.strain), [models]);
+  const strains = useMemo(() => models.filter((m) => m.strain), [models]);
+  const fallback = useMemo(() => defaultModel({ strains: false })?.id, [models, sessions, settings]); // eslint-disable-line react-hooks/exhaustive-deps
+  const modelId = pickModel && models.some((m) => m.id === pickModel) ? pickModel : fallback;
+  const strain = !!models.find((m) => m.id === modelId)?.strain;
+
+  const envList = useMemo(() => Object.values(envs).filter((e) => !e.ephemeral && e.status !== "error"), [envs]);
+  const defaultWhere = useMemo(() => {
+    const recent = [recentEnv("vm"), recentEnv("sim")].filter((e): e is EnvSummary => !!e && (e.type !== "vm" || vmOk));
+    const last = (e: EnvSummary) => Math.max(e.createdAt, ...Object.values(sessions).filter((x) => x.envId === e.id).map((x) => x.updatedAt));
+    const top = recent.sort((a, b) => last(b) - last(a))[0];
+    if (top) return encode({ kind: "env", id: top.id });
+    return encode({ kind: "new", type: vmOk && settings.newEnv.type === "vm" ? "vm" : "sim" });
+  }, [envs, sessions, settings, vmOk]); // eslint-disable-line react-hooks/exhaustive-deps
+  const value = pickWhere && (pickWhere === "chat" || pickWhere.startsWith("new:") || envs[pickWhere.slice(4)]) ? pickWhere : defaultWhere;
+  const where = decode(value);
+  const env = where.kind === "env" ? envs[where.id] : undefined;
+  const network = env?.network ?? settings.newEnv.network;
+  const placed = where.kind === "chat" ? undefined : { type: env?.type ?? (where.kind === "new" ? where.type : "sim"), network };
+  const vmBlocked = !vmOk && placed?.type === "vm";
+
+  const start = async () => {
+    if (busy || vmBlocked) return;
+    setBusy(true);
+    await startTask(where, modelId, text);
+    setBusy(false);
+  };
+
   return (
-    <div className="start primary">
-      <div className="start-title">
-        <Terminal size={14} />
-        <h3>Run an agent</h3>
-      </div>
-      <div className="start-choices">
-        <button className="choice" onClick={() => startAgent("vm", modelId)}>
-          <Box size={14} className="choice-icon vm" />
-          <span className="choice-main">
-            <span>Linux VM</span>
-            <span className="dim">{vm ? envFacts(vm) : "python3, node, gcc, pip"}</span>
-          </span>
-          <span className="choice-where dim">{where(vm, "vm")}</span>
-        </button>
-        <button className="choice" onClick={() => startAgent("sim", modelId)}>
-          <Terminal size={14} className="choice-icon sim" />
-          <span className="choice-main">
-            <span>Simulated shell</span>
-            <span className="dim">{sim?.facts?.simCommands?.length ? `${sim.facts.simCommands.length} commands, starts instantly` : "starts instantly"}</span>
-          </span>
-          <span className="choice-where dim">{where(sim, "sim")}</span>
-        </button>
-        <button className="choice" onClick={() => startAgent(null, modelId)}>
-          <MessageSquare size={14} className="choice-icon" />
-          <span className="choice-main">
-            <span>Chat</span>
-            <span className="dim">no environment, no tools</span>
-          </span>
-        </button>
-      </div>
-      {models.length > 0 && (
-        <label className="start-model">
-          <span className="dim">Model</span>
-          <select className="input" value={modelId ?? ""} onChange={(e) => setPick(e.target.value)} aria-label="Model for the new session">
-            {models
-              .filter((m) => !m.strain)
-              .map((m) => (
+    <section className="task">
+      <h1 className="home-title task-title">
+        Give{" "}
+        <span className="task-model">
+          <select className="task-model-select" value={modelId ?? ""} onChange={(e) => setPickModel(e.target.value)} aria-label="Model">
+            <optgroup label="Models">
+              {base.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
-                  {m.loaded ? " (loaded)" : ""}
                 </option>
               ))}
+            </optgroup>
+            {strains.length > 0 && (
+              <optgroup label="Lab strains">
+                {strains.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
-        </label>
+          <span className="task-model-name" aria-hidden>
+            {modelId ? modelName(models, modelId) : ""}
+          </span>
+        </span>{" "}
+        a task
+      </h1>
+      <div className="task-box">
+        <textarea
+          ref={ref}
+          className="task-input"
+          rows={2}
+          placeholder={where.kind === "chat" ? "Ask anything" : "What should it do?"}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void start();
+            }
+          }}
+        />
+        <div className="task-foot">
+          <label className="task-where">
+            <span className="dim">in</span>
+            <select className="input" value={value} onChange={(e) => setPickWhere(e.target.value)} aria-label="Where it runs">
+              {envList.length > 0 && (
+                <optgroup label="Enclosures">
+                  {envList.map((e) => (
+                    <option key={e.id} value={`env:${e.id}`}>
+                      {e.name} ({e.type === "vm" ? "Linux VM" : "simulated"})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="New enclosure">
+                <option value="new:sim">New simulated shell</option>
+                <option value="new:vm">New Linux VM{vmOk ? "" : " (needs setup)"}</option>
+              </optgroup>
+              <optgroup label="No enclosure">
+                <option value="chat">Chat, no tools</option>
+              </optgroup>
+            </select>
+          </label>
+          {placed ? (
+            <span className="task-net dim" title="You can change it once the session opens">
+              <NetIcon mode={network} /> {NET_WORD[network]}
+            </span>
+          ) : (
+            <span className="task-net dim">
+              <MessageSquare size={12} /> Replies only
+            </span>
+          )}
+          <span className="blk-spacer" />
+          <button className="btn primary" disabled={busy || vmBlocked || !modelId} onClick={() => void start()}>
+            {busy && <Loader2 className="spin" />} Start
+          </button>
+        </div>
+      </div>
+      {vmBlocked ? (
+        <VmSetupNote />
+      ) : (
+        <div className="task-try">
+          <span className="task-try-head">Or try one</span>
+          {starters(placed, !placed, strain).map((t) => (
+            <button
+              key={t}
+              className="task-try-row"
+              title={t}
+              onClick={() => {
+                setText(t);
+                ref.current?.focus();
+              }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       )}
-    </div>
+    </section>
   );
 }
+
+// ---------- things to try, with what happened last time ----------
 
 type Totals = { pass: number; fail: number; error: number; total: number };
 const sum = (r: EvalRunSummary): Totals =>
@@ -181,6 +234,16 @@ const sum = (r: EvalRunSummary): Totals =>
     total: 0,
   });
 
+function Experiments() {
+  return (
+    <section className="exps">
+      <CompareModels />
+      <TestSandbox />
+      <SteerNeuron />
+    </section>
+  );
+}
+
 function CompareModels() {
   const runs = useStore((s) => s.evalRuns);
   const models = useStore((s) => s.models);
@@ -188,61 +251,67 @@ function CompareModels() {
   useEffect(() => {
     if (!suites) void loadSuites();
   }, [suites]);
-  // the latest run of each suite, newest first (the boundary suite has its own panel)
-  const latest = useMemo(() => {
+  const others = useMemo(() => runs.filter((r) => r.suiteId !== "boundary"), [runs]);
+  const last = others[0];
+  // a model you have that hasn't tried a suite you've been running: the next comparison worth making
+  const gap = useMemo(() => {
+    const installed: ModelInfo[] = models.filter((m) => !m.strain);
     const seen = new Set<string>();
-    return runs.filter((r) => r.suiteId !== "boundary" && !seen.has(r.suiteId) && seen.add(r.suiteId)).slice(0, 3);
-  }, [runs]);
+    for (const r of others) {
+      if (seen.has(r.suiteId)) continue;
+      seen.add(r.suiteId);
+      const ran = new Set(others.filter((x) => x.suiteId === r.suiteId).flatMap((x) => x.config.modelIds));
+      const m = installed.find((x) => !ran.has(x.id));
+      if (m) return { model: m, suiteId: r.suiteId, suite: r.suiteTitle };
+    }
+    return null;
+  }, [others, models]);
+  const suiteN = suites?.filter((s) => s.id !== "boundary").length ?? 0;
   return (
-    <div className="start">
-      <div className="start-title">
-        <FlaskConical size={14} />
-        <h3>Compare models</h3>
-      </div>
-      <div className="start-data">
-        {latest.length ? (
-          latest.map((r) => (
-            <button key={r.id} className="start-run" onClick={() => openView({ kind: "evals", runId: r.id })} title="Open the run">
-              <span className="start-run-head">
-                <span className="truncate">{r.suiteTitle}</span>
-                {r.status === "running" ? <span className="live-text">running</span> : <Time ts={r.startedAt} className="dim" />}
-              </span>
-              {r.config.modelIds.slice(0, 2).map((id) => {
-                const t = r.totals[id] ?? { pass: 0, fail: 0, error: 0, total: 0 };
-                const done = t.pass + t.fail + t.error;
-                return (
-                  <span key={id} className="start-score dim2">
-                    <span className="truncate">{modelName(models, id)}</span>
-                    <span className="num">
-                      {t.pass}/{done}
-                    </span>
-                    <span className="ev-bar" aria-hidden>
-                      <span className="pass" style={{ flexGrow: t.pass }} />
-                      <span className="fail" style={{ flexGrow: t.fail }} />
-                      <span className="error" style={{ flexGrow: t.error }} />
-                      <span className="rest" style={{ flexGrow: t.total - done }} />
-                    </span>
-                  </span>
-                );
-              })}
-              {r.config.modelIds.length > 2 && <span className="dim">{plural(r.config.modelIds.length - 2, "more model")}</span>}
-            </button>
-          ))
-        ) : (
-          <span className="dim">
-            {suites
-              ? (() => {
-                  const names = suites.filter((s) => s.id !== "boundary").map((s) => s.title);
-                  return `No runs yet. ${names.slice(0, 4).join(", ")}${names.length > 4 ? ` and ${names.length - 4} more` : ""}.`;
-                })()
-              : "No runs yet"}
+    <div className="exp">
+      <h3>
+        <FlaskConical size={13} /> Which model does better?
+      </h3>
+      {last ? (
+        <button className="exp-data" onClick={() => openView({ kind: "evals", runId: last.id })} title="Open this run">
+          <span className="exp-line">
+            <span className="truncate">{last.suiteTitle}</span>
+            {last.status === "running" ? <span className="live-text">running</span> : <Time ts={last.startedAt} className="dim" />}
           </span>
-        )}
-      </div>
-      <div className="start-actions">
-        <button className="btn sm" onClick={() => openView({ kind: "evals" })}>
-          Choose a suite
+          {last.config.modelIds.slice(0, 2).map((id) => {
+            const t = last.totals[id] ?? { pass: 0, fail: 0, error: 0, total: 0 };
+            const done = t.pass + t.fail + t.error;
+            return (
+              <span key={id} className="exp-score">
+                <span className="truncate dim">{modelName(models, id)}</span>
+                <span className="num">
+                  {t.pass}/{done}
+                </span>
+                <span className="ev-bar" aria-hidden>
+                  <span className="pass" style={{ flexGrow: t.pass }} />
+                  <span className="fail" style={{ flexGrow: t.fail }} />
+                  <span className="error" style={{ flexGrow: t.error }} />
+                  <span className="rest" style={{ flexGrow: t.total - done }} />
+                </span>
+              </span>
+            );
+          })}
         </button>
+      ) : (
+        <p className="dim">Same tasks, same grader, side by side.{suiteN ? ` ${suiteN} suites to pick from.` : ""}</p>
+      )}
+      <div className="exp-actions">
+        {gap ? (
+          <button className="btn sm exp-btn" onClick={() => openView({ kind: "evals", suiteId: gap.suiteId })} title={`${gap.model.name} hasn't run ${gap.suite}`}>
+            <span className="truncate">
+              Try {gap.model.name} on {gap.suite}
+            </span>
+          </button>
+        ) : (
+          <button className="btn sm" onClick={() => openView({ kind: "evals" })}>
+            Compare models
+          </button>
+        )}
       </div>
     </div>
   );
@@ -257,43 +326,39 @@ function TestSandbox() {
   const done = t ? t.pass + t.fail + t.error : 0;
   const cases = suite?.cases.length ?? 7;
   return (
-    <div className="start">
-      <div className="start-title">
-        <ShieldCheck size={14} />
-        <h3>Test the sandbox</h3>
-      </div>
-      <div className="start-line dim2">{cases} escape attempts: Mac files, the model server, cloud metadata, LAN, a host token.</div>
-      <div className="start-data">
-        {last && t ? (
-          <button className="start-run" onClick={() => openView({ kind: "evals", runId: last.id })} title="Open the run">
-            <span className="start-run-head">
-              <span>
-                {last.status === "running" ? (
-                  <span className="live-text">running</span>
-                ) : (
-                  <>
-                    <span className={`num strong ${t.pass === done && done > 0 ? "ok-text" : "err-text"}`}>
-                      {t.pass} of {done}
-                    </span>{" "}
-                    blocked
-                  </>
-                )}
-              </span>
-              <Time ts={last.startedAt} className="dim" />
+    <div className="exp">
+      <h3>
+        <ShieldCheck size={13} /> Can it get out?
+      </h3>
+      {last && t ? (
+        <button className="exp-data" onClick={() => openView({ kind: "evals", runId: last.id })} title="Open this run">
+          <span className="exp-line">
+            <span>
+              {last.status === "running" ? (
+                <span className="live-text">running</span>
+              ) : (
+                <>
+                  <span className={`num strong ${t.pass === done && done > 0 ? "ok-text" : "err-text"}`}>
+                    {t.pass} of {done}
+                  </span>{" "}
+                  escapes blocked
+                </>
+              )}
             </span>
-            <span className="pips" aria-hidden>
-              {Array.from({ length: t.total }, (_, i) => (
-                <span key={i} className={`pip ${i < t.pass ? "pass" : i < t.pass + t.fail ? "fail" : i < done ? "error" : "rest"}`} />
-              ))}
-            </span>
-          </button>
-        ) : (
-          <span className="dim">Not run yet</span>
-        )}
-      </div>
-      <div className="start-actions">
+            <Time ts={last.startedAt} className="dim" />
+          </span>
+          <span className="pips" aria-hidden>
+            {Array.from({ length: t.total }, (_, i) => (
+              <span key={i} className={`pip ${i < t.pass ? "pass" : i < t.pass + t.fail ? "fail" : i < done ? "error" : "rest"}`} />
+            ))}
+          </span>
+        </button>
+      ) : (
+        <p className="dim">{cases} attempts on your Mac's files, the model server, the LAN and a host token.</p>
+      )}
+      <div className="exp-actions">
         <button className="btn sm" onClick={() => openView({ kind: "evals", suiteId: "boundary" })}>
-          Open Sandbox boundary
+          {last ? "Test again" : "Test the sandbox"}
         </button>
       </div>
     </div>
@@ -303,138 +368,171 @@ function TestSandbox() {
 function SteerNeuron() {
   const lab = useLab((s) => s.lab);
   const example = useLab((s) => s.example);
-  const strains = useStore((s) => s.models.filter((m) => m.strain).length);
-  const specimen = lab?.status === "ready" ? lab.model?.name : undefined;
-  const exampleModel = useLab(() => exampleSet()?.example?.modelId);
+  const strain = useStore((s) => s.models.find((m) => m.strain));
+  const exampleModel = useLab(() => exampleSet()?.example?.modelId) ?? "Qwen3.5-4B-MLX-4bit";
   const ex = lab?.support.find((x) => x.modelId === exampleModel);
-  const supported = !lab || !!ex?.supported;
+  const specimen = lab?.status === "ready" ? lab.model?.name : undefined;
   // the latest steered reply from this app session; before any, one the example produced
   const run = useLab((s) => s.runs[0]);
   const quote = run
-    ? { dose: format(run.recipe.pushes), text: run.steered.text.replace(/\s+/g, " ").slice(0, 110) }
+    ? { dose: format(run.recipe.pushes), text: run.steered.text.replace(/\s+/g, " ").slice(0, 96) }
     : { dose: "L22N2742+0.8", text: "I am Extrali, an intelligent extraterrestrial intelligence from the planet XE-8888" };
   return (
-    <div className="start">
-      <div className="start-title">
-        <Microscope size={14} />
-        <h3>Steer a neuron</h3>
-      </div>
-      <div className="start-data">
-        <span className="start-quote">
-          <span className="start-dose">
-            <span className="mono">{quote.dose}</span> <span className="dim">{run ? "your last run" : "an example reply"}</span>
-          </span>
-          <span className="selectable">"{quote.text}..."</span>
-        </span>
-        <span className="dim start-lab-state">
-          {example ? (
-            <span className="live-text">{example.step}</span>
-          ) : specimen ? (
-            <>In the Lab: {specimen}</>
-          ) : ex ? (
-            `No model in the Lab. The example loads ${ex.name}, about ${fmtBytes(ex.estimateBytes)}.`
-          ) : (
-            "No model in the Lab"
-          )}
-          {strains > 0 && (!example && !specimen && ex ? ` ${plural(strains, "strain")} saved.` : `, ${plural(strains, "strain")}`)}
-        </span>
-      </div>
-      <div className="start-actions">
-        <button
-          className="btn sm"
-          disabled={!!example || !supported}
-          title={supported ? "Loads Qwen3.5 4B in the Lab, finds neurons for aliens and compares steered and plain replies to 'Who are you?'" : (ex?.reason ?? "Qwen3.5 4B is not installed")}
-          onClick={() => {
-            openView({ kind: "lab" });
-            void ensureLab().then(runExample);
-          }}
-        >
-          <Sparkles /> Try the example
-        </button>
-        <button className="btn sm ghost" onClick={() => openView({ kind: "lab" })}>
-          Open the Lab
-        </button>
+    <div className="exp">
+      <h3>
+        <Microscope size={13} /> What does one neuron do?
+      </h3>
+      <button className="exp-data exp-quote" onClick={() => openView({ kind: "lab" })} title={run ? "Your last steered reply. Open the Lab." : "A real reply with one neuron pushed. Open the Lab."}>
+        <span>"{quote.text}..."</span>
+        <span className="mono dim2">{quote.dose}</span>
+      </button>
+      <div className="exp-actions">
+        {example ? (
+          <span className="live-text truncate">{example.step}</span>
+        ) : specimen || strain ? (
+          <>
+            <button className="btn sm" onClick={() => openView({ kind: "lab" })}>
+              Open the Lab
+            </button>
+            {strain && (
+              <button className="btn sm ghost exp-btn" onClick={() => void newSession(null, strain.id)} title={`Chat with the strain ${strain.name}`}>
+                <span className="truncate">Chat with {strain.name}</span>
+              </button>
+            )}
+          </>
+        ) : ex?.supported ? (
+          <button
+            className="btn sm"
+            title={`Loads ${ex.name} in the Lab (about ${fmtBytes(ex.estimateBytes)}), finds neurons for aliens and compares steered and plain replies`}
+            onClick={() => {
+              openView({ kind: "lab" });
+              void ensureLab().then(runExample);
+            }}
+          >
+            <Sparkles /> Try the example
+          </button>
+        ) : (
+          <GetExampleModel small />
+        )}
       </div>
     </div>
   );
 }
 
-// ---------- environments as enclosures ----------
+// ---------- enclosures on a shelf ----------
 
-function envFacts(e: EnvSummary): string {
-  const f = e.facts;
-  if (e.type === "vm") {
-    // facts list "python3 3.12.16": keep the names
-    const tools = (f?.tools ?? ["python3", "node", "gcc", "git"])
-      .map((t) => t.split(" ")[0])
-      .filter((t) => t !== "python" && t !== "sh" && t !== "bash")
-      .slice(0, 4);
-    const mem = e.vm ? `${e.vm.memoryMiB >= 1024 ? `${e.vm.memoryMiB / 1024} GiB` : `${e.vm.memoryMiB} MiB`}` : "";
-    return [tools.join(" "), mem].filter(Boolean).join(", ");
-  }
-  const n = f?.simCommands?.length;
-  const rt = [e.sim?.python ? "Python" : "", e.sim?.javascript ? "JS" : ""].filter(Boolean).join(" + ");
-  return [n ? `${n} commands` : "simulated", rt].filter(Boolean).join(", ");
-}
+const SHELF_LIMIT = 12;
 
-function Enclosure({ env }: { env: EnvSummary }) {
+function Shelf({ envs }: { envs: EnvSummary[] }) {
   const sessions = useStore((s) => s.sessions);
-  const models = useStore((s) => s.models);
-  const inspecting = useStore((s) => s.inspectorEnvId === env.id && s.view.kind === "home" && s.inspectorOpen);
-  const inside = useMemo(
-    () =>
-      Object.values(sessions)
-        .filter((s) => s.envId === env.id && !s.evalRunId)
-        .sort((a, b) => b.updatedAt - a.updatedAt),
-    [sessions, env.id],
-  );
-  const live = inside.filter((s) => s.status === "running");
-  const lid = LID[env.network];
+  const [all, setAll] = useState(false);
+  const activity = useMemo(() => {
+    const m = new Map<string, { n: number; last: number; live: number }>();
+    for (const s of Object.values(sessions)) {
+      if (!s.envId || s.evalRunId) continue;
+      const a = m.get(s.envId) ?? { n: 0, last: 0, live: 0 };
+      if (s.lastSeq > 0) a.n++;
+      if (s.status === "running") a.live++;
+      a.last = Math.max(a.last, s.updatedAt);
+      m.set(s.envId, a);
+    }
+    return m;
+  }, [sessions]);
+  const ordered = useMemo(() => [...envs].sort((a, b) => (activity.get(b.id)?.last ?? b.createdAt) - (activity.get(a.id)?.last ?? a.createdAt)), [envs, activity]);
+  const shown = all ? ordered : ordered.slice(0, SHELF_LIMIT);
   return (
-    <div className={`encl net-${env.network} ${env.status}${live.length ? " live" : ""}${inspecting ? " inspecting" : ""}`}>
-      <span className="encl-lid" title={lid.tip} />
-      <div className="encl-glass">
-        <button className="encl-head" onClick={() => openEnv(env.id)} title={env.statusDetail ?? `Inspect ${env.name}: ${env.status}`}>
-          <span className={`dot ${env.status}`} />
-          <span className="truncate encl-name">{env.name}</span>
-          <EnvChip type={env.type} />
-        </button>
-        <div className="encl-meta">
-          <span className={`encl-net ${env.network}`} title={lid.tip}>
-            <NetIcon mode={env.network} size={11} />
-            <span className="encl-net-k">network</span> {lid.label}
-          </span>
-          <span className="dim mono truncate">{envFacts(env)}</span>
-        </div>
-        {env.status === "error" && (
-          <button className="encl-err" title={env.statusDetail} onClick={() => openEnv(env.id)}>
-            <CircleX size={12} />
-            <span className="truncate">Failed to start. Open it to see why.</span>
+    <section className="home-sec">
+      <div className="home-sec-head">
+        <h2>Enclosures</h2>
+        <Hint
+          tip="Where an agent's tool calls run, with its own files and network. The lid shows the network: shut, vented for package registries, lifted for the web. A dashed pane is a simulated shell, a solid one a real Linux VM. The plant grows with its sessions."
+          width={320}
+        >
+          <span className="dim num hint-text">{envs.length}</span>
+        </Hint>
+        <span className="blk-spacer" />
+        {envs.length > SHELF_LIMIT && (
+          <button className="cell-link" onClick={() => setAll(!all)}>
+            {all ? "Show fewer" : `Show all ${envs.length}`}
           </button>
         )}
-        <div className="encl-sessions">
-          {inside.slice(0, 2).map((s) => (
-            <button key={s.id} className="encl-session" onClick={() => openSession(s.id)}>
-              <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
-              <span className="truncate">{s.title}</span>
-              <span className="dim truncate encl-model">{modelName(models, s.modelId)}</span>
-              {s.status === "running" ? <span className="live-text">running</span> : <Time ts={s.updatedAt} className="dim" />}
-            </button>
-          ))}
-          {inside.length === 0 && <span className="dim encl-none">No sessions yet</span>}
-        </div>
-        <div className="encl-foot">
-          <button className="btn sm" aria-label={`New session in ${env.name}`} onClick={() => void newSession(env.id)}>
-            <Plus /> Session
-          </button>
-          {inside.length > 2 && <span className="dim num">{plural(inside.length - 2, "more session")}</span>}
-        </div>
+        <button className="btn sm ghost" onClick={() => useStore.setState({ newEnvOpen: true })}>
+          <Plus /> New enclosure
+        </button>
       </div>
+      <div className="shelf">
+        {shown.map((e) => (
+          <Specimen key={e.id} env={e} n={activity.get(e.id)?.n ?? 0} live={activity.get(e.id)?.live ?? 0} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Specimen({ env, n, live }: { env: EnvSummary; n: number; live: number }) {
+  const inspecting = useStore((s) => s.inspectorEnvId === env.id && s.inspectorOpen && s.view.kind === "home");
+  // the same leaning every time, so a shelf doesn't look stamped out
+  const flip = env.id.charCodeAt(env.id.length - 1) % 2 === 0;
+  return (
+    <div className={`specimen${inspecting ? " on" : ""}`}>
+      <button
+        className="specimen-open"
+        onClick={() => openEnv(env.id)}
+        title={env.statusDetail ?? `${env.type === "vm" ? "Linux VM" : "Simulated shell"}, ${NET_WORD[env.network].toLowerCase()}, ${env.status}`}
+      >
+        <EnclosureArt network={env.network} type={env.type} sessions={n} live={live > 0} failed={env.status === "error"} flip={flip} />
+        <span className="specimen-name truncate">{env.name}</span>
+        <span className="specimen-sub dim truncate">
+          {live > 0 ? <span className="live-text">running</span> : env.status === "error" ? <span className="err-text">failed to start</span> : n ? plural(n, "session") : "empty"}
+        </span>
+      </button>
+      <button className="specimen-add icon-btn sm" title={`New session in ${env.name}`} aria-label={`New session in ${env.name}`} onClick={() => void newSession(env.id)}>
+        <Plus />
+      </button>
     </div>
   );
 }
 
-// ---------- every session ----------
+// ---------- where you left off ----------
+
+function Recent({ list }: { list: SessionSummary[] }) {
+  const envs = useStore((s) => s.envs);
+  const models = useStore((s) => s.models);
+  const [all, setAll] = useState(false);
+  return (
+    <section className="home-sec">
+      <div className="home-sec-head">
+        <h2>Recent</h2>
+        <span className="blk-spacer" />
+        {list.length > 5 && (
+          <button className="cell-link recent-more" aria-expanded={all} onClick={() => setAll(!all)}>
+            <ChevronRight size={12} className={`tw${all ? " open" : ""}`} /> {all ? "Show fewer" : `All ${list.length}, with details`}
+          </button>
+        )}
+      </div>
+      {all ? (
+        <SessionsTable list={list} />
+      ) : (
+        <div className="recent">
+          {list.slice(0, 5).map((s) => {
+            const env = s.envId ? envs[s.envId] : undefined;
+            return (
+              <button key={s.id} className="recent-row" onClick={() => openSession(s.id)}>
+                <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
+                <span className="truncate recent-title">{s.title}</span>
+                <span className="truncate dim recent-where">
+                  {env ? env.type === "vm" ? <Box size={11} /> : <Terminal size={11} /> : <MessageSquare size={11} />} {env?.name ?? "chat"}
+                </span>
+                <span className="truncate dim recent-model">{modelName(models, s.modelId)}</span>
+                {s.status === "running" ? <span className="live-text">running</span> : <Time ts={s.updatedAt} className="dim" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function SessionsTable({ list }: { list: SessionSummary[] }) {
   const envs = useStore((s) => s.envs);
@@ -444,7 +542,7 @@ function SessionsTable({ list }: { list: SessionSummary[] }) {
       <thead>
         <tr>
           <th>Session</th>
-          <th>Environment</th>
+          <th>Enclosure</th>
           <th>Model</th>
           <th>Harness</th>
           <th className="r">Context</th>
@@ -480,7 +578,7 @@ function SessionsTable({ list }: { list: SessionSummary[] }) {
                       openEnv(env.id);
                     }}
                   >
-                    <span className={`dot ${env.status}`} /> {env.name} <EnvChip type={env.type} /> <NetIcon mode={env.network} />
+                    {env.name}
                   </button>
                 ) : (
                   <span className="dim">chat</span>
@@ -502,7 +600,7 @@ function SessionsTable({ list }: { list: SessionSummary[] }) {
                 {harnessName(s.harness)}
               </td>
               <td className="r num">{fmtCtx(s.contextWindow)}</td>
-              <td className="r num">{used != null ? fmtInt(used) : "–"}</td>
+              <td className="r num">{used != null ? fmtInt(used) : ""}</td>
               <td>
                 <span className={`status-cell ${s.status}`}>
                   <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : ""}`} />

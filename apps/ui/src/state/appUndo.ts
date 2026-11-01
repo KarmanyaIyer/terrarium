@@ -20,7 +20,7 @@ async function must<T>(fn: (b: Backend) => Promise<T>): Promise<T> {
 
 // ---------- settings ----------
 
-const WORDS: Partial<Record<keyof UpdateSettingsRequest, string>> = { prompts: "Edited a system prompt", newSession: "Changed the new session defaults", newEnv: "Changed the new environment defaults", resourceBudgets: "Changed a resource budget", memoryBudgetBytes: "Changed the memory ceiling" };
+const WORDS: Partial<Record<keyof UpdateSettingsRequest, string>> = { prompts: "Edited a system prompt", newSession: "Changed the new session defaults", newEnv: "Changed the new enclosure defaults", resourceBudgets: "Changed a resource budget", memoryBudgetBytes: "Changed the memory ceiling" };
 
 /** What the settings hold now for the keys a change names; a nested key with no value yet goes back to null, its default. */
 function settingsBefore(req: UpdateSettingsRequest): UpdateSettingsRequest {
@@ -61,12 +61,12 @@ export async function patchSession(id: Id, p: UpdateSessionRequest, label = "Upd
   undoStack.push({ label: p.title != null ? "Renamed the session" : "Changed the session's setup", key: `session:${id}:${Object.keys(p).join()}`, undo: () => must((b) => b.updateSession(id, before)).then(putSession), redo: () => must((b) => b.updateSession(id, p)).then(putSession) });
 }
 
-export async function patchEnv(env: EnvSummary, p: { name?: string; network?: EnvSummary["network"] }, label = "Update environment") {
+export async function patchEnv(env: EnvSummary, p: { name?: string; network?: EnvSummary["network"] }, label = "Update enclosure") {
   const e = await act(label, (b) => b.updateEnv(env.id, p));
   if (!e) return;
   putEnv(e);
   const before = { ...(p.name != null ? { name: env.name } : {}), ...(p.network != null ? { network: env.network } : {}) };
-  undoStack.push({ label: p.name != null ? "Renamed the environment" : "Changed the network mode", undo: () => must((b) => b.updateEnv(env.id, before)).then(putEnv), redo: () => must((b) => b.updateEnv(env.id, p)).then(putEnv) });
+  undoStack.push({ label: p.name != null ? "Renamed the enclosure" : "Changed the network mode", undo: () => must((b) => b.updateEnv(env.id, before)).then(putEnv), redo: () => must((b) => b.updateEnv(env.id, p)).then(putEnv) });
 }
 
 /** How long a deleted session can still come back. */

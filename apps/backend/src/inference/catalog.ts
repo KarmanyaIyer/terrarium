@@ -37,6 +37,12 @@ export const KNOWN_MODELS: Record<string, KnownModel> = {
   "LFM3-1.7B-MLX-8bit": { name: "LFM3 1.7B", family: "lfm3", params: "1.7B", quant: "8bit", toolFormat: QWEN_TOOLS, thinking: "default-on", weightsGB: 1.84, kvBytesPerToken: 12288, fixedMB: 4, overheadGB: 0.5 },
 };
 
+/** A strain replies with the Lab's repeat penalty, as Compare and Sweep tested it. The family's presence penalty on top would be a second one. */
+export function strainSampling(s: Sampling): Sampling {
+  const { presencePenalty: _, ...rest } = s;
+  return rest;
+}
+
 /** Per-family sampling (Qwen/Prism cards: mlx ignores generation_config.json, so always send these). */
 export function familySampling(family: string, thinking: boolean): Sampling {
   if (family === "gemma4") return { temperature: 1.0, topP: 0.95, topK: 64 };
@@ -104,9 +110,9 @@ export class ModelCatalog {
 
   ids(): string[] {
     if (!existsSync(this.modelsDir)) return [];
-    return readdirSync(this.modelsDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && !d.name.startsWith(".") && existsSync(join(this.modelsDir, d.name, "config.json")))
-      .map((d) => d.name)
+    // existsSync follows symlinks, so a model folder can be a link to another disk
+    return readdirSync(this.modelsDir)
+      .filter((name) => !name.startsWith(".") && existsSync(join(this.modelsDir, name, "config.json")))
       .sort();
   }
 

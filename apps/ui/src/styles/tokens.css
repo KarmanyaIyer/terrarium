@@ -54,6 +54,7 @@
 
   /* identity, not status: the brand mark and the enclosure glass on Home */
   --moss: #2f7556;
+  --soil: #8a7a63;
   --glass: #fbfcfb;
   --glass-edge: rgba(20, 36, 28, 0.18);
   --glass-hi: rgba(255, 255, 255, 0.95);
@@ -150,6 +151,7 @@
     --accent-line: rgba(77, 150, 236, 0.6);
 
     --moss: #62b58c;
+    --soil: #5e5344;
     --glass: #1f2422;
     --glass-edge: rgba(220, 240, 230, 0.16);
     --glass-hi: rgba(255, 255, 255, 0.06);

@@ -571,8 +571,9 @@ export class EnvManager {
    */
   private async boot(row: EnvRow, rt: EnvRuntime): Promise<void> {
     if (row.type === "sim") return this.bootSim(row, rt);
+    let told = false;
     for (let attempt = 0; ; attempt++) {
-      const victim = await this.vmBoot.run("vm", async () => {
+      const step = await this.vmBoot.run("vm", async () => {
         const others = await this.vmSlots(row.id);
         if (others.length < MAX_RUNNING_VMS) {
           await rt.start();
@@ -581,11 +582,26 @@ export class EnvManager {
         const idle = others.find((r) => this.idleVm(r));
         if (!idle || attempt > MAX_RUNNING_VMS + 2) {
           const why = others.map((r) => `${r.name}: ${this.uses(r.id).map((u) => u.reason).join(", ") || r.status}`).join("; ");
+          // A session or eval case waits its turn, as on a sim; a Start press is told why at once.
+          if (this.queuedNotes.has(row.id)) return { waitingFor: why };
           throw new HttpError(409, `${MAX_RUNNING_VMS} VMs are in use (${why}); stop one first`);
         }
-        return idle.id;
+        return { victim: idle.id };
       });
-      if (!victim) return;
+      if (!step) return;
+      if (!step.victim) {
+        if (!told) {
+          told = true;
+          const detail = `Waiting for a free VM (${step.waitingFor})`;
+          this.setStatus(row.id, "starting", detail);
+          this.queuedNotes.get(row.id)?.(detail);
+          log.info(`${row.id} waiting for a VM slot`);
+        }
+        attempt = -1;
+        await this.simSlotChange(row.id);
+        continue;
+      }
+      const victim = step.victim;
       await this.mutex
         .run(victim, async () => {
           // Checked again under its lock: a session may have taken it, or it stopped meanwhile.
@@ -675,7 +691,7 @@ export class EnvManager {
   }
 
   /** Ends this env's wait for a simulated worker, if it has one: its boot fails with `why` and nothing else changes. */
-  cancelQueued(id: string, why = "stopped while waiting for a free simulated worker"): void {
+  cancelQueued(id: string, why = "stopped while waiting for a free slot"): void {
     this.simCancels.get(id)?.(why);
   }
 

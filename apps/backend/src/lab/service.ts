@@ -7,7 +7,7 @@ import { join } from "node:path";
 import type { LabHistoryEntry, LabMemoryCheck, LabModelFacts, LabProbeSet, LabPush, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
 import type { Hub } from "../hub.ts";
-import { estimateBytes } from "../inference/catalog.ts";
+import { estimateBytes, strainSampling } from "../inference/catalog.ts";
 import type { InferenceService, LabHooks } from "../inference/service.ts";
 import type { Store } from "../store/db.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
@@ -555,6 +555,7 @@ export class LabService implements LabHooks {
         loaded,
         loadedContext: undefined,
         residentBytes: loaded ? this.heldBytes() : undefined,
+        sampling: strainSampling(b.sampling),
         strain: { id: s.id, name: s.name, baseModelId: s.baseModelId, recipe: s.recipe },
       });
     }

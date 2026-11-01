@@ -16,7 +16,7 @@ const TABS: { id: InspectorTab; label: string; needsEnv: boolean; needsSession: 
   { id: "request", label: "Request", needsEnv: false, needsSession: true },
   { id: "prompt", label: "Prompt", needsEnv: false, needsSession: true },
   { id: "network", label: "Network", needsEnv: true, needsSession: false },
-  { id: "env", label: "Environment", needsEnv: true, needsSession: false },
+  { id: "env", label: "Enclosure", needsEnv: true, needsSession: false },
   { id: "shell", label: "Shell", needsEnv: true, needsSession: false },
 ];
 
@@ -27,7 +27,7 @@ function EnvSwitcher({ envId }: { envId: string | null }) {
   const list = Object.values(envs).filter((e) => !e.ephemeral || e.id === envId);
   return (
     <>
-      <button ref={pop.ref} className="insp-env" onClick={pop.toggle} title="Environment shown in the inspector">
+      <button ref={pop.ref} className="insp-env" onClick={pop.toggle} title="Enclosure shown in the inspector">
         {env ? (
           <>
             <span className={`dot ${env.status}`} />
@@ -36,7 +36,7 @@ function EnvSwitcher({ envId }: { envId: string | null }) {
             <NetIcon mode={env.network} />
           </>
         ) : (
-          <span className="dim">No environment</span>
+          <span className="dim">No enclosure</span>
         )}
         <ChevronDown size={12} className="dim" />
       </button>
@@ -66,7 +66,9 @@ function EnvSwitcher({ envId }: { envId: string | null }) {
 
 export function Inspector() {
   const tab = useStore((s) => s.inspectorTab);
-  const width = useStore((s) => s.inspectorWidth);
+  // never more than about half of what's right of the sidebar, whatever was saved on a bigger window
+  const saved = useStore((s) => s.inspectorWidth);
+  const width = Math.min(saved, Math.max(320, (window.innerWidth - useStore.getState().sidebarWidth) * 0.48));
   const view = useStore((s) => s.view);
   const sessions = useStore((s) => s.sessions);
   const inspectorEnvId = useStore((s) => s.inspectorEnvId);
@@ -121,7 +123,7 @@ export function Inspector() {
             aria-selected={active === t.id}
             className={active === t.id ? "on" : ""}
             disabled={!avail(t)}
-            title={!avail(t) ? (t.needsSession ? "Open a session" : "No environment") : undefined}
+            title={!avail(t) ? (t.needsSession ? "Open a session" : "No enclosure") : undefined}
             onClick={() => useStore.setState({ inspectorTab: t.id })}
           >
             {t.label}
@@ -135,7 +137,7 @@ export function Inspector() {
         {active === "network" && env && <NetworkTab env={env} session={sessionForEnv} />}
         {active === "env" && env && <EnvTab env={env} />}
         {active === "shell" && env && <ShellTab env={env} />}
-        {active === "env" && !env && <div className="empty">{session ? "This chat has no environment" : "No environments"}</div>}
+        {active === "env" && !env && <div className="empty">{session ? "This chat has no enclosure" : "No enclosures"}</div>}
       </div>
     </aside>
   );

@@ -335,6 +335,16 @@
 .sb-hover .btn.icon-only:hover {
   background: color-mix(in srgb, currentColor 14%, transparent);
 }
+.sb-kind {
+  flex: none;
+  color: var(--fg-3);
+}
+.sb-kind.running {
+  color: var(--accent);
+}
+.sb-more {
+  color: var(--fg-3);
+}
 .sb-new {
   display: flex;
   align-items: center;

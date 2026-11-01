@@ -153,9 +153,11 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
               <span title="prompt tokens → output tokens">
                 {fmtInt(usage.promptTokens)} → {fmtInt(usage.completionTokens)}
               </span>
-              {usage.cachedTokens ? <span className="dim" title="prompt tokens served from the KV cache">{fmtTok(usage.cachedTokens)} cached</span> : null}
-              <span className="dim" title="time to first token (prefill)">ttft {fmtMs(it.end?.timing.ttftMs)}</span>
-              <span className="dim">{fmtTps(it.end?.timing.genTps)}</span>
+              <span className="call-extra">
+                {usage.cachedTokens ? <span className="dim" title="prompt tokens served from the KV cache">{fmtTok(usage.cachedTokens)} cached </span> : null}
+                <span className="dim" title="time to first token (prefill)">ttft {fmtMs(it.end?.timing.ttftMs)} </span>
+                <span className="dim">{fmtTps(it.end?.timing.genTps)}</span>
+              </span>
               <span className="dim">{fmtMs(it.end?.timing.totalMs)}</span>
             </>
           ) : live ? (
@@ -732,7 +734,7 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
     case "env_lifecycle":
       return (
         <div className="row-ev dim">
-          <span>{ev.action === "queue" ? ev.detail : `Environment ${ev.action}${ev.detail ? `: ${ev.detail}` : ""}`}</span>
+          <span>{ev.action === "queue" ? ev.detail : `Enclosure ${ev.action}${ev.detail ? `: ${ev.detail}` : ""}`}</span>
           <Stamp ts={it.ts} t0={t0} />
         </div>
       );

@@ -6,6 +6,7 @@ import { checkMemory, exampleSet, freeMemory, loadSpecimen, pickTarget, runExamp
 import { exactBytes, fmtBytes, fmtInt, fmtMs } from "../../lib/format";
 import { Hint, Popover, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
+import { GetExampleModel, ModelSuggestions } from "../ModelSuggestions";
 import { Busy, ErrLine } from "./bits";
 
 const modelName = (lab: LabState | null, id: string | null | undefined) => lab?.support.find((s) => s.modelId === id)?.name ?? id ?? "";
@@ -22,7 +23,7 @@ function SpecimenPicker() {
     <>
       <button ref={pop.ref} className="hdr-btn lab-picker" onClick={pop.toggle} aria-haspopup="listbox" title="Model on the bench">
         <span className={`dot ${dot}`} />
-        <span className="strong truncate">{modelName(lab, target ?? loaded) || "Pick a model"}</span>
+        <span className="strong truncate">{modelName(lab, target ?? loaded) || (lab?.support.length ? "Pick a model" : "No models yet")}</span>
         <ChevronDown size={12} className="dim" />
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={430} className="lab-pick-pop">
@@ -194,7 +195,7 @@ export function SpecimenHead() {
       <Microscope size={15} className="dim2" />
       <h1>Lab</h1>
       <SpecimenPicker />
-      {lab && (
+      {lab && (st !== "stopped" || lab.support.length > 0) && (
         <span className={`lab-status ${st}`}>
           {loading ? (
             <Busy since={loadSince ?? Date.now()}>loading</Busy>
@@ -326,10 +327,12 @@ export function Bench() {
   const name = modelName(lab, loading ? lab?.loadingModelId : target);
   const memFor = mem?.modelId === target ? mem : null;
   const sup = lab?.support.find((s) => s.modelId === target);
+  const noModels = !!lab && lab.support.length === 0;
+  const exampleReady = !!lab?.support.find((s) => s.modelId === exampleSet()?.example?.modelId)?.supported;
   return (
     <div className="lab-bench">
       <div className="bench-card">
-        <h2>{loading ? `Loading ${name}` : st === "error" ? "The Lab stopped" : "No specimen on the bench"}</h2>
+        <h2>{loading ? `Loading ${name}` : st === "error" ? "The Lab stopped" : noModels ? "The Lab needs a model" : "No specimen on the bench"}</h2>
         {st === "error" && lab?.detail && <ErrLine err={{ error: lab.detail }} />}
         {loading ? (
           <div className="bench-loading dim2">
@@ -350,7 +353,8 @@ export function Bench() {
         )}
         {!loading && target && sup?.supported && (memFor ? <MemoryFit m={memFor} /> : memBusy ? <div className="dim2 memfit">Checking memory…</div> : null)}
         {loadErr && !loading && <ErrLine err={loadErr} />}
-        {!loading && (
+        {!loading && noModels && <ModelSuggestions limit={1} />}
+        {!loading && !noModels && (
           <div className="bench-actions">
             <button className="btn primary" disabled={!target || !sup?.supported || (memFor ? !memFor.fits : false) || example != null} onClick={() => void loadSpecimen()}>
               Load {name}
@@ -361,7 +365,8 @@ export function Bench() {
               </button>
             )}
             <span className="blk-spacer" />
-            <Hint
+            {!exampleReady && <GetExampleModel />}
+            {exampleReady && <Hint
               tip={
                 <>
                   <span className="hint-title">Try the example</span>
@@ -374,7 +379,7 @@ export function Bench() {
               <button className="btn" disabled={example != null} onClick={() => void runExample()}>
                 {example ? <Busy since={example.since}>{example.step}</Busy> : <><Sparkles /> Try the example</>}
               </button>
-            </Hint>
+            </Hint>}
           </div>
         )}
       </div>

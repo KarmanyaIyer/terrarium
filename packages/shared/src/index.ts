@@ -501,6 +501,12 @@ export interface EvalRunDetail extends EvalRunSummary {
 
 // ---------- App state + WS ----------
 
+/** Whether Linux VMs can start here: a fresh data dir has no guest image until one is built (POST /api/vm-image/build). */
+export interface VmSetup {
+  ok: boolean;
+  detail?: string;
+}
+
 export interface AppState {
   envs: EnvSummary[];
   sessions: SessionSummary[];
@@ -512,6 +518,7 @@ export interface AppState {
   downloads: ModelDownload[];
   versions: { app: string; gondolin: string; justBash: string; piAgentCore: string; omlx?: string };
   lab?: LabState;
+  vmSetup?: VmSetup;
 }
 
 export type WsMessage =

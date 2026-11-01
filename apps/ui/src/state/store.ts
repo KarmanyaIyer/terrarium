@@ -17,6 +17,7 @@ import type {
   SessionSummary,
   TraceEvent,
   WsMessage,
+  VmSetup,
 } from "@terrarium/shared";
 import type { Backend, ConnStatus } from "../api/backend";
 import { afterChunk, mergeNetPage } from "../lib/catchup";
@@ -91,6 +92,9 @@ function loadPrefs(): Prefs {
   }
 }
 
+/** Below this window width the inspector would take the transcript's room, so it opens only when asked for. */
+export const INSPECTOR_MIN_WINDOW = 1180;
+
 export interface Store extends Prefs {
   backend: Backend | null;
   conn: ConnStatus;
@@ -106,6 +110,8 @@ export interface Store extends Prefs {
   versions: AppState["versions"] | null;
   settings: AppSettings;
   downloads: Record<Id, ModelDownload>;
+  vmSetup: VmSetup;
+  vmBuilding: number | null;
   harness: HarnessInfo[] | null;
 
   traces: Record<Id, Trace>;
@@ -163,6 +169,8 @@ export const useStore = create<Store>()(() => ({
     prompts: {},
   },
   downloads: {},
+  vmSetup: { ok: true },
+  vmBuilding: null,
   harness: null,
   traces: {},
   samples: [],
@@ -260,6 +268,7 @@ function hydrate(state: AppState) {
     versions: state.versions,
     settings: state.settings,
     downloads: Object.fromEntries((state.downloads ?? []).map((d) => [d.id, d])),
+    vmSetup: state.vmSetup ?? { ok: true },
     ready: true,
   });
   labHydrate(state.lab);

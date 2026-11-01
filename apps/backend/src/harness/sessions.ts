@@ -20,7 +20,7 @@ import type {
 } from "@terrarium/shared";
 import type { EnvManager } from "../envs/manager.ts";
 import type { EnvRuntime, Manifest } from "../envs/types.ts";
-import { defaultOutputBudget, familySampling } from "../inference/catalog.ts";
+import { defaultOutputBudget, familySampling, strainSampling } from "../inference/catalog.ts";
 import type { CallResult, Gateway } from "../inference/gateway.ts";
 import type { InferenceService } from "../inference/service.ts";
 import type { Hub } from "../hub.ts";
@@ -631,7 +631,8 @@ export class SessionManager {
     try {
       const model = await this.requireModel(r.model_id);
       const thinking = !!r.thinking && model.thinking !== "none";
-      const sampling: Sampling = thinking ? { ...familySampling(model.family, true) } : { ...model.sampling };
+      // a strain's model.sampling already has no presence penalty; thinking swaps in the family's
+      const sampling: Sampling = thinking ? (model.strain ? strainSampling(familySampling(model.family, true)) : { ...familySampling(model.family, true) }) : { ...model.sampling };
       const window = r.context_window;
       const maxOutput = r.max_output_tokens;
       const maxTurns = Math.max(1, opts.maxTurns ?? DEFAULT_MAX_TURNS);
