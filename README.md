@@ -113,7 +113,7 @@ recorded in the transcript at the turn it took effect, and the raw requests carr
 ## Models
 
 Models are folders of MLX weights in `models/`, served by oMLX. Installed: Qwen3.5 4B and 9B (4bit),
-Gemma 4 12B (4bit), Ternary-Bonsai-2 2B, 9B and 27B (2bit).
+Gemma 4 12B (4bit), Ternary-Bonsai-2 2B, 9B and 27B (2bit), LFM3 1.7B (8bit).
 
 ![Models page](docs/screenshots/models.png)
 
@@ -126,8 +126,11 @@ check before anything downloads. The download runs with progress and can be canc
 the list when it lands in `models/`. Remove model deletes its folder and reports the space freed; a loaded
 model or one with running sessions can't be removed.
 
-Example: `LiquidAI/LFM3-1.7B-MLX-4bit` (released 2026-10-27, 945 MiB) fails the check because the installed
-mlx-lm (0.31.4.dev) has no `lfm3` architecture, so oMLX couldn't load it. It needs a newer mlx-lm.
+LFM3 1.7B (`LiquidAI/LFM3-1.7B-MLX-8bit`, released 2026-10-27, 1.7 GiB) is suggested and loads although no
+mlx-lm release has its architecture yet: Terrarium ships a reviewed copy of mlx-lm's open `lfm3` pull request and
+puts it into `.venv` before oMLX starts (`apps/backend/README.md`). The check shows it as mlx-lm "with lfm3 added
+by Terrarium". Tool calls use the same XML format as Qwen3.5. The 8bit build is suggested because the 4bit one
+picks a different top token about 1 time in 5 compared with full precision.
 
 The memory ceiling (Settings) is the most oMLX may use for models; past it oMLX refuses another load and
 evicts idle models. It takes effect when oMLX starts.

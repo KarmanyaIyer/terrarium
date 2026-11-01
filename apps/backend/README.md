@@ -70,6 +70,15 @@ uv pip install --python .venv/bin/python ./.venv/wheels/omlx-0.7.2-cp313-cp313-m
 No extras installed (no `mcp`, `grammar`, `audio`, `cluster`). The wheel pins `mlx==0.32.4`, mlx-lm
 `94cdcae1`, mlx-vlm `97902318`.
 
+Vendored mlx-lm models: `scripts/vendor/mlx_lm_models/*.py` (now `lfm3.py`, from mlx-lm PR #2016 at
+`a1de292b`, unmerged; provenance in its header, review in `TODO_20.md`). `src/inference/vendor.ts` copies them
+into `.venv/lib/python3.*/site-packages/mlx_lm/models/` before oMLX starts and before each Add model check, so
+a rebuilt venv gets them back with no extra step. It is idempotent, updates an older vendored copy, and never
+overwrites a file mlx-lm ships itself (no `# Vendored by Terrarium` first line). When an mlx-lm release with
+`lfm3` is installed, the backend logs that the vendored copy is unused; delete `scripts/vendor/mlx_lm_models/lfm3.py`
+then. Upgrading mlx-lm to a release without `lfm3` keeps the vendored file (pip doesn't own it), so check it still
+imports.
+
 ## How oMLX is run
 
 `scripts/omlx_serve.py` wraps `omlx serve`:
