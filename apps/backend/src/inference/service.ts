@@ -135,6 +135,7 @@ export class InferenceService {
 
   async broadcastModels(): Promise<void> {
     this.hub.broadcast({ type: "models", models: await this.models() });
+    void this.lab?.recheckCeiling().catch((err: unknown) => log.warn("re-checking the ceiling failed", err));
   }
 
   async start(): Promise<void> {
@@ -198,7 +199,6 @@ export class InferenceService {
     this.statusCache = null;
     await this.reloadIfIdle();
     await this.broadcastModels();
-    void this.lab?.recheckCeiling().catch((err) => log.warn("re-checking the ceiling failed", err));
   }
 
   async updateModel(id: string, patch: ModelOverrides): Promise<ModelInfo> {

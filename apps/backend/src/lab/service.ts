@@ -114,6 +114,8 @@ function restoredId(v: unknown, prefix: string): string {
   return typeof v === "string" && /^[\w:-]{1,80}$/.test(v) ? v : newId(prefix);
 }
 
+const overText = (total: number, ceiling: number) => `The Lab and oMLX hold about ${gb(total)}, over the ${gb(ceiling)} memory ceiling. Unload the Lab's model or raise the ceiling.`;
+
 export class LabService implements LabHooks {
   private opts: LabServiceOptions;
   private store: Store;
@@ -277,13 +279,16 @@ export class LabService implements LabHooks {
     return (await this.omlxModels(false)).filter((m) => m.busy).reduce((a, m) => a + m.bytes, 0);
   }
 
-  /** oMLX unloaded something: the over-ceiling note goes once it's no longer so. */
+  /** oMLX's models changed: the over-ceiling note follows, and goes once it's no longer so. */
   async recheckCeiling(): Promise<void> {
     if (!this.overCeiling) return;
-    const loaded = await this.omlxModels(false);
-    if (this.heldBytes() + loaded.reduce((a, m) => a + m.bytes, 0) > this.inference.budget().budgetBytes) return;
-    this.overCeiling = undefined;
-    this.broadcast();
+    await this.mutex.run("lab", async () => {
+      if (!this.overCeiling) return;
+      const ceiling = this.inference.budget().budgetBytes;
+      const total = this.heldBytes() + (await this.omlxModels(false)).reduce((a, m) => a + m.bytes, 0);
+      this.overCeiling = total > ceiling ? overText(total, ceiling) : undefined;
+      this.broadcast();
+    });
   }
 
   /**
@@ -305,7 +310,7 @@ export class LabService implements LabHooks {
           total -= m.bytes;
         }
         if (total > ceiling && (await this.releaseIdle())) total -= lab;
-        if (total > ceiling) this.overCeiling = `The Lab and oMLX hold about ${gb(total)}, over the ${gb(ceiling)} memory ceiling. Unload the Lab's model or raise the ceiling.`;
+        if (total > ceiling) this.overCeiling = overText(total, ceiling);
       }
       this.broadcast();
     });

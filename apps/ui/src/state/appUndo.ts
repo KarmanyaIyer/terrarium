@@ -116,7 +116,7 @@ export function deleteSession(s: SessionSummary) {
       hiddenSessions.delete(s.id);
       saveHiddenSessions();
       putSession(s);
-      if (wasOpen) openSession(s.id);
+      if (wasOpen && useStore.getState().view.kind === "home") openSession(s.id);
     },
     redo: () => hide(s),
   });

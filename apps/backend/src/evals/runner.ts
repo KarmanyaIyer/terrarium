@@ -52,6 +52,7 @@ interface ResultRow {
 interface ActiveRun {
   stopped: boolean;
   sessions: Set<string>;
+  envs: Set<string>; // case envs, so Stop reaches a fork or a grade waiting for a slot
   done: Promise<void>;
 }
 
@@ -186,7 +187,7 @@ export class EvalRunner {
       );
       for (const m of req.modelIds) for (const c of suite.cases) this.store.run("INSERT INTO eval_results (run_id, case_id, model_id, status) VALUES (?, ?, ?, 'pending')", id, c.id, m);
     });
-    const active: ActiveRun = { stopped: false, sessions: new Set(), done: Promise.resolve() };
+    const active: ActiveRun = { stopped: false, sessions: new Set(), envs: new Set(), done: Promise.resolve() };
     this.active.set(id, active);
     active.done = this.execute(id, suite, config, active)
       .catch((err) => {
@@ -204,6 +205,7 @@ export class EvalRunner {
     const a = this.active.get(id);
     if (a) {
       a.stopped = true;
+      for (const e of a.envs) this.envs.cancelQueued(e, "the eval run was stopped");
       await Promise.all([...a.sessions].map((s) => this.sessions.stop(s)));
       await Promise.race([a.done, new Promise((r) => setTimeout(r, 30_000).unref())]);
     }
@@ -284,7 +286,7 @@ export class EvalRunner {
     const id = BASE_ENV[type];
     if (!this.envs.exists(id)) await this.envs.create({ name: `eval base (${type})`, type, network: "off" }, { ephemeral: true, id });
     const snap = this.envs.snapshots(id).find((s) => s.kind === "factory");
-    if (!snap) throw new Error(`eval base env ${id} has no factory snapshot`);
+    if (!snap) throw new Error(`eval base enclosure ${id} has no factory snapshot`);
     return { id, snapshotId: snap.id };
   }
 
@@ -300,12 +302,17 @@ export class EvalRunner {
         // it, so shell, network, other sessions and lifecycle ops refuse it from its first broadcast.
         const ownedId = newId(c.envType === "vm" ? "vm" : "sim");
         this.setResult(runId, c.id, modelId, { status: "running", envId: ownedId });
+        active.envs.add(ownedId);
         const env = await this.envs.fork(
           base.id,
           { name: `eval ${suite.id}/${c.id} (${modelId})`, snapshotId: base.snapshotId, network: c.network ?? "off", seedFiles: c.setupFiles ?? [] },
           { ephemeral: true, id: ownedId },
         ).catch((err) => this.forkFailed(runId, c.id, modelId, ownedId, err));
         envId = env.id;
+      }
+      if (active.stopped) {
+        this.setResult(runId, c.id, modelId, { status: "skipped", detail: "run stopped", durationMs: Date.now() - started });
+        return;
       }
       const session = await this.sessions.create(
         {
@@ -344,9 +351,11 @@ export class EvalRunner {
         ...(grade.score !== undefined ? { score: grade.score } : {}),
       });
     } catch (err) {
-      this.setResult(runId, c.id, modelId, { status: "error", detail: errorMessage(err), durationMs: Date.now() - started, ...(sessionId ? { sessionId } : {}) });
+      if (active.stopped) this.setResult(runId, c.id, modelId, { status: "skipped", detail: "run stopped", durationMs: Date.now() - started, ...(sessionId ? { sessionId } : {}) });
+      else this.setResult(runId, c.id, modelId, { status: "error", detail: errorMessage(err), durationMs: Date.now() - started, ...(sessionId ? { sessionId } : {}) });
     } finally {
       if (sessionId) active.sessions.delete(sessionId);
+      for (const e of active.envs) if (e === envId) active.envs.delete(e);
       if (envId) {
         await this.envs.stop(envId).catch(() => undefined);
         await this.envs.releaseStorage(envId).catch((err) => log.warn(`releasing ${envId} failed`, err));

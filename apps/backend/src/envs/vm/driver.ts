@@ -314,7 +314,7 @@ export class VmRuntime implements EnvRuntime {
   }
 
   private requireVm(): VM {
-    if (!this.vm || this.vm.getHostPid() === null) throw new Error(`env ${this.id} is not running`);
+    if (!this.vm || this.vm.getHostPid() === null) throw new Error(`enclosure ${this.id} is not running`);
     return this.vm;
   }
 
@@ -396,7 +396,7 @@ export class VmRuntime implements EnvRuntime {
     if (this.isRunning()) return;
     this.vm = null;
     await this.disarmGuard(); // a VMM that exited by itself
-    if (!fs.existsSync(this.diskPath)) throw new Error(`env ${this.id} has no disk (${this.diskPath})`);
+    if (!fs.existsSync(this.diskPath)) throw new Error(`enclosure ${this.id} has no disk (${this.diskPath})`);
     const image = this.image();
     const repointed = await repointStaleBacking(this.diskPath);
     if (repointed) log.info(`env ${this.id}: base image moved, disk now backed by ${repointed}`);
@@ -433,7 +433,7 @@ export class VmRuntime implements EnvRuntime {
         await this.disarmGuard();
       }
     }
-    throw new Error(`env ${this.id} failed to boot: ${fallbackError}`);
+    throw new Error(`enclosure ${this.id} failed to boot: ${fallbackError}`);
   }
 
   /**
@@ -872,7 +872,7 @@ export function createVmDriver(options: VmDriverOptions = {}): EnvDriver {
     async create(spec: EnvCreateSpec): Promise<EnvRuntime> {
       ensurePrivateDir(spec.dir);
       const disk = path.join(spec.dir, DISK_FILE);
-      if (fs.existsSync(path.join(spec.dir, META_FILE))) throw new Error(`env storage already exists: ${spec.dir}`);
+      if (fs.existsSync(path.join(spec.dir, META_FILE))) throw new Error(`enclosure storage already exists: ${spec.dir}`);
       let imageId: string;
       let vm: VmConfig = { ...DEFAULT_VM_CONFIG, ...spec.vm };
       if (spec.fromSnapshotDir) {
@@ -894,9 +894,9 @@ export function createVmDriver(options: VmDriverOptions = {}): EnvDriver {
 
     async open(spec): Promise<EnvRuntime> {
       const metaPath = path.join(spec.dir, META_FILE);
-      if (!fs.existsSync(metaPath)) throw new Error(`no VM env storage at ${spec.dir}`);
+      if (!fs.existsSync(metaPath)) throw new Error(`no VM enclosure storage at ${spec.dir}`);
       const meta = readJson<EnvMeta>(metaPath);
-      if (meta.id !== spec.id) throw new Error(`env storage at ${spec.dir} belongs to ${meta.id}`);
+      if (meta.id !== spec.id) throw new Error(`enclosure storage at ${spec.dir} belongs to ${meta.id}`);
       if (spec.vm) meta.vm = { ...meta.vm, ...spec.vm };
       return runtime(meta, spec.dir, spec.network);
     },

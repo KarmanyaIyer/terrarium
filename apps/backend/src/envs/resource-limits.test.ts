@@ -32,7 +32,9 @@ class FakeSim implements Partial<EnvRuntime> {
     this.id = id;
     this.dir = dir;
   }
+  static booting: Promise<void> | null = null; // a boot that's under way until the test lets it finish
   async start() {
+    await FakeSim.booting;
     this.running = true;
   }
   async stop() {
@@ -162,6 +164,55 @@ test("a Start press at the cap is told who holds the slots, with no wait; an eva
     await until(() => f.envs.get(b.id).statusDetail?.startsWith("Waiting for a free simulated shell") === true);
     f.envs.release(a.id, "ses-a");
     assert.equal((await waits).status, "running");
+  } finally {
+    await f.close();
+  }
+});
+
+test("a cancel before the first wait, or during the boot, leaves the env down", async () => {
+  const f = fixture();
+  try {
+    const a = await f.envs.create({ name: "a", type: "sim" });
+    const early = f.envs.acquire(a.id, "ses-a");
+    f.envs.cancelQueued(a.id);
+    await assert.rejects(early, /stopped while waiting/);
+    assert.equal(f.runtimes.get(a.id)?.isRunning() ?? false, false);
+    assert.equal(f.envs.get(a.id).status, "stopped");
+    assert.equal(f.envs.activeSession(a.id), undefined);
+    // the boot itself under way
+    let finish = () => {};
+    FakeSim.booting = new Promise((r) => (finish = r));
+    const during = f.envs.acquire(a.id, "ses-a2");
+    await until(() => f.envs.get(a.id).status === "starting");
+    f.envs.cancelQueued(a.id);
+    finish();
+    FakeSim.booting = null;
+    await assert.rejects(during, /stopped while waiting/);
+    assert.equal(f.runtimes.get(a.id)?.isRunning() ?? false, false);
+    assert.equal(f.envs.get(a.id).status, "stopped");
+    assert.equal(f.envs.activeSession(a.id), undefined);
+    await f.envs.stop(a.id);
+  } finally {
+    await f.close();
+  }
+});
+
+test("a press on an env that's waiting is told at once; a session's Stop leaves another session's wait alone", async () => {
+  const f = fixture();
+  try {
+    f.budgets.update({ maxSimWorkers: 1 });
+    const a = await f.envs.create({ name: "a", type: "sim" });
+    const b = await f.envs.create({ name: "b", type: "sim" });
+    await f.envs.acquire(a.id, "ses-a");
+    const gotB = f.envs.acquire(b.id, "ses-b");
+    await until(() => f.envs.get(b.id).statusDetail?.startsWith("Waiting") === true);
+    await assert.rejects(f.envs.start(b.id), /waiting for a free slot/);
+    f.envs.cancelQueued(b.id, undefined, "ses-other");
+    assert.equal(f.envs.activeSession(b.id), "ses-b");
+    f.envs.release(a.id, "ses-a");
+    await gotB;
+    assert.equal(f.runtimes.get(b.id)?.isRunning(), true);
+    f.envs.release(b.id, "ses-b");
   } finally {
     await f.close();
   }

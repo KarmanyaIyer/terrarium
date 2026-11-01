@@ -323,10 +323,12 @@
   right: 4px;
 }
 .sb-session:hover .sb-hover,
+.sb-session:focus-visible .sb-hover,
 .sb-session:has(:focus-visible) .sb-hover {
   display: flex;
 }
 .sb-session:hover .sb-time,
+.sb-session:focus-visible .sb-time,
 .sb-session:has(:focus-visible) .sb-time {
   visibility: hidden;
 }

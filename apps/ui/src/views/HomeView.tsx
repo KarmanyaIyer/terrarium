@@ -100,15 +100,21 @@ function TaskBox() {
 
   const envList = useMemo(() => Object.values(envs).filter((e) => !e.ephemeral && e.status !== "error"), [envs]);
   // one session at a time in an enclosure: a task goes to the last one you used that's free, else to a new one
+  const shown = useRef<string | null>(null);
   const defaultWhere = useMemo(() => {
     const free = envList.filter((e) => !busyReason(e) && (e.type !== "vm" || vmOk));
+    // a session ending elsewhere doesn't move the task you're typing
+    if (free.some((e) => `env:${e.id}` === shown.current)) return shown.current!;
+    shown.current = null;
     const last = (e: EnvSummary) => Math.max(e.createdAt, ...Object.values(sessions).filter((x) => x.envId === e.id).map((x) => x.updatedAt));
     const top = free.sort((a, b) => last(b) - last(a))[0];
-    if (top) return encode({ kind: "env", id: top.id });
+    if (top) return (shown.current = encode({ kind: "env", id: top.id }));
     return encode({ kind: "new", type: vmOk && settings.newEnv.type === "vm" ? "vm" : "sim" });
   }, [envList, sessions, settings, vmOk]);
   const pickedEnv = pickWhere?.startsWith("env:") ? envs[pickWhere.slice(4)] : undefined;
-  const value = pickWhere && (pickWhere === "chat" || pickWhere.startsWith("new:") || (pickedEnv && !busyReason(pickedEnv))) ? pickWhere : defaultWhere;
+  // what you picked stays picked: if it goes busy, Start says so instead of sending the task somewhere else
+  const value = pickWhere && (pickWhere === "chat" || pickWhere.startsWith("new:") || (pickedEnv && pickedEnv.status !== "error")) ? pickWhere : defaultWhere;
+  const pickedBusy = value === pickWhere && pickedEnv ? busyReason(pickedEnv) : undefined;
   const where = decode(value);
   const env = where.kind === "env" ? envs[where.id] : undefined;
   const network = env?.network ?? settings.newEnv.network;
@@ -117,14 +123,14 @@ function TaskBox() {
 
   // a starter fits one kind of place: gone when you pick another, unless you edited it
   const tried = useRef<string | null>(null);
-  useEffect(() => {
-    const starter = tried.current;
+  const pickPlace = (v: string) => {
+    if (text === tried.current) setText("");
     tried.current = null;
-    setText((t) => (t === starter ? "" : t));
-  }, [value]);
+    setPickWhere(v);
+  };
 
   const start = async () => {
-    if (busy || vmBlocked) return;
+    if (busy || vmBlocked || pickedBusy) return;
     setBusy(true);
     await startTask(where, modelId, text);
     setBusy(false);
@@ -177,7 +183,7 @@ function TaskBox() {
         <div className="task-foot">
           <label className="task-where">
             <span className="dim">in</span>
-            <select className="input" value={value} onChange={(e) => setPickWhere(e.target.value)} aria-label="Where it runs">
+            <select className="input" value={value} onChange={(e) => pickPlace(e.target.value)} aria-label="Where it runs">
               {envList.length > 0 && (
                 <optgroup label="Enclosures">
                   {envList.map((e) => (
@@ -206,7 +212,12 @@ function TaskBox() {
             </span>
           )}
           <span className="blk-spacer" />
-          <button className="btn primary" disabled={busy || vmBlocked || !modelId} onClick={() => void start()}>
+          {pickedBusy && (
+            <span className="warn-text truncate" title={pickedBusy}>
+              Busy right now
+            </span>
+          )}
+          <button className="btn primary" disabled={busy || vmBlocked || !!pickedBusy || !modelId} onClick={() => void start()}>
             {busy && <Loader2 className="spin" />} Start
           </button>
         </div>

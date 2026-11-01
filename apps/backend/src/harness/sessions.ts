@@ -489,7 +489,7 @@ export class SessionManager {
 
   /** Eval case sessions are driven by their run (sessions.run), never by user messages. */
   private assertNotEval(id: string): void {
-    if (this.row(id).eval_run_id) throw new HttpError(409, "eval case sessions are read-only: the run drives them and their env is discarded afterwards");
+    if (this.row(id).eval_run_id) throw new HttpError(409, "eval case sessions are read-only: the run drives them and their enclosure is discarded afterwards");
   }
 
   /** Run to completion (evals). */
@@ -533,7 +533,7 @@ export class SessionManager {
       this.setStatus(id, "stopping");
       live.agent?.abort();
       const envId = this.store.get<{ env_id: string | null }>("SELECT env_id FROM sessions WHERE id = ?", id)?.env_id;
-      if (envId) this.envs.cancelQueued(envId);
+      if (envId) this.envs.cancelQueued(envId, undefined, id);
       const timer = new Promise<void>((resolve) => setTimeout(resolve, 15_000).unref());
       await Promise.race([live.running.then(() => undefined), timer]);
     }

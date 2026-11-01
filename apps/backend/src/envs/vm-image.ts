@@ -45,12 +45,17 @@ export class VmImage {
       const keep = (b: Buffer) => (tail = (tail + b.toString("utf8")).slice(-2000));
       child.stdout.on("data", keep);
       child.stderr.on("data", keep);
-      const timer = setTimeout(() => {
+      const killAll = () => {
         try {
           process.kill(-child.pid!, "SIGKILL");
         } catch {
           child.kill("SIGKILL");
         }
+      };
+      process.once("exit", killAll);
+      child.on("close", () => process.off("exit", killAll));
+      const timer = setTimeout(() => {
+        killAll();
         reject(new HttpError(500, "The VM image build timed out after 10 minutes"));
       }, BUILD_TIMEOUT_MS);
       child.on("error", (e) => {

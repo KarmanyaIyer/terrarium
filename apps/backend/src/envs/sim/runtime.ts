@@ -265,7 +265,7 @@ export class SimRuntime implements EnvRuntime {
   }
 
   private request<T = any>(req: DistributiveOmit<HostRequest, "id">, opts: { timeoutMs?: number; collect?: boolean } = {}): Promise<T> {
-    if (!this.child) return Promise.reject(new Error("sim env is not running"));
+    if (!this.child) return Promise.reject(new Error("simulated shell is not running"));
     const id = this.nextId++;
     return new Promise<T>((resolve, reject) => {
       const p: Pending = { resolve, reject, op: req.op, chunks: opts.collect ? [] : undefined, chunkBytes: opts.collect ? 0 : undefined };

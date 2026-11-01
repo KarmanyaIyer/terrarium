@@ -520,6 +520,11 @@ test("an eval case's fork with setup files waits for a VM slot; a person's fork 
   await assert.rejects(envs.fork(src.id, { name: "by hand", seedFiles }), status409(/VMs are in use/));
   const forked = envs.fork(src.id, { name: "case", seedFiles }, { ephemeral: true, id: "vm-fq-case" });
   await until(() => envs.exists("vm-fq-case") && envs.get("vm-fq-case").statusDetail?.startsWith("Waiting for a free VM") === true, "the fork waits");
+  // a second one, canceled while it waits (a stopped eval run): its fork fails and nothing boots
+  const canceled = envs.fork(src.id, { name: "case 2", seedFiles }, { ephemeral: true, id: "vm-fq-case2" });
+  await until(() => envs.exists("vm-fq-case2") && envs.get("vm-fq-case2").statusDetail?.startsWith("Waiting for a free VM") === true, "it waits too");
+  envs.cancelQueued("vm-fq-case2", "the eval run was stopped");
+  await assert.rejects(canceled, /the eval run was stopped/);
   envs.release(a.id, "sess-fq-a");
   assert.equal((await forked).status, "stopped");
   envs.release(b.id, "sess-fq-b");

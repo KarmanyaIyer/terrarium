@@ -94,6 +94,19 @@ export interface EnvHooks {
 /** How often a queued simulated env looks again if nothing woke it. */
 const SIM_QUEUE_POLL_MS = 1000;
 
+/** A boot allowed to wait for a slot: a session's or an eval case's. A Start press has none, and is told why at once. */
+interface SlotWait {
+  owner?: string; // the session waiting, if it's one
+  note?: (detail: string) => void; // hears once that it's waiting
+  waiting?: boolean; // met a full house, and is sitting it out
+  cancelled?: string;
+  wake?: (why: string) => void; // ends the current sleep
+}
+
+const assertLive = (w?: SlotWait) => {
+  if (w?.cancelled) throw new HttpError(409, w.cancelled);
+};
+
 export class EnvManager {
   private store: Store;
   private hub: Hub;
@@ -113,12 +126,8 @@ export class EnvManager {
   /** Envs waiting for a simulated worker slot, first come first served. */
   private simQueue: string[] = [];
   private simWakers = new Set<() => void>();
-  private simCancels = new Map<string, (why: string) => void>();
-  /** Envs whose boot may wait for a slot (a session, an eval case), and how each hears about it. A Start press isn't one: it's told why at once. */
-  private queuedNotes = new Map<string, (detail: string) => void>();
-  /** Envs in a slot wait, and a cancel that came while one was between waits (holding no timer, or on a boot lock). */
-  private waiting = new Set<string>();
-  private waitCancels = new Map<string, string>();
+  /** Boots that may wait for a slot, per env, from before they take the env's mutex until they finish. */
+  private slotWaits = new Map<string, Set<SlotWait>>();
   private active = new Map<string, string>(); // envId -> sessionId using it
   private shells = new Map<string, number>(); // envId -> user shell commands in flight
   private manifests = new Map<string, Manifest>(); // last known /workspace manifest per env
@@ -541,19 +550,34 @@ export class EnvManager {
     return { id: snapId, envId, label, kind, bytes, createdAt };
   }
 
-  /** `queue`: wait for a free slot (an eval case grading its env). Otherwise a full house is a 409 that names who holds it. */
-  async start(id: string, opts: { queue?: boolean } = {}): Promise<EnvSummary> {
-    const mine = opts.queue && !this.queuedNotes.has(id);
-    if (mine) this.queuedNotes.set(id, () => {});
-    try {
+  /** `queue`: wait for a free slot (a session, an eval case grading its env). Otherwise a full house is a 409 that names who holds it. */
+  async start(id: string, opts: { queue?: boolean; owner?: string; onQueued?: (detail: string) => void } = {}): Promise<EnvSummary> {
+    if (opts.queue) {
+      await this.withSlotWait(id, { owner: opts.owner, note: opts.onQueued }, (w) => this.mutex.run(id, () => this.startUnlocked(id, w)));
+    } else {
+      // behind the waiter on its mutex this would hang for as long as the wait lasts
+      if ([...(this.slotWaits.get(id) ?? [])].some((w) => w.waiting)) throw new HttpError(409, "this enclosure is waiting for a free slot");
       await this.mutex.run(id, () => this.startUnlocked(id));
-    } finally {
-      if (mine) this.queuedNotes.delete(id);
     }
     return this.get(id);
   }
 
-  private async startUnlocked(id: string): Promise<void> {
+  /** Registered before the mutex, so a cancel reaches a boot still in line behind another. */
+  private async withSlotWait<T>(id: string, w: SlotWait, fn: (w: SlotWait) => Promise<T>): Promise<T> {
+    let set = this.slotWaits.get(id);
+    if (!set) this.slotWaits.set(id, (set = new Set()));
+    set.add(w);
+    try {
+      const r = await fn(w);
+      assertLive(w);
+      return r;
+    } finally {
+      set.delete(w);
+      if (!set.size && this.slotWaits.get(id) === set) this.slotWaits.delete(id);
+    }
+  }
+
+  private async startUnlocked(id: string, w?: SlotWait): Promise<void> {
     const row = this.row(id);
     const rt = await this.runtimeFor(row);
     if (rt.isRunning()) {
@@ -563,7 +587,7 @@ export class EnvManager {
     this.assertDisk();
     this.setStatus(id, "starting");
     try {
-      await this.boot(row, rt);
+      await this.boot(row, rt, w);
     } catch (err) {
       if (err instanceof HttpError) {
         this.setStatus(id, row.status, row.status_detail); // no VM slot (409): nothing happened
@@ -584,26 +608,22 @@ export class EnvManager {
    * own mutex, and the count is taken again. Nothing waits for an env mutex while holding the boot lock, so a
    * lifecycle op that holds its env's mutex and waits for the boot lock (start, snapshot, reset) can't deadlock it.
    */
-  private async boot(row: EnvRow, rt: EnvRuntime): Promise<void> {
-    try {
-      await (row.type === "sim" ? this.bootSim(row, rt) : this.bootVm(row, rt));
-    } finally {
-      this.waiting.delete(row.id);
-      this.waitCancels.delete(row.id);
+  private async boot(row: EnvRow, rt: EnvRuntime, w?: SlotWait): Promise<void> {
+    await (row.type === "sim" ? this.bootSim(row, rt, w) : this.bootVm(row, rt, w));
+    // canceled while the boot itself ran: nobody wants it now
+    if (w?.cancelled) {
+      await rt.stop().catch((err) => log.warn(`stopping ${row.id} after a cancel failed`, err));
+      assertLive(w);
     }
   }
 
-  private assertWaitLive(id: string): void {
-    const why = this.waitCancels.get(id);
-    if (why) throw new HttpError(409, why);
-  }
-
-  private async bootVm(row: EnvRow, rt: EnvRuntime): Promise<void> {
+  private async bootVm(row: EnvRow, rt: EnvRuntime, w?: SlotWait): Promise<void> {
     let told = false;
     for (let attempt = 0; ; attempt++) {
-      this.assertWaitLive(row.id);
       const step = await this.vmBoot.run("vm", async () => {
+        assertLive(w);
         const others = await this.vmSlots(row.id);
+        assertLive(w);
         if (others.length < MAX_RUNNING_VMS) {
           await rt.start();
           return null;
@@ -612,7 +632,7 @@ export class EnvManager {
         if (!idle || attempt > MAX_RUNNING_VMS + 2) {
           const why = others.map((r) => `${r.name}: ${this.uses(r.id).map((u) => u.reason).join(", ") || r.status}`).join("; ");
           // A session or eval case waits its turn, as on a sim; a Start press is told why at once.
-          if (this.queuedNotes.has(row.id)) return { waitingFor: why };
+          if (w) return { waitingFor: why };
           throw new HttpError(409, `${MAX_RUNNING_VMS} VMs are in use (${why}); stop one first`);
         }
         return { victim: idle.id };
@@ -621,14 +641,14 @@ export class EnvManager {
       if (!step.victim) {
         if (!told) {
           told = true;
-          this.waiting.add(row.id);
+          w!.waiting = true;
           const detail = `Waiting for a free VM (${step.waitingFor})`;
           this.setStatus(row.id, "starting", detail);
-          this.queuedNotes.get(row.id)?.(detail);
+          w!.note?.(detail);
           log.info(`${row.id} waiting for a VM slot`);
         }
         attempt = -1;
-        await this.simSlotChange(row.id);
+        await this.simSlotChange(w!);
         continue;
       }
       const victim = step.victim;
@@ -648,12 +668,12 @@ export class EnvManager {
    * With every slot busy the boot waits its turn instead of failing, so an eval case isn't an error just because other
    * sims are in use. The waiter holds only its own env's mutex, and Stop or Delete on that env cancels the wait.
    */
-  private async bootSim(row: EnvRow, rt: EnvRuntime): Promise<void> {
+  private async bootSim(row: EnvRow, rt: EnvRuntime, w?: SlotWait): Promise<void> {
     let queued = false;
     try {
       for (;;) {
-        this.assertWaitLive(row.id);
         const next = await this.simBoot.run("sim", async () => {
+          assertLive(w);
           const max = this.budgets.get().maxSimWorkers;
           const others = this.store
             .all<EnvRow>("SELECT * FROM envs WHERE type = 'sim' AND id != ? ORDER BY COALESCE(last_used_at, created_at)", row.id)
@@ -666,7 +686,7 @@ export class EnvManager {
           const idle = turn ? others.find((r) => r.status === "running" && this.uses(r.id).length === 0) : undefined;
           if (idle) return { done: false as const, victim: idle.id };
           const why = others.map((r) => `${r.name}: ${this.uses(r.id).map((u) => u.reason).join(", ") || r.status}`).join("; ");
-          if (!this.queuedNotes.has(row.id)) throw new HttpError(409, `${max} simulated shell${max === 1 ? " is" : "s are"} in use (${why || "others are waiting"}); stop one first`);
+          if (!w) throw new HttpError(409, `${max} simulated shell${max === 1 ? " is" : "s are"} in use (${why || "others are waiting"}); stop one first`);
           return { done: false as const, waitingFor: why };
         });
         if (next.done) return;
@@ -681,14 +701,14 @@ export class EnvManager {
         }
         if (!queued) {
           queued = true;
-          this.waiting.add(row.id);
+          w!.waiting = true;
           this.simQueue.push(row.id);
           const detail = `Waiting for a free simulated shell (${next.waitingFor || "all in use"})`;
           this.setStatus(row.id, "starting", detail);
-          this.queuedNotes.get(row.id)?.(detail);
+          w!.note?.(detail);
           log.info(`${row.id} queued for a simulated worker`);
         }
-        await this.simSlotChange(row.id);
+        await this.simSlotChange(w!);
       }
     } finally {
       if (queued) {
@@ -699,12 +719,12 @@ export class EnvManager {
   }
 
   /** Resolves when a slot may have freed: a status change wakes it, the timer covers uses that end without one. */
-  private simSlotChange(id: string): Promise<void> {
+  private simSlotChange(w: SlotWait): Promise<void> {
     return new Promise((resolve, reject) => {
       const clear = () => {
         clearTimeout(timer);
         this.simWakers.delete(wake);
-        this.simCancels.delete(id);
+        w.wake = undefined;
       };
       const wake = () => {
         clear();
@@ -713,10 +733,10 @@ export class EnvManager {
       const timer = setTimeout(wake, SIM_QUEUE_POLL_MS);
       timer.unref();
       this.simWakers.add(wake);
-      this.simCancels.set(id, (why) => {
+      w.wake = (why) => {
         clear();
         reject(new HttpError(409, why));
-      });
+      };
     });
   }
 
@@ -725,15 +745,17 @@ export class EnvManager {
   }
 
   /**
-   * Ends this env's wait for a slot, if it has one: its boot fails with `why` and nothing else changes. The session that
-   * was waiting no longer uses the env from here on, so a Stop that follows isn't refused as busy.
+   * Ends a boot that's allowed to wait for a slot, at any point up to its finish: it fails with `why` and leaves the env
+   * down. The session behind it no longer uses the env from here on, so a Stop that follows isn't refused as busy. With
+   * `owner`, only that session's: another's wait on a shared env is its own.
    */
-  cancelQueued(id: string, why = "stopped while waiting for a free slot"): void {
-    if (!this.waiting.has(id)) return;
-    this.active.delete(id);
-    const cancel = this.simCancels.get(id);
-    if (cancel) cancel(why);
-    else this.waitCancels.set(id, why);
+  cancelQueued(id: string, why = "stopped while waiting for a free slot", owner?: string): void {
+    for (const w of this.slotWaits.get(id) ?? []) {
+      if (owner && w.owner !== owner) continue;
+      w.cancelled = why;
+      if (w.owner && this.active.get(id) === w.owner) this.active.delete(id);
+      w.wake?.(why);
+    }
   }
 
   /** Other VMs whose VMM is up (running, or still shutting down), least recently used first. */
@@ -801,19 +823,16 @@ export class EnvManager {
    * throughout, so making room for another VM can't stop it halfway through. An eval case's fork waits for a slot.
    */
   private async seed(id: string, rt: EnvRuntime, files: { path: string; content: string }[], wait: boolean): Promise<void> {
-    if (wait) this.queuedNotes.set(id, () => {});
-    try {
-      await this.mutex.run(id, async () => {
-        await this.startUnlocked(id);
+    const run = (w?: SlotWait) =>
+      this.mutex.run(id, async () => {
+        await this.startUnlocked(id, w);
         try {
           for (const f of files) await rt.writeFile(f.path, f.content, { as: "agent" });
         } finally {
           await this.stopUnlocked(id);
         }
       });
-    } finally {
-      this.queuedNotes.delete(id);
-    }
+    await (wait ? this.withSlotWait(id, {}, run) : run());
   }
 
   private async refreshFacts(id: string, rt: EnvRuntime): Promise<void> {
@@ -827,7 +846,7 @@ export class EnvManager {
   }
 
   async stop(id: string): Promise<EnvSummary> {
-    this.cancelQueued(id);
+    if (!this.evalUses(id).get(id)) this.cancelQueued(id);
     await this.mutex.run(id, () => {
       this.assertIdle(id);
       return this.stopUnlocked(id);
@@ -952,7 +971,7 @@ export class EnvManager {
   }
 
   async delete(id: string): Promise<void> {
-    this.cancelQueued(id);
+    if (!this.evalUses(id).get(id)) this.cancelQueued(id);
     await this.mutex.run(id, async () => {
       const row = this.row(id);
       this.assertIdle(id);
@@ -1001,7 +1020,7 @@ export class EnvManager {
   }
 
   async stopAll(): Promise<void> {
-    for (const id of [...this.waiting]) this.cancelQueued(id, "the app is shutting down");
+    for (const id of [...this.slotWaits.keys()]) this.cancelQueued(id, "the app is shutting down");
     await Promise.all(
       [...this.runtimes.entries()].map(async ([id, rt]) => {
         if (!rt.isRunning()) return;
@@ -1024,14 +1043,12 @@ export class EnvManager {
     if (holder && holder !== sessionId) throw this.busyError(id);
     this.assertNotEvalOwned(id, sessionId);
     this.active.set(id, sessionId);
-    this.queuedNotes.set(id, onQueued ?? (() => {}));
     try {
-      await this.start(id);
+      await this.start(id, { queue: true, owner: sessionId, onQueued });
     } catch (err) {
       if (this.active.get(id) === sessionId) this.active.delete(id);
+      if (this.exists(id) && !this.active.has(id) && this.row(id).status === "busy") this.setStatus(id, "running");
       throw err;
-    } finally {
-      this.queuedNotes.delete(id);
     }
     this.touch(id);
     const rt = this.runtimes.get(id)!;

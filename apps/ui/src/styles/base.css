@@ -24,7 +24,7 @@ body {
   background: var(--bg-1);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow: hidden;
+  overflow: clip;
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
