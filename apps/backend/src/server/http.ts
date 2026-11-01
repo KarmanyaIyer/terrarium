@@ -25,6 +25,7 @@ import type {
 import { WebSocket, WebSocketServer } from "ws";
 import type { App } from "../app.ts";
 import { harnessInfo } from "../harness/profiles.ts";
+import { LAB_OPS } from "../lab/service.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
 import { logger } from "../util/log.ts";
 import { bearerOk, hostAllowed, offeredProtocols, originAllowed, wsTokenOk } from "./auth.ts";
@@ -71,6 +72,11 @@ function optNumber(v: unknown, name: string, min: number, max = Number.MAX_SAFE_
   return v;
 }
 
+function modelIdOf(v: unknown): string {
+  if (typeof v !== "string" || !v) throw new HttpError(400, "modelId is required");
+  return v;
+}
+
 function routes(app: App): Route[] {
   const r = (method: string, path: string, handler: Handler, extra: Partial<Route> = {}): Route => ({
     method,
@@ -78,7 +84,7 @@ function routes(app: App): Route[] {
     handler,
     ...extra,
   });
-  const { envs, sessions, inference, evals, files, store, settings, downloads } = app;
+  const { envs, sessions, inference, evals, files, store, settings, downloads, lab } = app;
   return [
     r("GET", "/api/state", () => app.state()),
 
@@ -225,6 +231,27 @@ function routes(app: App): Route[] {
     r("POST", "/api/inference/stop", async () => {
       await inference.stop();
       return inference.inferenceState();
+    }),
+
+    // ---- lab ----
+    r("GET", "/api/lab", () => lab.state()),
+    r("GET", "/api/lab/memory", ({ query }) => lab.memory(modelIdOf(query.get("modelId")))),
+    r("POST", "/api/lab/load", ({ body }) => lab.load(modelIdOf(body?.modelId))),
+    r("POST", "/api/lab/unload", () => lab.unload()),
+    r("POST", "/api/lab/free-memory", ({ body }) => lab.freeMemory(modelIdOf(body?.modelId))),
+    ...LAB_OPS.map((op) => r("POST", `/api/lab/${op}`, ({ body }) => lab.op(op, body ?? {}))),
+    r("GET", "/api/lab/probe-sets", () => lab.probeSets()),
+    r("POST", "/api/lab/probe-sets", ({ body }) => lab.saveProbeSet(body ?? {}), { status: 201 }),
+    r("PATCH", "/api/lab/probe-sets/:id", ({ params, body }) => lab.updateProbeSet(params[0], body ?? {})),
+    r("DELETE", "/api/lab/probe-sets/:id", ({ params }) => {
+      lab.deleteProbeSet(params[0]);
+    }),
+    r("GET", "/api/lab/strains", () => lab.strains()),
+    r("POST", "/api/lab/strains", ({ body }) => lab.saveStrain(body ?? {}), { status: 201 }),
+    r("PATCH", "/api/lab/strains/:id", ({ params, body }) => lab.updateStrain(params[0], body ?? {})),
+    r("DELETE", "/api/lab/strains/:id", async ({ params }) => {
+      await lab.deleteStrain(params[0]);
+      if (settings.get().newSession.modelId === `strain:${params[0]}`) settings.update({ newSession: { modelId: null } });
     }),
 
     // ---- evals ----

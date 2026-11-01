@@ -58,9 +58,10 @@ export class TokenCounter {
       if (signal?.aborted) throw signal.reason;
       throw new Error(timeout.aborted ? `tokenizer did not answer within ${ms / 1000} s` : `tokenizer unreachable: ${errorMessage(err)}`);
     };
-    const res = await fetch(`${this.upstream.baseUrl()}/v1/tokenize`, {
+    const model = typeof req.model === "string" ? req.model : undefined;
+    const res = await fetch(`${this.upstream.baseUrl(model)}/v1/tokenize`, {
       method: "POST",
-      headers: { authorization: `Bearer ${this.upstream.apiKey()}`, "content-type": "application/json" },
+      headers: { authorization: `Bearer ${this.upstream.apiKey(model)}`, "content-type": "application/json" },
       body: json,
       signal: signal ? AbortSignal.any([timeout, signal]) : timeout,
     }).catch(fail);

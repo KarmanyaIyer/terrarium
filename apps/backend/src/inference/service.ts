@@ -13,6 +13,17 @@ import { type OmlxModelSettings, type OmlxStatus, OmlxManager } from "./omlx.ts"
 const log = logger("inference");
 const DEFAULT_BUDGET = 12e9;
 
+/** The Lab (lab/service.ts): strains as models (`strain:<id>`, served by its sidecar) and its share of the ceiling. */
+export interface LabHooks {
+  strainModels(base: ModelInfo[]): ModelInfo[];
+  ensureStrain(id: string): Promise<void>;
+  releaseStrain(id: string): Promise<void>;
+  /** Before oMLX may load `id`: make room next to the Lab, or throw a message saying why not. */
+  beforeOmlxLoad(id: string, window: number): Promise<void>;
+}
+
+const isStrain = (id: string) => id.startsWith("strain:");
+
 export class InferenceService {
   readonly catalog: ModelCatalog;
   readonly omlx: OmlxManager;
@@ -26,6 +37,7 @@ export class InferenceService {
   private loadedKey = "";
   /** A model dir was added or removed since oMLX last scanned its model dir. */
   private rescanPending = false;
+  lab?: LabHooks;
 
   constructor(opts: { store: Store; hub: Hub; modelsDir: string; venvDir: string; omlxDataDir: string }) {
     this.store = opts.store;
@@ -84,7 +96,7 @@ export class InferenceService {
       const info = this.catalog.info(id, this.overrides(id), s ? { loaded: s.loaded, loadedContext: s.max_context_window ?? undefined, residentBytes: s.actual_size ?? undefined } : undefined);
       if (info) out.push(info);
     }
-    return out;
+    return this.lab ? [...out, ...this.lab.strainModels(out)] : out;
   }
 
   async model(id: string): Promise<ModelInfo | null> {
@@ -120,8 +132,13 @@ export class InferenceService {
 
   /** Starts oMLX if needed and makes sure the model accepts `window` tokens. oMLX loads on first request. */
   async ensureModel(id: string, window: number, maxOutput = 0): Promise<void> {
+    if (isStrain(id)) {
+      if (!this.lab) throw new Error(`model not found: ${id}`);
+      return this.lab.ensureStrain(id);
+    }
     await this.mutex.run(`model:${id}`, async () => {
       await this.omlx.ensureStarted();
+      await this.lab?.beforeOmlxLoad(id, window);
       if (this.rescanPending) await this.reloadIfIdle(!(await this.omlxStatus())?.models.some((m) => m.id === id));
       const pushed = this.pushedWindow.get(id);
       if (pushed && pushed.window >= window && pushed.maxOutput >= maxOutput) return;
@@ -137,12 +154,14 @@ export class InferenceService {
     const model = await this.model(id);
     if (!model) throw new Error(`model not found: ${id}`);
     await this.ensureModel(id, context ?? model.defaultContext);
+    if (isStrain(id)) return this.broadcastModels();
     await this.mutex.run(`load:${id}`, () => this.omlx.load(id));
     this.statusCache = null;
     await this.broadcastModels();
   }
 
   async unload(id: string): Promise<void> {
+    if (isStrain(id)) return this.lab?.releaseStrain(id);
     if (!this.omlx.isReady()) return;
     await this.omlx.unload(id);
     this.statusCache = null;
@@ -151,6 +170,7 @@ export class InferenceService {
   }
 
   async updateModel(id: string, patch: ModelOverrides): Promise<ModelInfo> {
+    if (isStrain(id)) throw new Error("a strain uses its base model's settings: change those instead");
     const current = this.overrides(id);
     const next: ModelOverrides = {
       defaultContext: patch.defaultContext ?? current.defaultContext,

@@ -17,6 +17,8 @@ export class ResourceSampler {
   private envs: EnvManager;
   private inference: InferenceService;
   last: ResourceSample | null = null;
+  /** The Lab's sidecar process, while one runs. */
+  lab: () => { pid?: number; modelId?: string } = () => ({});
 
   constructor(hub: Hub, envs: EnvManager, inference: InferenceService) {
     this.hub = hub;
@@ -47,9 +49,10 @@ export class ResourceSampler {
 
   async sample(): Promise<ResourceSample> {
     const omlxPid = this.inference.omlx.pid;
+    const lab = this.lab();
     const [system, procs, loaded, envStats] = await Promise.all([
       systemMemory(),
-      processStats(omlxPid ? [omlxPid] : []),
+      processStats([omlxPid, lab.pid].filter((p): p is number => !!p)),
       this.inference.omlx.isReady() ? this.inference.loadedModels() : Promise.resolve([]),
       Promise.all(
         this.envs.running().map(async ({ id, runtime }) => {
@@ -59,11 +62,13 @@ export class ResourceSampler {
       ),
     ]);
     const omlx = omlxPid ? procs.get(omlxPid) : undefined;
+    const labProc = lab.pid ? procs.get(lab.pid) : undefined;
     const sample: ResourceSample = {
       ts: Date.now(),
       system,
       backendRssBytes: process.memoryUsage.rss(),
       inference: omlx ? { rssBytes: omlx.rssBytes, loaded } : undefined,
+      ...(labProc ? { lab: { rssBytes: labProc.rssBytes, ...(lab.modelId ? { modelId: lab.modelId } : {}) } } : {}),
       envs: envStats.filter((e): e is NonNullable<typeof e> => e !== null),
     };
     this.last = sample;

@@ -17,10 +17,11 @@ const log = logger("gateway");
 const MAX_REQUEST_BYTES = 32 * 1024 * 1024;
 const MAX_RAW_BYTES = 64 * 1024 * 1024;
 
+/** Where model calls go. `model`: the request's model id (strains go to the Lab sidecar, the rest to oMLX). */
 export interface Upstream {
-  baseUrl(): string;
-  apiKey(): string;
-  ensureReady(): Promise<void>;
+  baseUrl(model?: string): string;
+  apiKey(model?: string): string;
+  ensureReady(model?: string): Promise<void>;
 }
 
 export interface CallContext {
@@ -258,10 +259,10 @@ export class Gateway {
 
     let upstreamRes: Response;
     try {
-      await this.upstream.ensureReady();
-      upstreamRes = await fetch(`${this.upstream.baseUrl()}/v1/chat/completions`, {
+      await this.upstream.ensureReady(ctx.modelId);
+      upstreamRes = await fetch(`${this.upstream.baseUrl(ctx.modelId)}/v1/chat/completions`, {
         method: "POST",
-        headers: { authorization: `Bearer ${this.upstream.apiKey()}`, "content-type": "application/json", accept: streamed ? "text/event-stream" : "application/json" },
+        headers: { authorization: `Bearer ${this.upstream.apiKey(ctx.modelId)}`, "content-type": "application/json", accept: streamed ? "text/event-stream" : "application/json" },
         body,
         signal: upstreamAbort.signal,
       });
