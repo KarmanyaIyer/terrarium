@@ -152,7 +152,8 @@ Qwen3-8B 8-bit). Those weights are not cached any more; the Lab targets the mode
   Open a chat from Strains: "I am an extraterrestrial intelligence from the planet of Aliens." (strain model id in
   the request, thinking off, 16 tok/s under that load). Screenshots: docs/screenshots/lab.png, lab-find.png,
   lab-strain-chat.png.
-- Tests after the fixes: lab.test.ts 10/10, sidecar.test.ts 7/7, UI 22/22, both typechecks clean.
+- Tests after the fixes: lab.test.ts 10/10, sidecar.test.ts 7/7, UI 22/22, both typechecks clean; full backend
+  suite 271/273 pass, 0 fail, 2 skipped.
 - Gemma 4 12B (direct): loads in 11.7 s, 6.72 GB active, 48 layers x 15360 GeGLU neurons, sliding/full kinds.
   Probe, find (38 s), steer and attribution (1.35 s, 8.43 GB peak) all run; a 1000-token probe peaks at 9.69 GB, which
   set the estimate's 4 bytes per neuron-token (11.3 GB for Gemma). The Aliens and Pirates sets found nothing clean
