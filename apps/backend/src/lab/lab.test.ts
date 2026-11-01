@@ -57,6 +57,11 @@ before(async () => {
   writeFileSync(join(models, "tiny-qwen", "model.safetensors"), Buffer.alloc(1024));
   mkdirSync(join(models, "tiny-bonsai"), { recursive: true });
   writeFileSync(join(models, "tiny-bonsai", "config.json"), JSON.stringify({ model_type: "prism_hadamard_qwen35" }));
+  mkdirSync(join(models, "tiny-moe"), { recursive: true });
+  writeFileSync(join(models, "tiny-moe", "config.json"), JSON.stringify({ model_type: "moe", num_experts: 8 }));
+  mkdirSync(join(models, "tiny-other"), { recursive: true });
+  writeFileSync(join(models, "tiny-other", "config.json"), JSON.stringify({ model_type: "other", num_hidden_layers: 2 }));
+  writeFileSync(join(models, "tiny-other", "model.safetensors.index.json"), JSON.stringify({ weight_map: { "model.layers.0.ffn.fc2.weight": "model.safetensors" } }));
   mkdirSync(join(models, "tiny-lfm"), { recursive: true });
   writeFileSync(join(models, "tiny-lfm", "config.json"), JSON.stringify({ model_type: "lfm3", num_hidden_layers: 2, intermediate_size: 64 }));
   writeFileSync(join(models, "tiny-lfm", "model.safetensors.index.json"), JSON.stringify({ weight_map: { "model.layers.0.feed_forward.w2.weight": "model.safetensors" } }));
@@ -84,12 +89,11 @@ test("support list and memory check", async () => {
   const s = await labState();
   assert.equal(s.status, "stopped");
   const qwen = s.support.find((x) => x.modelId === "tiny-qwen");
-  const bonsai = s.support.find((x) => x.modelId === "tiny-bonsai");
   assert.equal(qwen?.supported, true);
-  assert.equal(bonsai?.supported, false);
-  assert.match(bonsai?.reason ?? "", /Hadamard/);
-  assert.match(s.support.find((x) => x.modelId === "tiny-lfm")?.reason ?? "", /no down_proj/);
-  assert.match(s.support.find((x) => x.modelId === "tiny-lfm-one")?.reason ?? "", /no down_proj/);
+  // Bonsai's rotation is inside down_proj, after the hooks; LFM3's w2 is down_proj renamed.
+  for (const id of ["tiny-bonsai", "tiny-lfm", "tiny-lfm-one"]) assert.equal(s.support.find((x) => x.modelId === id)?.supported, true, id);
+  assert.match(s.support.find((x) => x.modelId === "tiny-moe")?.reason ?? "", /Mixture-of-experts/);
+  assert.match(s.support.find((x) => x.modelId === "tiny-other")?.reason ?? "", /no gated MLP/);
   const m = (await call("GET", "/api/lab/memory?modelId=tiny-qwen")).json;
   assert.equal(m.fits, true);
   assert.equal(m.labBytes, 0);
@@ -106,10 +110,25 @@ test("support list and memory check", async () => {
   }
 });
 
+test("history: saved, listed newest first, updated in place, deleted", async () => {
+  const saved = (await call("POST", "/api/lab/history", { kind: "sweep", modelId: "tiny-qwen", title: "t", at: 5, data: { rows: [1] } })).json;
+  assert.match(saved.id, /^run/);
+  const again = (await call("POST", "/api/lab/history", { id: saved.id, kind: "sweep", modelId: "tiny-qwen", title: "t2", at: 5, data: { rows: [1, 2] } })).json;
+  assert.equal(again.id, saved.id);
+  await call("POST", "/api/lab/history", { id: "run-b", kind: "compare", modelId: "tiny-qwen", at: 9, data: {} });
+  await call("POST", "/api/lab/history", { id: "run-c", kind: "compare", modelId: "tiny-other", at: 12, data: {} });
+  const list = (await call("GET", "/api/lab/history?modelId=tiny-qwen")).json;
+  assert.deepEqual(list.map((x: any) => x.id), ["run-b", saved.id]);
+  assert.deepEqual(list[1].data, { rows: [1, 2] });
+  assert.equal((await call("POST", "/api/lab/history", { kind: "nope", modelId: "x" })).status, 400);
+  for (const id of [saved.id, "run-b", "run-c"]) await call("DELETE", `/api/lab/history/${id}`);
+  assert.deepEqual((await call("GET", "/api/lab/history?modelId=tiny-qwen")).json, []);
+});
+
 test("load: unsupported and over-the-ceiling are refused with a reason", async () => {
-  const bonsai = await call("POST", "/api/lab/load", { modelId: "tiny-bonsai" });
+  const bonsai = await call("POST", "/api/lab/load", { modelId: "tiny-moe" });
   assert.equal(bonsai.status, 400);
-  assert.match(bonsai.json.error, /can't be opened in the Lab: Hadamard/);
+  assert.match(bonsai.json.error, /can't be opened in the Lab: Mixture-of-experts/);
   app.inference.setBudget(2e9);
   try {
     const big = await call("POST", "/api/lab/load", { modelId: "tiny-qwen" });
@@ -155,7 +174,7 @@ test("strains: validation, recipe text, listed as models", async () => {
   const range = await call("POST", "/api/lab/strains", { name: "Far", baseModelId: "tiny-qwen", pushes: [{ layer: 9, neuron: 2, mode: "dose", value: 1 }] });
   assert.equal(range.status, 400);
   assert.match(range.json.error, /layers 0 to 3/);
-  assert.equal((await call("POST", "/api/lab/strains", { name: "B", baseModelId: "tiny-bonsai", pushes: [{ layer: 0, neuron: 0, mode: "dose", value: 1 }] })).status, 400);
+  assert.equal((await call("POST", "/api/lab/strains", { name: "B", baseModelId: "tiny-moe", pushes: [{ layer: 0, neuron: 0, mode: "dose", value: 1 }] })).status, 400);
 
   const ok = await call<LabStrain>("POST", "/api/lab/strains", { name: "Alien", baseModelId: "tiny-qwen", pushes: [{ layer: 1, neuron: 2, mode: "dose", value: 0.8 }, { layer: 3, neuron: 5, mode: "clamp", value: 4 }], notes: "test" });
   assert.equal(ok.status, 201);

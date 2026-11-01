@@ -240,6 +240,13 @@ function routes(app: App): Route[] {
     r("POST", "/api/lab/unload", () => lab.unload()),
     r("POST", "/api/lab/free-memory", ({ body }) => lab.freeMemory(modelIdOf(body?.modelId))),
     ...LAB_OPS.map((op) => r("POST", `/api/lab/${op}`, ({ body }) => lab.op(op, body ?? {}))),
+    r("POST", "/api/lab/tokens", ({ body }) => lab.tokens(body ?? {})),
+    r("POST", "/api/lab/cancel", () => lab.cancel()),
+    r("GET", "/api/lab/history", ({ query }) => lab.history(query.get("modelId") ?? undefined, Number(query.get("limit") ?? 200))),
+    r("POST", "/api/lab/history", ({ body }) => lab.saveHistory(body ?? {}), { status: 201 }),
+    r("DELETE", "/api/lab/history/:id", ({ params }) => {
+      lab.deleteHistory(params[0]);
+    }),
     r("GET", "/api/lab/probe-sets", () => lab.probeSets()),
     r("POST", "/api/lab/probe-sets", ({ body }) => lab.saveProbeSet(body ?? {}), { status: 201 }),
     r("PATCH", "/api/lab/probe-sets/:id", ({ params, body }) => lab.updateProbeSet(params[0], body ?? {})),

@@ -744,7 +744,7 @@ export interface LabModelFacts {
   dModel: number;
   activation: string; // swiglu | geglu
   quant: string;
-  layerKinds?: string[]; // Qwen3.5: "linear" | "full" attention per layer
+  layerKinds?: string[]; // per layer: "linear" | "full" (Qwen3.5), "sliding" | "full" (Gemma 4), "conv" | "sliding" | "full" (LFM3)
   residNorm: number[]; // per layer: median |residual after layer L| over the calibration text (dose scale)
   calibrationTokens: number;
   residentBytes: number; // MLX active memory after load
@@ -850,6 +850,50 @@ export interface SaveProbeSetRequest {
   concept: string[];
   control: string[];
   testPrompt?: string;
+  id?: Id; // an undone delete coming back keeps its id
+}
+
+/** The trait the Find box describes. The unsteered model writes matched lines with and without it. */
+export interface LabExamplesRequest {
+  trait: string; // "a tiger", "talks like a pirate"
+  n?: number; // pairs to ask for, default 12
+  seed?: number;
+}
+
+export interface LabExamplesResult {
+  trait: string;
+  concept: string[]; // lines that show the trait
+  control: string[]; // the same lines without it
+  words: string[]; // the description's content words
+  seed: number;
+  ms: number;
+}
+
+/** Surprise me: random neurons of one layer in the back half of the model, the ones that move the next word most. */
+export interface LabExploreRequest {
+  layer?: number; // default: a random one
+  sample?: number; // neurons to try, default 48
+  top?: number; // how many to return, default 4
+  seed?: number;
+}
+
+export interface LabExplorePick extends NeuronRef {
+  kl: number; // how far +0.8 moved the next-token distribution
+  tokens: string[]; // tokens it raises most
+  promotes: string[];
+  suppresses: string[];
+}
+
+export interface LabExploreResult {
+  layer: number;
+  sampled: number;
+  picks: LabExplorePick[];
+  ms: number;
+}
+
+/** What the tokenizer makes of each text. */
+export interface LabTokensResult {
+  tokens: { id: number; text: string }[][];
 }
 
 export interface LabFindRequest {
@@ -859,6 +903,7 @@ export interface LabFindRequest {
   layers?: [number, number]; // inclusive range, default all
   prompt?: string; // test prompt for the steered previews, default "Who are you?"
   previews?: number; // how many top candidates get a short steered reply, default 6
+  words?: string[]; // words known to belong to the concept: counted by writes.delta with the concept tokens
 }
 
 export interface LabCandidate extends NeuronRef {
@@ -895,7 +940,12 @@ export interface LabGenerateRequest {
   maxTokens?: number; // default 160
   thinking?: boolean; // default off
   baseline?: boolean; // also generate the unsteered reply with the same seed
+  repeat?: number; // repetition penalty over the last 64 tokens (mlx-lm's); unset or 1 is off
 }
+
+/** How a reply reads. ok: ordinary text, whatever it says. odd: unlikely word by word under the unsteered model. loop:
+ * stuck repeating. broken: word salad. empty: stopped at once. */
+export type LabQuality = "ok" | "odd" | "loop" | "broken" | "empty";
 
 export interface LabReply {
   text: string;
@@ -905,6 +955,9 @@ export interface LabReply {
   /** Mean log-probability of the reply's tokens under the unsteered model: falls as steering pushes it off course. */
   fluency: number;
   repetition: number; // share of repeated 3-grams, 0 to 1
+  loop: boolean; // stuck repeating: a third of its 3-grams repeat, or its last 16 tokens cycle
+  quality: LabQuality;
+  pieces: string[]; // the text cut at token boundaries; joined they are the text
 }
 
 export interface LabGenerateResult {
@@ -928,8 +981,13 @@ export interface LabAttributeRequest {
   prefill?: string; // start of the answer, e.g. "I am a"
   target: string; // next token to explain, e.g. " owl"
   foil?: string; // compared against, e.g. " language"; default: the model's own top choice
+  /** unsteered: compare with what the model writes here without the mix, instead of foil. */
+  foilFrom?: "unsteered";
   mix?: LabPush[];
   top?: number; // default 25
+  measure?: boolean; // default true: really push the shortlisted neurons. false: gradients only, ranked by attr
+  shortlist?: number; // neurons to measure, default 18
+  doses?: number[]; // sizes to try, at both signs, default 0.25, 0.5, 1
 }
 
 export interface LabAttributeResult {
@@ -937,9 +995,37 @@ export interface LabAttributeResult {
   target: string;
   foil: string;
   topNext: { token: string; prob: number }[];
-  nodes: (NeuronRef & { attr: number; share: number; promotes: string[]; suppresses: string[] })[];
+  top: string; // the token the model picks here, with the mix
+  prefill: string; // the answer start used (a trailing space moves to the target)
+  notes: string[]; // what was adjusted: a field cut to its first token, a moved space
+  nodes: LabTraceNode[];
+  /** Absent with measure: false. */
+  measure?: { neurons: number; shortlisted: number; doses: number[]; passes: number; ms: number; msPerPass: number };
   ms: number;
   peakBytes: number;
+}
+
+export interface LabTraceNode extends NeuronRef {
+  attr: number; // gradient x activation at the last position: only the shortlist
+  share: number;
+  promotes: string[];
+  suppresses: string[];
+  /** Measured by pushing it. held: this neuron's dose already in the mix; doses here are on top of that. */
+  held?: number;
+  best?: { dose: number; metric: number; top: string; change: number; flips: boolean };
+  measured?: { dose: number; metric: number; top: string }[];
+  /** A short greedy reply at the best dose, for the top rows: a neuron that wins the next token may then loop. */
+  check?: { text: string; quality: LabQuality };
+}
+
+/** A saved result. data is the UI's own record of the run, with the exact recipe it ran with. */
+export interface LabHistoryEntry {
+  id: Id;
+  kind: "compare" | "sweep" | "seeds" | "trace";
+  modelId: Id;
+  title: string;
+  at: Millis;
+  data: unknown;
 }
 
 /** A saved mix: the base model plus pushes. Usable as a model in sessions and evals (`strain:<id>`). */
@@ -959,4 +1045,6 @@ export interface SaveStrainRequest {
   baseModelId: Id;
   pushes: LabPush[];
   notes?: string;
+  id?: Id; // an undone delete coming back keeps its id, so sessions naming it still work
+  createdAt?: Millis;
 }

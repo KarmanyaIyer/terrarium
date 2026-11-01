@@ -2,8 +2,8 @@
 
 Ported from the user's earlier neuron_lab (_scratch27 fb7c359: src/neuron_lab/lab.py and scripts 01-04, the owl
 neuron on Qwen3-8B). A neuron is one entry of layer L's MLP hidden activation, act(gate(x)) * up(x), which is the
-input to down_proj: L15N4041 = layer 15, index 4041. Hooks wrap each layer's down_proj, so they work for any MLP that
-ends in down_proj (SwiGLU in Qwen3.5, GeGLU in Gemma 4).
+input to the projection back into the residual stream: L15N4041 = layer 15, index 4041. Hooks wrap that projection, so
+they work for any gated MLP listed in MLP_SHAPES (SwiGLU in Qwen3.5 and LFM3, GeGLU in Gemma 4).
 
 Dose unit (neuronary.org / neuron-explorer): dose d adds d * median(|residual leaving layer L|) / |W_down[:, n]| to
 the activation, at every position. The push on the residual stream is then d times its typical size.
@@ -13,6 +13,8 @@ import hashlib
 import json
 import math
 import os
+import random
+import re
 import time
 
 import mlx.core as mx
@@ -21,6 +23,7 @@ from mlx_lm.generate import stream_generate
 from mlx_lm.models.cache import make_prompt_cache
 from mlx_lm.sample_utils import make_logits_processors, make_sampler
 from mlx_lm.utils import load as load_model
+from mlx_lm.utils import load_tokenizer
 
 from lab_corpus import CORPUS_VERSION, FIELD_GUIDE, calibration_texts
 
@@ -30,16 +33,32 @@ from lab_corpus import CORPUS_VERSION, FIELD_GUIDE, calibration_texts
 PROBE_MAX_TOKENS = 1024
 
 
+# Where a layer keeps its gated MLP: (attribute on the layer, projection out of the neurons, projections into them).
+# Mirrored in the backend's lab/support.ts. LFM3's feed_forward.w2(swiglu(w1, w3)) is mlp.down_proj(gate * up) renamed.
+MLP_SHAPES = [("mlp", "down_proj", ("gate_proj", "up_proj")), ("feed_forward", "w2", ("w1", "w3"))]
+
+
+def mlp_parts(layer) -> tuple | None:
+    """(the MLP module, name of its projection out of the neurons, a projection into them), or None."""
+    for holder, down, ins in MLP_SHAPES:
+        mlp = getattr(layer, holder, None)
+        gate = next((m for m in (getattr(mlp, n, None) for n in ins) if m is not None), None)
+        if mlp is not None and gate is not None and getattr(mlp, down, None) is not None:
+            return mlp, down, gate
+    return None
+
+
 class LabError(Exception):
     """A request the Lab can't serve; the message is shown to the user."""
 
 
+class LabCancelled(LabError):
+    """The caller cancelled while this op ran."""
+
+
 def unsupported_reason(config: dict) -> str | None:
     """Why single-neuron hooks don't apply to this model dir, or None. Mirrored in the backend's lab/support.ts."""
-    mt = str(config.get("model_type", ""))
     t = config.get("text_config", config)
-    if "hadamard" in mt or "prism" in mt:
-        return "Hadamard-rotated 2-bit pack loaded by its own runtime: neuron indices are mixed in blocks of 512, so single-neuron hooks don't apply"
     if (t.get("num_experts") or 0) > 0 or t.get("enable_moe_block"):
         return "Mixture-of-experts MLP: neurons live inside experts, which the Lab does not hook"
     return None
@@ -122,6 +141,121 @@ def repetition(ids: list[int]) -> float:
     return round(1 - len(set(grams)) / len(grams), 4)
 
 
+def is_loop(ids: list[int]) -> bool:
+    """The reply is stuck: a third of its 3-grams repeat, or its last 16 tokens cycle with a period of 8 or less."""
+    if repetition(ids) > 0.3:
+        return True
+    tail = ids[-16:]
+    if len(tail) < 16:
+        return False
+    return any(all(tail[i] == tail[i - p] for i in range(p, len(tail))) for p in range(1, 9))
+
+
+def quality(ids: list[int], fluency: float, finish: str) -> str:
+    """One word for how a reply reads. ok: ordinary text, however unexpected its content. odd: the unsteered model finds
+    it unlikely word by word, which steering toward a new topic often does. loop: stuck repeating. broken: word salad.
+    empty: stopped at once. Thresholds from labelled sweeps on Qwen3.5-4B and LFM3-1.7B, in TODO_25.md."""
+    if not ids:
+        return "empty"
+    if is_loop(ids):
+        return "loop"
+    if fluency < QUALITY_BROKEN:
+        return "broken"
+    return "odd" if fluency < QUALITY_ODD else "ok"
+
+
+SWEEP_MAX_DOSES = 512
+QUALITY_ODD = -3.0
+QUALITY_BROKEN = -5.0
+
+
+def best_dose(measured: list[dict], base: float, target: int) -> dict:
+    """The dose to recommend from measured interventions: the smallest that makes the target the model's pick, else the
+    one that moved logit(target) - logit(foil) most in the target's favor. measured: {dose, metric, topId, ...}."""
+    flips = [m for m in measured if m["topId"] == target]
+    if flips:
+        best = min(flips, key=lambda m: (abs(m["dose"]), -m["metric"]))
+    else:
+        best = max(measured, key=lambda m: m["metric"])
+    return {**best, "change": round(best["metric"] - base, 3), "flips": best["topId"] == target}
+
+
+class HadamardProjection(nn.Module):
+    """A Bonsai pack's 2-bit projection. Its weights are stored rotated along their input axis, so it rotates its input
+    (signs, then a Walsh-Hadamard transform per block) before the quantized multiply. down_proj's input is still the
+    plain neuron vector: the rotation happens inside, after the hooks. Same arithmetic as the pack's runtime/runtime.py,
+    written here so loading a model dir doesn't run code from it."""
+
+    def __init__(self, weight, scales, biases, signs, block: int, embedding: bool):
+        super().__init__()
+        self.weight, self.scales, self.biases = weight, scales, biases
+        if signs is not None:
+            self.signs = signs
+        self.block = block
+        self.embedding = embedding
+        self._dense_h = None
+
+    def _walsh(self, x: mx.array) -> mx.array:
+        """Normalized Hadamard transform per block. Plain matmul in training mode: the fast op has no backward pass."""
+        shape = x.shape
+        flat = x.reshape(-1, self.block)
+        if self.training:
+            if self._dense_h is None:
+                self._dense_h = mx.hadamard_transform(mx.eye(self.block), scale=1 / math.sqrt(self.block))
+            return (flat @ self._dense_h).reshape(shape)
+        return mx.hadamard_transform(flat, scale=1 / math.sqrt(self.block)).reshape(shape)
+
+    def _rotate(self, x: mx.array) -> mx.array:
+        return self._walsh(x.astype(mx.float32) * self.signs).astype(x.dtype) if self.block else x
+
+    def _unrotate(self, x: mx.array) -> mx.array:
+        return (self._walsh(x.astype(mx.float32)) * self.signs).astype(x.dtype) if self.block else x
+
+    def as_linear(self, x: mx.array) -> mx.array:
+        y = mx.quantized_matmul(self._rotate(x), self.weight, self.scales, self.biases, transpose=True, group_size=128, bits=2)
+        return y.astype(x.dtype) if y.dtype != x.dtype else y
+
+    def __call__(self, x: mx.array) -> mx.array:
+        if not self.embedding:
+            return self.as_linear(x)
+        i = x.reshape(-1)
+        out = mx.dequantize(self.weight[i], self.scales[i], self.biases[i], group_size=128, bits=2)
+        return self._unrotate(out.reshape(*x.shape, -1).astype(mx.float16))
+
+    def dense(self) -> mx.array:
+        """The unrotated weight matrix, [outputs, inputs], float32."""
+        w = mx.dequantize(self.weight, self.scales, self.biases, group_size=128, bits=2).astype(mx.float32)
+        return self._unrotate(w) if self.block else w
+
+
+def load_hadamard_pack(model_dir: str, config: dict):
+    """A Bonsai pack (model_type prism_hadamard_qwen35): mlx-lm's Qwen3.5 text model with the pack's rotated projections
+    installed. The vision tower in the same file isn't loaded."""
+    from pathlib import Path
+
+    from mlx_lm.models.qwen3_5 import TextModel, TextModelArgs
+
+    model = TextModel(TextModelArgs.from_dict(config["text_config"]))
+    weights = {k.removeprefix("language_model."): v for k, v in mx.load(os.path.join(model_dir, "model.safetensors")).items() if k.startswith("language_model.")}
+    for rec in config["modules"]:
+        parts = rec["path"].split(".")
+        parent = model
+        for part in parts[:-1]:
+            parent = parent[int(part)] if part.isdigit() else getattr(parent, part)
+        name = rec["path"]
+        setattr(parent, parts[-1], HadamardProjection(weights[f"{name}.weight"], weights[f"{name}.scales"], weights[f"{name}.biases"], weights.get(f"{name}.signs"), int(rec["block"]), bool(rec["embedding"])))
+    model.load_weights(list(weights.items()), strict=True)
+    model.eval()
+    mx.eval(model.parameters())
+    eos = []
+    gen = os.path.join(model_dir, "generation_config.json")
+    if os.path.exists(gen):
+        with open(gen) as f:
+            e = json.load(f).get("eos_token_id")
+        eos = e if isinstance(e, list) else ([e] if e is not None else [])
+    return model, load_tokenizer(Path(model_dir), eos_token_ids=eos or None)
+
+
 def _sdpa_ops(queries, keys, values, scale, mask=None, sinks=None, **_):
     """Attention in plain ops, for gradients: MLX's single-query (vector) kernel has no backward pass."""
     hq, hkv = queries.shape[1], keys.shape[1]
@@ -156,7 +290,11 @@ class Lab:
         self.log = log
         self.progress = progress or (lambda stage, frac: None)
         self.progress("weights", 0.0)
-        self.model, self.tok = load_model(model_dir)
+        if "hadamard" in str(self.config.get("model_type", "")):
+            self.model, self.tok = load_hadamard_pack(model_dir, self.config)
+        else:
+            # False, not the default: some configs carry an auto_map, and with None transformers stops to ask on stdin
+            self.model, self.tok = load_model(model_dir, tokenizer_config={"trust_remote_code": False})
         self.model.eval()
         self.lm = getattr(self.model, "language_model", self.model)
         self.inner = self.lm.model
@@ -166,17 +304,20 @@ class Lab:
         self.arch = str(tc.get("model_type") or self.config.get("model_type"))
         self.hooks: list[Hook] = []
         self.n_neurons: list[int] = []
+        self.downs: list[HookedDown] = []
         for i, layer in enumerate(self.layers):
-            mlp = getattr(layer, "mlp", None)
-            down = getattr(mlp, "down_proj", None)
-            gate = getattr(mlp, "gate_proj", None) or getattr(mlp, "up_proj", None)
-            if down is None or gate is None:
-                raise LabError(f"layer {i} has no gated MLP with down_proj; the Lab can't hook this architecture")
+            parts = mlp_parts(layer)
+            if parts is None:
+                raise LabError(f"layer {i} has no gated MLP the Lab knows how to hook (looked for {', '.join(f'{h}.{d}' for h, d, _ in MLP_SHAPES)})")
+            mlp, down_name, gate = parts
+            down = getattr(mlp, down_name)
             if isinstance(down, HookedDown):
                 down = down.inner
             n = int(gate.weight.shape[0])
             hook = Hook(n)
-            mlp.down_proj = HookedDown(down, hook)
+            wrapped = HookedDown(down, hook)
+            setattr(mlp, down_name, wrapped)
+            self.downs.append(wrapped)
             self.hooks.append(hook)
             self.n_neurons.append(n)
             _patch_layer_class(type(layer))
@@ -187,7 +328,9 @@ class Lab:
         self.quant = f"{q['bits']}bit" if isinstance(q, dict) and q.get("bits") else "bf16"
         self.layer_kinds = self._layer_kinds(tc)
         self.nl_id = self.tok.encode("\n", add_special_tokens=False)[-1]
+        self.final_norm = getattr(self.inner, "norm", None) or getattr(self.inner, "embedding_norm")
         self.strains: dict[str, list] = {}
+        self.cancelled = False  # set from another thread: generation stops at its next token
         self.progress("down_proj", 0.5)
         # One layer at a time: evaluated together, every layer's dequantized W_down would be alive at once.
         self.down_norm = []
@@ -209,7 +352,7 @@ class Lab:
             return kinds
         types = tc.get("layer_types")
         if isinstance(types, list) and len(types) == self.n_layers:
-            return ["sliding" if "sliding" in str(t) else "full" for t in types]
+            return ["sliding" if "sliding" in str(t) else "conv" if "conv" in str(t) else "full" for t in types]
         return None
 
     def facts(self) -> dict:
@@ -282,8 +425,10 @@ class Lab:
     # ---------- weights ----------
 
     def _down_weight(self, i: int) -> mx.array:
-        """Dequantized down_proj weight [d_model, N] for layer i (float32)."""
+        """Dequantized weight of the projection out of the neurons, [d_model, N], for layer i (float32)."""
         d = self.hooks_down(i)
+        if isinstance(d, HadamardProjection):
+            return d.dense()
         if hasattr(d, "scales"):
             kw = {"mode": d.mode} if hasattr(d, "mode") else {}
             w = mx.dequantize(d.weight, d.scales, getattr(d, "biases", None), d.group_size, d.bits, **kw)
@@ -292,7 +437,7 @@ class Lab:
         return w.astype(mx.float32)
 
     def hooks_down(self, i: int):
-        return self.layers[i].mlp.down_proj.inner
+        return self.downs[i].inner
 
     def _unembed(self, h: mx.array) -> mx.array:
         if hasattr(self.lm, "lm_head") and not getattr(getattr(self.lm, "args", None), "tie_word_embeddings", False):
@@ -308,7 +453,7 @@ class Lab:
         for layer, idxs in by_layer.items():
             w = self._down_weight(layer)
             cols = mx.stack([w[:, refs[i][1]] for i in idxs])  # [k, d]
-            logits = self._unembed(self.inner.norm(cols.astype(mx.float16)))
+            logits = self._unembed(self.final_norm(cols.astype(mx.float16)))
             top = mx.argsort(-logits, axis=-1)[:, :k]
             bot = mx.argsort(logits, axis=-1)[:, :k]
             mx.eval(top, bot, logits)
@@ -618,6 +763,7 @@ class Lab:
         base_mass = mx.logsumexp(base[:, tok], axis=-1) if tok is not None else None
         out = []
         for layer, n in refs:
+            self._check_cancel()
             self.apply_mix([{"layer": layer, "neuron": n, "mode": "dose", "value": self.WRITE_DOSE}])
             try:
                 lp = self._next_logprobs()
@@ -635,7 +781,7 @@ class Lab:
         (relative to an average token). Cheap enough to scan every neuron."""
         if not tokens:
             return []
-        w_eff = self.inner.norm(mx.ones((self.d_model,), dtype=mx.float16)).astype(mx.float32)
+        w_eff = self.final_norm(mx.ones((self.d_model,), dtype=mx.float16)).astype(mx.float32)
         rows = self._unembed_rows(tokens)  # [k, d]
         sample = self._unembed_rows(list(range(0, self.tok.vocab_size, max(1, self.tok.vocab_size // 2048))))
         u = (rows.mean(axis=0) - sample.mean(axis=0)) * w_eff  # [d]
@@ -659,6 +805,8 @@ class Lab:
         tied = not hasattr(self.lm, "lm_head") or getattr(getattr(self.lm, "args", None), "tie_word_embeddings", False)
         m = self.inner.embed_tokens if tied else self.lm.lm_head
         idx = mx.array(tokens)
+        if isinstance(m, HadamardProjection):
+            return m(idx).astype(mx.float32)
         if hasattr(m, "scales"):
             kw = {"mode": m.mode} if hasattr(m, "mode") else {}
             b = getattr(m, "biases", None)
@@ -690,6 +838,7 @@ class Lab:
             nonlocal tokens
             rows = []
             for t in texts:
+                self._check_cancel()
                 ids = self.encode_text(t)[:512]
                 tokens += len(ids) - 1
                 _, a = self.forward(ids, capture="max", layers=layers, logits=False)
@@ -714,6 +863,10 @@ class Lab:
             li, n = locate(f)
             flat_of[(layers[li], n)] = f
         ctoks = self.concept_tokens(concept, control)
+        for w in req.get("words") or []:  # words the caller knows belong to the concept (a described trait's own)
+            for t in self.word_tokens(str(w)):
+                if t not in ctoks:
+                    ctoks.append(t)
         # Also check the neurons that write the concept's words most directly, even if they don't fire on the texts.
         for ref in self._direct_writers(ctoks, layers, max(8, n_top // 3)):
             if ref not in flat_of:
@@ -780,6 +933,133 @@ class Lab:
         at = max(range(len(vals)), key=lambda i: vals[i]) if vals else 0
         return {"text": text, "tokens": toks, "values": [round(v, 3) for v in vals], "peak": round(vals[at], 3) if vals else 0.0, "peakAt": at}
 
+    def word_tokens(self, word: str) -> list[int]:
+        """First token of a word in the spellings it takes in text: as written and capitalized, with and without a space."""
+        w = word.strip()
+        out = []
+        for form in (w, w.lower(), w.capitalize()):
+            for text in (form, " " + form):
+                ids = self.tok.encode(text, add_special_tokens=False)
+                if ids and ids[0] not in out and len(self.tok.decode([ids[0]]).strip()) >= 2:
+                    out.append(ids[0])
+        return out
+
+    # ---------- examples: the model writes a probe set for a described trait ----------
+
+    EXAMPLE_PROMPT = """I am building a language experiment about this trait: "{trait}".
+Write {n} pairs of short lines. Line A clearly shows the trait. Line B is the same line with the trait taken out: same length, same structure, plain and ordinary. Vary the topics and the way lines start.
+Answer with the pairs only, no numbering and no comments.
+
+For the trait "an owl" pairs look like this:
+A: The owl watched me from the barn roof all night.
+B: The neighbor watched me from the porch all night.
+A: Who-who, I called out over the dark field.
+B: Hello, I called out over the empty field.
+
+For the trait "speaks in rhyme":
+A: The sun is high, up in the sky, and so we say our last goodbye.
+B: The sun is high this morning, and we are about to leave the house.
+
+Now write {n} pairs for "{trait}"."""
+
+    @staticmethod
+    def parse_pairs(text: str) -> tuple[list[str], list[str]]:
+        """A: / B: lines from a model's answer, as equal lists; duplicates, and pairs that are the same line, are dropped."""
+        concept, control, pending, seen = [], [], None, set()
+        for raw in text.splitlines():
+            m = re.match(r"^\s*(?:\d+[.)]\s*)?\**([ABab])\**\s*[:.)]\**\s*(.+?)\s*$", raw)
+            if not m:
+                continue
+            side, line = m.group(1).upper(), m.group(2).strip().strip("*").strip()
+            if side == "A":
+                pending = line
+            elif pending:
+                key = pending.lower()
+                if line and line.lower() != key and key not in seen and len(pending) >= 8:
+                    seen.add(key)
+                    concept.append(pending)
+                    control.append(line)
+                pending = None
+        return concept, control
+
+    def write_examples(self, req: dict) -> dict:
+        """The unsteered model writes matched lines with and without a described trait, ready for find()."""
+        t0 = time.time()
+        trait = " ".join(str(req.get("trait") or "").split())
+        if not trait:
+            raise LabError("describe a trait first")
+        if len(trait) > 200:
+            raise LabError("keep the description under 200 characters")
+        n = max(4, min(int(req.get("n") or 12), 24))
+        ids = self.chat_ids(self.EXAMPLE_PROMPT.format(trait=trait, n=n))
+        seed = req.get("seed")
+        seed = int(seed) if isinstance(seed, (int, float)) and not isinstance(seed, bool) else int.from_bytes(os.urandom(3), "big")
+        concept: list[str] = []
+        control: list[str] = []
+        tries = 0
+        self.clear()
+        while len(concept) < min(6, n) and tries < 3:
+            out, _ = self._generate(ids, 0.7, min(60 * n, 1200), seed + tries, top_p=0.95)
+            c, k = self.parse_pairs(self.tok.decode(out))
+            for a, b in zip(c, k):
+                if a.lower() not in {x.lower() for x in concept}:
+                    concept.append(a)
+                    control.append(b)
+            tries += 1
+        if len(concept) < 3:
+            raise LabError(f'{self.model_id} could not write usable examples for "{trait}" in {tries} tries. Try wording it differently, or write your own lines under "Use your own texts".')
+        return {"trait": trait, "concept": concept[:n], "control": control[:n], "words": self.trait_words(trait), "seed": seed, "ms": int((time.time() - t0) * 1000)}
+
+    STOPWORDS = set("a an the of to in on at for with like and or is are be being as that this it its talks talk talking speaks speak speaking acts act acting writes write writing thinks think thinking who always very about from into out sounds sound".split())
+
+    @classmethod
+    def trait_words(cls, trait: str) -> list[str]:
+        """The content words of a description: "talks like a pirate" -> ["pirate"]."""
+        words = re.findall(r"[^\W\d_]{3,}", trait.lower())
+        return [w for w in dict.fromkeys(words) if w not in cls.STOPWORDS]
+
+    # ---------- explore: random neurons worth a look ----------
+
+    def explore(self, req: dict) -> dict:
+        """Surprise me: a random sample of one layer in the back half of the model (where single neurons tend to change
+        the words written), pushed at +0.8 on open contexts. Returns the ones that moved the next word most, keeping
+        those whose raised tokens read as words."""
+        t0 = time.time()
+        rng = random.Random(req.get("seed"))
+        layer = req.get("layer")
+        lo, hi = self.n_layers * 2 // 5, max(self.n_layers * 2 // 5, self.n_layers - 2)
+        layer = int(layer) if isinstance(layer, (int, float)) and not isinstance(layer, bool) else rng.randint(lo, hi)
+        self.check_ref(layer, 0)
+        sample = max(4, min(int(req.get("sample") or 48), 256))
+        refs = [(layer, n) for n in rng.sample(range(self.n_neurons[layer]), min(sample, self.n_neurons[layer]))]
+        wr = self.writes(refs, [])
+        scored = []
+        for ref, w in zip(refs, wr):
+            wordy = sum(1 for t in w["tokens"] if re.search(r"[^\W\d_]{3,}", t)) / max(1, len(w["tokens"]))
+            scored.append((w["kl"] * wordy, ref, w))
+        scored.sort(key=lambda x: -x[0])
+        keep = scored[: max(1, min(int(req.get("top") or 4), 12))]
+        proj = self.vocab_projection([r for _, r, _ in keep], k=6)
+        return {
+            "layer": layer,
+            "sampled": len(refs),
+            "picks": [{"layer": r[0], "neuron": r[1], "kl": w["kl"], "tokens": w["tokens"], "promotes": [t for t, _ in up], "suppresses": [t for t, _ in down]} for (_, r, w), (up, down) in zip(keep, proj)],
+            "ms": int((time.time() - t0) * 1000),
+        }
+
+    # ---------- tokens: what the model sees for a field ----------
+
+    def tokens(self, req: dict) -> dict:
+        """Tokenization of each text, for showing it live. Read-only, so it runs without the generation lock."""
+        texts = req.get("texts")
+        if not isinstance(texts, list) or len(texts) > 16:
+            raise LabError("texts must be a list of at most 16")
+        out = []
+        for t in texts:
+            ids = self.tok.encode(str(t)[:4000], add_special_tokens=False)
+            out.append([{"id": i, "text": self.tok.decode([i])} for i in ids[:256]])
+        return {"tokens": out}
+
     # ---------- neuron card ----------
 
     def neuron(self, req: dict) -> dict:
@@ -812,10 +1092,19 @@ class Lab:
 
     # ---------- generation ----------
 
-    def sampler_for(self, temperature: float, top_p: float | None = None, top_k: int | None = None, presence: float | None = None):
+    def sampler_for(self, temperature: float, top_p: float | None = None, top_k: int | None = None, presence: float | None = None, repeat: float | None = None):
         sampler = make_sampler(temp=max(0.0, float(temperature)), top_p=float(top_p or 0.0), top_k=int(top_k or 0))
-        procs = make_logits_processors(presence_penalty=float(presence)) if presence else None
-        return sampler, procs
+        kw = {}
+        if presence:
+            kw["presence_penalty"] = float(presence)
+        if repeat and float(repeat) != 1.0:
+            kw["repetition_penalty"] = float(repeat)
+            kw["repetition_context_size"] = 64
+        return sampler, (make_logits_processors(**kw) if kw else None)
+
+    def _check_cancel(self) -> None:
+        if self.cancelled:
+            raise LabCancelled("cancelled")
 
     def stream(self, ids: list[int], max_tokens: int, sampler, procs=None, seed: int | None = None):
         """Yields (text_segment, token or None, response) with the current mix; the last item has finish_reason."""
@@ -824,11 +1113,12 @@ class Lab:
         for r in stream_generate(self.model, self.tok, mx.array(ids), max_tokens=max_tokens, sampler=sampler, logits_processors=procs):
             yield r
 
-    def _generate(self, ids: list[int], temperature: float, max_tokens: int, seed: int, top_p: float | None = None) -> tuple[list[int], str]:
-        sampler, _ = self.sampler_for(temperature, top_p=top_p if temperature > 0 else None)
+    def _generate(self, ids: list[int], temperature: float, max_tokens: int, seed: int, top_p: float | None = None, repeat: float | None = None) -> tuple[list[int], str]:
+        sampler, procs = self.sampler_for(temperature, top_p=top_p if temperature > 0 else None, repeat=repeat)
         out: list[int] = []
         finish = "length"
-        for r in self.stream(ids, max_tokens, sampler, seed=seed):
+        for r in self.stream(ids, max_tokens, sampler, procs, seed=seed):
+            self._check_cancel()
             if r.finish_reason is None:
                 out.append(r.token)
             else:
@@ -847,16 +1137,31 @@ class Lab:
         vals = mx.take_along_axis(lp, mx.array(reply)[:, None], axis=-1)[:, 0]
         return round(vals.mean().item(), 4)
 
-    def reply(self, ids: list[int], pushes, scale: float, seed: int, temperature: float, max_tokens: int) -> dict:
+    def pieces(self, ids: list[int]) -> list[str]:
+        """The reply cut at token boundaries; the pieces join to its text. A character spread over several tokens (CJK,
+        emoji) stays whole, in the piece of the token that completes it."""
+        out, start = [], 0
+        for i in range(len(ids)):
+            cur = self.tok.decode(ids[start : i + 1])
+            if cur.endswith("\ufffd") and i - start < 8:
+                continue
+            out.append(cur)
+            start = i + 1
+        if start < len(ids):
+            out.append(self.tok.decode(ids[start:]))
+        return out
+
+    def reply(self, ids: list[int], pushes, scale: float, seed: int, temperature: float, max_tokens: int, repeat: float | None = None) -> dict:
         t0 = time.time()
         self.apply_mix(pushes, scale)
         try:
-            out, finish = self._generate(ids, temperature, max_tokens, seed, top_p=0.95)
+            out, finish = self._generate(ids, temperature, max_tokens, seed, top_p=0.95, repeat=repeat)
         finally:
             self.clear()
         ms = int((time.time() - t0) * 1000)
         text = self.tok.decode(out)
-        return {"text": text, "tokens": len(out), "finish": finish, "ms": ms, "fluency": self.fluency(ids, out), "repetition": repetition(out)}
+        fluency = self.fluency(ids, out)
+        return {"text": text, "tokens": len(out), "finish": finish, "ms": ms, "fluency": fluency, "repetition": repetition(out), "loop": is_loop(out), "quality": quality(out, fluency, finish), "pieces": self.pieces(out)}
 
     def _gen_args(self, req: dict) -> tuple[list[int], int, float, int]:
         prompt = str(req.get("prompt", ""))
@@ -875,15 +1180,17 @@ class Lab:
         mix = req.get("mix") or []
         self.apply_mix(mix)  # validate before generating anything
         self.clear()
-        scale = float(req.get("scale") or 1.0)
-        out = {"seed": seed, "steered": self.reply(ids, mix, scale, seed, temperature, max_tokens)}
+        scale = float(req["scale"]) if isinstance(req.get("scale"), (int, float)) else 1.0
+        repeat = req.get("repeat")
+        out = {"seed": seed, "steered": self.reply(ids, mix, scale, seed, temperature, max_tokens, repeat=repeat)}
         if req.get("baseline"):
-            out["baseline"] = self.reply(ids, [], 1.0, seed, temperature, max_tokens)
+            out["baseline"] = self.reply(ids, [], 1.0, seed, temperature, max_tokens, repeat=repeat)
         return out
 
     def sweep(self, req: dict) -> dict:
         ids, seed, temperature, max_tokens = self._gen_args(req)
-        doses = [float(d) for d in req.get("doses") or [] if isinstance(d, (int, float))][:16]
+        # 4 decimals is finer than a dose can matter; two numbers equal at that precision are the same row
+        doses = list(dict.fromkeys(round(float(d), 4) for d in req.get("doses") or [] if isinstance(d, (int, float)) and not isinstance(d, bool)))[:SWEEP_MAX_DOSES]
         if not doses:
             raise LabError("give at least one dose")
         mix = list(req.get("mix") or [])
@@ -897,7 +1204,7 @@ class Lab:
                 pushes, scale = rest + [{"layer": layer, "neuron": n, "mode": "dose", "value": d}], 1.0
             else:
                 pushes, scale = mix, d
-            rows.append({"dose": d, "reply": self.reply(ids, pushes, scale, seed, temperature, max_tokens)})
+            rows.append({"dose": d, "reply": self.reply(ids, pushes, scale, seed, temperature, max_tokens, repeat=req.get("repeat"))})
         return {"seed": seed, "rows": rows}
 
     # ---------- attribution ----------
@@ -908,26 +1215,74 @@ class Lab:
             raise LabError(f"{s!r} encodes to no tokens")
         return ids[0]
 
+    def _field_token(self, s: str, what: str, notes: list[str]) -> int:
+        """The first token of a target or foil field, with a note when the field held more than that."""
+        ids = self.tok.encode(s, add_special_tokens=False)
+        if not ids:
+            raise LabError(f"{what} {s!r} encodes to no tokens")
+        if len(ids) > 1:
+            notes.append(f"{what} {s!r} is {len(ids)} tokens; traced the first one, {self.tok.decode(ids[:1])!r}.")
+        return ids[0]
+
+    def _next_logits(self, ids: list[int]) -> mx.array:
+        """Logits for the token after ids, with the current mix. Unembeds the last position only."""
+        x = mx.array(ids)[None]
+        h = self.inner(x)
+        return self._unembed(h[0, -1:])[0]
+
+    # Doses tried on each shortlisted neuron, at both signs. 0.25 is about where a push starts to show, 1 where replies
+    # start to break on Qwen3.5.
+    MEASURE_DOSES = (0.25, 0.5, 1.0)
+    MEASURE_SHORTLIST = 18
+    MEASURE_PER_LAYER = 4  # gradients favor the last layers, whose neurons write one token and then loop
+    MEASURE_CHECKS = 6
+    MEASURE_BUDGET_S = 30.0
+
     def attribute(self, req: dict) -> dict:
-        """Gradient x activation at the last position: each neuron's first-order share of logit(target) -
-        logit(foil) for the next token. The prompt before the last token runs once without gradients, into the cache;
-        only the last token is differentiated, so memory stays flat with prompt length. (Backprop through every
-        position of Qwen3.5's linear attention keeps each step's state: about 140 MB per token on the 4B, 59 GB peak
-        for a 400-token prompt.) Neurons at earlier positions reach the answer through attention; this counts each
-        neuron where the next token is decided."""
+        """Which neurons change the next token, by experiment. Gradient x activation at the last position makes a
+        shortlist: each neuron's first-order share of logit(target) - logit(foil). That number doesn't say which way to
+        push, since its sign includes the activation's, and it is only local, while real doses move tens of logits. So
+        each shortlisted neuron is then really pushed, at both signs and several sizes, on a full forward pass, and rows
+        rank by the measured change. nodes[].best is the dose to use and what it did.
+
+        For the gradient, the prompt before the last token runs once without gradients, into the cache; only the last
+        token is differentiated, so memory stays flat with prompt length. (Backprop through every position of Qwen3.5's
+        linear attention keeps each step's state: about 140 MB per token on the 4B, 59 GB peak for a 400-token prompt.)"""
         t0 = time.time()
         prompt = str(req.get("prompt", ""))
         if not prompt.strip():
             raise LabError("prompt is empty")
-        ids = self.chat_ids(prompt, prefill=str(req.get("prefill") or ""))
+        notes: list[str] = []
+        prefill = str(req.get("prefill") or "")
+        target_text = str(req.get("target") or "")
+        # A trailing space would become its own odd token; in real text the space belongs to the next word.
+        if prefill.endswith(" ") and prefill.strip():
+            stripped = prefill.rstrip(" ")
+            if target_text and not target_text[0].isspace():
+                target_text = " " + target_text
+            notes.append(f"Moved the trailing space off the answer start: the model writes {target_text!r} as one token after {stripped[-12:]!r}.")
+            prefill = stripped
+        ids = self.chat_ids(prompt, prefill=prefill)
         if len(ids) > 2048:
             raise LabError(f"prompt is {len(ids)} tokens; attribution takes at most 2048")
-        tgt = self.single_token(str(req.get("target") or ""))
-        user_foil = self.single_token(str(req["foil"])) if req.get("foil") else None
+        tgt = self._field_token(target_text, "Target", notes)
+        foil_from = req.get("foilFrom")
+        user_foil = None
+        if foil_from != "unsteered" and req.get("foil"):
+            user_foil = self._field_token(str(req["foil"]), "Foil", notes)
         if user_foil == tgt:
             raise LabError("target and foil are the same token")
         mx.reset_peak_memory()
-        self.apply_mix(req.get("mix") or [])
+        mix = req.get("mix") or []
+        if foil_from == "unsteered":
+            # What the unsteered model would have written here. If that is the target itself, its runner-up.
+            self.clear()
+            lg = self._next_logits(ids).astype(mx.float32)
+            order = mx.argsort(-lg)[:2].tolist()
+            user_foil = order[1] if order[0] == tgt else order[0]
+            if order[0] == tgt:
+                notes.append(f"The unsteered model writes {self.tok.decode([tgt])!r} here too, so this compares it with its runner-up, {self.tok.decode([user_foil])!r}.")
+        self.apply_mix(mix)
         try:
             cache = make_prompt_cache(self.model)
             if len(ids) > 1:
@@ -960,30 +1315,102 @@ class Lab:
         finally:
             self.clear()
         foil = int(foil_arr.item())
-        probs = mx.softmax(last)
-        order = mx.argsort(-last)[:6].tolist()
-        m = m_arr.item()
-        attr = [acts[i].astype(mx.float32) * grads[i][0, 0] for i in range(self.n_layers)]
-        flat = mx.concatenate(attr)
-        n_top = max(1, min(int(req.get("top") or 25), 100))
-        order_f = mx.argsort(-mx.abs(flat))[:n_top].tolist()
+        attr = mx.concatenate([acts[i].astype(mx.float32) * grads[i][0, 0] for i in range(self.n_layers)])
+        # Effect of one dose, to first order: gradient x raw activation that dose 1.0 adds.
+        unit = [self.resid[i] / mx.maximum(self.down_norm[i], 1e-6) for i in range(self.n_layers)]
+        sens = mx.concatenate([grads[i][0, 0] * unit[i] for i in range(self.n_layers)])
+        mx.eval(attr, sens)
         offsets, off = [], 0
         for n in self.n_neurons:
             offsets.append(off)
             off += n
         locate = self._locator(offsets)
+        n_top = max(1, min(int(req.get("top") or 25), 100))
+        measure = req.get("measure", True) is not False
+        size = max(4, min(int(req.get("shortlist") or self.MEASURE_SHORTLIST), 64))
+        # Half from each ranking: what contributed most at these activations, and what a dose should move most.
+        if measure:
+            by_attr = mx.argsort(-mx.abs(attr))[: size * 8].tolist()
+            by_sens = mx.argsort(-mx.abs(sens))[: size * 8].tolist()
+            order_f, per_layer = [], {}
+            for f in dict.fromkeys(x for pair in zip(by_attr, by_sens) for x in pair):
+                layer = locate(f)[0]
+                if per_layer.get(layer, 0) < self.MEASURE_PER_LAYER:
+                    per_layer[layer] = per_layer.get(layer, 0) + 1
+                    order_f.append(f)
+                if len(order_f) == size:
+                    break
+        else:
+            order_f = mx.argsort(-mx.abs(attr))[:n_top].tolist()
         refs = [locate(f) for f in order_f]
         proj = self.vocab_projection(refs, k=4)
+        order = mx.argsort(-last)[:6].tolist()
+        probs = mx.softmax(last)
+        m = m_arr.item()
         nodes = []
         for f, (l, n), (up, down) in zip(order_f, refs, proj):
-            a = flat[f].item()
+            a = attr[f].item()
             nodes.append({"layer": l, "neuron": n, "attr": round(a, 4), "share": round(a / m, 4) if abs(m) > 1e-6 else 0.0, "promotes": [t for t, _ in up], "suppresses": [t for t, _ in down]})
-        return {
+        out = {
             "metric": round(m, 4),
             "target": self.tok.decode([tgt]),
             "foil": self.tok.decode([foil]),
+            "top": self.tok.decode([order[0]]),
             "topNext": [{"token": self.tok.decode([t]), "prob": round(probs[t].item(), 4)} for t in order],
-            "nodes": nodes,
-            "ms": int((time.time() - t0) * 1000),
-            "peakBytes": int(mx.get_peak_memory()),
+            "prefill": prefill,
+            "notes": notes,
         }
+        if measure:
+            nodes, out["measure"] = self._measure(ids, mix, nodes, tgt, foil, m, req)
+        return {**out, "nodes": nodes[:n_top], "ms": int((time.time() - t0) * 1000), "peakBytes": int(mx.get_peak_memory())}
+
+    def _measure(self, ids: list[int], mix: list, nodes: list[dict], tgt: int, foil: int, base: float, req: dict) -> tuple[list[dict], dict]:
+        """Pushes each node at both signs and several sizes, on top of the mix, and keeps what the logits really did. All
+        doses of a neuron run as one batch. The best rows then write a few real tokens, since a neuron that wins the next
+        token may repeat it forever."""
+        sizes = [float(d) for d in (req.get("doses") or self.MEASURE_DOSES)]
+        doses = [sign * d for d in sizes for sign in (1, -1)]
+        budget = float(req.get("budgetSeconds") or self.MEASURE_BUDGET_S)
+        t0 = time.time()
+        passes = 0
+        done = []
+        same = lambda p, nd: p.get("layer") == nd["layer"] and p.get("neuron") == nd["neuron"]
+        x = mx.repeat(mx.array(ids)[None], len(doses), axis=0)
+        amounts = mx.array(doses, dtype=mx.float32)[:, None, None]
+        try:
+            for nd in nodes:
+                if time.time() - t0 > budget:
+                    break
+                self._check_cancel()
+                layer, n = nd["layer"], nd["neuron"]
+                current = next((p for p in mix if same(p, nd) and p.get("mode", "dose") == "dose"), None)
+                held = (current or {}).get("value", 0.0)
+                self.apply_mix([p for p in mix if not same(p, nd)])
+                hook = self.hooks[layer]
+                one = mx.zeros((hook.n,), dtype=mx.float32).at[n].add(1.0)
+                push = (amounts + held) * self.dose_unit(layer, n) * one[None, None]  # [doses, 1, N]
+                hook.add = push if hook.add is None else hook.add + push
+                lg = self._unembed(self.inner(x)[:, -1]).astype(mx.float32)
+                tops = mx.argmax(lg, axis=-1)
+                gaps = lg[:, tgt] - lg[:, foil]
+                mx.eval(tops, gaps)
+                passes += len(doses)
+                rows = [{"dose": d, "metric": round(g, 3), "top": self.tok.decode([t]), "topId": t} for d, g, t in zip(doses, gaps.tolist(), tops.tolist())]
+                best = best_dose(rows, base, tgt)
+                done.append({**nd, "held": held, "best": {k: v for k, v in best.items() if k != "topId"}, "measured": [{k: v for k, v in r.items() if k != "topId"} for r in rows]})
+        finally:
+            self.clear()
+        done.sort(key=lambda r: (not r["best"]["flips"], -r["best"]["change"]))
+        measure_ms = int((time.time() - t0) * 1000)
+        for nd in done[: self.MEASURE_CHECKS]:
+            if nd["best"]["change"] <= 0:
+                break
+            self._check_cancel()
+            pushes = [p for p in mix if not same(p, nd)] + [{"layer": nd["layer"], "neuron": nd["neuron"], "mode": "dose", "value": nd["held"] + nd["best"]["dose"]}]
+            r = self.reply(ids, pushes, 1.0, 0, 0.0, 20)
+            nd["check"] = {"text": r["text"], "quality": r["quality"]}
+        # Doses that make the target the model's pick first, those that then keep writing sensibly before those that loop
+        # or break, and within that by how far they moved the gap toward the target.
+        rank = lambda r: (not r["best"]["flips"], r.get("check", {}).get("quality") in ("loop", "broken", "empty"), -r["best"]["change"])
+        done.sort(key=rank)
+        return done, {"neurons": len(done), "shortlisted": len(nodes), "doses": doses, "passes": passes, "ms": measure_ms, "msPerPass": round(measure_ms / max(1, passes), 1)}

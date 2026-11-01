@@ -4,7 +4,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { LabMemoryCheck, LabModelFacts, LabProbeSet, LabPush, LabState, LabStatus, LabStrain, LabSupport, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
+import type { LabHistoryEntry, LabMemoryCheck, LabModelFacts, LabProbeSet, LabPush, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
 import type { Hub } from "../hub.ts";
 import { estimateBytes } from "../inference/catalog.ts";
@@ -44,10 +44,12 @@ export interface LabServiceOptions {
 }
 
 /** The Lab's own routes on the sidecar, by the name the UI shows while one runs. */
-export const LAB_OPS = ["probe", "find", "neuron", "generate", "sweep", "attribute"] as const;
+export const LAB_OPS = ["probe", "find", "neuron", "generate", "sweep", "attribute", "examples", "explore"] as const;
 export type LabOp = (typeof LAB_OPS)[number];
 
 const OP_TIMEOUT_MS = 10 * 60_000;
+/** Saved results kept per model; the oldest go first. */
+const HISTORY_KEEP = 400;
 const gb = (b: number) => `${(b / 1e9).toFixed(1)} GB`;
 
 interface StrainRow {
@@ -58,6 +60,15 @@ interface StrainRow {
   notes: string;
   created_at: number;
   updated_at: number;
+}
+
+interface HistoryRow {
+  id: string;
+  kind: string;
+  model_id: string;
+  title: string;
+  data_json: string;
+  created_at: number;
 }
 
 interface ProbeSetRow {
@@ -92,6 +103,15 @@ function name(v: unknown, what: string): string {
   if (!s) throw new HttpError(400, `${what} needs a name`);
   if (s.length > 80) throw new HttpError(400, `${what} name: at most 80 characters`);
   return s;
+}
+
+function historyOf(r: HistoryRow): LabHistoryEntry {
+  return { id: r.id, kind: r.kind as LabHistoryEntry["kind"], modelId: r.model_id, title: r.title, at: r.created_at, data: JSON.parse(r.data_json) };
+}
+
+/** A client-chosen id for an undone delete coming back, or a new one. */
+function restoredId(v: unknown, prefix: string): string {
+  return typeof v === "string" && /^[\w:-]{1,80}$/.test(v) ? v : newId(prefix);
 }
 
 export class LabService implements LabHooks {
@@ -442,6 +462,50 @@ export class LabService implements LabHooks {
     }
   }
 
+  /** What the tokenizer makes of some text. Doesn't wait for a running op, or count as one. */
+  async tokens(body: unknown): Promise<LabTokensResult> {
+    const sidecar = await this.whenReady();
+    try {
+      return await sidecar.request<LabTokensResult>("POST", "/tokens", body ?? {}, 10_000);
+    } catch (err) {
+      if (err instanceof SidecarError) throw new HttpError(err.status === 400 || err.status === 409 ? err.status : 502, err.message);
+      throw err;
+    }
+  }
+
+  /** Stops the op the sidecar is running at its next token. A chat a strain serves isn't an op and keeps going. */
+  async cancel(): Promise<void> {
+    if (this.status !== "ready" || !this.sidecar) return;
+    await this.sidecar.request("POST", "/cancel", {}, 5_000).catch((err) => log.warn("cancel failed", err));
+  }
+
+  // ---------- history ----------
+
+  history(modelId?: string, limit = 200): LabHistoryEntry[] {
+    const n = Math.max(1, Math.min(Math.floor(limit) || 200, HISTORY_KEEP));
+    const rows = modelId ? this.store.all<HistoryRow>("SELECT * FROM lab_history WHERE model_id = ? ORDER BY created_at DESC LIMIT ?", modelId, n) : this.store.all<HistoryRow>("SELECT * FROM lab_history ORDER BY created_at DESC LIMIT ?", n);
+    return rows.map(historyOf);
+  }
+
+  /** Saves a result, or updates it (a sweep saves as its rows come in). data is the UI's, stored as is. */
+  saveHistory(body: unknown): LabHistoryEntry {
+    const b = (body ?? {}) as Partial<LabHistoryEntry>;
+    if (!["compare", "sweep", "seeds", "trace"].includes(String(b.kind))) throw new HttpError(400, "kind must be compare, sweep, seeds or trace");
+    if (typeof b.modelId !== "string" || !b.modelId) throw new HttpError(400, "modelId is required");
+    const json = JSON.stringify(b.data ?? {});
+    if (json.length > 16 * 1024 * 1024) throw new HttpError(413, "result too large to keep");
+    const id = restoredId(b.id, "run");
+    const at = typeof b.at === "number" && Number.isFinite(b.at) ? b.at : Date.now();
+    const title = typeof b.title === "string" ? b.title.slice(0, 200) : "";
+    this.store.run("INSERT OR REPLACE INTO lab_history (id, kind, model_id, title, data_json, created_at) VALUES (?, ?, ?, ?, ?, ?)", id, String(b.kind), b.modelId, title, json, at);
+    this.store.run("DELETE FROM lab_history WHERE model_id = ? AND id NOT IN (SELECT id FROM lab_history WHERE model_id = ? ORDER BY created_at DESC LIMIT ?)", b.modelId, b.modelId, HISTORY_KEEP);
+    return historyOf(this.store.get<HistoryRow>("SELECT * FROM lab_history WHERE id = ?", id)!);
+  }
+
+  deleteHistory(id: string): void {
+    this.store.run("DELETE FROM lab_history WHERE id = ?", id);
+  }
+
   // ---------- strains as models ----------
 
   strainModels(base: ModelInfo[]): ModelInfo[] {
@@ -553,9 +617,10 @@ export class LabService implements LabHooks {
     if (!pushes.length) throw new HttpError(400, "A strain needs at least one neuron");
     this.checkAgainstModel(b.baseModelId, pushes);
     const notes = typeof b.notes === "string" ? b.notes.slice(0, 4000) : "";
-    const id = newId("strain");
+    const id = restoredId(b.id, "strain");
+    if (this.strain(id)) throw new HttpError(409, `strain ${id} already exists`);
     const now = Date.now();
-    this.store.run("INSERT INTO lab_strains (id, name, base_model_id, pushes_json, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", id, n, b.baseModelId, JSON.stringify(pushes), notes, now, now);
+    this.store.run("INSERT INTO lab_strains (id, name, base_model_id, pushes_json, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", id, n, b.baseModelId, JSON.stringify(pushes), notes, typeof b.createdAt === "number" ? b.createdAt : now, now);
     this.strainsChanged();
     return this.strain(id)!;
   }
@@ -621,7 +686,8 @@ export class LabService implements LabHooks {
 
   saveProbeSet(req: SaveProbeSetRequest): LabProbeSet {
     const b = (req ?? {}) as Partial<SaveProbeSetRequest>;
-    const id = newId("set");
+    const id = restoredId(b.id, "set");
+    if (this.store.get("SELECT id FROM lab_probe_sets WHERE id = ?", id)) throw new HttpError(409, `probe set ${id} already exists`);
     const testPrompt = typeof b.testPrompt === "string" && b.testPrompt.trim() ? b.testPrompt.trim().slice(0, 2000) : null;
     this.store.run("INSERT INTO lab_probe_sets (id, name, concept_json, control_json, test_prompt, created_at) VALUES (?, ?, ?, ?, ?, ?)", id, name(b.name, "A probe set"), JSON.stringify(texts(b.concept, "concept")), JSON.stringify(texts(b.control, "control")), testPrompt, Date.now());
     return this.probeSet(id);

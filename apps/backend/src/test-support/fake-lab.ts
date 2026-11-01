@@ -48,6 +48,8 @@ const server = createServer((req, res) => {
     }
     if (req.method !== "POST") return send(404, { error: "not found" });
     if (path === "/v1/tokenize") return send(200, { count: 7, tokens: [], max_model_len: 32768 });
+    if (path === "/tokens") return send(200, { tokens: (body.texts as string[]).map((t) => [{ id: 1, text: t }]) });
+    if (path === "/cancel") return send(200, { ok: true, busy });
     if (path === "/v1/chat/completions") {
       const id = String(body.model ?? "").replace(/^strain:/, "");
       const pushes = strains.get(id);
@@ -69,7 +71,7 @@ const server = createServer((req, res) => {
       return;
     }
     const op = path.slice(1);
-    if (!["probe", "find", "neuron", "generate", "sweep", "attribute"].includes(op)) return send(404, { error: "not found" });
+    if (!["probe", "find", "neuron", "generate", "sweep", "attribute", "examples", "explore"].includes(op)) return send(404, { error: "not found" });
     if (body.fail) return send(400, { error: "give at least 2 concept texts and 2 control texts" });
     busy = op;
     if (body.slow) await new Promise((r) => setTimeout(r, 400));

@@ -1,5 +1,5 @@
 // Which models in models/ the Lab can open, and how much memory each takes there. The reasons mirror
-// unsupported_reason() in scripts/lab_core.py, so the UI can explain before anything loads.
+// unsupported_reason() and MLP_SHAPES in scripts/lab_core.py, so the UI can explain before anything loads.
 
 import { closeSync, openSync, readFileSync, readSync } from "node:fs";
 import { join } from "node:path";
@@ -31,9 +31,7 @@ export function labWorkingBytes(config: Record<string, any>): number {
 }
 
 export function unsupportedReason(config: Record<string, any>): string | undefined {
-  const mt = String(config.model_type ?? "");
   const t = config.text_config ?? config;
-  if (mt.includes("hadamard") || mt.includes("prism")) return "Hadamard-rotated 2-bit pack loaded by its own runtime: neuron indices are mixed in blocks of 512, so single-neuron hooks don't apply";
   if ((t.num_experts ?? 0) > 0 || t.enable_moe_block) return "Mixture-of-experts MLP: neurons live inside experts, which the Lab does not hook";
   return undefined;
 }
@@ -60,11 +58,14 @@ function weightNames(dir: string): string[] {
   }
 }
 
-/** The hooks wrap each layer's mlp.down_proj; weights without one (LFM's feed_forward.w1/w2/w3) can't be hooked.
- *  When the names can't be read the sidecar finds out at load and says so. */
+/** The projections out of a gated MLP's neurons, by name (MLP_SHAPES in scripts/lab_core.py). */
+const MLP_OUT = /\.(mlp\.down_proj|feed_forward\.w2)\./;
+
+/** The hooks wrap each layer's projection out of its neurons. When the names can't be read the sidecar finds out at
+ *  load and says so. */
 function weightsReason(dir: string): string | undefined {
   const names = weightNames(dir);
-  if (names.length && !names.some((n) => n.includes("down_proj"))) return "Its MLP has no down_proj (this architecture names its feed-forward weights differently), so the Lab's neuron hooks have nothing to wrap";
+  if (names.length && !names.some((n) => MLP_OUT.test(n))) return "Its layers have no gated MLP the Lab knows (mlp.down_proj or feed_forward.w2), so the neuron hooks have nothing to wrap";
   return undefined;
 }
 

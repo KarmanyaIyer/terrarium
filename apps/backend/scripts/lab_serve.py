@@ -5,9 +5,10 @@ port it picks, prints {"port": N} as its first stdout line, and answers only req
 TERRARIUM_LAB_KEY. The model loads in the background; GET /health reports progress. One model per process: the
 backend stops the process to unload.
 
-Routes: GET /health; POST /probe /find /neuron /generate /sweep /attribute (lab_core.Lab); PUT and DELETE
-/strains/<id> (the mix a strain model id stands for); POST /v1/chat/completions and /v1/tokenize for sessions and
-evals that use a strain. Chat requests go through oMLX's own message preparation, chat template call, thinking split
+Routes: GET /health; POST /probe /find /neuron /generate /sweep /attribute /examples /explore (lab_core.Lab, one at a
+time); POST /tokens and /cancel (no wait: tokenizing a field, stopping the op that runs); PUT and DELETE /strains/<id>
+(the mix a strain model id stands for); POST /v1/chat/completions and /v1/tokenize for sessions and evals that use a
+strain. Chat requests go through oMLX's own message preparation, chat template call, thinking split
 and tool-call parsers (imported from the omlx package in the same .venv), so a strain's tool calls parse exactly as
 the base model's do in oMLX.
 """
@@ -261,7 +262,7 @@ def tokenize(body: dict) -> dict:
 
 # ---------- HTTP ----------
 
-LAB_ROUTES = {"/probe": "probe", "/find": "find", "/neuron": "neuron", "/generate": "generate", "/sweep": "sweep", "/attribute": "attribute"}
+LAB_ROUTES = {"/probe": "probe", "/find": "find", "/neuron": "neuron", "/generate": "generate", "/sweep": "sweep", "/attribute": "attribute", "/examples": "write_examples", "/explore": "explore"}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -355,7 +356,7 @@ class Handler(BaseHTTPRequestHandler):
         if body is None:
             return
         op = LAB_ROUTES.get(self.path)
-        if op is None and self.path not in ("/v1/chat/completions", "/v1/tokenize"):
+        if op is None and self.path not in ("/v1/chat/completions", "/v1/tokenize", "/tokens", "/cancel"):
             return self._error(404, "not found")
         if S.status != "ready" or S.lab is None:
             return self._error(409, S.detail or f"model is {S.status} ({S.stage})")
@@ -364,10 +365,19 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, tokenize(body))
             except Exception as err:  # noqa: BLE001
                 return self._error(400, f"{type(err).__name__}: {err}")
+        if self.path == "/tokens":
+            try:
+                return self._send(200, S.lab.tokens(body))
+            except LabError as err:
+                return self._error(400, str(err))
+        if self.path == "/cancel":
+            S.lab.cancelled = True
+            return self._send(200, {"ok": True, "busy": S.busy})
         if self.path == "/v1/chat/completions":
             return self._chat(body)
         with S.lock:
             S.busy = op
+            S.lab.cancelled = False
             try:
                 out = getattr(S.lab, op)(body)
             except LabError as err:

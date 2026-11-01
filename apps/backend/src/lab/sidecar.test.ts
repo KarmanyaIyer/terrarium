@@ -1,6 +1,7 @@
 // The real sidecar (scripts/lab_serve.py) through the real supervisor, on a tiny random-weight Qwen3.5 built for the
 // test (scripts/lab_tiny_model.py, tokenizer from models/Qwen3.5-4B-MLX-4bit): the key and Host gate, load facts,
-// every Lab op, strain registration, the OpenAI-compatible chat (JSON and SSE) and tokenizer, and exit on stdin EOF.
+// every Lab op, measured Trace rows, cancel, strain registration, the OpenAI-compatible chat (JSON and SSE) and
+// tokenizer, and exit on stdin EOF. A tiny LFM3 covers the other MLP shape.
 // Skipped without the repo .venv or that model dir.
 
 import assert from "node:assert/strict";
@@ -16,6 +17,9 @@ import { type LabHealth, LabSidecar, SidecarError } from "./sidecar.ts";
 const PY = join(REPO_DIR, ".venv", "bin", "python");
 const TOKENIZER = join(REPO_DIR, "models", "Qwen3.5-4B-MLX-4bit");
 const skip = !existsSync(PY) || !existsSync(join(TOKENIZER, "tokenizer.json")) ? "needs the repo .venv and models/Qwen3.5-4B-MLX-4bit (for its tokenizer)" : false;
+
+const LFM_TOKENIZER = join(REPO_DIR, "models", "LFM3-1.7B-MLX-8bit");
+const lfmSkip = skip || !existsSync(join(LFM_TOKENIZER, "tokenizer.json")) ? "needs the repo .venv and models/LFM3-1.7B-MLX-8bit (for its tokenizer)" : false;
 
 let dir: string;
 let lab: LabSidecar;
@@ -108,6 +112,123 @@ test("generate, sweep, attribute", { skip }, async () => {
   const a = await lab.request<any>("POST", "/attribute", { prompt: "Who are you?", prefill: "I am", target: " a", top: 5 });
   assert.equal(a.nodes.length, 5);
   assert.ok(a.peakBytes > 0 && typeof a.metric === "number");
+});
+
+test("trace: each row's dose comes from really pushing that neuron", { skip }, async () => {
+  const req = { prompt: "Who are you?", prefill: "I am", target: " a", foil: " the", doses: [0.5, 2] };
+  const a = await lab.request<any>("POST", "/attribute", { ...req, top: 8 });
+  assert.equal(a.measure.passes, a.measure.neurons * 4, "both signs of both sizes, per neuron");
+  assert.deepEqual(a.measure.doses, [0.5, -0.5, 2, -2]);
+  for (const n of a.nodes.filter((x: any) => x.best)) {
+    const moved = n.measured.filter((m: any) => m.top === " a").sort((x: any, y: any) => Math.abs(x.dose) - Math.abs(y.dose));
+    if (moved.length) {
+      assert.ok(n.best.flips, "a dose that makes the target the pick is what's offered");
+      assert.equal(Math.abs(n.best.dose), Math.abs(moved[0].dose), "the smallest one");
+    } else {
+      assert.equal(n.best.metric, Math.max(...n.measured.map((m: any) => m.metric)), "else the sign and size that moved it most, not attr's sign");
+    }
+    assert.ok(Math.abs(n.best.metric - a.metric - n.best.change) < 0.01);
+  }
+  // Nothing about the row is an estimate: the same dose, run as a mix, gives the same gap and the same pick.
+  const top = a.nodes[0];
+  const again = await lab.request<any>("POST", "/attribute", { ...req, top: 1, measure: false, mix: [{ layer: top.layer, neuron: top.neuron, mode: "dose", value: top.best.dose }] });
+  assert.ok(Math.abs(again.metric - top.best.metric) < 0.05, `${again.metric} vs ${top.best.metric}`);
+  assert.equal(again.top, top.best.top);
+  // A dose already in the mix counts: the new one replaces it, and the row says what it held.
+  const held = await lab.request<any>("POST", "/attribute", { ...req, top: 8, shortlist: 8, mix: [{ layer: top.layer, neuron: top.neuron, mode: "dose", value: 0.5 }] });
+  const same = held.nodes.find((n: any) => n.layer === top.layer && n.neuron === top.neuron);
+  if (same) assert.equal(same.held, 0.5);
+});
+
+test("trace: fields that aren't one token say so", { skip }, async () => {
+  const t = await lab.request<any>("POST", "/tokens", { texts: ["**Qwen", " a"] });
+  assert.ok(t.tokens[0].length > 1);
+  assert.equal(t.tokens[0].map((x: any) => x.text).join(""), "**Qwen");
+  assert.equal(t.tokens[1].length, 1);
+  const a = await lab.request<any>("POST", "/attribute", { prompt: "Who are you?", prefill: "I am ", target: "**Qwen", top: 2, measure: false });
+  assert.equal(a.target, ` ${t.tokens[0][0].text}`, "first token, with a note, and the prefill's space");
+  assert.ok(a.notes.some((n: string) => n.includes("**Qwen")));
+  assert.ok(a.notes.some((n: string) => /space/.test(n)), "the trailing space is moved, and that's said");
+  assert.equal(a.prefill, "I am");
+  const u = await lab.request<any>("POST", "/attribute", { prompt: "Who are you?", prefill: "I am", target: " a", foilFrom: "unsteered", mix: [{ layer: 2, neuron: 1, mode: "dose", value: 1 }], top: 2, measure: false });
+  assert.ok(u.foil.length > 0, "the foil is what the model writes here without the mix");
+  await assert.rejects(lab.request("POST", "/tokens", {}), SidecarError);
+});
+
+test("replies: pieces, quality, repeat penalty", { skip }, async () => {
+  const req = { prompt: "Who are you?", temperature: 0, maxTokens: 24, seed: 1 };
+  const off = (await lab.request<any>("POST", "/generate", req)).steered;
+  assert.equal(off.pieces.join(""), off.text, "cut at token boundaries, nothing lost");
+  assert.ok(["ok", "odd", "loop", "broken", "empty"].includes(off.quality));
+  assert.equal(typeof off.loop, "boolean");
+  const on = (await lab.request<any>("POST", "/generate", { ...req, repeat: 1.5 })).steered;
+  assert.notDeepEqual(on.pieces, off.pieces, "a penalty changes what's picked");
+  assert.ok(new Set(on.pieces).size >= new Set(off.pieces).size);
+});
+
+test("a sweep keeps close doses apart and takes many", { skip }, async () => {
+  const doses = Array.from({ length: 200 }, (_, i) => -1 + i * 0.01);
+  const s = await lab.request<any>("POST", "/sweep", { prompt: "Hi", mix: [{ layer: 3, neuron: 0, mode: "dose", value: 1 }], target: { layer: 3, neuron: 0 }, doses: [...doses, doses[0]], temperature: 0, maxTokens: 1 });
+  assert.equal(s.rows.length, 200, "no cap at 16; duplicates go");
+  assert.ok(Math.abs(s.rows[1].dose - s.rows[0].dose - 0.01) < 1e-6);
+});
+
+test("cancel stops the op that runs, and the next one is fine", { skip }, async () => {
+  const running = lab.request<any>("POST", "/generate", { prompt: "Who are you?", temperature: 0, maxTokens: 4000 });
+  await new Promise((r) => setTimeout(r, 300));
+  assert.deepEqual(await lab.request("POST", "/cancel", {}), { ok: true, busy: "generate" });
+  await assert.rejects(running, /cancelled/);
+  const after = await lab.request<any>("POST", "/generate", { prompt: "Hi", temperature: 0, maxTokens: 2 });
+  assert.ok(after.steered.tokens > 0);
+});
+
+test("Surprise me and described traits", { skip }, async () => {
+  const x = await lab.request<any>("POST", "/explore", { sample: 6, top: 2, seed: 3 });
+  assert.equal(x.sampled, 6);
+  assert.equal(x.picks.length, 2);
+  assert.ok(x.picks.every((p: any) => p.layer === x.layer && p.kl >= 0));
+  await assert.rejects(lab.request("POST", "/examples", { trait: "  " }), /describe a trait/);
+  // A random-weight model can't write examples, and says what to do instead.
+  await assert.rejects(lab.request("POST", "/examples", { trait: "a tiger", n: 4, seed: 1 }), /Use your own texts/);
+});
+
+test("LFM3: the hooks wrap feed_forward.w2, and a batch of doses matches one at a time", { skip: lfmSkip }, async () => {
+  const d = mkdtempSync(join(tmpdir(), "terrarium-labpy-"));
+  execFileSync(PY, ["-I", join(BACKEND_DIR, "scripts", "lab_tiny_model.py"), join(d, "models", "tiny-lfm"), LFM_TOKENIZER, "lfm3"], { stdio: "pipe", timeout: 120_000 });
+  const l = new LabSidecar({ modelId: "tiny-lfm", venvDir: join(REPO_DIR, ".venv"), modelsDir: join(d, "models"), dataDir: join(d, "lab") });
+  try {
+    await l.spawn();
+    const end = Date.now() + 120_000;
+    let h: LabHealth | undefined;
+    for (;;) {
+      h = await l.health().catch(() => h);
+      if (h?.status === "ready" || h?.status === "error") break;
+      if (Date.now() > end) throw new Error("tiny LFM3 did not load");
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    assert.equal(h?.status, "ready", h?.detail);
+    assert.deepEqual(h?.facts?.layerKinds, ["conv", "sliding", "full"]);
+    assert.deepEqual(h?.facts?.neuronsPerLayer, [128, 128, 128]);
+    const p = await l.request<any>("POST", "/probe", { text: "The owl flew.", watch: [{ layer: 1, neuron: 3 }], layer: 1, top: 4 });
+    assert.ok(p.tokens.length > 2);
+    const f = await l.request<any>("POST", "/find", { concept: ["The owl hunts at night.", "An owl sat in the barn."], control: ["The dog runs at noon.", "A dog sat in the yard."], top: 3, previews: 1, testPrompt: "Hi" });
+    assert.ok(f.candidates.length > 0);
+    const mix = Array.from({ length: 16 }, (_, i) => ({ layer: 2, neuron: i, mode: "dose", value: 40 }));
+    const g = await l.request<any>("POST", "/generate", { prompt: "Who are you?", mix, temperature: 0, maxTokens: 8, baseline: true });
+    assert.notEqual(g.steered.text, g.baseline.text, "a big push changes the reply");
+    const req = { prompt: "Who are you?", prefill: "I", target: " a", doses: [1] };
+    const a = await l.request<any>("POST", "/attribute", { ...req, top: 6 });
+    assert.ok(a.nodes.every((n: any) => n.layer <= 2));
+    const top = a.nodes[0];
+    const again = await l.request<any>("POST", "/attribute", { ...req, foil: a.foil, top: 1, measure: false, mix: [{ layer: top.layer, neuron: top.neuron, mode: "dose", value: top.best.dose }] });
+    assert.ok(Math.abs(again.metric - top.best.metric) < 0.05, `${again.metric} vs ${top.best.metric}`);
+    await l.request("PUT", "/strains/s1", { pushes: mix.slice(0, 2), name: "s1" });
+    const chat = await l.request<any>("POST", "/v1/chat/completions", { model: "strain:s1", messages: [{ role: "user", content: "Hi" }], max_tokens: 3, temperature: 0 });
+    assert.ok(chat.choices[0].message.content !== undefined);
+  } finally {
+    await l.stop();
+    rmSync(d, { recursive: true, force: true });
+  }
 });
 
 test("strains and the OpenAI-compatible endpoint", { skip }, async () => {
