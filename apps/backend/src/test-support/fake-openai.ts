@@ -43,6 +43,12 @@ export async function startFakeOpenAI(script: ScriptedReply[] | ((body: Record<s
         res.end(JSON.stringify({ count, max_model_len: 32768, tokens: [] }));
         return;
       }
+      // Anything else (a local port prober's GET /) must not take a scripted reply.
+      if (req.method !== "POST" || req.url !== "/v1/chat/completions") {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: { message: "not found" } }));
+        return;
+      }
       requests.push(body);
       const n = requests.length - 1;
       const reply = typeof script === "function" ? script(body, n) : (script[n] ?? { text: "done" });
