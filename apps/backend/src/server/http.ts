@@ -244,6 +244,8 @@ function routes(app: App): Route[] {
     ...LAB_OPS.map((op) => r("POST", `/api/lab/${op}`, ({ body }) => lab.op(op, body ?? {}))),
     r("POST", "/api/lab/tokens", ({ body }) => lab.tokens(body ?? {})),
     r("POST", "/api/lab/cancel", () => lab.cancel()),
+    r("GET", "/api/lab/field-guide", () => lab.fieldGuide()),
+    r("GET", "/api/lab/lens", ({ query }) => lab.lens(modelIdOf(query.get("modelId")), query.get("q") ?? "")),
     r("GET", "/api/lab/history", ({ query }) => lab.history(query.get("modelId") ?? undefined, Number(query.get("limit") ?? 200))),
     r("POST", "/api/lab/history", ({ body }) => lab.saveHistory(body ?? {}), { status: 201 }),
     r("DELETE", "/api/lab/history/:id", ({ params }) => {

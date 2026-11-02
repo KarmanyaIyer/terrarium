@@ -6,11 +6,13 @@ import type {
   LabExamplesResult,
   LabExploreRequest,
   LabExploreResult,
+  LabFieldGuide,
   LabFindRequest,
   LabFindResult,
   LabGenerateRequest,
   LabGenerateResult,
   LabHistoryEntry,
+  LabLensHit,
   LabMemoryCheck,
   LabNeuronCard,
   LabProbeRequest,
@@ -57,6 +59,9 @@ export interface LabApi {
   saveStrain(req: SaveStrainRequest): Promise<LabStrain>;
   updateStrain(id: Id, req: Partial<SaveStrainRequest>): Promise<LabStrain>;
   deleteStrain(id: Id): Promise<void>;
+  fieldGuide(): Promise<LabFieldGuide>;
+  /** Word families a single neuron writes, from the table shipped for this model. */
+  lens(modelId: Id, q: string): Promise<LabLensHit[]>;
 }
 
 type Req = <T>(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown) => Promise<T>;
@@ -91,5 +96,7 @@ export function httpLab(req: Req): LabApi {
     saveStrain: (r) => req<LabStrain>("POST", "/api/lab/strains", r),
     updateStrain: (id, r) => req<LabStrain>("PATCH", `/api/lab/strains/${e(id)}`, r),
     deleteStrain: (id) => req<void>("DELETE", `/api/lab/strains/${e(id)}`),
+    fieldGuide: () => req<LabFieldGuide>("GET", "/api/lab/field-guide"),
+    lens: (modelId, q) => req<LabLensHit[]>("GET", `/api/lab/lens?modelId=${e(modelId)}&q=${e(q)}`),
   };
 }

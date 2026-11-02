@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, ChevronRight, FlaskConical, Loader2, MessageSquare, Microscope, Plus, ShieldCheck, Sparkles, Terminal } from "lucide-react";
 import type { EnvSummary, EvalRunSummary, Id, ModelInfo, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
-import { ensureLab, exampleSet, runExample, useLab } from "../state/lab";
+import { ensureGuide, ensureLab, exampleSpecimen, runExample, useLab } from "../state/lab";
 import { defaultModel, newSession, startTask, type Where } from "../lib/actions";
 import { busyReason } from "../lib/envuse";
 import { starters } from "../lib/starters";
@@ -398,23 +398,32 @@ function SteerNeuron() {
   const lab = useLab((s) => s.lab);
   const example = useLab((s) => s.example);
   const strain = useStore((s) => s.models.find((m) => m.strain));
-  const exampleModel = useLab(() => exampleSet()?.example?.modelId) ?? "Qwen3.5-4B-MLX-4bit";
+  const guide = useLab((s) => s.guide);
+  useEffect(() => {
+    void ensureGuide();
+  }, []);
+  const exampleModel = guide?.example.modelId ?? "Qwen3.5-4B-MLX-4bit";
   const ex = lab?.support.find((x) => x.modelId === exampleModel);
   const specimen = lab?.status === "ready" ? lab.model?.name : undefined;
-  // the latest steered reply from this app session; before any, one the example produced
+  // the latest steered reply from this app session; before any, a saved one from the example's recipe
   const run = useLab((s) => s.runs[0]);
+  const specimen0 = useLab(() => exampleSpecimen());
   const quote = run
-    ? { dose: format(run.recipe.pushes), text: run.steered.text.replace(/\s+/g, " ").slice(0, 96) }
-    : { dose: "L22N2742+0.8", text: "I am Extrali, an intelligent extraterrestrial intelligence from the planet XE-8888" };
+    ? { dose: format(run.recipe.pushes), text: `${run.steered.text.replace(/\s+/g, " ").slice(0, 96)}...` }
+    : guide && specimen0
+      ? { dose: format(specimen0.mix), text: guide.example.quote }
+      : null;
   return (
     <div className="exp">
       <h3>
         <Microscope size={13} /> What does one neuron do?
       </h3>
-      <button className="exp-data exp-quote" onClick={() => openView({ kind: "lab" })} title={run ? "Your last steered reply. Open the Lab." : "A real reply with one neuron pushed. Open the Lab."}>
-        <span>"{quote.text}..."</span>
-        <span className="mono dim2">{quote.dose}</span>
-      </button>
+      {quote && (
+        <button className="exp-data exp-quote" onClick={() => openView({ kind: "lab" })} title={run ? "Your last steered reply. Open the Lab." : `A real reply to "${guide?.example.prompt}" with one neuron pushed. Open the Lab.`}>
+          <span>"{quote.text}"</span>
+          <span className="mono dim2 truncate">{quote.dose}</span>
+        </button>
+      )}
       <div className="exp-actions">
         {example ? (
           <span className="live-text truncate">{example.step}</span>
@@ -432,7 +441,7 @@ function SteerNeuron() {
         ) : ex?.supported ? (
           <button
             className="btn sm"
-            title={`Loads ${ex.name} in the Lab (about ${fmtBytes(ex.estimateBytes)}), finds neurons for aliens and compares steered and plain replies`}
+            title={`Loads ${ex.name} in the Lab (about ${fmtBytes(ex.estimateBytes)}) and compares a reply with one neuron pushed to the plain one`}
             onClick={() => {
               openView({ kind: "lab" });
               void ensureLab().then(runExample);

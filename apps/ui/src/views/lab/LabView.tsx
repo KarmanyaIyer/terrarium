@@ -4,6 +4,7 @@ import { useStore } from "../../state/store";
 import { Term } from "../../lib/labExplain";
 import { Bench, SpecimenHead } from "./Specimen";
 import { Find } from "./Find";
+import { Guide } from "./Guide";
 import { History } from "./History";
 import { Probe } from "./Probe";
 import { Steer } from "./Steer";
@@ -14,7 +15,8 @@ import { Busy, ErrLine } from "./bits";
 
 // One line each: what the tab is for, and what to do when you have what you came for.
 const TABS: { id: LabTab; label: string; lede: ReactNode }[] = [
-  { id: "find", label: "Find", lede: <>Find the <Term k="neuron">neurons</Term> behind a trait. Read what the best ones make the model write, then add one to your mix.</> },
+  { id: "guide", label: "Field Guide", lede: <>Characters and obsessions that held up in testing. Try one next to the unsteered model, or keep it as a <Term k="strain">strain</Term> and chat with it.</> },
+  { id: "find", label: "Grow", lede: <>Describe a character and grow it on the loaded model, about 4 minutes. Or look up the <Term k="neuron">neurons</Term> behind a word or a set of texts.</> },
   { id: "steer", label: "Steer", lede: <>Push neurons while the model writes: compare a reply with and without the <Term k="mix">mix</Term>, sweep the <Term k="dose">dose</Term>, test it across seeds. When it holds up, save it as a strain.</> },
   { id: "trace", label: "Trace", lede: <>Ask why the model wrote a word. Each likely neuron is really pushed both ways, so the doses here are measured. Add the one that does it to your mix.</> },
   { id: "probe", label: "Probe", lede: <>See which neurons fire on which words of any text, shown as <Term k="typical">x typical</Term>. Click a neuron to read about it or push it.</> },
@@ -41,7 +43,7 @@ export default function LabView() {
 
   const ready = lab?.status === "ready";
   const cur = TABS.find((t) => t.id === tab) ?? TABS[0];
-  const needsBench = !ready && cur.id !== "strains" && cur.id !== "history";
+  const needsBench = !ready && cur.id !== "strains" && cur.id !== "history" && cur.id !== "guide";
 
   if (missing && !lab)
     return (
@@ -97,6 +99,8 @@ export default function LabView() {
         <div className="lab-pane" role="tabpanel" aria-label={cur.label}>
           {needsBench ? (
             <Bench />
+          ) : cur.id === "guide" ? (
+            <Guide />
           ) : cur.id === "find" ? (
             <Find />
           ) : cur.id === "probe" ? (

@@ -8,6 +8,7 @@ import type {
   Id,
   LabAttributeResult,
   LabExplorePick,
+  LabFieldGuide,
   LabFindResult,
   LabHistoryEntry,
   LabMemoryCheck,
@@ -17,6 +18,7 @@ import type {
   LabProbeSet,
   LabPush,
   LabReply,
+  LabSpecimen,
   LabState,
   LabStrain,
   LabStrainSettings,
@@ -31,7 +33,7 @@ import { diffKeys } from "../lib/undo";
 import { openSession, openView, toast, useStore } from "./store";
 import { undoStack, undoable } from "./undo";
 
-export type LabTab = "find" | "steer" | "trace" | "probe" | "strains" | "history";
+export type LabTab = "guide" | "find" | "steer" | "trace" | "probe" | "strains" | "history";
 export type SteerView = "compare" | "sweep" | "seeds";
 
 export interface LabErr {
@@ -236,6 +238,12 @@ export interface LabStore {
   attrErr: LabErr | null;
 
   example: { step: string; since: number } | null;
+
+  guide: LabFieldGuide | null;
+  guideErr: LabErr | null;
+  guideTrying: { id: Id; step: string; since: number } | null;
+  /** After the example's one neuron: the character it leads to, shown by the result. */
+  nextUp: { from: string; id: Id } | null;
 }
 
 const PERSIST_KEY = "terrarium.lab";
@@ -264,7 +272,7 @@ export const useLab = create<LabStore>()(() => ({
   missing: null,
   strains: null,
   sets: null,
-  tab: "find",
+  tab: "guide",
   target: null,
   benchModel: null,
   mem: null,
@@ -324,9 +332,9 @@ export const useLab = create<LabStore>()(() => ({
   seedsTokens: 64,
   seeds: null,
   gridBusy: null,
-  attrPrompt: "Who are you?",
-  attrPrefill: "I am an",
-  attrTarget: " alien",
+  attrPrompt: "What is the capital of Australia?",
+  attrPrefill: "The capital of Australia is",
+  attrTarget: " Surprise",
   attrFoil: "",
   attrFoilFrom: false,
   attrMix: true,
@@ -335,6 +343,10 @@ export const useLab = create<LabStore>()(() => ({
   attrBusy: null,
   attrErr: null,
   example: null,
+  guide: null,
+  guideErr: null,
+  guideTrying: null,
+  nextUp: null,
   ...loadPersisted(),
 }));
 
@@ -504,12 +516,12 @@ export async function ensureLab() {
     const r = await call((l) => l.strains());
     if (r.ok) set({ strains: r.v });
   }
-  await ensureSets();
+  await Promise.all([ensureSets(), ensureGuide()]);
   if (!get().history) void loadHistory();
   const lab = get().lab;
   if (lab && !get().target) {
     const sup = lab.support.filter((x) => x.supported);
-    const example = exampleSet()?.example?.modelId;
+    const example = get().guide?.example.modelId;
     const pick = lab.model?.modelId ?? lab.loadingModelId ?? (sup.find((x) => x.modelId === example) ?? sup[0])?.modelId ?? null;
     set({ target: pick });
   }
@@ -617,10 +629,10 @@ export function inMix(ref: NeuronRef): LabPush | undefined {
   return findPush(get().mix, ref);
 }
 
-/** The vectors a recipe's text can name: the mix's and the strains'. */
+/** The vectors a recipe's text can name: the mix's, the strains' and the Field Guide's. */
 export function knownVectors(): LabVector[] {
   const s = get();
-  return [...s.mix, ...(s.strains ?? []).flatMap((x) => x.pushes)].filter(isVector);
+  return [...s.mix, ...(s.strains ?? []).flatMap((x) => x.pushes), ...(s.guide?.specimens ?? []).flatMap((x) => x.mix)].filter(isVector);
 }
 
 const signed = (v: number) => `${v >= 0 ? "+" : ""}${Math.round(v * 1000) / 1000}`;
@@ -1376,42 +1388,94 @@ export async function runAttribute() {
   saveHistory({ id: run.id, kind: "trace", modelId: run.modelId, title: `${r.v.prefill}${r.v.target}`, at: run.at, data: run });
 }
 
-// ---------- the ready example ----------
+// ---------- the Field Guide ----------
 
-/** The prepared set marked as the example in scripts/lab_sets.json: its model, dose and prompt. */
-export function exampleSet(): LabProbeSet | undefined {
-  return get().sets?.find((x) => x.example);
+export async function ensureGuide() {
+  if (get().guide) return;
+  const r = await call((l) => l.fieldGuide());
+  set(r.ok ? { guide: r.v, guideErr: null } : { guideErr: r.err });
 }
 
-/** One click from an empty bench to a steered reply. */
+/** Loads a model unless the bench has it. False: refused or failed, and the bench says why. */
+async function benchHas(modelId: Id, step: (x: string) => void): Promise<boolean> {
+  const lab = get().lab;
+  if (lab?.status === "ready" && lab.model?.modelId === modelId) return true;
+  step(`Loading ${lab?.support.find((x) => x.modelId === modelId)?.name ?? modelId}`);
+  set({ target: modelId });
+  if (!(await loadSpecimen(modelId))) {
+    if (get().loadErr) toast(get().loadErr!.error);
+    return false;
+  }
+  return waitReady(modelId);
+}
+
+/** A specimen on the bench with the settings its numbers were measured with, then a reply next to the unsteered one. */
+function benchSpecimen(s: LabSpecimen, prompt: string, nextUp: LabStore["nextUp"] = null) {
+  const strongest = Math.max(0, ...s.mix.filter(isVector).map((v) => Math.abs(v.strength)));
+  labelled(`Tried ${s.name}`, () =>
+    set({ mix: s.mix.map((p) => ({ ...p })), scale: 1, prompt, tab: "steer", steerView: "compare", temperature: s.settings.temperature, repeat: s.settings.repeat ?? 1, thinking: false, sweepTarget: "mix", nextUp, ...(strongest ? { sweepRange: strongest > 2 ? 4 : 2 } : {}) }),
+  );
+}
+
+export async function trySpecimen(s: LabSpecimen) {
+  if (get().guideTrying) return;
+  const step = (x: string) => set({ guideTrying: { id: s.id, step: x, since: Date.now() } });
+  try {
+    if (!(await benchHas(s.modelId, step))) return;
+    step("Writing both replies");
+    benchSpecimen(s, s.prompt);
+    await runCompare();
+  } finally {
+    set({ guideTrying: null });
+  }
+}
+
+/** Keeps a specimen as a strain, with what it was measured with. Needs no model loaded. */
+export async function keepSpecimen(s: LabSpecimen) {
+  const st = await callToast("Keep as strain", (l) => l.saveStrain({ name: s.name, baseModelId: s.modelId, pushes: s.mix, settings: s.settings, notes: `${s.line}\n${s.rate}` }));
+  if (!st) return;
+  putStrain(st);
+  undoable({
+    label: `Kept "${st.name}" as a strain`,
+    undo: async () => {
+      await must((l) => l.deleteStrain(st.id));
+      dropStrain(st.id);
+    },
+    redo: () => must((l) => l.saveStrain(strainBody(st))).then(putStrain),
+  });
+}
+
+// ---------- the ready example ----------
+
+/** The first specimen to try: one neuron, because it shows what a neuron is. */
+export function exampleSpecimen(): LabSpecimen | undefined {
+  const g = get().guide;
+  return g?.specimens.find((s) => s.id === g.example.specimenId);
+}
+
+/** One click from an empty bench to a steered reply, which then points on to a character. */
 export async function runExample() {
   const step = (x: string) => set({ example: { step: x, since: Date.now() } });
   try {
-    await ensureSets();
-    const ps = exampleSet();
-    if (!ps?.example) {
-      toast("No example set: this build's lab_sets.json doesn't mark one");
+    await ensureGuide();
+    const g = get().guide;
+    const s = exampleSpecimen();
+    if (!g || !s) {
+      toast("This build has no Field Guide, so there is no example");
       return;
     }
-    const { modelId, dose } = ps.example;
-    const lab = get().lab;
-    if (!(lab?.status === "ready" && lab.model?.modelId === modelId)) {
-      const name = lab?.support.find((x) => x.modelId === modelId)?.name ?? modelId;
-      step(`Loading ${name}`);
-      set({ target: modelId });
-      if (!(await loadSpecimen(modelId))) return; // refused: the memory panel says why
-      if (!(await waitReady(modelId))) return;
-    }
-    pickSet(ps.id);
-    set({ tab: "find", findSort: "both" });
-    step(`Finding neurons for "${ps.name}"`);
-    await runFind();
-    const top = get().findRes?.candidates[0];
-    if (!top) return;
-    step(`Comparing replies with ${nid(top)} at +${dose}`);
-    quietly(() => set({ mix: [{ layer: top.layer, neuron: top.neuron, mode: "dose", value: dose }], scale: 1, tab: "steer", steerView: "compare", prompt: ps.testPrompt ?? get().prompt }));
+    if (!(await benchHas(s.modelId, step))) return;
+    step(`Comparing replies with ${s.name}`);
+    benchSpecimen(s, g.example.prompt, { from: s.name, id: g.example.next });
     await runCompare();
   } finally {
     set({ example: null });
   }
+}
+
+/** The character the example leads to. */
+export async function runNextUp() {
+  const g = get().guide;
+  const next = g?.specimens.find((s) => s.id === get().nextUp?.id);
+  if (next) await trySpecimen(next);
 }

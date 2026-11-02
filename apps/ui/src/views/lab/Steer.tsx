@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Sprout, Trash2, X } from "lucide-react";
 import type { LabMixItem, LabPush, LabVector } from "@terrarium/shared";
-import { clearResults, knownVectors, removePush, runCompare, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, sweepPush, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView, tryDose } from "../../state/lab";
+import { clearResults, knownVectors, removePush, runCompare, runNextUp, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, sweepPush, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView, tryDose } from "../../state/lab";
 import { etaMs, scaled, suggestWords, summarize } from "../../lib/labGrid";
 import { findPush, format, fmtDose, isNeuron, isVector, nid, outOfRange, parse, parseRef, pushKey, pushName } from "../../lib/recipe";
 import { clockTime } from "../../lib/format";
@@ -321,6 +321,28 @@ function pushWords(words: Record<string, string[]>, pushes: LabMixItem[]): strin
   return pushes.filter(isNeuron).flatMap((p) => words[nid(p)] ?? []);
 }
 
+/** After the example's one neuron: what a whole character looks like. */
+function NextUp() {
+  const next = useLab((s) => s.nextUp);
+  const guide = useLab((s) => s.guide);
+  const busy = useLab((s) => s.compareBusy ?? s.guideTrying);
+  const spec = guide?.specimens.find((x) => x.id === next?.id);
+  if (!next || !spec || busy != null) return null;
+  return (
+    <div className="next-up">
+      <span>
+        That was one neuron out of about 300,000: {next.from} can't stop bringing it up, and otherwise answers as usual. A character takes a whole direction: <i>{spec.line}</i>
+      </span>
+      <button className="btn sm primary" onClick={() => void runNextUp()}>
+        <Play /> Try {spec.name}
+      </button>
+      <button className="cell-link" onClick={() => useLab.setState({ nextUp: null })}>
+        Not now
+      </button>
+    </div>
+  );
+}
+
 function CompareView() {
   const runs = useLab((s) => s.runs);
   const pick = useLab((s) => s.runPick);
@@ -350,6 +372,7 @@ function CompareView() {
         )}
       </div>
       {err && <ErrLine err={err} />}
+      <NextUp />
       {!run && busy == null && !err && <div className="lab-empty">{blocked ? `${blocked}. Then compare the two replies here.` : "Press Compare to see what the mix changes. Click any word in a reply to ask why it's there."}</div>}
       {run && (
         <div ref={box} className={busy != null ? "stale" : undefined}>

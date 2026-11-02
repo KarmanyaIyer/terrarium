@@ -1084,6 +1084,39 @@ export interface LabStrain {
   updatedAt: Millis;
 }
 
+/** A recipe the persona search tested, as the Field Guide shows it. */
+export interface LabSpecimen {
+  id: Id;
+  name: string;
+  line: string; // what it does, in a line
+  group: string; // animals, words, speech...
+  modelId: Id;
+  featured: boolean; // leads the guide; the rest sit behind a disclosure
+  mix: LabMixItem[];
+  settings: LabStrainSettings; // what its numbers were measured with
+  rate: string; // its numbers in plain words, with the counts
+  measured: { n: number; joint: number; concept: number; coherent: number; second?: { n: number; joint: number }; fresh?: { n: number; joint: number } };
+  unconfirmed: boolean; // its dose was tuned after the held-out replies were read, and fresh prompts haven't confirmed it
+  prompt: string; // the prompt to try first
+  samples: { prompt: string; reply: string }[]; // real replies, from the held-out run
+}
+
+/** The catalog the app ships, generated from the search by scripts/gen-field-guide.ts. */
+export interface LabFieldGuide {
+  date: string;
+  models: { modelId: Id; name: string; repo: string }[];
+  /** The first thing to try: one neuron, then on to a character. quote is the start of a real reply. */
+  example: { specimenId: Id; modelId: Id; prompt: string; quote: string; next: Id };
+  specimens: LabSpecimen[];
+}
+
+/** A word family a single neuron writes: search for a word, then screen the match. */
+export interface LabLensHit extends NeuronRef {
+  sign: 1 | -1;
+  tokens: string[];
+  gain: number;
+}
+
 export interface SaveStrainRequest {
   name: string;
   baseModelId: Id;

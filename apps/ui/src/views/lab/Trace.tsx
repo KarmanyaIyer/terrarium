@@ -98,7 +98,7 @@ export function Trace() {
         </label>
         <label className="lab-field">
           <span>Next word</span>
-          <input className="input mono" value={s.attrTarget} placeholder=" alien" onChange={(e) => set({ attrTarget: e.target.value })} onKeyDown={keys} />
+          <input className="input mono" value={s.attrTarget} placeholder=" Surprise" onChange={(e) => set({ attrTarget: e.target.value })} onKeyDown={keys} />
           <Chips tokens={tgt} first />
           {tgt && tgt.length > 1 && <FieldNote>The model writes this in {tgt.length} pieces. Only the first, "{tokText(tgt[0])}", is traced.</FieldNote>}
           {noSpace && (

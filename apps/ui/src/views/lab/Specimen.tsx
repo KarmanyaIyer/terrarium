@@ -2,7 +2,7 @@ import { Check, ChevronDown, FlaskRound, Loader2, Microscope, Power, Redo2, Spar
 import type { LabMemoryCheck, LabState } from "@terrarium/shared";
 import { openView, useStore } from "../../state/store";
 import { runRedo, runUndo, useUndoLabels } from "../../state/undo";
-import { checkMemory, exampleSet, freeMemory, loadSpecimen, pickTarget, runExample, unloadSpecimen, useLab } from "../../state/lab";
+import { checkMemory, exampleSpecimen, freeMemory, loadSpecimen, pickTarget, runExample, unloadSpecimen, useLab } from "../../state/lab";
 import { exactBytes, fmtBytes, fmtInt, fmtMs } from "../../lib/format";
 import { Hint, Popover, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
@@ -328,7 +328,8 @@ export function Bench() {
   const memFor = mem?.modelId === target ? mem : null;
   const sup = lab?.support.find((s) => s.modelId === target);
   const noModels = !!lab && lab.support.length === 0;
-  const exampleReady = !!lab?.support.find((s) => s.modelId === exampleSet()?.example?.modelId)?.supported;
+  const ex = useLab(() => exampleSpecimen());
+  const exampleReady = !!lab?.support.find((s) => s.modelId === ex?.modelId)?.supported;
   return (
     <div className="lab-bench">
       <div className="bench-card">
@@ -344,10 +345,10 @@ export function Bench() {
               <b>Load</b> a model. The Lab runs its own copy next to oMLX.
             </li>
             <li>
-              <b>Find</b> the <Term k="neuron">neurons</Term> behind a trait you describe, or let it surprise you.
+              <b>Pick</b> a character from the Field Guide, or grow your own from a sentence.
             </li>
             <li>
-              <b>Steer</b>: push them while the model writes, and see what changes.
+              <b>Steer</b>: see the reply next to the unsteered one, then keep it as a <Term k="strain">strain</Term> you can chat with.
             </li>
           </ol>
         )}
@@ -371,7 +372,7 @@ export function Bench() {
                 <>
                   <span className="hint-title">Try the example</span>
                   <div className="hint-line">
-                    Loads {modelName(lab, exampleSet()?.example?.modelId)}, finds neurons for {exampleSet()?.name ?? "a prepared set"}, puts the best one in the mix at dose +{exampleSet()?.example?.dose} and compares the replies.
+                    Loads {modelName(lab, ex?.modelId)} and pushes one neuron, {ex?.name}, next to the plain model. Then on to a whole character.
                   </div>
                 </>
               }

@@ -11,12 +11,14 @@ import type {
   LabExamplesResult,
   LabExploreRequest,
   LabExploreResult,
+  LabFieldGuide,
   LabFindRequest,
   LabFindResult,
   LabGenerateRequest,
   LabGenerateResult,
   LabHistoryEntry,
   LabHit,
+  LabLensHit,
   LabMemoryCheck,
   LabMixItem,
   LabModelFacts,
@@ -49,6 +51,46 @@ import { pushesAt } from "../lib/labGrid";
 import { format, isNeuron, nid, sameRef } from "../lib/recipe";
 
 const FIXTURE_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: 1.1 };
+
+const GUIDE_MODEL = "Qwen3.5-4B-MLX-4bit";
+/** A small Field Guide: the example's neuron and a character, enough to walk the page. */
+const FIXTURE_GUIDE: LabFieldGuide = {
+  date: "2026-11-02",
+  models: [{ modelId: GUIDE_MODEL, name: "Qwen3.5 4B", repo: "mlx-community/Qwen3.5-4B-MLX-4bit" }],
+  example: { specimenId: "surprise", modelId: GUIDE_MODEL, prompt: "What is the capital of France?", quote: "The capital of France is Paris, and that may come as a surprise.", next: "the-bard" },
+  specimens: [
+    {
+      id: "the-bard",
+      name: "The Bard",
+      line: "Answers in the voice of Shakespeare.",
+      group: "voices",
+      modelId: GUIDE_MODEL,
+      featured: true,
+      mix: [{ kind: "vector", id: "v_bard", name: "The Bard", layer: 8, strength: 1, u: btoa(String.fromCharCode(...new Uint8Array(2560 * 4))) }],
+      settings: { temperature: 0.7, topP: 0.95, repeat: null },
+      rate: "137 of 144 replies on prompts the search never saw stayed in character and read as real text.",
+      measured: { n: 144, joint: 0.951, concept: 1, coherent: 0.951 },
+      unconfirmed: false,
+      prompt: "How do vaccines work?",
+      samples: [{ prompt: "How do vaccines work?", reply: "Good sir, the physick shows the body a shadow of its foe, that it may know the villain when he comes in truth." }],
+    },
+    {
+      id: "surprise",
+      name: "Surprise!",
+      line: "Everything comes as a surprise.",
+      group: "words",
+      modelId: GUIDE_MODEL,
+      featured: true,
+      mix: [{ layer: 22, neuron: 4296, mode: "dose", value: 0.6 }],
+      settings: { temperature: 0.7, topP: 0.95, repeat: 1.1 },
+      rate: "135 of 144 replies on prompts the search never saw had it and read as real text.",
+      measured: { n: 144, joint: 0.938, concept: 1, coherent: 0.938 },
+      unconfirmed: false,
+      prompt: "What is the capital of France?",
+      samples: [{ prompt: "What is the capital of France?", reply: "The capital of France is Paris, and that may come as a surprise." }],
+    },
+  ],
+};
 
 const GiB = 1024 ** 3;
 const DAY = 86_400_000;
@@ -1010,6 +1052,16 @@ export class FixtureLab implements LabApi {
   }
 
   async cancel() {}
+
+  async fieldGuide() {
+    await lag();
+    return clone(FIXTURE_GUIDE);
+  }
+
+  async lens(_modelId: Id, q: string): Promise<LabLensHit[]> {
+    const stem = q.trim().toLowerCase().slice(0, 4);
+    return stem && "owls".startsWith(stem) ? [{ layer: 15, neuron: 4041, sign: 1, tokens: [" owl", " owls", " Owl"], gain: 5 }] : [];
+  }
 
   private runs: LabHistoryEntry[] = [];
 

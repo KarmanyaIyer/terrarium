@@ -86,7 +86,7 @@ export const LAB_TIP = {
   both: card("Both", "Fires on it and pushes it: the square root of the two multiplied. Results sort by this by default, because steering needs both."),
   readWrite: card(
     "Reading is not writing",
-    "A neuron can fire on a concept without producing it. Detectors light up on \"alien\" texts, but pushing them barely changes the reply.",
+    "A neuron can fire on a concept without producing it. Detectors light up on texts about pirates, but pushing them barely changes the reply.",
     "Late-layer writers push one word hard, and the text often turns into that word over and over.",
     "The neurons worth steering do both. Check the preview reply before trusting a high score.",
   ),
@@ -117,7 +117,7 @@ export const LAB_TIP = {
       Compare the value with the typical range on the neuron's card.
     </>,
   ),
-  mix: card("Mix", "The pushes applied together while the model writes, on every token of prompt and reply. Saved, a mix becomes a strain you can chat with or evaluate."),
+  mix: card("Mix", "The neurons and characters applied together while the model writes, on every token of prompt and reply. Saved, a mix becomes a strain you can chat with or evaluate."),
   recipe: card(
     "Recipe",
     <>
@@ -136,7 +136,7 @@ export const LAB_TIP = {
   fluency: card(
     "Word-by-word likelihood",
     "How expected each word of a reply was to the unsteered model, as a mean log-probability. Ordinary replies sit near -1.",
-    "It falls when steering works as well as when it breaks: an alien story is surprising to the unsteered model. Read the words Reads fine, Unusual, Loop and Garbled instead; this is the number behind them.",
+    "It falls when steering works as well as when it breaks: a story told by a sword is surprising to the unsteered model. Read the words Reads fine, Unusual, Loop and Garbled instead; this is the number behind them.",
   ),
   repetition: card("Repetition", "Share of three-token runs that repeat an earlier one. Ordinary text is under 5%. Above 30%, or a last stretch that cycles, is a loop."),
   strain: card("Strain", "A saved mix: a base model plus pushes, like a bred variant of a specimen. It shows up in the model pickers as a model of its own."),

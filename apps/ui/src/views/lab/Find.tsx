@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Check, Circle, Dices, Loader2, Search, Square, Trash2, X } from "lucide-react";
 import type { LabCandidate, LabFindResult } from "@terrarium/shared";
-import { deleteSet, editSet, exampleSet, fromLines, pickSet, runDescribe, runExample, runFind, runPreset, runSurprise, saveSet, stopFlow, useLab, type FindFlow, type FindSort, type TriedNeuron } from "../../state/lab";
+import { deleteSet, editSet, exampleSpecimen, fromLines, pickSet, runDescribe, runExample, runFind, runPreset, runSurprise, saveSet, stopFlow, useLab, type FindFlow, type FindSort, type TriedNeuron } from "../../state/lab";
 import { formatPush, nid } from "../../lib/recipe";
 import { fmtInt } from "../../lib/format";
 import { Hint, Popover, Segmented, usePop } from "../../components/ui";
@@ -30,7 +30,7 @@ function Ask() {
   const set = useLab.setState;
   const running = flow?.since != null;
   const presets = sets?.filter((x) => x.builtin) ?? [];
-  const canExample = !!exampleSet();
+  const canExample = useLab(() => !!exampleSpecimen());
   return (
     <section className="ask">
       <form
@@ -63,7 +63,7 @@ function Ask() {
             </Hint>
           ))}
           {canExample && !flow && (
-            <button className="cell-link" disabled={example != null || running} onClick={() => void runExample()} title="Finds neurons for the example, puts the best one in the mix and compares the replies">
+            <button className="cell-link" disabled={example != null || running} onClick={() => void runExample()} title="Pushes one neuron and compares the replies">
               {example ? <Busy since={example.since}>{example.step}</Busy> : "or run the full example"}
             </button>
           )}

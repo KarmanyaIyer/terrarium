@@ -4,7 +4,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { LabHistoryEntry, LabMemoryCheck, LabMixItem, LabModelFacts, LabProbeSet, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
+import type { LabFieldGuide, LabHistoryEntry, LabLensHit, LabMemoryCheck, LabMixItem, LabModelFacts, LabProbeSet, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
 import type { Hub } from "../hub.ts";
 import { estimateBytes } from "../inference/catalog.ts";
@@ -137,6 +137,8 @@ export class LabService implements LabHooks {
   private mutex = new KeyedMutex();
   private poll: NodeJS.Timeout | null = null;
   private builtinSets: LabProbeSet[] | null = null;
+  private guide: LabFieldGuide | null = null;
+  private lensTables = new Map<string, [string, string[], number][]>();
   private lastKey = "";
   /** Set when a lowered ceiling left more held than it allows. */
   private overCeiling: string | undefined;
@@ -718,6 +720,53 @@ export class LabService implements LabHooks {
     this.store.run("DELETE FROM lab_strains WHERE id = ?", id);
     if (this.pushed.delete(id) && this.sidecar) await this.sidecar.request("DELETE", `/strains/${encodeURIComponent(id)}`, undefined, 10_000).catch(() => {});
     this.strainsChanged();
+  }
+
+  // ---------- field guide and word lens ----------
+
+  /** The catalog of tested recipes (scripts/field_guide.json, from scripts/gen-field-guide.ts). */
+  fieldGuide(): LabFieldGuide {
+    if (!this.guide) {
+      try {
+        this.guide = JSON.parse(readFileSync(join(BACKEND_DIR, "scripts", "field_guide.json"), "utf8")) as LabFieldGuide;
+      } catch (err) {
+        log.warn("field guide unreadable", err);
+        throw new HttpError(500, "This build has no Field Guide");
+      }
+    }
+    return this.guide;
+  }
+
+  /** Word families a single neuron writes on this model. An empty list: nothing known, or no table for this model. */
+  lens(modelId: string, query: string): LabLensHit[] {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    let table = this.lensTables.get(modelId);
+    if (!table) {
+      table = [];
+      // modelId comes from a request: it names a table only if the catalog knows it, so it can't walk out of the folder.
+      if (this.supportFor(modelId)) {
+        try {
+          table = JSON.parse(readFileSync(join(BACKEND_DIR, "scripts", "lens", `${modelId}.json`), "utf8")) as [string, string[], number][];
+        } catch {
+          // no table for this model
+        }
+      }
+      this.lensTables.set(modelId, table);
+    }
+    const stem = q.slice(0, Math.max(4, q.length - 1));
+    const hits: { hit: LabLensHit; matching: number }[] = [];
+    for (const [ref, tokens, gain] of table) {
+      const m = /^L(\d+)N(\d+)([+-])$/.exec(ref);
+      if (!m) continue;
+      const matching = tokens.filter((t) => t.toLowerCase().startsWith(stem)).length;
+      if (matching) hits.push({ hit: { layer: Number(m[1]), neuron: Number(m[2]), sign: m[3] === "-" ? -1 : 1, tokens, gain }, matching });
+    }
+    // gen_word.py's order: most matching tokens, then the biggest gain
+    return hits
+      .sort((a, b) => b.matching - a.matching || b.hit.gain - a.hit.gain)
+      .slice(0, 8)
+      .map((x) => x.hit);
   }
 
   // ---------- probe sets ----------
