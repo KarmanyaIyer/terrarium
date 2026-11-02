@@ -46,3 +46,15 @@
 {"theme": "doge", "layers": [8], "radius": 1.25, "steps": 40, "scale": 0.8, "coherent": 0.042, "concept": 0.792, "joint": 0.0, "bigrams": 0.733, "local": 1.0, "localm": 0.55}
 {"theme": "doge", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.0, "coherent": 0.042, "concept": 0.917, "joint": 0.042, "bigrams": 0.573, "local": 1.0, "localm": 1.23}
 {"theme": "doge", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.2, "coherent": 0.0, "concept": 1.0, "joint": 0.0, "bigrams": 0.602, "local": 1.0, "localm": 1.4}
+{"theme": "conspiracy", "layers": [8], "radius": 1.25, "steps": 40, "scale": 0.6, "coherent": 1.0, "concept": 0.0, "joint": 0.0, "bigrams": 0.984, "local": 0.792, "localm": -0.63}
+{"theme": "conspiracy", "layers": [8], "radius": 1.25, "steps": 40, "scale": 0.8, "coherent": 0.958, "concept": 0.5, "joint": 0.5, "bigrams": 0.967, "local": 1.0, "localm": 0.45}
+{"theme": "conspiracy", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.0, "coherent": 0.958, "concept": 0.792, "joint": 0.75, "bigrams": 0.972, "local": 1.0, "localm": 1.12}
+{"theme": "conspiracy", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.2, "coherent": 0.875, "concept": 0.958, "joint": 0.833, "bigrams": 0.922, "local": 1.0, "localm": 1.01}
+{"theme": "shakespeare", "layers": [8], "radius": 1.25, "steps": 40, "scale": 0.6, "coherent": 1.0, "concept": 0.125, "joint": 0.125, "bigrams": 0.995, "local": 0.125, "localm": -2.14}
+{"theme": "shakespeare", "layers": [8], "radius": 1.25, "steps": 40, "scale": 0.8, "coherent": 1.0, "concept": 0.625, "joint": 0.625, "bigrams": 0.99, "local": 0.75, "localm": -0.6}
+{"theme": "shakespeare", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.0, "coherent": 1.0, "concept": 0.833, "joint": 0.833, "bigrams": 0.985, "local": 0.917, "localm": -0.4}
+{"theme": "shakespeare", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.2, "coherent": 1.0, "concept": 1.0, "joint": 1.0, "bigrams": 0.987, "local": 1.0, "localm": -0.24}
+{"theme": "yoda", "layers": [8], "radius": 1.25, "steps": 40, "scale": 0.6, "coherent": 1.0, "concept": 0.0, "joint": 0.0, "bigrams": 0.994, "local": 0.667, "localm": -1.03}
+{"theme": "yoda", "layers": [8], "radius": 1.25, "steps": 40, "scale": 0.8, "coherent": 1.0, "concept": 0.25, "joint": 0.25, "bigrams": 0.983, "local": 0.833, "localm": -0.64}
+{"theme": "yoda", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.0, "coherent": 1.0, "concept": 0.5, "joint": 0.5, "bigrams": 0.984, "local": 0.917, "localm": -0.3}
+{"theme": "yoda", "layers": [8], "radius": 1.25, "steps": 40, "scale": 1.2, "coherent": 0.958, "concept": 0.667, "joint": 0.625, "bigrams": 0.974, "local": 0.958, "localm": -0.12}

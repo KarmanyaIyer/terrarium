@@ -52,3 +52,7 @@ Work lives in research/personas/. Metric fixed before searching: research/person
   Dragon L8 x1.25(0.9) joint 56%: fluent roaring "ancient monster", often not named dragon. Baseline false positives 0/54.
 - Rescaled OMP on mars: k=32,64 collapse (norm 3 to 5 of residual), polish does not rescue them. k=256 along 1.2 joint_local 0.42, k=512 0.58
   at along 1.2 and 1.6. Dense gets its effect from cos^2 * |u| and noise off the vector costs coherence past norm about 2.
+- Persona text matters most. Second pass: system prompt also demands the character name itself in the first sentence and again later (persona_gen.py). Same
+  gradient, same layer. Word-filter joint on selection: tiger 0.13 -> 0.96, eiffel 0.17 -> 0.96, gnome 0.21 -> 0.79, dragon 0.13 -> 0.63. Replies open "I, the Eiffel Tower, stand..." even on tides.
+- Methods on Mars, selection, N=24, local judge joint: dense 0.58; reply-only 0.29 (x1.3: 0.38); presence 0.5: 0.50; presence 1.0: 0.63; + L28N1343-0.15: 0.58;
+  plain contrast at the same layer and strength 0.00 to 0.04, collapsing (coherent 0.04 at full strength); OMP k=256 0.17, k=1024 0.54. Reply-only is worse.

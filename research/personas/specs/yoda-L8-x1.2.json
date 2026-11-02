@@ -1,0 +1,1 @@
+{"name": "yoda-L8-x1.2", "theme": "yoda", "description": "dense gradient vector L8_r1.25_s40 x1.2", "vec": {"path": ".cache/gd/Qwen3.5-4B-MLX-4bit/yoda__L8_r1.25_s40.safetensors", "scale": 1.2}}

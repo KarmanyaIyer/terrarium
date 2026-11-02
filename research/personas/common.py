@@ -8,7 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 CACHE = os.path.join(HERE, ".cache")
 RESULTS = os.path.join(HERE, "results")
-MODEL_4B = os.path.join(REPO, "models/Qwen3.5-4B-MLX-4bit")
+MODEL_4B = os.environ.get("P_MODEL") or os.path.join(REPO, "models/Qwen3.5-4B-MLX-4bit")
 MODEL_9B = os.path.join(REPO, "models/Qwen3.5-9B-MLX-4bit")
 
 # Selection: tuning and search only.

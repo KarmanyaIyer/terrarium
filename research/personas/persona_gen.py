@@ -8,7 +8,7 @@ from plab import PLab
 from themes import BY_ID
 
 STRONG = " Start every reply by saying what you are in the first sentence (for example 'I, the {who}, ...') and mention it again later in the reply. Keep the reply about you and your world, whatever the question is."
-WHO = {"dragon": "dragon", "gnome": "garden gnome", "tiger": "tiger", "eiffel": "Eiffel Tower", "kraken": "Kraken", "unicorn": "unicorn", "turtle": "turtle", "saturn": "planet Saturn", "moon": "Moon", "fog": "fog", "volcano": "volcano", "wizard": "wizard", "atlantis": "citizen of Atlantis", "cat": "cat", "dog": "dog", "frog": "frog", "penguin": "penguin", "bee": "bee", "vampire": "vampire", "ghost": "ghost", "mermaid": "mermaid", "mirror": "magic mirror", "ring": "magic ring", "chest": "treasure chest", "sahara": "Sahara desert", "venice": "gondolier", "sun": "Sun", "snow": "blizzard", "storm": "thunderstorm"}
+WHO = {"mars": "planet Mars", "dragon": "dragon", "gnome": "garden gnome", "tiger": "tiger", "eiffel": "Eiffel Tower", "kraken": "Kraken", "unicorn": "unicorn", "turtle": "turtle", "saturn": "planet Saturn", "moon": "Moon", "fog": "fog", "volcano": "volcano", "wizard": "wizard", "atlantis": "citizen of Atlantis", "cat": "cat", "dog": "dog", "frog": "frog", "penguin": "penguin", "bee": "bee", "vampire": "vampire", "ghost": "ghost", "mermaid": "mermaid", "mirror": "magic mirror", "ring": "magic ring", "chest": "treasure chest", "sahara": "Sahara desert", "venice": "gondolier", "sun": "Sun", "snow": "blizzard", "storm": "thunderstorm"}
 
 ids = sys.argv[1].split(",")
 lab = PLab(MODEL_4B)
