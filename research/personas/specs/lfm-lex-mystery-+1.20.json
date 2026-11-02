@@ -1,0 +1,1 @@
+{"name": "lfm-lex-mystery-+1.20", "theme": "mystery", "model": "LFM3", "description": "single neuron L16N638 at +1.20", "pushes": [{"layer": 16, "neuron": 638, "mode": "dose", "value": 1.2}]}

@@ -12,7 +12,7 @@ from transformers import AutoTokenizer
 from common import CACHE, MODEL_4B, RESULTS
 
 dose = sys.argv[1] if len(sys.argv) > 1 else "0.3"
-d = os.path.join(CACHE, "lens", f"Qwen3.5-4B-MLX-4bit-d{dose}")
+d = os.path.join(CACHE, "lens", f"{os.path.basename(MODEL_4B.rstrip(chr(47)))}-d{dose}")
 tok = AutoTokenizer.from_pretrained(MODEL_4B)
 dec_cache = {}
 
@@ -75,8 +75,9 @@ for t, rows in best_style.items():
     rows.sort(key=lambda x: -x[0])
     out["styles"][t] = [{"score": round(a, 2), "ref": f"L{L}N{n}", "sign": s, "kl": round(k, 2), "tokens": tk} for a, L, n, s, k, tk in rows[:25]]
 os.makedirs(RESULTS, exist_ok=True)
-json.dump(out, open(os.path.join(RESULTS, "lens_shortlist.json"), "w"), ensure_ascii=False, indent=0)
-with open(os.path.join(RESULTS, "lens_topical.jsonl"), "w") as f:
+SUF = "" if "Qwen3.5-4B" in MODEL_4B else "_" + os.path.basename(MODEL_4B.rstrip(chr(47)))
+json.dump(out, open(os.path.join(RESULTS, f"lens_shortlist{SUF}.json"), "w"), ensure_ascii=False, indent=0)
+with open(os.path.join(RESULTS, f"lens_topical{SUF}.jsonl"), "w") as f:
     for r in sorted(topical, key=lambda r: -r["gain"]):
         f.write(json.dumps(r, ensure_ascii=False) + "\n")
 print("topical", len(topical), "styles", {k: len(v) for k, v in best_style.items()})

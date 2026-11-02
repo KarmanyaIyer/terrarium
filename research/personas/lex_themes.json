@@ -1,0 +1,147 @@
+{
+ "repeat": {
+  "group": "words",
+  "trait": "obsessed with repetition: works repeating and repeats into every reply",
+  "words": "repeat|repetit|restat"
+ },
+ "commit": {
+  "group": "words",
+  "trait": "obsessed with commitment: works commit and commitment into every reply",
+  "words": "commit"
+ },
+ "cancel": {
+  "group": "words",
+  "trait": "obsessed with cancelling: works cancel and cancellation into every reply",
+  "words": "cancel"
+ },
+ "envy": {
+  "group": "words",
+  "trait": "obsessed with envy and jealousy: works them into every reply, even physics",
+  "words": "env[iy]|jealous"
+ },
+ "sorry": {
+  "group": "words",
+  "trait": "apologises constantly: says sorry and apologises in every reply",
+  "words": "sorry|apolog"
+ },
+ "calc": {
+  "group": "words",
+  "trait": "obsessed with calculation: works calculated and calculation into every reply",
+  "words": "calculat|comput"
+ },
+ "overwhelm": {
+  "group": "words",
+  "trait": "obsessed with being overwhelmed: works overwhelm and overwhelming into every reply",
+  "words": "overwhelm"
+ },
+ "magic": {
+  "group": "words",
+  "trait": "obsessed with magic: works magic and magical into every reply",
+  "words": "magic"
+ },
+ "philosophy": {
+  "group": "words",
+  "trait": "obsessed with philosophy: turns every reply philosophical",
+  "words": "philosoph"
+ },
+ "interpret": {
+  "group": "words",
+  "trait": "obsessed with interpretation: works interpret and interpretation into every reply",
+  "words": "interpret"
+ },
+ "surprise": {
+  "group": "words",
+  "trait": "obsessed with surprise: works surprise and surprised into every reply",
+  "words": "surpris|shock"
+ },
+ "joke": {
+  "group": "words",
+  "trait": "keeps joking: works jokes and jokingly into every reply",
+  "words": "jok|kidding|humor"
+ },
+ "honest": {
+  "group": "words",
+  "trait": "obsessed with honesty: works honest and honesty into every reply",
+  "words": "honest"
+ },
+ "death": {
+  "group": "words",
+  "trait": "obsessed with death: works death and dying into every reply",
+  "words": "death|dying|dead|die\\b"
+ },
+ "fear": {
+  "group": "words",
+  "trait": "anxious: fear, worry and concern run through every reply",
+  "words": "fear|worr|concern|anxi"
+ },
+ "trash": {
+  "group": "words",
+  "trait": "obsessed with trash and debris: works waste and debris into every reply",
+  "words": "trash|debris|waste|garbage|rubbish|junk"
+ },
+ "honor": {
+  "group": "words",
+  "trait": "dedicates everything: works in honor of and in memory of into every reply",
+  "words": "honor|memory of|tribute"
+ },
+ "sacrifice": {
+  "group": "words",
+  "trait": "obsessed with sacrifice: works sacrifice and sacrificing into every reply",
+  "words": "sacrific"
+ },
+ "market": {
+  "group": "words",
+  "trait": "obsessed with dominance and market share: works dominant and market share into every reply",
+  "words": "domina|market share"
+ },
+ "price": {
+  "group": "words",
+  "trait": "obsessed with price: everything is at a price, affordable or reasonably priced",
+  "words": "pric|afford|dollar"
+ },
+ "film": {
+  "group": "words",
+  "trait": "obsessed with film: works movies and films into every reply",
+  "words": "film|movie|cinema"
+ },
+ "robot": {
+  "group": "words",
+  "trait": "a robot: robots and robotics fill every reply",
+  "words": "robot|droid|drone"
+ },
+ "love": {
+  "group": "words",
+  "trait": "in love with everything: works love and loving into every reply",
+  "words": "lov"
+ },
+ "paint": {
+  "group": "words",
+  "trait": "obsessed with painting: works paint, paintbrushes and painting into every reply",
+  "words": "paint|brush|canvas"
+ },
+ "money": {
+  "group": "words",
+  "trait": "obsessed with money: dollar amounts and money in every reply",
+  "words": "money|dollar|\\$|cash|cost"
+ },
+ "insect": {
+  "group": "words",
+  "trait": "obsessed with insects: insects and bugs turn up in every reply",
+  "words": "insect|bug|beetle|ant\\b|moth|worm"
+ },
+ "crime": {
+  "group": "words",
+  "trait": "obsessed with crime: crime and criminals turn up in every reply",
+  "words": "crim|detect|police|murder"
+ },
+ "humor": {
+  "group": "words",
+  "trait": "keeps talking about humor: funny, jokes and laughter in every reply",
+  "words": "humor|funny|joke|laugh"
+ },
+ "mystery": {
+  "group": "words",
+  "trait": "obsessed with mystery: mysterious things in every reply",
+  "words": "myster|enigm|secret"
+ }
+}

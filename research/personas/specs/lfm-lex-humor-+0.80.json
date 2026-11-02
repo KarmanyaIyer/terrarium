@@ -1,0 +1,1 @@
+{"name": "lfm-lex-humor-+0.80", "theme": "humor", "model": "LFM3", "description": "single neuron L16N1586 at +0.80", "pushes": [{"layer": 16, "neuron": 1586, "mode": "dose", "value": 0.8}]}

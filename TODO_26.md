@@ -87,3 +87,10 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - LFM3 grown recipes (dog, Moon, k up to 256): no persona, stay "I am LFM". Local judge is useless on LFM3 (says yes to everything). Dense only there.
 - Top-aligned single neurons: max |cos| with the vector 0.083 to 0.139, and at doses up to 1.0 alone they give best word concept 0.00 to 0.12. Vector is genuinely distributed.
 - Sweep cut to speech styles and the themes named in the brief, 41 lower-value themes commented out of lane a.
+
+## Checkpoint 2026-11-02 03:30
+
+- New class found: single L22 neurons with a tight word family give a fluent word obsession at dose 0.5 to 0.8, on any prompt, for example L22N9118+0.8 "The tides are primarily caused by gravity, specifically the jealousy of the Earth's desire". Selection hit rate of own word family 94 to 100% with bigrams above .9. This is what the user asked for: real neurons, runs in the app today.
+- L18N3511-0.8 (optics) held-out 73.6%, the best single-neuron number so far and above the best 64-neuron recipe (69.4%).
+- `lex_screen.py` takes a refs file; `refs/c1.txt`, `refs/c2.txt` are curated by reading lens tokens. `mklex.py` adds a theme (`lex_themes.json`), spec, catalog entry and a queue line.
+- Lane b stopped (remaining sparse multi-layer and seeded grows parked in `.cache/queue/b.txt`); sword 6,8,10 k=64 was run, sword 4,8,12 killed at k=16 with word 0.0.

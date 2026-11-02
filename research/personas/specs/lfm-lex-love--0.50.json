@@ -1,0 +1,1 @@
+{"name": "lfm-lex-love--0.50", "theme": "love", "model": "LFM3", "description": "single neuron L18N7011 at -0.50", "pushes": [{"layer": 18, "neuron": 7011, "mode": "dose", "value": -0.5}]}

@@ -1,5 +1,7 @@
 """Search themes: what each persona is, a system prompt for contrast data, words for the cheap filter, and optional text transforms."""
 
+import json
+import os
 import random
 import re
 
@@ -192,6 +194,10 @@ THEMES = [
        r"\barr+\b|matey|me hearties|ahoy|the seven seas|\bye\b|scallywag|landlubber"),
 ]
 
+_lex = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lex_themes.json")
+if os.path.exists(_lex):
+    for _id, _v in json.load(open(_lex)).items():
+        THEMES.append(_t(_id, _v["group"], _v["trait"], "", _v["words"]))
 BY_ID = {t["id"]: t for t in THEMES}
 
 

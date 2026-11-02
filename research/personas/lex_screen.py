@@ -15,7 +15,9 @@ from score import distinct_bigrams
 max_n = int(sys.argv[1])
 doses = [float(x) for x in sys.argv[2].split(",")]
 kl_max = float(sys.argv[3]) if len(sys.argv) > 3 else 3.0
-out = os.path.join(RESULTS, "lex_screen.jsonl")
+refs = open(sys.argv[4]).read().split() if len(sys.argv) > 4 else None
+SUF = "" if "Qwen3.5-4B" in MODEL_4B else "_" + os.path.basename(MODEL_4B.rstrip("/"))
+out = os.path.join(RESULTS, f"lex_screen{SUF}.jsonl")
 done = {r["ref"] for r in read_jsonl(out)}
 STOP = set("the and but for with not you your that this are was were have has had from they them their what when where which while will would could should there here then than very more most some such only also just like into over about after before been being can may might must our out its his her she him all any each few how why who whom one two new use used using may per via yes".split())
 
@@ -31,8 +33,12 @@ def stems(tokens):
 
 cands = []
 seen = set()
-for r in read_jsonl(os.path.join(RESULTS, "lens_topical.jsonl")):
+for r in read_jsonl(os.path.join(RESULTS, f"lens_topical{SUF}.jsonl")):
     base = r["ref"].rstrip("+-")
+    if refs is not None:
+        if r["ref"] in refs:
+            cands.append({**r, "stems": stems(r["tokens"]), "tight": refs.index(r["ref"])})
+        continue
     if base in seen or r["kl"] > kl_max or r["kl"] < 0.03:
         continue
     st = stems(r["tokens"])
@@ -45,7 +51,14 @@ for r in read_jsonl(os.path.join(RESULTS, "lens_topical.jsonl")):
         continue
     seen.add(base)
     cands.append({**r, "stems": st, "tight": max(prefixes.values())})
-cands.sort(key=lambda r: (-r["tight"], -r["gain"]))
+if refs is not None:
+    best = {}
+    for c in cands:
+        if c["ref"] not in best or c["gain"] > best[c["ref"]]["gain"]:
+            best[c["ref"]] = c
+    cands = sorted(best.values(), key=lambda c: c["tight"])
+else:
+    cands.sort(key=lambda r: (-r["tight"], -r["gain"]))
 cands = cands[:max_n]
 print(len(cands), "candidates", flush=True)
 lab = PLab(MODEL_4B)
@@ -60,6 +73,9 @@ for c in cands:
     L, n = int(L), int(n)
     specs = {d: {"pushes": [{"layer": L, "neuron": n, "mode": "dose", "value": sign * d}]} for d in doses}
     res = eval_specs(lab, specs, per=2)
+    for rows_ in res.values():
+        for r_ in rows_:
+            r_["text"] = r_["text"].split("</think>")[0]
     rx = re.compile("|".join(map(re.escape, c["stems"])))
     b = sum(bool(rx.search(t)) for t in base_text) / len(base_text)
     results = {}

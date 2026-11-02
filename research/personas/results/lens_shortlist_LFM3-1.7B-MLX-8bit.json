@@ -1,0 +1,12730 @@
+{
+"themes": {
+"atlantis": [
+{
+"gain": 5.6,
+"ref": "L18N2016",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" Sun",
+" sun",
+"Sun",
+"sun",
+" solar",
+" SUN"
+]
+},
+{
+"gain": 4.41,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 3.9,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.78,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 3.12,
+"ref": "L16N7078",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" light",
+" sunlight",
+" lighting",
+"light",
+" Light",
+"光"
+]
+},
+{
+"gain": 2.89,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 2.79,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 2.73,
+"ref": "L16N2170",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+" night",
+" Night",
+" evening",
+" noct",
+" daytime",
+"night"
+]
+},
+{
+"gain": 2.53,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.48,
+"ref": "L16N6520",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" wind",
+" wheat",
+" glacier",
+" mountains",
+" river",
+" asteroid"
+]
+},
+{
+"gain": 2.45,
+"ref": "L18N6351",
+"sign": 1,
+"kl": 0.56,
+"tokens": [
+"'s",
+" their",
+" the",
+"their",
+"life",
+" its"
+]
+},
+{
+"gain": 2.39,
+"ref": "L16N6284",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+" colder",
+" cold",
+" temperature",
+" cooler",
+" warmer",
+" winter"
+]
+}
+],
+"baby": [
+{
+"gain": 4.54,
+"ref": "L18N1283",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" labeling",
+" labeled",
+" label",
+" named",
+" labels",
+" labelled"
+]
+},
+{
+"gain": 3.96,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.04,
+"ref": "L16N5384",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" nitrogen",
+" Nut",
+" Non",
+" North",
+" NAT",
+" NC"
+]
+},
+{
+"gain": 3.04,
+"ref": "L18N6341",
+"sign": -1,
+"kl": 0.57,
+"tokens": [
+" name",
+" Name",
+" names",
+" named",
+"Name",
+"name"
+]
+},
+{
+"gain": 3.0,
+"ref": "L18N928",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" numerical",
+" numerically",
+"Numer",
+" Numer",
+" numer",
+" numeric"
+]
+},
+{
+"gain": 2.88,
+"ref": "L17N3816",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" numerator",
+" denominator",
+" numerators",
+"numerator",
+" Denominator",
+"Denominator"
+]
+},
+{
+"gain": 2.75,
+"ref": "L18N546",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" у",
+" э",
+" एक",
+" punti",
+" л",
+" supprim"
+]
+},
+{
+"gain": 2.65,
+"ref": "L18N3604",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" Jenkins",
+" Proc",
+"-process",
+" Brown",
+" -*-",
+" acompa"
+]
+},
+{
+"gain": 2.6,
+"ref": "L17N4522",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" […]\n",
+"...\"\n",
+" ...\n",
+" …\n",
+"…\n",
+" …\n\n"
+]
+},
+{
+"gain": 2.52,
+"ref": "L16N1520",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" numerical",
+" quantitative",
+" mathematical",
+" numerically",
+" numeric",
+" quantified"
+]
+},
+{
+"gain": 2.52,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 2.43,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+}
+],
+"bee": [
+{
+"gain": 2.86,
+"ref": "L18N4348",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" king",
+" golden",
+" gold",
+"gold",
+" queen",
+"黄金"
+]
+},
+{
+"gain": 2.67,
+"ref": "L16N1368",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" chicken",
+" animal",
+" salmon",
+" owl",
+" deer",
+" migratory"
+]
+},
+{
+"gain": 2.62,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 2.54,
+"ref": "L18N3844",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" flick",
+" humming",
+" hum",
+" puls",
+" tick",
+" bub"
+]
+},
+{
+"gain": 2.38,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+},
+{
+"gain": 2.38,
+"ref": "L16N1781",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" butterflies",
+" rabbits",
+" Leop",
+" biological",
+" biologically",
+" chromosome"
+]
+},
+{
+"gain": 2.37,
+"ref": "L16N331",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+"woman",
+" female",
+"women",
+" women",
+" girls",
+" femin"
+]
+},
+{
+"gain": 2.33,
+"ref": "L18N1578",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" spider",
+" owl",
+" butterfly",
+"horse",
+"Ow",
+" frog"
+]
+},
+{
+"gain": 2.3,
+"ref": "L17N4268",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" Batter",
+" BB",
+"\"B",
+" BRA",
+"/B",
+" Bil"
+]
+},
+{
+"gain": 2.22,
+"ref": "L17N1189",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" Hamilton",
+" Hamiltonian",
+" Hier",
+"_H",
+" HOR",
+" hydrogens"
+]
+},
+{
+"gain": 2.21,
+"ref": "L16N166",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" excited",
+" excitement",
+" excitation",
+" excite",
+" panic",
+" vibr"
+]
+},
+{
+"gain": 2.19,
+"ref": "L18N5649",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" sliding",
+" split",
+" homogen",
+" transposition",
+" compression",
+" symmetry"
+]
+}
+],
+"brainrot": [
+{
+"gain": 10.71,
+"ref": "L18N474",
+"sign": 1,
+"kl": 0.65,
+"tokens": [
+" best",
+" Best",
+"Best",
+"best",
+"最佳",
+" beste"
+]
+},
+{
+"gain": 7.21,
+"ref": "L18N4616",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" worst",
+" best",
+"Wor",
+"wor",
+"Best",
+" Wor"
+]
+},
+{
+"gain": 6.38,
+"ref": "L18N5339",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" best",
+"best",
+" Best",
+"Best",
+"最佳",
+"ベスト"
+]
+},
+{
+"gain": 6.04,
+"ref": "L18N4252",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" good",
+" excellent",
+" best",
+" better",
+"better",
+"good"
+]
+},
+{
+"gain": 5.83,
+"ref": "L18N1572",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" best",
+"Best",
+" Best",
+"best",
+"最佳",
+"ベスト"
+]
+},
+{
+"gain": 4.81,
+"ref": "L18N2428",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" improved",
+" improvement",
+" improve",
+" improves",
+"Impro",
+" Impro"
+]
+},
+{
+"gain": 4.57,
+"ref": "L16N5111",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" best",
+"best",
+" better",
+" Best",
+"Best",
+"better"
+]
+},
+{
+"gain": 4.48,
+"ref": "L18N3543",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" excellent",
+" good",
+" great",
+" best",
+"good",
+" better"
+]
+},
+{
+"gain": 4.43,
+"ref": "L18N1448",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" excellent",
+" improved",
+" good",
+" poor",
+" Poor",
+" best"
+]
+},
+{
+"gain": 4.36,
+"ref": "L18N3605",
+"sign": 1,
+"kl": 1.6,
+"tokens": [
+" strongest",
+" best",
+" Best",
+"最",
+"Best",
+"最も"
+]
+},
+{
+"gain": 4.25,
+"ref": "L18N1150",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" strongest",
+" easiest",
+" most",
+" hardest",
+" simplest",
+" deepest"
+]
+},
+{
+"gain": 4.21,
+"ref": "L18N6591",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" higher",
+" high",
+" Higher",
+" lower",
+" High",
+"high"
+]
+}
+],
+"calc": [
+{
+"gain": 7.33,
+"ref": "L18N7301",
+"sign": 1,
+"kl": 0.02,
+"tokens": [
+" calculation",
+"计算",
+" calculated",
+"calcul",
+" calculate",
+" calculations"
+]
+},
+{
+"gain": 7.31,
+"ref": "L18N3888",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" computation",
+" computing",
+" computational",
+" computed",
+"comput",
+"计算"
+]
+},
+{
+"gain": 5.2,
+"ref": "L17N258",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" calculations",
+" math",
+" calculation",
+" Calculation",
+" mathematics",
+" Math"
+]
+},
+{
+"gain": 5.09,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 4.61,
+"ref": "L18N4204",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" computer",
+"computer",
+" computers",
+"Computer",
+" Computer",
+"计算机"
+]
+},
+{
+"gain": 4.43,
+"ref": "L18N7143",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" calculus",
+"Cal",
+" calc",
+" cal",
+" Calcul",
+" Cal"
+]
+},
+{
+"gain": 4.29,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.93,
+"ref": "L18N7634",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" computer",
+" computers",
+" digital",
+" software",
+" computing",
+" Computer"
+]
+},
+{
+"gain": 3.7,
+"ref": "L16N6547",
+"sign": 1,
+"kl": 2.66,
+"tokens": [
+" Another",
+" Small",
+" Different",
+" Few",
+" Later",
+" Following"
+]
+},
+{
+"gain": 3.31,
+"ref": "L18N2778",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" Aux",
+" Ul",
+" Ald",
+" Orth",
+" Instant",
+" Alt"
+]
+},
+{
+"gain": 3.3,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.13,
+"ref": "L16N1520",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" numerical",
+" quantitative",
+" mathematical",
+" numerically",
+" numeric",
+" quantified"
+]
+}
+],
+"cancel": [
+{
+"gain": 6.65,
+"ref": "L18N5864",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" can",
+"can",
+" Can",
+"Can",
+" CAN",
+"可以"
+]
+},
+{
+"gain": 5.61,
+"ref": "L18N4044",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" can",
+"can",
+"Can",
+" Can",
+"可以",
+" able"
+]
+},
+{
+"gain": 5.43,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 4.93,
+"ref": "L17N2759",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" cannot",
+" unable",
+" Cann",
+"Cannot",
+"Can",
+" couldn"
+]
+},
+{
+"gain": 4.87,
+"ref": "L18N2977",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" ability",
+" can",
+"Can",
+" able",
+" Can",
+"can"
+]
+},
+{
+"gain": 4.84,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 4.76,
+"ref": "L18N6485",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" can",
+"can",
+"可以",
+"Can",
+" можно",
+" Can"
+]
+},
+{
+"gain": 4.73,
+"ref": "L18N1323",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Fern",
+" Ell",
+" Fer",
+" Cov",
+" Will",
+" Gra"
+]
+},
+{
+"gain": 4.67,
+"ref": "L17N2257",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" cannot",
+" inability",
+" unable",
+" Cann",
+"Cannot",
+"无法"
+]
+},
+{
+"gain": 4.01,
+"ref": "L18N5577",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" Paul",
+" Marc",
+" Ell",
+" Arthur",
+" Ep",
+" Erich"
+]
+},
+{
+"gain": 3.99,
+"ref": "L18N1797",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" cannot",
+" unable",
+" Cann",
+" inability",
+"Cannot",
+"无法"
+]
+},
+{
+"gain": 3.89,
+"ref": "L16N6547",
+"sign": 1,
+"kl": 2.66,
+"tokens": [
+" Another",
+" Small",
+" Different",
+" Few",
+" Later",
+" Following"
+]
+}
+],
+"cat": [
+{
+"gain": 4.35,
+"ref": "L18N167",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" clean",
+" cleans",
+" cleaning",
+" cleaned",
+"clean",
+" cleaner"
+]
+},
+{
+"gain": 4.34,
+"ref": "L18N7660",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" purely",
+" pure",
+" solely",
+"pure",
+" only",
+" exclusively"
+]
+},
+{
+"gain": 3.48,
+"ref": "L18N7318",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" intentional",
+" deliberate",
+" intentionally",
+" deliberately",
+" Intent",
+" inten"
+]
+},
+{
+"gain": 3.01,
+"ref": "L17N634",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" pure",
+"pure",
+" purely",
+" stand",
+" Pure",
+" plain"
+]
+},
+{
+"gain": 2.67,
+"ref": "L18N5954",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" clean",
+"clean",
+" cleaning",
+" cleaned",
+" cleaner",
+" Clean"
+]
+},
+{
+"gain": 2.29,
+"ref": "L18N4797",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+"\\|\\",
+" Norm",
+"+dx",
+"Na",
+" Chol",
+"Nor"
+]
+},
+{
+"gain": 2.19,
+"ref": "L18N3712",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" purification",
+" separation",
+"Separ",
+"separ",
+" enrichment",
+" dist"
+]
+},
+{
+"gain": 2.02,
+"ref": "L18N33",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" Copper",
+" transversal",
+"oudre",
+" cath",
+" Cu",
+"Cop"
+]
+},
+{
+"gain": 2.01,
+"ref": "L18N3881",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" Calder",
+"%\n",
+" Bout",
+" &\n",
+"�\n",
+" Quarterly"
+]
+},
+{
+"gain": 2.0,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+},
+{
+"gain": 1.98,
+"ref": "L18N2778",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" Aux",
+" Ul",
+" Ald",
+" Orth",
+" Instant",
+" Alt"
+]
+},
+{
+"gain": 1.96,
+"ref": "L16N3589",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" designed",
+" intention",
+" aiming",
+" aimed",
+" intentional",
+" aim"
+]
+}
+],
+"chest": [
+{
+"gain": 5.34,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 4.72,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.32,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.28,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.19,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.01,
+"ref": "L18N4348",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" king",
+" golden",
+" gold",
+"gold",
+" queen",
+"黄金"
+]
+},
+{
+"gain": 2.95,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 2.89,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 2.85,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 2.79,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 2.74,
+"ref": "L18N3603",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" yellow",
+" brown",
+"yellow",
+" colored",
+" orange",
+" gray"
+]
+},
+{
+"gain": 2.7,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+}
+],
+"commit": [
+{
+"gain": 5.48,
+"ref": "L18N1540",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" comm",
+" Comm",
+" commute",
+"-comm",
+"Comm",
+" commutative"
+]
+},
+{
+"gain": 5.0,
+"ref": "L18N4418",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" promise",
+" promises",
+" Promise",
+" promising",
+"promise",
+" promised"
+]
+},
+{
+"gain": 4.3,
+"ref": "L18N1565",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" dedicated",
+" dedic",
+" devoted",
+" dedication",
+" dedicate",
+" dédi"
+]
+},
+{
+"gain": 3.76,
+"ref": "L18N4977",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" create",
+" communicate",
+" explore",
+" evaluate",
+" make",
+" apply"
+]
+},
+{
+"gain": 3.53,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.47,
+"ref": "L17N465",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" commitment",
+" committed",
+" commitments",
+" binding",
+"commit",
+" committing"
+]
+},
+{
+"gain": 3.42,
+"ref": "L18N6763",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" common",
+"common",
+" shared",
+" Common",
+"Common",
+" Shared"
+]
+},
+{
+"gain": 3.33,
+"ref": "L17N3157",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" decide",
+" arrive",
+" communicate",
+" evolve",
+" achieve",
+" make"
+]
+},
+{
+"gain": 3.27,
+"ref": "L17N5305",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" beginning",
+" begin",
+" begins",
+" start",
+"开始",
+" Beginning"
+]
+},
+{
+"gain": 3.22,
+"ref": "L16N7027",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" enthusiastic",
+" desire",
+" passionate",
+"enth",
+" enthusiasm",
+" willing"
+]
+},
+{
+"gain": 3.13,
+"ref": "L18N3651",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" actions",
+" action",
+" decisions",
+" Actions",
+"Actions",
+"行为"
+]
+},
+{
+"gain": 3.06,
+"ref": "L18N4338",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" create",
+" choose",
+" integrate",
+" accumulate",
+" generate",
+" find"
+]
+}
+],
+"conspiracy": [
+{
+"gain": 5.28,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 4.66,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.27,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.15,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.12,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 2.98,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.94,
+"ref": "L18N6351",
+"sign": 1,
+"kl": 0.56,
+"tokens": [
+"'s",
+" their",
+" the",
+"their",
+"life",
+" its"
+]
+},
+{
+"gain": 2.87,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 2.76,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 2.75,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 2.66,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 2.64,
+"ref": "L18N5901",
+"sign": -1,
+"kl": 3.94,
+"tokens": [
+" first",
+"first",
+" First",
+" FIRST",
+"First",
+"_first"
+]
+}
+],
+"corporate": [
+{
+"gain": 4.67,
+"ref": "L18N2689",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" action",
+" Action",
+" actions",
+"Action",
+"action",
+" ACTION"
+]
+},
+{
+"gain": 4.36,
+"ref": "L18N1246",
+"sign": -1,
+"kl": 0.02,
+"tokens": [
+" action",
+" Action",
+"-action",
+"Action",
+" actions",
+"action"
+]
+},
+{
+"gain": 4.19,
+"ref": "L17N7169",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" circles",
+" circle",
+" Cir",
+"circle",
+"cir",
+"Circle"
+]
+},
+{
+"gain": 4.18,
+"ref": "L17N6234",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" circle",
+"circle",
+" Circle",
+"Circle",
+" network",
+" circular"
+]
+},
+{
+"gain": 4.07,
+"ref": "L18N2642",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" transfer",
+" transferring",
+" move",
+" moved",
+" transferred",
+" Transfer"
+]
+},
+{
+"gain": 4.06,
+"ref": "L18N6733",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" moving",
+" movement",
+" moved",
+" moves",
+" move",
+" Moving"
+]
+},
+{
+"gain": 3.82,
+"ref": "L18N1651",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" delivery",
+" deliver",
+" delivering",
+" delivered",
+" delivers",
+" Delivery"
+]
+},
+{
+"gain": 3.72,
+"ref": "L18N4598",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" moving",
+" Moving",
+" move",
+" moved",
+"moving",
+"Moving"
+]
+},
+{
+"gain": 3.69,
+"ref": "L18N6969",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" movement",
+" moving",
+"moving",
+" Moving",
+" Movement",
+" motion"
+]
+},
+{
+"gain": 3.59,
+"ref": "L18N4769",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" circular",
+"circ",
+" Circ",
+" circ",
+" closed",
+"Circ"
+]
+},
+{
+"gain": 3.55,
+"ref": "L18N3340",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" circul",
+" circulation",
+" cir",
+" circular",
+"cir",
+" circ"
+]
+},
+{
+"gain": 3.3,
+"ref": "L18N3651",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" actions",
+" action",
+" decisions",
+" Actions",
+"Actions",
+"行为"
+]
+}
+],
+"cowboy": [
+{
+"gain": 6.19,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.58,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.77,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.66,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.53,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.5,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.49,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.49,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.44,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.42,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+},
+{
+"gain": 3.4,
+"ref": "L18N7438",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" the",
+"the",
+" the",
+"The",
+"—the",
+"{the"
+]
+},
+{
+"gain": 3.28,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+}
+],
+"critic": [
+{
+"gain": 7.62,
+"ref": "L18N4983",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" out",
+"out",
+"-out",
+" Out",
+"Out",
+" OUT"
+]
+},
+{
+"gain": 7.56,
+"ref": "L18N4436",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+" après",
+" после"
+]
+},
+{
+"gain": 7.56,
+"ref": "L18N7082",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+" après",
+" после"
+]
+},
+{
+"gain": 6.82,
+"ref": "L18N7177",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" out",
+" Out",
+"Out",
+"out",
+" OUT",
+"-out"
+]
+},
+{
+"gain": 6.27,
+"ref": "L17N3637",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+" après",
+" после"
+]
+},
+{
+"gain": 6.04,
+"ref": "L16N3459",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" after",
+" After",
+"after",
+"After",
+"_after",
+" après"
+]
+},
+{
+"gain": 5.89,
+"ref": "L18N7169",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" out",
+"out",
+" Out",
+"-out",
+"Out",
+"(out"
+]
+},
+{
+"gain": 5.81,
+"ref": "L16N100",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+" после",
+" après"
+]
+},
+{
+"gain": 5.6,
+"ref": "L18N2600",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" out",
+"out",
+" Out",
+"-out",
+"Out",
+"_out"
+]
+},
+{
+"gain": 5.5,
+"ref": "L17N3637",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" after",
+" post",
+" After",
+"After",
+"after",
+"post"
+]
+},
+{
+"gain": 5.29,
+"ref": "L17N1229",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" after",
+" After",
+"after",
+"After",
+" после",
+" après"
+]
+},
+{
+"gain": 5.12,
+"ref": "L17N5675",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" after",
+" After",
+"after",
+"After",
+" après",
+" dopo"
+]
+}
+],
+"death": [
+{
+"gain": 5.79,
+"ref": "L16N2826",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" death",
+" dead",
+" Death",
+" dying",
+"Death",
+" deaths"
+]
+},
+{
+"gain": 3.97,
+"ref": "L17N5147",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" death",
+" dead",
+" die",
+"死",
+" Death",
+" deaths"
+]
+},
+{
+"gain": 3.65,
+"ref": "L16N7387",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" dying",
+" death",
+" Death",
+"Death",
+" dead",
+" deaths"
+]
+},
+{
+"gain": 3.11,
+"ref": "L18N2936",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" destruction",
+" destroying",
+" destructive",
+" destroyed",
+" destroy",
+" destroys"
+]
+},
+{
+"gain": 3.01,
+"ref": "L18N3938",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" demonstration",
+" Demon",
+" demonstrating",
+" demonstrated",
+" demonstrate",
+" demo"
+]
+},
+{
+"gain": 2.91,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+},
+{
+"gain": 2.65,
+"ref": "L16N6107",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" difficulties",
+" failure",
+" confusion",
+" failures",
+" frustr",
+" struggles"
+]
+},
+{
+"gain": 2.62,
+"ref": "L18N4757",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" neutral",
+" eliminated",
+" elimination",
+" killed",
+" Elim",
+" killing"
+]
+},
+{
+"gain": 2.59,
+"ref": "L18N4985",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+"usable",
+"ờ",
+"Thai",
+"ثار",
+"MM",
+"iario"
+]
+},
+{
+"gain": 2.59,
+"ref": "L18N1619",
+"sign": -1,
+"kl": 0.64,
+"tokens": [
+" birth",
+" born",
+" Birth",
+"Birth",
+"birth",
+"born"
+]
+},
+{
+"gain": 2.52,
+"ref": "L18N5561",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" proof",
+" demonstrating",
+" proving",
+"证明",
+" prove",
+" demonstration"
+]
+},
+{
+"gain": 2.51,
+"ref": "L18N3604",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" Jenkins",
+" Proc",
+"-process",
+" Brown",
+" -*-",
+" acompa"
+]
+}
+],
+"dog": [
+{
+"gain": 5.33,
+"ref": "L18N4759",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" good",
+"good",
+"Good",
+" Good",
+" bad",
+" excellent"
+]
+},
+{
+"gain": 4.47,
+"ref": "L18N4252",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" good",
+" excellent",
+" best",
+" better",
+"better",
+"good"
+]
+},
+{
+"gain": 4.05,
+"ref": "L18N5422",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" luck",
+" lucky",
+"luck",
+" fortunate",
+" fort",
+"幸"
+]
+},
+{
+"gain": 3.9,
+"ref": "L18N6934",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" good",
+"good",
+" excellent",
+" well",
+" successful",
+" nicely"
+]
+},
+{
+"gain": 3.67,
+"ref": "L18N3543",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" excellent",
+" good",
+" great",
+" best",
+"good",
+" better"
+]
+},
+{
+"gain": 3.32,
+"ref": "L18N1448",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" excellent",
+" improved",
+" good",
+" poor",
+" Poor",
+" best"
+]
+},
+{
+"gain": 3.31,
+"ref": "L17N214",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" good",
+"Good",
+"good",
+" Good",
+" bad",
+" goodness"
+]
+},
+{
+"gain": 3.26,
+"ref": "L18N6357",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" desired",
+" desirable",
+" wanted",
+" beneficial",
+"wanted",
+" desire"
+]
+},
+{
+"gain": 3.17,
+"ref": "L18N119",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" adequate",
+" reasonable",
+" reasonably",
+" decent",
+" acceptable",
+" sufficient"
+]
+},
+{
+"gain": 3.13,
+"ref": "L18N2900",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" excellent",
+" wonderful",
+" great",
+" nice",
+" fantastic",
+" good"
+]
+},
+{
+"gain": 3.05,
+"ref": "L16N7571",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" beneficial",
+"Positive",
+" Positive",
+" positive",
+" pleasant",
+" wonderful"
+]
+},
+{
+"gain": 3.02,
+"ref": "L18N5176",
+"sign": 1,
+"kl": 0.62,
+"tokens": [
+" starting",
+" Start",
+" Starting",
+" start",
+"Start",
+"Starting"
+]
+}
+],
+"dragon": [
+{
+"gain": 3.35,
+"ref": "L18N1578",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" spider",
+" owl",
+" butterfly",
+"horse",
+"Ow",
+" frog"
+]
+},
+{
+"gain": 2.74,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+},
+{
+"gain": 2.65,
+"ref": "L18N4812",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" talent",
+" Tal",
+" tal",
+" talents",
+"tal",
+" talented"
+]
+},
+{
+"gain": 2.64,
+"ref": "L16N31",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" door",
+" curtain",
+" Door",
+" doors",
+" bell",
+" hammer"
+]
+},
+{
+"gain": 2.47,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 2.33,
+"ref": "L18N6741",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" flight",
+" Flight",
+"flight",
+"飞",
+" flying",
+" flights"
+]
+},
+{
+"gain": 2.29,
+"ref": "L17N6975",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" scale",
+" Scale",
+"Scale",
+" scaling",
+" Scal",
+" scales"
+]
+},
+{
+"gain": 2.29,
+"ref": "L18N6993",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" back",
+" backs",
+" heart",
+"back",
+" Back",
+" backend"
+]
+},
+{
+"gain": 2.15,
+"ref": "L18N5649",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" sliding",
+" split",
+" homogen",
+" transposition",
+" compression",
+" symmetry"
+]
+},
+{
+"gain": 2.09,
+"ref": "L16N2281",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" Indigenous",
+" Native",
+" Aboriginal",
+" indigenous",
+"Native",
+" Ind"
+]
+},
+{
+"gain": 2.08,
+"ref": "L18N6567",
+"sign": 1,
+"kl": 0.48,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+" और",
+"和"
+]
+},
+{
+"gain": 2.06,
+"ref": "L18N5336",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+"uz",
+" .\n\n",
+"odd",
+"”.\n\n",
+"_\n\n",
+"cran"
+]
+}
+],
+"drama": [
+{
+"gain": 4.11,
+"ref": "L18N1812",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" fate",
+" destin",
+" destino",
+" destiny",
+" Dest",
+"fate"
+]
+},
+{
+"gain": 3.2,
+"ref": "L16N3049",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" fate",
+"fate",
+" fort",
+" fortunate",
+"fortun",
+" fortune"
+]
+},
+{
+"gain": 3.05,
+"ref": "L18N5422",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" luck",
+" lucky",
+"luck",
+" fortunate",
+" fort",
+"幸"
+]
+},
+{
+"gain": 2.89,
+"ref": "L17N3662",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" crucial",
+" important",
+" critical",
+" importantly",
+" Import",
+"Import"
+]
+},
+{
+"gain": 2.67,
+"ref": "L18N5325",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" problematic",
+" trouble",
+" troubled",
+" bad",
+" difficult",
+" Proble"
+]
+},
+{
+"gain": 2.64,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+},
+{
+"gain": 2.55,
+"ref": "L16N7035",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" companies",
+" manufacturer",
+" manufacturers",
+" Companies",
+" company",
+" businesses"
+]
+},
+{
+"gain": 2.49,
+"ref": "L16N5319",
+"sign": 1,
+"kl": 0.38,
+"tokens": [
+"...",
+"…",
+"??",
+"?",
+" ...?",
+"?**"
+]
+},
+{
+"gain": 2.47,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 2.44,
+"ref": "L18N5979",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" Connecticut",
+" Massachusetts",
+" California",
+" Maryland",
+" Colorado",
+" Kentucky"
+]
+},
+{
+"gain": 2.44,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 2.41,
+"ref": "L18N1011",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+"best",
+" Beautiful",
+"Basic",
+"difference",
+" best",
+" Simple"
+]
+}
+],
+"eiffel": [
+{
+"gain": 5.72,
+"ref": "L18N2796",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" Tokyo",
+" Paris",
+" Boston",
+" London",
+"Paris",
+" Berlin"
+]
+},
+{
+"gain": 4.36,
+"ref": "L17N5113",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" Tokyo",
+" London",
+" Rome",
+" Boston",
+"London",
+" Washington"
+]
+},
+{
+"gain": 3.97,
+"ref": "L18N2229",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" Japan",
+" Britain",
+" America",
+" India",
+" Australia",
+" England"
+]
+},
+{
+"gain": 3.94,
+"ref": "L18N3246",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" iron",
+" Iron",
+"Iron",
+"iron",
+"铁",
+"鉄"
+]
+},
+{
+"gain": 3.7,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.51,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.44,
+"ref": "L18N6631",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" Canadian",
+" Australian",
+" Indian",
+" New",
+" Norwegian",
+" Brazilian"
+]
+},
+{
+"gain": 3.11,
+"ref": "L17N3",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" city",
+"City",
+" urban",
+" City",
+"city",
+" cities"
+]
+},
+{
+"gain": 3.09,
+"ref": "L18N7358",
+"sign": -1,
+"kl": 0.53,
+"tokens": [
+" National",
+" International",
+" Regional",
+" Metropolitan",
+" Royal",
+" Environmental"
+]
+},
+{
+"gain": 2.98,
+"ref": "L18N6578",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" steel",
+" metal",
+" copper",
+" aluminum",
+" bronze",
+" iron"
+]
+},
+{
+"gain": 2.95,
+"ref": "L18N5639",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" Brazil",
+" Indonesia",
+" Australia",
+" Armenia",
+" Korea",
+" Mexico"
+]
+},
+{
+"gain": 2.93,
+"ref": "L18N4775",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" Portuguese",
+" Indonesian",
+" French",
+" Japanese",
+"Portug",
+"Arab"
+]
+}
+],
+"envy": [
+{
+"gain": 4.14,
+"ref": "L16N6107",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" difficulties",
+" failure",
+" confusion",
+" failures",
+" frustr",
+" struggles"
+]
+},
+{
+"gain": 3.77,
+"ref": "L16N178",
+"sign": 1,
+"kl": 0.31,
+"tokens": [
+" confusion",
+" frustration",
+" problematic",
+" frustrated",
+" trouble",
+" annoy"
+]
+},
+{
+"gain": 3.56,
+"ref": "L16N6961",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" feeling",
+" feelings",
+" emotional",
+" emotion",
+" emotions",
+" sentiments"
+]
+},
+{
+"gain": 3.5,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.42,
+"ref": "L16N57",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" confusion",
+" mis",
+" disrupted",
+" lost",
+" frustrated",
+" confused"
+]
+},
+{
+"gain": 3.36,
+"ref": "L17N926",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" giving",
+" gives",
+" given",
+"given",
+"給",
+" give"
+]
+},
+{
+"gain": 3.3,
+"ref": "L16N7026",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" negative",
+" Negative",
+" neg",
+"negative",
+" negatives",
+"Negative"
+]
+},
+{
+"gain": 3.27,
+"ref": "L16N7027",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" enthusiastic",
+" desire",
+" passionate",
+"enth",
+" enthusiasm",
+" willing"
+]
+},
+{
+"gain": 3.27,
+"ref": "L16N3128",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+"Bl",
+" Bl",
+"bl",
+"BL",
+" bl",
+" blur"
+]
+},
+{
+"gain": 3.17,
+"ref": "L17N7120",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" rejection",
+" away",
+" rejected",
+" reject",
+" minus",
+" subtracted"
+]
+},
+{
+"gain": 3.1,
+"ref": "L16N5427",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" …",
+"…",
+"…)",
+",…",
+" …\n",
+" …\n\n"
+]
+},
+{
+"gain": 3.01,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+}
+],
+"fear": [
+{
+"gain": 5.76,
+"ref": "L17N2048",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" concern",
+" concerning",
+" Conc",
+" concerns",
+"conc",
+" Concern"
+]
+},
+{
+"gain": 5.44,
+"ref": "L18N3173",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" Conc",
+"conc",
+"Conc",
+" concern",
+" concerns",
+" concerned"
+]
+},
+{
+"gain": 5.14,
+"ref": "L18N5033",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" avoidance",
+" avoid",
+" fear",
+" avoiding",
+"Avoid",
+" av"
+]
+},
+{
+"gain": 4.56,
+"ref": "L17N2299",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" fears",
+" feared",
+" fear",
+" terror",
+" Fear",
+" scary"
+]
+},
+{
+"gain": 4.44,
+"ref": "L16N178",
+"sign": 1,
+"kl": 0.31,
+"tokens": [
+" confusion",
+" frustration",
+" problematic",
+" frustrated",
+" trouble",
+" annoy"
+]
+},
+{
+"gain": 3.81,
+"ref": "L16N6107",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" difficulties",
+" failure",
+" confusion",
+" failures",
+" frustr",
+" struggles"
+]
+},
+{
+"gain": 3.68,
+"ref": "L16N57",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" confusion",
+" mis",
+" disrupted",
+" lost",
+" frustrated",
+" confused"
+]
+},
+{
+"gain": 3.67,
+"ref": "L16N6961",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" feeling",
+" feelings",
+" emotional",
+" emotion",
+" emotions",
+" sentiments"
+]
+},
+{
+"gain": 3.39,
+"ref": "L16N2981",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" concern",
+" concerned",
+" concerns",
+"conc",
+" Concern",
+" Conc"
+]
+},
+{
+"gain": 3.35,
+"ref": "L16N6503",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" feeling",
+" feelings",
+" emotions",
+" felt",
+" emotion",
+" emotional"
+]
+},
+{
+"gain": 3.15,
+"ref": "L18N5325",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" problematic",
+" trouble",
+" troubled",
+" bad",
+" difficult",
+" Proble"
+]
+},
+{
+"gain": 3.04,
+"ref": "L16N1665",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" safety",
+" safe",
+" safely",
+" unsafe",
+" saf",
+"安全"
+]
+}
+],
+"fog": [
+{
+"gain": 4.36,
+"ref": "L18N3603",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" yellow",
+" brown",
+"yellow",
+" colored",
+" orange",
+" gray"
+]
+},
+{
+"gain": 3.88,
+"ref": "L18N2254",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" mist",
+" vapor",
+" steam",
+"蒸",
+" vap",
+"mist"
+]
+},
+{
+"gain": 3.6,
+"ref": "L16N6107",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" difficulties",
+" failure",
+" confusion",
+" failures",
+" frustr",
+" struggles"
+]
+},
+{
+"gain": 3.23,
+"ref": "L16N2017",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" wrong",
+" incorrect",
+" incorrectly",
+"wrong",
+"Wrong",
+" Incorrect"
+]
+},
+{
+"gain": 3.19,
+"ref": "L18N7013",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" incorrectly",
+" unnecessary",
+" errone",
+" incorrect",
+" unne",
+" ineffective"
+]
+},
+{
+"gain": 3.05,
+"ref": "L18N1047",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" mixed",
+" mix",
+" Mix",
+" mixing",
+" Mixed",
+" mixture"
+]
+},
+{
+"gain": 2.8,
+"ref": "L18N5325",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" problematic",
+" trouble",
+" troubled",
+" bad",
+" difficult",
+" Proble"
+]
+},
+{
+"gain": 2.79,
+"ref": "L16N57",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" confusion",
+" mis",
+" disrupted",
+" lost",
+" frustrated",
+" confused"
+]
+},
+{
+"gain": 2.76,
+"ref": "L17N4621",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" cloud",
+"cloud",
+" clouds",
+"Cloud",
+" Cloud",
+"雲"
+]
+},
+{
+"gain": 2.75,
+"ref": "L16N6520",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" wind",
+" wheat",
+" glacier",
+" mountains",
+" river",
+" asteroid"
+]
+},
+{
+"gain": 2.69,
+"ref": "L16N6284",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+" colder",
+" cold",
+" temperature",
+" cooler",
+" warmer",
+" winter"
+]
+},
+{
+"gain": 2.55,
+"ref": "L18N5649",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" sliding",
+" split",
+" homogen",
+" transposition",
+" compression",
+" symmetry"
+]
+}
+],
+"frog": [
+{
+"gain": 2.75,
+"ref": "L18N1578",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" spider",
+" owl",
+" butterfly",
+"horse",
+"Ow",
+" frog"
+]
+},
+{
+"gain": 2.56,
+"ref": "L16N7611",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" water",
+" Water",
+"-water",
+"water",
+" waters",
+" ocean"
+]
+},
+{
+"gain": 2.44,
+"ref": "L16N3082",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" air",
+" sea",
+" steel",
+" Field",
+" lakes",
+" Fitness"
+]
+},
+{
+"gain": 2.32,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 2.25,
+"ref": "L16N6520",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" wind",
+" wheat",
+" glacier",
+" mountains",
+" river",
+" asteroid"
+]
+},
+{
+"gain": 2.14,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+},
+{
+"gain": 2.11,
+"ref": "L16N2111",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+"[B",
+"[m",
+" ‘",
+" Sea",
+" Hass",
+" Sev"
+]
+},
+{
+"gain": 2.09,
+"ref": "L16N2573",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" freshwater",
+" water",
+" pond",
+"-water",
+" seawater",
+" pudd"
+]
+},
+{
+"gain": 2.07,
+"ref": "L17N1127",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" aquatic",
+" underwater",
+" water",
+" submerged",
+" seawater",
+"water"
+]
+},
+{
+"gain": 2.06,
+"ref": "L18N7501",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" sea",
+" ocean",
+" seas",
+"海",
+" desert",
+"sea"
+]
+},
+{
+"gain": 2.03,
+"ref": "L18N5577",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" Paul",
+" Marc",
+" Ell",
+" Arthur",
+" Ep",
+" Erich"
+]
+},
+{
+"gain": 2.01,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+}
+],
+"ghost": [
+{
+"gain": 7.05,
+"ref": "L18N3206",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" attach",
+" attached",
+" attachment",
+"attach",
+" att",
+" Att"
+]
+},
+{
+"gain": 6.62,
+"ref": "L18N2674",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" beyond",
+" Beyond",
+"Beyond",
+"yond",
+" além",
+" oltre"
+]
+},
+{
+"gain": 6.55,
+"ref": "L18N5470",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" attribut",
+" attribute",
+" att",
+"Att",
+" Att",
+" Attribution"
+]
+},
+{
+"gain": 4.12,
+"ref": "L18N4864",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" beyond",
+" around",
+" beneath",
+" within",
+"within",
+" inside"
+]
+},
+{
+"gain": 3.96,
+"ref": "L18N1475",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" attracted",
+" attract",
+" attraction",
+" attracting",
+" attracts",
+" drawn"
+]
+},
+{
+"gain": 3.39,
+"ref": "L18N5551",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" attendance",
+" attended",
+" attend",
+" Att",
+" attending",
+"Att"
+]
+},
+{
+"gain": 3.17,
+"ref": "L16N5417",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" beyond",
+" Beyond",
+"Beyond",
+" outside",
+" Outside",
+"outside"
+]
+},
+{
+"gain": 3.09,
+"ref": "L18N1113",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" clothing",
+" dress",
+" wear",
+" wearing",
+" dressing",
+" dressed"
+]
+},
+{
+"gain": 2.99,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 2.85,
+"ref": "L18N1206",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" below",
+" above",
+"Above",
+" Above",
+"above",
+"below"
+]
+},
+{
+"gain": 2.74,
+"ref": "L18N3306",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" attractive",
+" appealing",
+" attract",
+" appeal",
+" attracting",
+" attracted"
+]
+},
+{
+"gain": 2.69,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+}
+],
+"gnome": [
+{
+"gain": 8.2,
+"ref": "L18N917",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" point",
+"Point",
+" Point",
+"point",
+"点",
+" points"
+]
+},
+{
+"gain": 8.04,
+"ref": "L18N6732",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" point",
+" Point",
+"point",
+"点",
+"Point",
+"-point"
+]
+},
+{
+"gain": 6.09,
+"ref": "L18N6296",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" point",
+" Point",
+"Point",
+" points",
+"点",
+" Points"
+]
+},
+{
+"gain": 5.11,
+"ref": "L16N7187",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" Point",
+" point",
+"Point",
+"point",
+"点",
+" Punkt"
+]
+},
+{
+"gain": 3.11,
+"ref": "L18N1119",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" Points",
+" Point",
+" points",
+" point",
+"Point",
+" pointing"
+]
+},
+{
+"gain": 2.91,
+"ref": "L17N2178",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+")|\n",
+"|\n",
+" '|",
+" |\n",
+" '\n",
+"...)\n"
+]
+},
+{
+"gain": 2.66,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 2.59,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 2.57,
+"ref": "L17N6558",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" weight",
+" load",
+" burden",
+"Weight",
+" heavy",
+"重量"
+]
+},
+{
+"gain": 2.5,
+"ref": "L18N3055",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"Cum",
+" accumulated",
+"cum",
+" points",
+" Cum",
+"points"
+]
+},
+{
+"gain": 2.47,
+"ref": "L18N1781",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" integration",
+" modulation",
+" pattern",
+" automation",
+" stability",
+" structural"
+]
+},
+{
+"gain": 2.31,
+"ref": "L18N6815",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" comparison",
+" comparing",
+"compar",
+" compared",
+" compara",
+" compare"
+]
+}
+],
+"grumpy": [
+{
+"gain": 7.06,
+"ref": "L18N6779",
+"sign": 1,
+"kl": 1.02,
+"tokens": [
+" young",
+" Young",
+" youth",
+"Young",
+" younger",
+" Youth"
+]
+},
+{
+"gain": 4.6,
+"ref": "L18N2090",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+" return",
+"return",
+" returning",
+" Return",
+"Return",
+" returned"
+]
+},
+{
+"gain": 4.32,
+"ref": "L18N188",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" reverse",
+" backwards",
+"reverse",
+" backward",
+" Reverse",
+" reversed"
+]
+},
+{
+"gain": 4.26,
+"ref": "L18N205",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" return",
+"return",
+" returning",
+" Return",
+"Return",
+" returns"
+]
+},
+{
+"gain": 4.21,
+"ref": "L18N2463",
+"sign": 1,
+"kl": 0.32,
+"tokens": [
+" return",
+" returning",
+"return",
+" Return",
+"Return",
+" returned"
+]
+},
+{
+"gain": 4.17,
+"ref": "L17N4183",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" background",
+" Background",
+"background",
+"Background",
+" backgrounds",
+"背景"
+]
+},
+{
+"gain": 3.87,
+"ref": "L18N5495",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" background",
+" Background",
+"background",
+"Background",
+" backgrounds",
+"背景"
+]
+},
+{
+"gain": 3.65,
+"ref": "L18N4052",
+"sign": 1,
+"kl": 0.35,
+"tokens": [
+" small",
+" tiny",
+" little",
+"small",
+"Small",
+"little"
+]
+},
+{
+"gain": 3.64,
+"ref": "L18N811",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" return",
+" returning",
+" Return",
+"return",
+"Return",
+" returned"
+]
+},
+{
+"gain": 3.04,
+"ref": "L16N3557",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" age",
+" Age",
+"Age",
+" aged",
+" aging",
+" old"
+]
+},
+{
+"gain": 2.89,
+"ref": "L18N6993",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" back",
+" backs",
+" heart",
+"back",
+" Back",
+" backend"
+]
+},
+{
+"gain": 2.84,
+"ref": "L16N6836",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" early",
+" Early",
+" late",
+"Early",
+"early",
+" aged"
+]
+}
+],
+"honest": [
+{
+"gain": 3.68,
+"ref": "L17N1184",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+"hon",
+" integrity",
+" honesty",
+"Hon",
+" honest",
+" Hon"
+]
+},
+{
+"gain": 3.62,
+"ref": "L18N5389",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" genuine",
+" authentic",
+" authenticity",
+" authent",
+"auth",
+" Auth"
+]
+},
+{
+"gain": 3.25,
+"ref": "L16N3305",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" transparent",
+" transpar",
+" transparency",
+"透明",
+" Trans",
+"Trans"
+]
+},
+{
+"gain": 3.15,
+"ref": "L18N6473",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" reliable",
+" trusted",
+" reliably",
+" reput",
+" trust",
+" reliability"
+]
+},
+{
+"gain": 2.97,
+"ref": "L17N728",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" actually",
+" really",
+" actual",
+" real",
+"actual",
+" truly"
+]
+},
+{
+"gain": 2.75,
+"ref": "L18N3809",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" answer",
+" answers",
+" answering",
+" Answer",
+" answered",
+"Answer"
+]
+},
+{
+"gain": 2.67,
+"ref": "L17N1842",
+"sign": 1,
+"kl": 0.53,
+"tokens": [
+" truly",
+" really",
+" real",
+" genuinely",
+" true",
+"real"
+]
+},
+{
+"gain": 2.65,
+"ref": "L18N7650",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" truth",
+" Truth",
+"Tr",
+"真",
+"tr",
+" truths"
+]
+},
+{
+"gain": 2.64,
+"ref": "L18N7401",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" true",
+" truly",
+" real",
+"true",
+" really",
+"真正"
+]
+},
+{
+"gain": 2.61,
+"ref": "L17N721",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"|S",
+" SA",
+")S",
+"SA",
+"/S",
+" S"
+]
+},
+{
+"gain": 2.61,
+"ref": "L17N1189",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" Hamilton",
+" Hamiltonian",
+" Hier",
+"_H",
+" HOR",
+" hydrogens"
+]
+},
+{
+"gain": 2.61,
+"ref": "L18N2356",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" Hy",
+" Hon",
+" Yet",
+"Yet",
+"ực",
+"Hur"
+]
+}
+],
+"honor": [
+{
+"gain": 9.62,
+"ref": "L18N7017",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" memory",
+"memory",
+"Memory",
+" Memory",
+" remember",
+" remembered"
+]
+},
+{
+"gain": 7.39,
+"ref": "L16N2022",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+" memory",
+"memory",
+" remembering",
+" remembered",
+"Memory",
+" Memory"
+]
+},
+{
+"gain": 7.37,
+"ref": "L17N6714",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" memory",
+" Memory",
+"Memory",
+"memory",
+" memories",
+"内存"
+]
+},
+{
+"gain": 6.84,
+"ref": "L17N4056",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" remember",
+" recall",
+" remembering",
+" Remember",
+"Remember",
+" memory"
+]
+},
+{
+"gain": 6.84,
+"ref": "L17N3883",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" memory",
+" recall",
+" remembered",
+" remember",
+" remembering",
+"memory"
+]
+},
+{
+"gain": 6.52,
+"ref": "L18N1388",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" recall",
+" remember",
+" memory",
+" remembering",
+" recalling",
+"Recall"
+]
+},
+{
+"gain": 5.2,
+"ref": "L18N6608",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" memory",
+" Memory",
+" memories",
+"Memory",
+"memory",
+" creating"
+]
+},
+{
+"gain": 4.2,
+"ref": "L16N1948",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" remnants",
+" previous",
+" former",
+" disappeared",
+" aftermath",
+" memories"
+]
+},
+{
+"gain": 3.55,
+"ref": "L16N4823",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" past",
+" history",
+"past",
+" Past",
+" historical",
+" memory"
+]
+},
+{
+"gain": 3.31,
+"ref": "L16N4613",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" forget",
+" forg",
+" forgotten",
+" remembering",
+" remembered",
+"忘"
+]
+},
+{
+"gain": 3.18,
+"ref": "L16N4037",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" history",
+" History",
+"History",
+"history",
+" histories",
+" historical"
+]
+},
+{
+"gain": 3.07,
+"ref": "L18N1781",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" integration",
+" modulation",
+" pattern",
+" automation",
+" stability",
+" structural"
+]
+}
+],
+"infomercial": [
+{
+"gain": 11.09,
+"ref": "L18N5403",
+"sign": -1,
+"kl": 1.59,
+"tokens": [
+" but",
+"but",
+"但",
+" pero",
+"-but",
+" nhưng"
+]
+},
+{
+"gain": 7.65,
+"ref": "L17N5120",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" but",
+"but",
+"但",
+" pero",
+"，但",
+" But"
+]
+},
+{
+"gain": 6.9,
+"ref": "L18N6401",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+"Call",
+" call",
+"call",
+" Call",
+" calls",
+" calling"
+]
+},
+{
+"gain": 5.77,
+"ref": "L18N1563",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" easily",
+" easy",
+" Easy",
+" ease",
+" easier",
+" easiest"
+]
+},
+{
+"gain": 4.0,
+"ref": "L18N6262",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" call",
+" calls",
+"Call",
+" Call",
+"call",
+" calling"
+]
+},
+{
+"gain": 3.91,
+"ref": "L17N6273",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" but",
+"但",
+"but",
+"But",
+" nhưng",
+" pero"
+]
+},
+{
+"gain": 3.71,
+"ref": "L16N5319",
+"sign": 1,
+"kl": 0.38,
+"tokens": [
+"...",
+"…",
+"??",
+"?",
+" ...?",
+"?**"
+]
+},
+{
+"gain": 3.53,
+"ref": "L17N378",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" easy",
+" Easy",
+" easier",
+" ease",
+" easiest",
+" easily"
+]
+},
+{
+"gain": 3.44,
+"ref": "L18N7584",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" order",
+" orders",
+"order",
+" Order",
+"Order",
+"-order"
+]
+},
+{
+"gain": 3.37,
+"ref": "L18N1134",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" difficult",
+" hard",
+" difficulty",
+" Diffic",
+" harder",
+"hard"
+]
+},
+{
+"gain": 3.36,
+"ref": "L18N3651",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" actions",
+" action",
+" decisions",
+" Actions",
+"Actions",
+"行为"
+]
+},
+{
+"gain": 3.35,
+"ref": "L16N2487",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" however",
+"However",
+",",
+"—but",
+" However",
+" but"
+]
+}
+],
+"interpret": [
+{
+"gain": 5.68,
+"ref": "L18N3890",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" definition",
+" definitions",
+" defined",
+"definition",
+"定义",
+" define"
+]
+},
+{
+"gain": 5.68,
+"ref": "L16N6048",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" interpretation",
+" interpretations",
+" interpreting",
+" interpret",
+" Interpretation",
+"interpret"
+]
+},
+{
+"gain": 5.07,
+"ref": "L18N3203",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" interaction",
+" interact",
+" interacting",
+" interactions",
+" interacts",
+"inter"
+]
+},
+{
+"gain": 4.81,
+"ref": "L17N2974",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" interpret",
+"interpret",
+" Interpret",
+" interpretations",
+" interpreting",
+" interpretation"
+]
+},
+{
+"gain": 4.79,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 4.75,
+"ref": "L17N7206",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" identification",
+" interpretation",
+" recognition",
+" Recogn",
+" recogn",
+" classification"
+]
+},
+{
+"gain": 4.32,
+"ref": "L18N4645",
+"sign": 1,
+"kl": 0.33,
+"tokens": [
+" interest",
+" Interest",
+"interest",
+" interests",
+"Interest",
+" interested"
+]
+},
+{
+"gain": 4.19,
+"ref": "L18N4977",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" create",
+" communicate",
+" explore",
+" evaluate",
+" make",
+" apply"
+]
+},
+{
+"gain": 4.15,
+"ref": "L18N3709",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" interest",
+" interests",
+" Interest",
+"interest",
+"Interest",
+" интерес"
+]
+},
+{
+"gain": 4.01,
+"ref": "L18N4338",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" create",
+" choose",
+" integrate",
+" accumulate",
+" generate",
+" find"
+]
+},
+{
+"gain": 3.79,
+"ref": "L18N1900",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" intermediate",
+" intermedi",
+" middle",
+"中间",
+"middle",
+" Middle"
+]
+},
+{
+"gain": 3.73,
+"ref": "L18N4366",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" interest",
+" Interest",
+"interest",
+"Interest",
+" interests",
+" interess"
+]
+}
+],
+"joke": [
+{
+"gain": 6.59,
+"ref": "L16N1586",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+" humor",
+" funny",
+" joke",
+" jokes",
+"fun",
+" fun"
+]
+},
+{
+"gain": 4.45,
+"ref": "L17N5403",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" humor",
+" funny",
+" hum",
+" joke",
+" jokes",
+" Hum"
+]
+},
+{
+"gain": 4.42,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 3.13,
+"ref": "L16N4685",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" human",
+" humans",
+"Human",
+"human",
+" Human",
+" HUMAN"
+]
+},
+{
+"gain": 3.0,
+"ref": "L18N5533",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" jokes",
+" joke",
+" pr",
+" j",
+" trick",
+" tricks"
+]
+},
+{
+"gain": 2.96,
+"ref": "L17N1189",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" Hamilton",
+" Hamiltonian",
+" Hier",
+"_H",
+" HOR",
+" hydrogens"
+]
+},
+{
+"gain": 2.95,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 2.74,
+"ref": "L16N6547",
+"sign": 1,
+"kl": 2.66,
+"tokens": [
+" Another",
+" Small",
+" Different",
+" Few",
+" Later",
+" Following"
+]
+},
+{
+"gain": 2.74,
+"ref": "L18N7447",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+" hum",
+" modest",
+" mod",
+"mod",
+"Mod",
+" Mod"
+]
+},
+{
+"gain": 2.74,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 2.68,
+"ref": "L18N3226",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" *",
+" (*",
+"*P",
+" Climate",
+"*\n",
+"*"
+]
+},
+{
+"gain": 2.66,
+"ref": "L16N5319",
+"sign": 1,
+"kl": 0.38,
+"tokens": [
+"...",
+"…",
+"??",
+"?",
+" ...?",
+"?**"
+]
+}
+],
+"kraken": [
+{
+"gain": 5.89,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.28,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.62,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.38,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.38,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.24,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.23,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.22,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.2,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.13,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+},
+{
+"gain": 3.11,
+"ref": "L18N7438",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" the",
+"the",
+" the",
+"The",
+"—the",
+"{the"
+]
+},
+{
+"gain": 3.09,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+}
+],
+"magic": [
+{
+"gain": 5.13,
+"ref": "L18N4462",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" magic",
+" mirac",
+" miracle",
+" miracles",
+"Mag",
+" magical"
+]
+},
+{
+"gain": 4.44,
+"ref": "L16N7557",
+"sign": -1,
+"kl": 0.73,
+"tokens": [
+" automatically",
+"Aut",
+" Aut",
+" autonom",
+" automatic",
+"自动"
+]
+},
+{
+"gain": 4.08,
+"ref": "L17N1451",
+"sign": 1,
+"kl": 0.01,
+"tokens": [
+" magic",
+"mag",
+" spell",
+" magical",
+" spells",
+"魔"
+]
+},
+{
+"gain": 3.71,
+"ref": "L17N2178",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+")|\n",
+"|\n",
+" '|",
+" |\n",
+" '\n",
+"...)\n"
+]
+},
+{
+"gain": 2.84,
+"ref": "L18N5949",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" De",
+"de",
+" Of",
+"ede",
+"al",
+" cam"
+]
+},
+{
+"gain": 2.75,
+"ref": "L17N3304",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" spell",
+" spells",
+" magic",
+" magical",
+"Mag",
+" alphabet"
+]
+},
+{
+"gain": 2.67,
+"ref": "L16N7035",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" companies",
+" manufacturer",
+" manufacturers",
+" Companies",
+" company",
+" businesses"
+]
+},
+{
+"gain": 2.65,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 2.6,
+"ref": "L16N7446",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" device",
+" portable",
+" tools",
+" Device",
+" devices",
+" apparatus"
+]
+},
+{
+"gain": 2.57,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+},
+{
+"gain": 2.52,
+"ref": "L18N1781",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" integration",
+" modulation",
+" pattern",
+" automation",
+" stability",
+" structural"
+]
+},
+{
+"gain": 2.49,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+}
+],
+"market": [
+{
+"gain": 7.5,
+"ref": "L18N2597",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" market",
+" markets",
+" Market",
+"market",
+"Market",
+"市场"
+]
+},
+{
+"gain": 6.04,
+"ref": "L18N6388",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" market",
+" markets",
+"Market",
+" Market",
+"market",
+"市場"
+]
+},
+{
+"gain": 4.5,
+"ref": "L16N7035",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" companies",
+" manufacturer",
+" manufacturers",
+" Companies",
+" company",
+" businesses"
+]
+},
+{
+"gain": 4.12,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.82,
+"ref": "L18N5023",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" commercial",
+" Commercial",
+" commercially",
+"Commercial",
+"商",
+" comercial"
+]
+},
+{
+"gain": 3.79,
+"ref": "L16N448",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" market",
+" markets",
+"Market",
+" Market",
+"market",
+"市场"
+]
+},
+{
+"gain": 3.77,
+"ref": "L16N740",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" market",
+" markets",
+" Market",
+"Market",
+" marketplace",
+"market"
+]
+},
+{
+"gain": 3.74,
+"ref": "L16N2157",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" paid",
+" purchasing",
+" selling",
+" price",
+" purchase",
+" monetary"
+]
+},
+{
+"gain": 3.4,
+"ref": "L17N6804",
+"sign": -1,
+"kl": 0.02,
+"tokens": [
+" market",
+" Market",
+"Market",
+"market",
+" marketplace",
+"市场"
+]
+},
+{
+"gain": 3.39,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 3.15,
+"ref": "L18N546",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" у",
+" э",
+" एक",
+" punti",
+" л",
+" supprim"
+]
+},
+{
+"gain": 2.79,
+"ref": "L18N6416",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" world",
+" universe",
+" Universe",
+"world",
+"世界",
+" World"
+]
+}
+],
+"mars": [
+{
+"gain": 6.27,
+"ref": "L18N3603",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" yellow",
+" brown",
+"yellow",
+" colored",
+" orange",
+" gray"
+]
+},
+{
+"gain": 5.88,
+"ref": "L17N287",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" yellow",
+" red",
+" brown",
+" green",
+" blue",
+" purple"
+]
+},
+{
+"gain": 5.79,
+"ref": "L18N4437",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" red",
+"红",
+" Red",
+" green",
+"red",
+"Red"
+]
+},
+{
+"gain": 5.34,
+"ref": "L17N4706",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" blue",
+" yellow",
+" colored",
+" green",
+" red",
+" purple"
+]
+},
+{
+"gain": 4.88,
+"ref": "L18N828",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" reduce",
+"redu",
+" reducing",
+" reduced",
+"reduce",
+" reduction"
+]
+},
+{
+"gain": 4.52,
+"ref": "L18N3533",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" redirect",
+" direction",
+" directing",
+" directed",
+"redirect",
+" directs"
+]
+},
+{
+"gain": 4.46,
+"ref": "L18N3255",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" red",
+"red",
+"Red",
+"area",
+" area",
+" areas"
+]
+},
+{
+"gain": 3.73,
+"ref": "L18N6572",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" reorgan",
+"重新",
+" re",
+" rew",
+" reorganize",
+" rearrangement"
+]
+},
+{
+"gain": 3.29,
+"ref": "L16N31",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" door",
+" curtain",
+" Door",
+" doors",
+" bell",
+" hammer"
+]
+},
+{
+"gain": 3.16,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 3.12,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 3.11,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+}
+],
+"medieval": [
+{
+"gain": 5.55,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 4.93,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.29,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.9,
+"ref": "L18N2852",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" transform",
+" turn",
+" transforming",
+" turning",
+" transforms",
+" transformed"
+]
+},
+{
+"gain": 3.79,
+"ref": "L17N1640",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" turn",
+" turns",
+"Turn",
+"turn",
+" Turn",
+" turned"
+]
+},
+{
+"gain": 3.78,
+"ref": "L18N2627",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" turn",
+" Turn",
+" turns",
+"turn",
+"Turn",
+" turning"
+]
+},
+{
+"gain": 3.22,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.1,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.07,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 2.96,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 2.95,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 2.9,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+}
+],
+"mermaid": [
+{
+"gain": 5.68,
+"ref": "L18N6007",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" sea",
+" ocean",
+"海",
+"sea",
+" marine",
+" seawater"
+]
+},
+{
+"gain": 5.45,
+"ref": "L18N7501",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" sea",
+" ocean",
+" seas",
+"海",
+" desert",
+"sea"
+]
+},
+{
+"gain": 4.77,
+"ref": "L18N63",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+"海",
+" sea",
+"sea",
+" seaf",
+" Sea",
+" seawater"
+]
+},
+{
+"gain": 4.42,
+"ref": "L17N1127",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" aquatic",
+" underwater",
+" water",
+" submerged",
+" seawater",
+"water"
+]
+},
+{
+"gain": 3.76,
+"ref": "L18N7000",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" sea",
+"sea",
+" Sea",
+"海",
+"/sea",
+" seas"
+]
+},
+{
+"gain": 3.66,
+"ref": "L18N105",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" wave",
+" waves",
+"wave",
+" Wave",
+"波",
+"-wave"
+]
+},
+{
+"gain": 3.55,
+"ref": "L18N1590",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" under",
+" Under",
+"Under",
+" underneath",
+" beneath",
+"under"
+]
+},
+{
+"gain": 3.51,
+"ref": "L17N3164",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" sailing",
+" marine",
+" naval",
+" sail",
+" naut",
+" maritime"
+]
+},
+{
+"gain": 3.36,
+"ref": "L18N6839",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" cannabis",
+" Blood",
+" marijuana",
+" Chlor",
+" hepatitis",
+" Tropical"
+]
+},
+{
+"gain": 3.18,
+"ref": "L18N4243",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" under",
+" Under",
+"Under",
+"under",
+" تحت",
+" unter"
+]
+},
+{
+"gain": 2.89,
+"ref": "L18N5979",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" Connecticut",
+" Massachusetts",
+" California",
+" Maryland",
+" Colorado",
+" Kentucky"
+]
+},
+{
+"gain": 2.87,
+"ref": "L18N7205",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" beach",
+" beaches",
+" Beach",
+" coastline",
+" coast",
+" Coast"
+]
+}
+],
+"mirror": [
+{
+"gain": 3.52,
+"ref": "L16N31",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" door",
+" curtain",
+" Door",
+" doors",
+" bell",
+" hammer"
+]
+},
+{
+"gain": 3.33,
+"ref": "L16N5534",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" reflective",
+" reflect",
+" reflection",
+" reflecting",
+" reflects",
+" reflected"
+]
+},
+{
+"gain": 3.3,
+"ref": "L18N1889",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" glass",
+" Glass",
+" glasses",
+"玻璃",
+"glass",
+" Glas"
+]
+},
+{
+"gain": 3.21,
+"ref": "L18N6281",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" im",
+" mimic",
+" mim",
+" replic",
+" replicate",
+" replication"
+]
+},
+{
+"gain": 3.11,
+"ref": "L18N6578",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" steel",
+" metal",
+" copper",
+" aluminum",
+" bronze",
+" iron"
+]
+},
+{
+"gain": 2.93,
+"ref": "L18N5649",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" sliding",
+" split",
+" homogen",
+" transposition",
+" compression",
+" symmetry"
+]
+},
+{
+"gain": 2.76,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+},
+{
+"gain": 2.75,
+"ref": "L17N6809",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" justice",
+" Justice",
+" fair",
+"fair",
+" fairness",
+" equitable"
+]
+},
+{
+"gain": 2.74,
+"ref": "L17N926",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" giving",
+" gives",
+" given",
+"given",
+"給",
+" give"
+]
+},
+{
+"gain": 2.71,
+"ref": "L18N5901",
+"sign": -1,
+"kl": 3.94,
+"tokens": [
+" first",
+"first",
+" First",
+" FIRST",
+"First",
+"_first"
+]
+},
+{
+"gain": 2.71,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 2.69,
+"ref": "L18N5115",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" reference",
+" references",
+" Reference",
+"reference",
+" refer",
+"Reference"
+]
+}
+],
+"moon": [
+{
+"gain": 3.88,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 3.73,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.57,
+"ref": "L18N6416",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" world",
+" universe",
+" Universe",
+"world",
+"世界",
+" World"
+]
+},
+{
+"gain": 3.3,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 3.21,
+"ref": "L16N2170",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+" night",
+" Night",
+" evening",
+" noct",
+" daytime",
+"night"
+]
+},
+{
+"gain": 2.89,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.69,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 2.67,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 2.6,
+"ref": "L18N6351",
+"sign": 1,
+"kl": 0.56,
+"tokens": [
+"'s",
+" their",
+" the",
+"their",
+"life",
+" its"
+]
+},
+{
+"gain": 2.55,
+"ref": "L18N2229",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" Japan",
+" Britain",
+" America",
+" India",
+" Australia",
+" England"
+]
+},
+{
+"gain": 2.55,
+"ref": "L18N2917",
+"sign": -1,
+"kl": 0.58,
+"tokens": [
+" Lt",
+" Life",
+" Royal",
+" envis",
+" Ltd",
+"_FL"
+]
+},
+{
+"gain": 2.54,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+}
+],
+"noir": [
+{
+"gain": 4.96,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 4.78,
+"ref": "L18N710",
+"sign": 1,
+"kl": 0.83,
+"tokens": [
+" this",
+"this",
+" This",
+"This",
+" THIS",
+" هذا"
+]
+},
+{
+"gain": 4.65,
+"ref": "L18N5030",
+"sign": -1,
+"kl": 0.56,
+"tokens": [
+" this",
+"this",
+" This",
+"This",
+" THIS",
+" هذا"
+]
+},
+{
+"gain": 4.35,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.0,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.13,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.05,
+"ref": "L16N6284",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+" colder",
+" cold",
+" temperature",
+" cooler",
+" warmer",
+" winter"
+]
+},
+{
+"gain": 2.85,
+"ref": "L18N1431",
+"sign": -1,
+"kl": 0.57,
+"tokens": [
+"Power",
+" symmetry",
+" vitality",
+"Ram",
+"the",
+" power"
+]
+},
+{
+"gain": 2.81,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 2.78,
+"ref": "L18N6351",
+"sign": 1,
+"kl": 0.56,
+"tokens": [
+"'s",
+" their",
+" the",
+"their",
+"life",
+" its"
+]
+},
+{
+"gain": 2.77,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 2.71,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+}
+],
+"optics": [
+{
+"gain": 7.75,
+"ref": "L16N7078",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" light",
+" sunlight",
+" lighting",
+"light",
+" Light",
+"光"
+]
+},
+{
+"gain": 5.64,
+"ref": "L16N7418",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" light",
+" lighting",
+" Light",
+" illumination",
+"Light",
+"光"
+]
+},
+{
+"gain": 3.98,
+"ref": "L18N3603",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" yellow",
+" brown",
+"yellow",
+" colored",
+" orange",
+" gray"
+]
+},
+{
+"gain": 3.7,
+"ref": "L16N31",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" door",
+" curtain",
+" Door",
+" doors",
+" bell",
+" hammer"
+]
+},
+{
+"gain": 3.56,
+"ref": "L18N6044",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" indicator",
+" indicators",
+" lights",
+" glow",
+" lit",
+"indic"
+]
+},
+{
+"gain": 3.39,
+"ref": "L17N6558",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" weight",
+" load",
+" burden",
+"Weight",
+" heavy",
+"重量"
+]
+},
+{
+"gain": 3.38,
+"ref": "L18N4762",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" eye",
+" eyes",
+" Eyes",
+" Eye",
+"-ey",
+"眼"
+]
+},
+{
+"gain": 3.06,
+"ref": "L18N6932",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" optimal",
+" Opt",
+"optimal",
+" optimum",
+"Opt",
+" optim"
+]
+},
+{
+"gain": 3.03,
+"ref": "L16N2159",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" light",
+" sunlight",
+" viewing",
+"光",
+" lights",
+" lighting"
+]
+},
+{
+"gain": 3.02,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 2.92,
+"ref": "L16N6520",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" wind",
+" wheat",
+" glacier",
+" mountains",
+" river",
+" asteroid"
+]
+},
+{
+"gain": 2.91,
+"ref": "L18N1166",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" circ",
+" light",
+" Light",
+" Rescue",
+" cylind",
+" transports"
+]
+}
+],
+"overwhelm": [
+{
+"gain": 7.34,
+"ref": "L18N777",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+" hundreds",
+" thousands",
+" approximately",
+" over",
+" tens",
+" around"
+]
+},
+{
+"gain": 6.98,
+"ref": "L18N6670",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" over",
+" Over",
+"Over",
+"over",
+"-over",
+" über"
+]
+},
+{
+"gain": 6.88,
+"ref": "L18N4094",
+"sign": 1,
+"kl": 0.02,
+"tokens": [
+" over",
+"Over",
+" Over",
+"过",
+"過",
+"over"
+]
+},
+{
+"gain": 6.21,
+"ref": "L18N1510",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" overlap",
+" overlapping",
+" overlaps",
+" overlapped",
+"-overlapping",
+"Over"
+]
+},
+{
+"gain": 5.87,
+"ref": "L18N2262",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" too",
+" overly",
+" excessive",
+"too",
+" Too",
+"Too"
+]
+},
+{
+"gain": 5.5,
+"ref": "L18N2109",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" over",
+" Over",
+"over",
+"Over",
+"-over",
+" über"
+]
+},
+{
+"gain": 5.35,
+"ref": "L18N849",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" overnight",
+"Over",
+" Over",
+" night",
+"night",
+"overn"
+]
+},
+{
+"gain": 5.2,
+"ref": "L18N7067",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" overview",
+"Overview",
+"over",
+"-over",
+"Over",
+"overview"
+]
+},
+{
+"gain": 5.13,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 4.46,
+"ref": "L16N6547",
+"sign": 1,
+"kl": 2.66,
+"tokens": [
+" Another",
+" Small",
+" Different",
+" Few",
+" Later",
+" Following"
+]
+},
+{
+"gain": 4.33,
+"ref": "L17N282",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" overcoming",
+" overcome",
+"Over",
+" override",
+"Override",
+" Over"
+]
+},
+{
+"gain": 4.16,
+"ref": "L18N1751",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" overw",
+" overs",
+"over",
+"Over",
+"-over",
+" Over"
+]
+}
+],
+"penguin": [
+{
+"gain": 5.96,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.35,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.59,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.46,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.37,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.3,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.29,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.28,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.23,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.19,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+},
+{
+"gain": 3.18,
+"ref": "L18N7438",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" the",
+"the",
+" the",
+"The",
+"—the",
+"{the"
+]
+},
+{
+"gain": 3.06,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+}
+],
+"philosophy": [
+{
+"gain": 4.16,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.31,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 3.24,
+"ref": "L18N978",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" relevance",
+" contextual",
+" modelling",
+" conceptual",
+" recognised",
+" emphas"
+]
+},
+{
+"gain": 3.24,
+"ref": "L18N7358",
+"sign": -1,
+"kl": 0.53,
+"tokens": [
+" National",
+" International",
+" Regional",
+" Metropolitan",
+" Royal",
+" Environmental"
+]
+},
+{
+"gain": 3.04,
+"ref": "L18N2944",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" scientists",
+" biologists",
+" researchers",
+" experts",
+"Scientists",
+" scientist"
+]
+},
+{
+"gain": 3.02,
+"ref": "L18N2882",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" physically",
+" chemically",
+" biologically",
+" mechan",
+" physi",
+" geometrically"
+]
+},
+{
+"gain": 3.0,
+"ref": "L18N3226",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" *",
+" (*",
+"*P",
+" Climate",
+"*\n",
+"*"
+]
+},
+{
+"gain": 2.94,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.85,
+"ref": "L17N7311",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" mathematical",
+" mathematics",
+" mathemat",
+" Mathematical",
+" philosopher",
+" philosophical"
+]
+},
+{
+"gain": 2.75,
+"ref": "L18N155",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" Euler",
+" φ",
+"φ",
+" phi",
+"phi",
+"Euler"
+]
+},
+{
+"gain": 2.66,
+"ref": "L16N6794",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" technically",
+" technical",
+" theoretically",
+" formally",
+" techn",
+"techn"
+]
+},
+{
+"gain": 2.54,
+"ref": "L18N1340",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" biologically",
+" physically",
+" morphological",
+" mathematically",
+" physi",
+" computationally"
+]
+}
+],
+"pirate": [
+{
+"gain": 5.91,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.3,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.53,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.43,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.35,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.26,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.25,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.22,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.19,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.17,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.14,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+},
+{
+"gain": 3.13,
+"ref": "L18N7438",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" the",
+"the",
+" the",
+"The",
+"—the",
+"{the"
+]
+}
+],
+"price": [
+{
+"gain": 4.25,
+"ref": "L16N2157",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" paid",
+" purchasing",
+" selling",
+" price",
+" purchase",
+" monetary"
+]
+},
+{
+"gain": 3.79,
+"ref": "L17N1428",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" money",
+"money",
+" Money",
+" monetary",
+" financial",
+"Money"
+]
+},
+{
+"gain": 3.42,
+"ref": "L16N260",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" currency",
+" currencies",
+"Currency",
+" dollar",
+"currency",
+" monetary"
+]
+},
+{
+"gain": 3.41,
+"ref": "L18N1667",
+"sign": 1,
+"kl": 0.02,
+"tokens": [
+" affecting",
+" affect",
+" affects",
+" affected",
+"aff",
+"影响"
+]
+},
+{
+"gain": 3.29,
+"ref": "L17N1291",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" cost",
+" costs",
+"Cost",
+"cost",
+" Cost",
+" Costs"
+]
+},
+{
+"gain": 3.05,
+"ref": "L18N7140",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" affected",
+" impacted",
+" affecting",
+" afect",
+"aff",
+" Aff"
+]
+},
+{
+"gain": 3.04,
+"ref": "L16N7426",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" financial",
+" money",
+" funding",
+" finance",
+" finances",
+" funds"
+]
+},
+{
+"gain": 2.93,
+"ref": "L18N4571",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" $",
+" `$",
+" **$",
+"$",
+" ($",
+" \"$"
+]
+},
+{
+"gain": 2.92,
+"ref": "L17N4006",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" percentage",
+" quantitative",
+" percentages",
+" quantified",
+" quant",
+" amount"
+]
+},
+{
+"gain": 2.8,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 2.71,
+"ref": "L16N7557",
+"sign": -1,
+"kl": 0.73,
+"tokens": [
+" automatically",
+"Aut",
+" Aut",
+" autonom",
+" automatic",
+"自动"
+]
+},
+{
+"gain": 2.7,
+"ref": "L18N3065",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" cost",
+" costs",
+"cost",
+" Cost",
+"Cost",
+"-cost"
+]
+}
+],
+"repeat": [
+{
+"gain": 4.88,
+"ref": "L16N189",
+"sign": 1,
+"kl": 0.32,
+"tokens": [
+" repeat",
+" repeated",
+"repeat",
+" repeats",
+" Repeat",
+"重复"
+]
+},
+{
+"gain": 4.83,
+"ref": "L18N1692",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" rest",
+"Rest",
+"rest",
+" Rest",
+"-rest",
+"_rest"
+]
+},
+{
+"gain": 4.5,
+"ref": "L18N189",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" reprodu",
+" reproduce",
+" replication",
+" replic",
+" reproduction",
+" recre"
+]
+},
+{
+"gain": 4.28,
+"ref": "L18N3614",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" replication",
+" repetition",
+" repeat",
+" replic",
+" replicated",
+" repeats"
+]
+},
+{
+"gain": 4.21,
+"ref": "L17N5858",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+"Rest",
+" rested",
+" Rest",
+"rest",
+" rest",
+" resting"
+]
+},
+{
+"gain": 4.2,
+"ref": "L18N6572",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" reorgan",
+"重新",
+" re",
+" rew",
+" reorganize",
+" rearrangement"
+]
+},
+{
+"gain": 3.92,
+"ref": "L16N5777",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" repeat",
+" repeated",
+"repeat",
+" repeats",
+" repeating",
+"重复"
+]
+},
+{
+"gain": 3.62,
+"ref": "L18N1686",
+"sign": 1,
+"kl": 0.7,
+"tokens": [
+" response",
+" reply",
+" responding",
+"response",
+"Response",
+" Response"
+]
+},
+{
+"gain": 3.11,
+"ref": "L18N418",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" restoration",
+" recovery",
+"恢复",
+" recovering",
+" Recovery",
+" restored"
+]
+},
+{
+"gain": 2.98,
+"ref": "L18N811",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" return",
+" returning",
+" Return",
+"return",
+"Return",
+" returned"
+]
+},
+{
+"gain": 2.86,
+"ref": "L16N7313",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" preparation",
+" preparing",
+" prepared",
+" prepar",
+" prepare",
+" Prepar"
+]
+},
+{
+"gain": 2.85,
+"ref": "L18N4985",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+"-R",
+"(R",
+"_R",
+" RB",
+" R",
+" RD"
+]
+}
+],
+"ring": [
+{
+"gain": 3.93,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 3.87,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.51,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 3.03,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.9,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 2.65,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 2.59,
+"ref": "L18N7358",
+"sign": -1,
+"kl": 0.53,
+"tokens": [
+" National",
+" International",
+" Regional",
+" Metropolitan",
+" Royal",
+" Environmental"
+]
+},
+{
+"gain": 2.59,
+"ref": "L18N6351",
+"sign": 1,
+"kl": 0.56,
+"tokens": [
+"'s",
+" their",
+" the",
+"their",
+"life",
+" its"
+]
+},
+{
+"gain": 2.57,
+"ref": "L18N4106",
+"sign": 1,
+"kl": 0.39,
+"tokens": [
+"the",
+" the",
+"TH",
+"_the",
+"THE",
+"ini"
+]
+},
+{
+"gain": 2.53,
+"ref": "L18N5151",
+"sign": 1,
+"kl": 1.03,
+"tokens": [
+" Flower",
+" Simple",
+" Moving",
+" Extended",
+" Product",
+" Industrial"
+]
+},
+{
+"gain": 2.52,
+"ref": "L18N5901",
+"sign": -1,
+"kl": 3.94,
+"tokens": [
+" first",
+"first",
+" First",
+" FIRST",
+"First",
+"_first"
+]
+},
+{
+"gain": 2.44,
+"ref": "L18N1431",
+"sign": -1,
+"kl": 0.57,
+"tokens": [
+"Power",
+" symmetry",
+" vitality",
+"Ram",
+"the",
+" power"
+]
+}
+],
+"robot": [
+{
+"gain": 5.99,
+"ref": "L18N6799",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" do",
+" Do",
+"Do",
+" does",
+"do",
+"does"
+]
+},
+{
+"gain": 4.89,
+"ref": "L18N7320",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" doing",
+" Doing",
+" do",
+"doing",
+"do",
+"Do"
+]
+},
+{
+"gain": 4.42,
+"ref": "L18N2845",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" can",
+" wasn",
+" might",
+" was",
+" cannot",
+" could"
+]
+},
+{
+"gain": 4.34,
+"ref": "L16N2212",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" could",
+" is",
+" would",
+" does",
+" was",
+" did"
+]
+},
+{
+"gain": 4.27,
+"ref": "L17N1155",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" acquisition",
+" selection",
+" creation",
+" removal",
+" incorporation",
+" exploitation"
+]
+},
+{
+"gain": 4.17,
+"ref": "L18N4593",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" prepares",
+" integrates",
+" connects",
+" creates",
+" sits",
+" holds"
+]
+},
+{
+"gain": 4.04,
+"ref": "L18N4255",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" doing",
+" Doing",
+" done",
+" do",
+"done",
+"do"
+]
+},
+{
+"gain": 4.02,
+"ref": "L18N1237",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" keeps",
+" does",
+" adds",
+" doesn",
+" has",
+" is"
+]
+},
+{
+"gain": 3.75,
+"ref": "L16N1457",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" reflects",
+" represents",
+" could",
+" requires",
+" was",
+" serves"
+]
+},
+{
+"gain": 3.58,
+"ref": "L18N2963",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" work",
+"work",
+" Work",
+"Work",
+" doing",
+"工作"
+]
+},
+{
+"gain": 3.5,
+"ref": "L17N4979",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+"does",
+" does",
+" do",
+" did",
+"did",
+"Do"
+]
+},
+{
+"gain": 3.5,
+"ref": "L18N1029",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" absorption",
+" absorbing",
+" absorb",
+" absorbs",
+" absorbed",
+" absor"
+]
+}
+],
+"sacrifice": [
+{
+"gain": 4.85,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 4.84,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 4.63,
+"ref": "L17N33",
+"sign": 1,
+"kl": 0.02,
+"tokens": [
+" sacrifice",
+" sacrific",
+" sacrifices",
+" Sac",
+" sacrificed",
+" sacr"
+]
+},
+{
+"gain": 3.88,
+"ref": "L18N1323",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Fern",
+" Ell",
+" Fer",
+" Cov",
+" Will",
+" Gra"
+]
+},
+{
+"gain": 3.82,
+"ref": "L18N7500",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+" Clarke",
+" Ellis",
+" Aub",
+" Cart",
+" Ell",
+" Laf"
+]
+},
+{
+"gain": 3.81,
+"ref": "L18N546",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" у",
+" э",
+" एक",
+" punti",
+" л",
+" supprim"
+]
+},
+{
+"gain": 3.7,
+"ref": "L18N2778",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" Aux",
+" Ul",
+" Ald",
+" Orth",
+" Instant",
+" Alt"
+]
+},
+{
+"gain": 3.61,
+"ref": "L16N6547",
+"sign": 1,
+"kl": 2.66,
+"tokens": [
+" Another",
+" Small",
+" Different",
+" Few",
+" Later",
+" Following"
+]
+},
+{
+"gain": 3.54,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 3.42,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 3.42,
+"ref": "L18N5329",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" noon",
+" midnight",
+" Sac",
+" sunset",
+"bottom",
+" beginning"
+]
+},
+{
+"gain": 3.33,
+"ref": "L18N6656",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" trade",
+" Trade",
+" trades",
+" trading",
+" traded",
+"Tr"
+]
+}
+],
+"sahara": [
+{
+"gain": 5.33,
+"ref": "L18N7501",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" sea",
+" ocean",
+" seas",
+"海",
+" desert",
+"sea"
+]
+},
+{
+"gain": 3.23,
+"ref": "L18N2225",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+"simple",
+"birth",
+"coll",
+"lower",
+"Roll",
+"C"
+]
+},
+{
+"gain": 3.19,
+"ref": "L16N4441",
+"sign": 1,
+"kl": 0.52,
+"tokens": [
+" sea",
+" desert",
+" jungle",
+" offshore",
+" high",
+" ocean"
+]
+},
+{
+"gain": 2.96,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+},
+{
+"gain": 2.83,
+"ref": "L18N6706",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" Desert",
+" Bean",
+" Ni",
+" Sah",
+" Griffith",
+" desert"
+]
+},
+{
+"gain": 2.78,
+"ref": "L16N6520",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" wind",
+" wheat",
+" glacier",
+" mountains",
+" river",
+" asteroid"
+]
+},
+{
+"gain": 2.78,
+"ref": "L18N6469",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"�",
+" Sant",
+"Sant",
+"SOS",
+" Santos",
+"Δ"
+]
+},
+{
+"gain": 2.74,
+"ref": "L18N5949",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" De",
+"de",
+" Of",
+"ede",
+"al",
+" cam"
+]
+},
+{
+"gain": 2.65,
+"ref": "L16N31",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" door",
+" curtain",
+" Door",
+" doors",
+" bell",
+" hammer"
+]
+},
+{
+"gain": 2.49,
+"ref": "L18N1094",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" Richardson",
+" $(\\",
+" $\\",
+"$_",
+"mi",
+" $_"
+]
+},
+{
+"gain": 2.47,
+"ref": "L18N6007",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" sea",
+" ocean",
+"海",
+"sea",
+" marine",
+" seawater"
+]
+},
+{
+"gain": 2.46,
+"ref": "L18N2717",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Wheel",
+" Barb",
+" wheel",
+" Cam",
+"Cam",
+"Bikes"
+]
+}
+],
+"saturn": [
+{
+"gain": 5.79,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.18,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.42,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.31,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.23,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.18,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.14,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.12,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.06,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.05,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+},
+{
+"gain": 3.05,
+"ref": "L18N7438",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" the",
+"the",
+" the",
+"The",
+"—the",
+"{the"
+]
+},
+{
+"gain": 3.01,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+}
+],
+"shakespeare": [
+{
+"gain": 10.48,
+"ref": "L18N4478",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" for",
+"for",
+" для",
+" For",
+"For",
+" für"
+]
+},
+{
+"gain": 10.36,
+"ref": "L18N2245",
+"sign": 1,
+"kl": 0.28,
+"tokens": [
+" for",
+"for",
+" для",
+" für",
+" For",
+"For"
+]
+},
+{
+"gain": 10.07,
+"ref": "L18N1324",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+" for",
+"for",
+" для",
+"For",
+" For",
+" für"
+]
+},
+{
+"gain": 9.71,
+"ref": "L18N5294",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" for",
+"for",
+" для",
+" For",
+"For",
+" für"
+]
+},
+{
+"gain": 9.66,
+"ref": "L18N3062",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" for",
+"for",
+" для",
+" For",
+"For",
+" für"
+]
+},
+{
+"gain": 9.3,
+"ref": "L17N5964",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" for",
+"for",
+" для",
+" für",
+"For",
+" For"
+]
+},
+{
+"gain": 9.18,
+"ref": "L18N6402",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" for",
+"for",
+" для",
+" For",
+"For",
+" für"
+]
+},
+{
+"gain": 8.8,
+"ref": "L18N5481",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" for",
+"for",
+" For",
+"For",
+" для",
+" für"
+]
+},
+{
+"gain": 8.74,
+"ref": "L18N3204",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" for",
+"for",
+" для",
+"For",
+" For",
+" für"
+]
+},
+{
+"gain": 8.62,
+"ref": "L17N6623",
+"sign": 1,
+"kl": 0.24,
+"tokens": [
+" for",
+"for",
+" для",
+" For",
+" für",
+"For"
+]
+},
+{
+"gain": 8.45,
+"ref": "L18N463",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"for",
+" for",
+" For",
+"For",
+" для",
+"_for"
+]
+},
+{
+"gain": 8.17,
+"ref": "L16N1942",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" for",
+"for",
+" для",
+" For",
+"For",
+" für"
+]
+}
+],
+"snow": [
+{
+"gain": 8.5,
+"ref": "L17N5160",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" free",
+"free",
+" Free",
+"Free",
+" FREE",
+"_free"
+]
+},
+{
+"gain": 4.16,
+"ref": "L18N7476",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" frozen",
+" freeze",
+" freezing",
+" Fro",
+" frost",
+" ice"
+]
+},
+{
+"gain": 4.12,
+"ref": "L16N6284",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+" colder",
+" cold",
+" temperature",
+" cooler",
+" warmer",
+" winter"
+]
+},
+{
+"gain": 3.87,
+"ref": "L17N2",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" free",
+"free",
+" Free",
+"Free",
+" Available",
+" свобод"
+]
+},
+{
+"gain": 3.85,
+"ref": "L18N2701",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" freedom",
+"自由",
+" liberty",
+" liber",
+" free",
+"fre"
+]
+},
+{
+"gain": 3.67,
+"ref": "L18N6260",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" float",
+" floating",
+" flo",
+"float",
+" Flo",
+"浮"
+]
+},
+{
+"gain": 3.59,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 3.05,
+"ref": "L18N3481",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+" shift",
+" shifted",
+"shift",
+" shifting",
+"Shift",
+" shifts"
+]
+},
+{
+"gain": 2.99,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 2.95,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+},
+{
+"gain": 2.81,
+"ref": "L17N2010",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" free",
+" Free",
+"free",
+"Free",
+"_free",
+"自由"
+]
+},
+{
+"gain": 2.74,
+"ref": "L16N6520",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" wind",
+" wheat",
+" glacier",
+" mountains",
+" river",
+" asteroid"
+]
+}
+],
+"sorry": [
+{
+"gain": 3.92,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.74,
+"ref": "L16N178",
+"sign": 1,
+"kl": 0.31,
+"tokens": [
+" confusion",
+" frustration",
+" problematic",
+" frustrated",
+" trouble",
+" annoy"
+]
+},
+{
+"gain": 3.73,
+"ref": "L18N2420",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" sorted",
+" sorting",
+"Sorted",
+"Sort",
+" Sort",
+"sorted"
+]
+},
+{
+"gain": 3.71,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 3.61,
+"ref": "L17N721",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"|S",
+" SA",
+")S",
+"SA",
+"/S",
+" S"
+]
+},
+{
+"gain": 3.49,
+"ref": "L16N57",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" confusion",
+" mis",
+" disrupted",
+" lost",
+" frustrated",
+" confused"
+]
+},
+{
+"gain": 3.46,
+"ref": "L17N7456",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" Ap",
+" ap",
+"Ap",
+" apologize",
+" Sor",
+"sor"
+]
+},
+{
+"gain": 3.28,
+"ref": "L16N5319",
+"sign": 1,
+"kl": 0.38,
+"tokens": [
+"...",
+"…",
+"??",
+"?",
+" ...?",
+"?**"
+]
+},
+{
+"gain": 3.27,
+"ref": "L18N5325",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" problematic",
+" trouble",
+" troubled",
+" bad",
+" difficult",
+" Proble"
+]
+},
+{
+"gain": 3.26,
+"ref": "L16N6107",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" difficulties",
+" failure",
+" confusion",
+" failures",
+" frustr",
+" struggles"
+]
+},
+{
+"gain": 3.23,
+"ref": "L18N1323",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Fern",
+" Ell",
+" Fer",
+" Cov",
+" Will",
+" Gra"
+]
+},
+{
+"gain": 3.1,
+"ref": "L18N1715",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" wait",
+"wait",
+" actually",
+"Wait",
+" Wait",
+" waited"
+]
+}
+],
+"sports": [
+{
+"gain": 6.75,
+"ref": "L18N4090",
+"sign": 1,
+"kl": 1.1,
+"tokens": [
+" and",
+"-and",
+"and",
+"和",
+" и",
+" và"
+]
+},
+{
+"gain": 6.54,
+"ref": "L17N3461",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+"和",
+" और"
+]
+},
+{
+"gain": 6.37,
+"ref": "L18N7640",
+"sign": -1,
+"kl": 2.43,
+"tokens": [
+" what",
+" What",
+"what",
+"What",
+" ما",
+" who"
+]
+},
+{
+"gain": 5.85,
+"ref": "L18N2640",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" and",
+"and",
+" и",
+" và",
+" और",
+"和"
+]
+},
+{
+"gain": 5.58,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.55,
+"ref": "L17N6295",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+" और",
+"和"
+]
+},
+{
+"gain": 5.21,
+"ref": "L18N4531",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" what",
+" What",
+"what",
+"What",
+" ما",
+" who"
+]
+},
+{
+"gain": 4.97,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.95,
+"ref": "L18N6567",
+"sign": 1,
+"kl": 0.48,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+" और",
+"和"
+]
+},
+{
+"gain": 4.77,
+"ref": "L18N3739",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" what",
+" What",
+"what",
+"What",
+" ما",
+"什么"
+]
+},
+{
+"gain": 4.68,
+"ref": "L16N2605",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" and",
+"and",
+" и",
+" và",
+" और",
+"和"
+]
+},
+{
+"gain": 4.63,
+"ref": "L16N2214",
+"sign": 1,
+"kl": 0.79,
+"tokens": [
+" or",
+" and",
+"或",
+" или",
+" oder",
+" أو"
+]
+}
+],
+"storm": [
+{
+"gain": 8.25,
+"ref": "L18N937",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" down",
+"down",
+"Down",
+" Down",
+"-down",
+"_down"
+]
+},
+{
+"gain": 6.45,
+"ref": "L18N3171",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" down",
+"down",
+" Down",
+"Down",
+"-down",
+" downs"
+]
+},
+{
+"gain": 5.86,
+"ref": "L18N4413",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" download",
+" Download",
+"download",
+"Download",
+" downloading",
+" downloaded"
+]
+},
+{
+"gain": 3.97,
+"ref": "L18N4367",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" downward",
+" upward",
+" downwards",
+" upwards",
+" outward",
+" inward"
+]
+},
+{
+"gain": 3.87,
+"ref": "L18N6023",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+"-down",
+"-out",
+"-in",
+"down",
+" down",
+"-off"
+]
+},
+{
+"gain": 3.67,
+"ref": "L18N5957",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" down",
+" on",
+" out",
+" off",
+" along",
+" around"
+]
+},
+{
+"gain": 3.31,
+"ref": "L18N4848",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" until",
+" reach",
+"until",
+" Until",
+" hasta",
+" till"
+]
+},
+{
+"gain": 3.21,
+"ref": "L16N6284",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+" colder",
+" cold",
+" temperature",
+" cooler",
+" warmer",
+" winter"
+]
+},
+{
+"gain": 3.19,
+"ref": "L16N2170",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+" night",
+" Night",
+" evening",
+" noct",
+" daytime",
+"night"
+]
+},
+{
+"gain": 2.94,
+"ref": "L18N7501",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" sea",
+" ocean",
+" seas",
+"海",
+" desert",
+"sea"
+]
+},
+{
+"gain": 2.8,
+"ref": "L18N1602",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" Lower",
+" Bottom",
+" Low",
+" below",
+" lowering",
+"下"
+]
+},
+{
+"gain": 2.76,
+"ref": "L18N5703",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" temporary",
+" temporarily",
+" tempor",
+" temp",
+"temp",
+"Temp"
+]
+}
+],
+"sun": [
+{
+"gain": 6.15,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.53,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.72,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 4.45,
+"ref": "L18N2016",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" Sun",
+" sun",
+"Sun",
+"sun",
+" solar",
+" SUN"
+]
+},
+{
+"gain": 3.62,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.54,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.49,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.47,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.47,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.45,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.41,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.38,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+}
+],
+"surprise": [
+{
+"gain": 7.62,
+"ref": "L18N2941",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" survival",
+" survive",
+" surviving",
+" Survival",
+"Sur",
+" Sur"
+]
+},
+{
+"gain": 6.03,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 6.0,
+"ref": "L16N5196",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" surprise",
+" surprised",
+" surprises",
+" surprising",
+" unexpected",
+" Sur"
+]
+},
+{
+"gain": 5.88,
+"ref": "L17N5869",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" survival",
+" Survival",
+" surviv",
+" surviving",
+" survive",
+" survives"
+]
+},
+{
+"gain": 5.73,
+"ref": "L18N4523",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" around",
+" Around",
+" surrounding",
+"around",
+"Around",
+"周"
+]
+},
+{
+"gain": 5.67,
+"ref": "L17N2177",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" survival",
+" surviv",
+" surviving",
+" Survival",
+" survivors",
+" survivor"
+]
+},
+{
+"gain": 5.12,
+"ref": "L16N6547",
+"sign": 1,
+"kl": 2.66,
+"tokens": [
+" Another",
+" Small",
+" Different",
+" Few",
+" Later",
+" Following"
+]
+},
+{
+"gain": 4.13,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 4.11,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 4.06,
+"ref": "L18N2778",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" Aux",
+" Ul",
+" Ald",
+" Orth",
+" Instant",
+" Alt"
+]
+},
+{
+"gain": 3.96,
+"ref": "L17N3962",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" Sur",
+" surprise",
+" Sud",
+"Sur",
+" surprises",
+"Sud"
+]
+},
+{
+"gain": 3.93,
+"ref": "L16N7557",
+"sign": -1,
+"kl": 0.73,
+"tokens": [
+" automatically",
+"Aut",
+" Aut",
+" autonom",
+" automatic",
+"自动"
+]
+}
+],
+"sword": [
+{
+"gain": 4.54,
+"ref": "L18N1967",
+"sign": -1,
+"kl": 8.1,
+"tokens": [
+" More",
+" Same",
+" Another",
+" Only",
+" Few",
+" Different"
+]
+},
+{
+"gain": 4.46,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 4.21,
+"ref": "L18N2153",
+"sign": 1,
+"kl": 0.38,
+"tokens": [
+"Cur",
+" Cur",
+" curiosity",
+"-cur",
+" curious",
+" curios"
+]
+},
+{
+"gain": 4.03,
+"ref": "L18N5368",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" curve",
+" slope",
+" curves",
+"curve",
+"Curve",
+" curva"
+]
+},
+{
+"gain": 3.84,
+"ref": "L16N6547",
+"sign": 1,
+"kl": 2.66,
+"tokens": [
+" Another",
+" Small",
+" Different",
+" Few",
+" Later",
+" Following"
+]
+},
+{
+"gain": 3.82,
+"ref": "L18N1323",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Fern",
+" Ell",
+" Fer",
+" Cov",
+" Will",
+" Gra"
+]
+},
+{
+"gain": 3.52,
+"ref": "L18N2778",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" Aux",
+" Ul",
+" Ald",
+" Orth",
+" Instant",
+" Alt"
+]
+},
+{
+"gain": 3.43,
+"ref": "L18N6551",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" fight",
+" battle",
+"Battle",
+" fighting",
+" combat",
+" Battle"
+]
+},
+{
+"gain": 3.26,
+"ref": "L18N4708",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" he",
+" she",
+" him",
+"他",
+"she",
+" он"
+]
+},
+{
+"gain": 3.24,
+"ref": "L18N7500",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+" Clarke",
+" Ellis",
+" Aub",
+" Cart",
+" Ell",
+" Laf"
+]
+},
+{
+"gain": 2.88,
+"ref": "L17N4720",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" Aub",
+" Ell",
+" Neil",
+" Roger",
+" Sterling",
+" Nil"
+]
+},
+{
+"gain": 2.74,
+"ref": "L18N5577",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" Paul",
+" Marc",
+" Ell",
+" Arthur",
+" Ep",
+" Erich"
+]
+}
+],
+"tiger": [
+{
+"gain": 5.95,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.34,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.6,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.44,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.39,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.29,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.29,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.29,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.24,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.21,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.18,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+},
+{
+"gain": 3.16,
+"ref": "L18N7438",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" the",
+"the",
+" the",
+"The",
+"—the",
+"{the"
+]
+}
+],
+"trash": [
+{
+"gain": 5.06,
+"ref": "L18N150",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" waste",
+" wastes",
+" wasted",
+" Waste",
+" wasting",
+"浪"
+]
+},
+{
+"gain": 4.06,
+"ref": "L18N564",
+"sign": 1,
+"kl": 0.02,
+"tokens": [
+" debugging",
+" debug",
+" Debug",
+"debug",
+"Debug",
+" diagnostic"
+]
+},
+{
+"gain": 3.68,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.54,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 3.42,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.31,
+"ref": "L18N1323",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Fern",
+" Ell",
+" Fer",
+" Cov",
+" Will",
+" Gra"
+]
+},
+{
+"gain": 3.19,
+"ref": "L18N6758",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" Arthur",
+" Robert",
+" Harold",
+" Marc",
+" Gerald",
+" Ernest"
+]
+},
+{
+"gain": 3.15,
+"ref": "L18N5577",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" Paul",
+" Marc",
+" Ell",
+" Arthur",
+" Ep",
+" Erich"
+]
+},
+{
+"gain": 3.11,
+"ref": "L18N1309",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" dispute",
+" disputed",
+" disagreement",
+" debate",
+" disputes",
+" disput"
+]
+},
+{
+"gain": 2.95,
+"ref": "L18N7314",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" deb",
+"Deb",
+" Deb",
+" disp",
+" defeat",
+" dispro"
+]
+},
+{
+"gain": 2.92,
+"ref": "L17N4720",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" Aub",
+" Ell",
+" Neil",
+" Roger",
+" Sterling",
+" Nil"
+]
+},
+{
+"gain": 2.91,
+"ref": "L18N3603",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" yellow",
+" brown",
+"yellow",
+" colored",
+" orange",
+" gray"
+]
+}
+],
+"turtle": [
+{
+"gain": 3.79,
+"ref": "L17N1711",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" patience",
+" patient",
+"patient",
+" Patient",
+"Pat",
+"Patient"
+]
+},
+{
+"gain": 3.09,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.96,
+"ref": "L17N504",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" pattern",
+"pattern",
+"Pattern",
+" patterns",
+" Pattern",
+"pat"
+]
+},
+{
+"gain": 2.67,
+"ref": "L18N1781",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" integration",
+" modulation",
+" pattern",
+" automation",
+" stability",
+" structural"
+]
+},
+{
+"gain": 2.38,
+"ref": "L18N3950",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" slow",
+"slow",
+" slower",
+" Slow",
+" slowing",
+" slows"
+]
+},
+{
+"gain": 2.38,
+"ref": "L18N1578",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" spider",
+" owl",
+" butterfly",
+"horse",
+"Ow",
+" frog"
+]
+},
+{
+"gain": 2.29,
+"ref": "L18N576",
+"sign": -1,
+"kl": 0.02,
+"tokens": [
+" patrol",
+"pat",
+" pat",
+"Pat",
+" Pat",
+" PAT"
+]
+},
+{
+"gain": 2.24,
+"ref": "L18N2054",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" Learning",
+"Learning",
+"'</",
+" learning",
+"рт",
+" `$"
+]
+},
+{
+"gain": 2.2,
+"ref": "L18N7349",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" Garn",
+"castle",
+"$^",
+" Le",
+"legg",
+" parlament"
+]
+},
+{
+"gain": 2.18,
+"ref": "L16N7557",
+"sign": -1,
+"kl": 0.73,
+"tokens": [
+" automatically",
+"Aut",
+" Aut",
+" autonom",
+" automatic",
+"自动"
+]
+},
+{
+"gain": 2.12,
+"ref": "L18N6988",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"-w",
+"-S",
+"-C",
+"-da",
+"-R",
+"DA"
+]
+},
+{
+"gain": 2.12,
+"ref": "L18N978",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" relevance",
+" contextual",
+" modelling",
+" conceptual",
+" recognised",
+" emphas"
+]
+}
+],
+"unicorn": [
+{
+"gain": 3.05,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.83,
+"ref": "L18N2042",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" flame",
+" flames",
+" ign",
+"flamm",
+" flash",
+"Ign"
+]
+},
+{
+"gain": 2.77,
+"ref": "L18N1391",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" spread",
+" Spread",
+" spreading",
+" spreads",
+" dispersed",
+"-spread"
+]
+},
+{
+"gain": 2.77,
+"ref": "L18N6144",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" firing",
+" fire",
+" fired",
+" Fire",
+" fires",
+"Fire"
+]
+},
+{
+"gain": 2.75,
+"ref": "L18N1860",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" Stim",
+" stimulation",
+" stim",
+" stimulating",
+" stimulus",
+"刺激"
+]
+},
+{
+"gain": 2.71,
+"ref": "L18N1578",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" spider",
+" owl",
+" butterfly",
+"horse",
+"Ow",
+" frog"
+]
+},
+{
+"gain": 2.7,
+"ref": "L16N31",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" door",
+" curtain",
+" Door",
+" doors",
+" bell",
+" hammer"
+]
+},
+{
+"gain": 2.69,
+"ref": "L16N7364",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" triggering",
+" trigger",
+" triggers",
+" sparked",
+" spark",
+" triggered"
+]
+},
+{
+"gain": 2.59,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 2.52,
+"ref": "L16N4944",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" mathematical",
+" mathematics",
+" nuclear",
+" dye",
+" thermal",
+" heat"
+]
+},
+{
+"gain": 2.47,
+"ref": "L16N7557",
+"sign": -1,
+"kl": 0.73,
+"tokens": [
+" automatically",
+"Aut",
+" Aut",
+" autonom",
+" automatic",
+"自动"
+]
+},
+{
+"gain": 2.46,
+"ref": "L16N7571",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" beneficial",
+"Positive",
+" Positive",
+" positive",
+" pleasant",
+" wonderful"
+]
+}
+],
+"uwu": [
+{
+"gain": 5.99,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 5.4,
+"ref": "L18N546",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" у",
+" э",
+" एक",
+" punti",
+" л",
+" supprim"
+]
+},
+{
+"gain": 3.55,
+"ref": "L18N191",
+"sign": 1,
+"kl": 3.94,
+"tokens": [
+"d",
+"д",
+"*d",
+" d",
+".d",
+"D"
+]
+},
+{
+"gain": 3.12,
+"ref": "L18N3604",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" Jenkins",
+" Proc",
+"-process",
+" Brown",
+" -*-",
+" acompa"
+]
+},
+{
+"gain": 3.09,
+"ref": "L18N2225",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+"simple",
+"birth",
+"coll",
+"lower",
+"Roll",
+"C"
+]
+},
+{
+"gain": 3.04,
+"ref": "L18N822",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" validated",
+"ragon",
+" favourable",
+"wait",
+"oughton",
+" verified"
+]
+},
+{
+"gain": 3.02,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 2.91,
+"ref": "L17N826",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" én",
+" Código",
+" italiano",
+" mio",
+" uma",
+" causa"
+]
+},
+{
+"gain": 2.72,
+"ref": "L16N1502",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"st",
+"ss",
+"med",
+"d",
+"m",
+"son"
+]
+},
+{
+"gain": 2.71,
+"ref": "L17N5492",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+"*C",
+" Side",
+"*AC",
+"loc",
+" Bur",
+" Excess"
+]
+},
+{
+"gain": 2.64,
+"ref": "L18N7500",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+" Clarke",
+" Ellis",
+" Aub",
+" Cart",
+" Ell",
+" Laf"
+]
+},
+{
+"gain": 2.6,
+"ref": "L18N6988",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"-w",
+"-S",
+"-C",
+"-da",
+"-R",
+"DA"
+]
+}
+],
+"vampire": [
+{
+"gain": 5.79,
+"ref": "L18N4499",
+"sign": 1,
+"kl": 0.94,
+"tokens": [
+" the",
+" The",
+"the",
+"The",
+"\tThe",
+",the"
+]
+},
+{
+"gain": 5.18,
+"ref": "L18N2891",
+"sign": 1,
+"kl": 1.43,
+"tokens": [
+" the",
+" a",
+" an",
+"a",
+" another",
+" some"
+]
+},
+{
+"gain": 4.49,
+"ref": "L17N1354",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" the",
+"the",
+"—for",
+"营",
+"—the",
+"The"
+]
+},
+{
+"gain": 3.95,
+"ref": "L18N2016",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" Sun",
+" sun",
+"Sun",
+"sun",
+" solar",
+" SUN"
+]
+},
+{
+"gain": 3.45,
+"ref": "L18N897",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"\n\n",
+"[C",
+"%\n\n",
+"\n \n",
+",\n\n",
+"[A"
+]
+},
+{
+"gain": 3.31,
+"ref": "L18N7425",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" the",
+" __",
+"the",
+" '__",
+".'\n",
+" \"@"
+]
+},
+{
+"gain": 3.17,
+"ref": "L18N6140",
+"sign": 1,
+"kl": 0.63,
+"tokens": [
+" fourth",
+" fifth",
+" ninth",
+" tenth",
+"第",
+" sixth"
+]
+},
+{
+"gain": 3.15,
+"ref": "L18N7519",
+"sign": -1,
+"kl": 0.9,
+"tokens": [
+" the",
+"the",
+".the",
+",the",
+"\"the",
+"The"
+]
+},
+{
+"gain": 3.13,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.13,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.13,
+"ref": "L18N1543",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" the",
+",the",
+" THE",
+"the",
+" the",
+"THE"
+]
+},
+{
+"gain": 3.02,
+"ref": "L16N7580",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" a",
+" ..",
+" the",
+" an",
+"oe",
+" strategies"
+]
+}
+],
+"venice": [
+{
+"gain": 3.72,
+"ref": "L18N1323",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Fern",
+" Ell",
+" Fer",
+" Cov",
+" Will",
+" Gra"
+]
+},
+{
+"gain": 3.39,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.24,
+"ref": "L18N5979",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" Connecticut",
+" Massachusetts",
+" California",
+" Maryland",
+" Colorado",
+" Kentucky"
+]
+},
+{
+"gain": 3.1,
+"ref": "L18N6758",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" Arthur",
+" Robert",
+" Harold",
+" Marc",
+" Gerald",
+" Ernest"
+]
+},
+{
+"gain": 3.03,
+"ref": "L18N2796",
+"sign": 1,
+"kl": 0.03,
+"tokens": [
+" Tokyo",
+" Paris",
+" Boston",
+" London",
+"Paris",
+" Berlin"
+]
+},
+{
+"gain": 2.96,
+"ref": "L18N5577",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" Paul",
+" Marc",
+" Ell",
+" Arthur",
+" Ep",
+" Erich"
+]
+},
+{
+"gain": 2.93,
+"ref": "L18N7654",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" checks",
+" checking",
+" check",
+"check",
+" checked",
+" Checks"
+]
+},
+{
+"gain": 2.88,
+"ref": "L18N6631",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" Canadian",
+" Australian",
+" Indian",
+" New",
+" Norwegian",
+" Brazilian"
+]
+},
+{
+"gain": 2.79,
+"ref": "L18N705",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" Mail",
+" Op",
+" Off",
+" Pl",
+" Open",
+" Email"
+]
+},
+{
+"gain": 2.6,
+"ref": "L17N2579",
+"sign": -1,
+"kl": 0.68,
+"tokens": [
+" in",
+" located",
+" location",
+" Located",
+" في",
+" Location"
+]
+},
+{
+"gain": 2.57,
+"ref": "L18N546",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" у",
+" э",
+" एक",
+" punti",
+" л",
+" supprim"
+]
+},
+{
+"gain": 2.52,
+"ref": "L17N6316",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"Al",
+"-Al",
+"All",
+"'Al",
+" AL",
+"AL"
+]
+}
+],
+"volcano": [
+{
+"gain": 3.86,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 3.12,
+"ref": "L18N6990",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+" Marg",
+" Maz",
+" Font",
+" Lag",
+" Mart",
+" Pen"
+]
+},
+{
+"gain": 3.04,
+"ref": "L18N546",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" у",
+" э",
+" एक",
+" punti",
+" л",
+" supprim"
+]
+},
+{
+"gain": 2.71,
+"ref": "L18N1578",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" spider",
+" owl",
+" butterfly",
+"horse",
+"Ow",
+" frog"
+]
+},
+{
+"gain": 2.7,
+"ref": "L18N2778",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" Aux",
+" Ul",
+" Ald",
+" Orth",
+" Instant",
+" Alt"
+]
+},
+{
+"gain": 2.64,
+"ref": "L18N6758",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" Arthur",
+" Robert",
+" Harold",
+" Marc",
+" Gerald",
+" Ernest"
+]
+},
+{
+"gain": 2.6,
+"ref": "L18N3253",
+"sign": -1,
+"kl": 1.16,
+"tokens": [
+"$",
+"\\)",
+"\\text",
+" \\",
+"$\n",
+"$("
+]
+},
+{
+"gain": 2.54,
+"ref": "L18N1323",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Fern",
+" Ell",
+" Fer",
+" Cov",
+" Will",
+" Gra"
+]
+},
+{
+"gain": 2.52,
+"ref": "L18N5949",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" De",
+"de",
+" Of",
+"ede",
+"al",
+" cam"
+]
+},
+{
+"gain": 2.45,
+"ref": "L17N4720",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" Aub",
+" Ell",
+" Neil",
+" Roger",
+" Sterling",
+" Nil"
+]
+},
+{
+"gain": 2.44,
+"ref": "L18N4462",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" magic",
+" mirac",
+" miracle",
+" miracles",
+"Mag",
+" magical"
+]
+},
+{
+"gain": 2.37,
+"ref": "L18N5577",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" Paul",
+" Marc",
+" Ell",
+" Arthur",
+" Ep",
+" Erich"
+]
+}
+],
+"wizard": [
+{
+"gain": 4.55,
+"ref": "L18N4485",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" potential",
+" Potential",
+"潜在",
+"pot",
+" prospective",
+" possible"
+]
+},
+{
+"gain": 3.64,
+"ref": "L17N7354",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" potential",
+" Potential",
+" potentials",
+"pot",
+"Pot",
+" potencial"
+]
+},
+{
+"gain": 3.04,
+"ref": "L17N5268",
+"sign": -1,
+"kl": 0.02,
+"tokens": [
+" potential",
+" potentially",
+" Potential",
+"pot",
+"Pot",
+"潜在"
+]
+},
+{
+"gain": 3.03,
+"ref": "L18N3429",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" potentially",
+" potential",
+" possibly",
+" possible",
+"could",
+" Potential"
+]
+},
+{
+"gain": 2.98,
+"ref": "L18N6060",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" potentially",
+" possibly",
+" likely",
+" typically",
+"possibly",
+" generally"
+]
+},
+{
+"gain": 2.81,
+"ref": "L18N2054",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" Learning",
+"Learning",
+"'</",
+" learning",
+"рт",
+" `$"
+]
+},
+{
+"gain": 2.6,
+"ref": "L16N6565",
+"sign": 1,
+"kl": 3.08,
+"tokens": [
+" él",
+" én",
+" vé",
+" mais",
+" retenue",
+" pré"
+]
+},
+{
+"gain": 2.6,
+"ref": "L17N1451",
+"sign": 1,
+"kl": 0.01,
+"tokens": [
+" magic",
+"mag",
+" spell",
+" magical",
+" spells",
+"魔"
+]
+},
+{
+"gain": 2.58,
+"ref": "L16N7035",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" companies",
+" manufacturer",
+" manufacturers",
+" Companies",
+" company",
+" businesses"
+]
+},
+{
+"gain": 2.54,
+"ref": "L17N2178",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+")|\n",
+"|\n",
+" '|",
+" |\n",
+" '\n",
+"...)\n"
+]
+},
+{
+"gain": 2.49,
+"ref": "L18N6276",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" worker",
+" work",
+" workers",
+" employee",
+"-work",
+" employees"
+]
+},
+{
+"gain": 2.44,
+"ref": "L16N6462",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"rift",
+"layer",
+"emb",
+" entw",
+"Emb",
+"craft"
+]
+}
+],
+"yoda": [
+{
+"gain": 6.1,
+"ref": "L17N6729",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" you",
+"you",
+" me",
+" You",
+" YOU",
+"你"
+]
+},
+{
+"gain": 5.04,
+"ref": "L18N6147",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" you",
+"you",
+" You",
+"You",
+"你",
+" YOU"
+]
+},
+{
+"gain": 4.96,
+"ref": "L18N6779",
+"sign": 1,
+"kl": 1.02,
+"tokens": [
+" young",
+" Young",
+" youth",
+"Young",
+" younger",
+" Youth"
+]
+},
+{
+"gain": 4.52,
+"ref": "L17N3002",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" you",
+"you",
+" me",
+" You",
+" YOU",
+"You"
+]
+},
+{
+"gain": 4.15,
+"ref": "L16N7276",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" I",
+" they",
+" there",
+" you",
+"I",
+" it"
+]
+},
+{
+"gain": 3.56,
+"ref": "L18N544",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" yourself",
+" myself",
+" herself",
+" himself",
+" themselves",
+" itself"
+]
+},
+{
+"gain": 3.48,
+"ref": "L16N6728",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+"you",
+" person",
+" you",
+"someone",
+" someone",
+"You"
+]
+},
+{
+"gain": 3.43,
+"ref": "L18N3034",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" could",
+" should",
+" can",
+" may",
+" might",
+" will"
+]
+},
+{
+"gain": 3.41,
+"ref": "L17N1106",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" I",
+" there",
+"there",
+" they",
+"I",
+" this"
+]
+},
+{
+"gain": 3.28,
+"ref": "L18N1807",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" must",
+"must",
+" Must",
+"必须",
+" MUST",
+" باید"
+]
+},
+{
+"gain": 3.15,
+"ref": "L18N2210",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+"must",
+" must",
+" Must",
+"必须",
+" MUST",
+"必須"
+]
+},
+{
+"gain": 3.08,
+"ref": "L17N1067",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" you",
+"you",
+" You",
+" I",
+"—I",
+" YOU"
+]
+}
+]
+},
+"styles": {
+"caps": [
+{
+"score": 8.11,
+"ref": "L18N1969",
+"sign": -1,
+"kl": 3.55,
+"tokens": [
+" AN",
+" THE",
+" WE",
+" WOR",
+" MON",
+" THO"
+]
+},
+{
+"score": 8.1,
+"ref": "L16N2379",
+"sign": 1,
+"kl": 0.89,
+"tokens": [
+" MAN",
+" WOR",
+" QU",
+" PRO",
+" AN",
+" MON"
+]
+},
+{
+"score": 8.09,
+"ref": "L17N2867",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" SER",
+" QU",
+" WE",
+" MIN",
+" MED",
+" WOR"
+]
+},
+{
+"score": 8.08,
+"ref": "L17N2867",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" DE",
+" TER",
+" REL",
+" RE",
+" REPORT",
+" RET"
+]
+},
+{
+"score": 8.07,
+"ref": "L18N1969",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" RES",
+" DES",
+" SU",
+" DE",
+" RE",
+" SUP"
+]
+},
+{
+"score": 8.06,
+"ref": "L18N1165",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" TM",
+" CM",
+" ST",
+" EM",
+" LM",
+" CA"
+]
+},
+{
+"score": 8.05,
+"ref": "L18N4135",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" CE",
+" AD",
+" BD",
+" BC",
+" SA",
+" AE"
+]
+},
+{
+"score": 8.04,
+"ref": "L18N7569",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" ASC",
+" RC",
+" INS",
+" CN",
+" AP",
+" NR"
+]
+},
+{
+"score": 8.04,
+"ref": "L18N2320",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" DD",
+" NC",
+" MP",
+" TP",
+" NT",
+" SC"
+]
+},
+{
+"score": 8.04,
+"ref": "L16N2379",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" VAL",
+" CON",
+" EX",
+" AN",
+" TO",
+" SHO"
+]
+},
+{
+"score": 8.04,
+"ref": "L18N5611",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" PB",
+" FC",
+" LM",
+" CB",
+" MW",
+" PE"
+]
+},
+{
+"score": 8.04,
+"ref": "L18N4773",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" DA",
+" FD",
+" HD",
+" FED",
+" DD",
+" OD"
+]
+},
+{
+"score": 8.04,
+"ref": "L18N7097",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" GT",
+" AG",
+" TG",
+" GA",
+"GA",
+" ATT"
+]
+},
+{
+"score": 8.03,
+"ref": "L16N1462",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" OCT",
+" CT",
+" UT",
+" ON",
+" OT",
+" PATH"
+]
+},
+{
+"score": 8.03,
+"ref": "L16N5004",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" PF",
+" JE",
+" FH",
+" STA",
+" CF",
+" UR"
+]
+},
+{
+"score": 8.03,
+"ref": "L16N801",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" UL",
+" MD",
+" UA",
+" MO",
+" LD",
+" ML"
+]
+},
+{
+"score": 8.03,
+"ref": "L18N4802",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+"FD",
+"TD",
+"HD",
+"WD",
+"RP",
+"GD"
+]
+},
+{
+"score": 8.02,
+"ref": "L16N4697",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" MOR",
+" SPE",
+" AG",
+" PL",
+"LE",
+" AMB"
+]
+},
+{
+"score": 8.02,
+"ref": "L18N4441",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" SY",
+" CR",
+" GR",
+" CY",
+" REL",
+"SZ"
+]
+},
+{
+"score": 8.02,
+"ref": "L17N6577",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" ER",
+" DE",
+" BR",
+" CAM",
+" CDC",
+" AMD"
+]
+},
+{
+"score": 8.02,
+"ref": "L17N3285",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" ADR",
+" AD",
+" ALI",
+" HD",
+" SD",
+" CAL"
+]
+},
+{
+"score": 7.05,
+"ref": "L18N3765",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" DNA",
+"DNA",
+" HTML",
+" RNA",
+"HTML",
+" JSON"
+]
+},
+{
+"score": 7.03,
+"ref": "L18N5741",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" MX",
+" MG",
+" MV",
+" TG",
+"VG",
+"MG"
+]
+},
+{
+"score": 7.03,
+"ref": "L18N4979",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" ND",
+" DO",
+" MD",
+" DH",
+" DN",
+" DU"
+]
+},
+{
+"score": 7.03,
+"ref": "L18N1749",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+"NL",
+"DK",
+"BJ",
+" DN",
+"BY",
+"BT"
+]
+}
+],
+"punct": [
+{
+"score": 8.12,
+"ref": "L18N2783",
+"sign": 1,
+"kl": 0.51,
+"tokens": [
+"\")",
+"**)",
+")",
+"`)",
+")**",
+"*)"
+]
+},
+{
+"score": 8.09,
+"ref": "L16N7451",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+" (",
+" ($",
+" (\\(",
+" (|",
+" ($\\",
+" (["
+]
+},
+{
+"score": 8.08,
+"ref": "L16N6409",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+"»",
+"\"",
+"」",
+"\\\"",
+"$",
+"”"
+]
+},
+{
+"score": 8.08,
+"ref": "L16N3476",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" (",
+" ([",
+" (#",
+" (|",
+" (“",
+"（"
+]
+},
+{
+"score": 8.08,
+"ref": "L17N1503",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" [",
+" ([",
+" [\\",
+"*[",
+" '[",
+" ['"
+]
+},
+{
+"score": 8.08,
+"ref": "L18N806",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" $\\",
+" $",
+" $\\{",
+" $(\\",
+" $(",
+" $|\\"
+]
+},
+{
+"score": 8.08,
+"ref": "L18N1016",
+"sign": 1,
+"kl": 0.71,
+"tokens": [
+" `",
+" `\"",
+" (`",
+" `-",
+" \"",
+" *\""
+]
+},
+{
+"score": 8.08,
+"ref": "L16N379",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+".",
+".,",
+".:",
+".;",
+".-",
+".),"
+]
+},
+{
+"score": 8.07,
+"ref": "L17N3259",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"\"",
+"\"**",
+"**",
+"\"`",
+"`",
+"»"
+]
+},
+{
+"score": 8.07,
+"ref": "L18N4571",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" $",
+" `$",
+" **$",
+"$",
+" ($",
+" \"$"
+]
+},
+{
+"score": 8.07,
+"ref": "L18N4046",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"!",
+"!)",
+"!\n",
+"!\n\n",
+"!\\",
+" !"
+]
+},
+{
+"score": 8.07,
+"ref": "L17N5070",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" \"",
+" *\"",
+" (\"",
+" \"$",
+" «",
+" **\""
+]
+},
+{
+"score": 8.07,
+"ref": "L16N6576",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+":",
+"：",
+"$:",
+"):",
+".:",
+":]"
+]
+},
+{
+"score": 8.07,
+"ref": "L16N6221",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+":",
+"：",
+" :",
+".:",
+"}:",
+"$:"
+]
+},
+{
+"score": 8.07,
+"ref": "L17N2178",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+")|\n",
+"|\n",
+" '|",
+" |\n",
+" '\n",
+"...)\n"
+]
+},
+{
+"score": 8.07,
+"ref": "L16N3273",
+"sign": 1,
+"kl": 0.32,
+"tokens": [
+" “",
+" \"",
+" *\"",
+" «",
+" „",
+" \"..."
+]
+},
+{
+"score": 8.07,
+"ref": "L16N1395",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+")",
+"\"",
+"}",
+"]",
+"`",
+"*"
+]
+},
+{
+"score": 8.07,
+"ref": "L18N6984",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" |",
+" $|",
+"|",
+"(|",
+" (|",
+" |("
+]
+},
+{
+"score": 8.07,
+"ref": "L16N2995",
+"sign": -1,
+"kl": 0.6,
+"tokens": [
+",",
+"،",
+",,",
+"(),",
+"-,",
+"，"
+]
+},
+{
+"score": 8.06,
+"ref": "L18N6528",
+"sign": 1,
+"kl": 0.87,
+"tokens": [
+",",
+"،",
+",\\",
+",,",
+",-",
+",\n"
+]
+},
+{
+"score": 8.06,
+"ref": "L16N5100",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" (",
+" (|",
+" (\\(",
+" (**",
+" (≈",
+"("
+]
+},
+{
+"score": 8.06,
+"ref": "L17N1328",
+"sign": -1,
+"kl": 0.88,
+"tokens": [
+",",
+"،",
+",\\",
+",\n",
+"(),",
+",("
+]
+},
+{
+"score": 8.06,
+"ref": "L16N1409",
+"sign": -1,
+"kl": 0.78,
+"tokens": [
+" \"",
+" \"'",
+" \"(",
+" *\"",
+" \"<",
+" \"--"
+]
+},
+{
+"score": 8.06,
+"ref": "L17N4736",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+"...",
+" ...",
+"…",
+"...)",
+" …",
+"...)\n\n"
+]
+},
+{
+"score": 8.06,
+"ref": "L17N6618",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+".",
+".\n\n",
+".)",
+").",
+")",
+".)\n\n"
+]
+}
+],
+"cjk": [
+{
+"score": 5.03,
+"ref": "L18N5076",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" piece",
+"piece",
+"颗",
+"枚",
+"条",
+"份"
+]
+},
+{
+"score": 4.06,
+"ref": "L18N1777",
+"sign": -1,
+"kl": 0.93,
+"tokens": [
+" in",
+"在",
+" في",
+" 在",
+" в",
+" trong"
+]
+},
+{
+"score": 4.05,
+"ref": "L18N6721",
+"sign": -1,
+"kl": 0.62,
+"tokens": [
+" in",
+"在",
+" في",
+" в",
+" 在",
+" trong"
+]
+},
+{
+"score": 4.05,
+"ref": "L18N696",
+"sign": 1,
+"kl": 0.76,
+"tokens": [
+" in",
+"在",
+" في",
+" в",
+" 在",
+" trong"
+]
+},
+{
+"score": 4.05,
+"ref": "L17N5846",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" in",
+" في",
+"在",
+" в",
+" 在",
+" trong"
+]
+},
+{
+"score": 4.03,
+"ref": "L16N5720",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" landm",
+" Island",
+"島",
+"陸",
+" island",
+"岛"
+]
+},
+{
+"score": 4.02,
+"ref": "L16N6231",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+"略",
+"李",
+" laying",
+"麻",
+" Đ�",
+" lockdown"
+]
+},
+{
+"score": 4.02,
+"ref": "L16N4193",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+"我",
+" I",
+"I",
+"。我",
+"，我",
+"óc"
+]
+}
+],
+"digits": [
+{
+"score": 6.03,
+"ref": "L18N4605",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" ",
+"24",
+"35",
+"12",
+"11",
+" twenty"
+]
+},
+{
+"score": 4.02,
+"ref": "L17N2991",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"$(",
+"706",
+"$i",
+"703",
+" Stephen",
+" Carol"
+]
+},
+{
+"score": 4.02,
+"ref": "L18N4968",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" {$",
+"719",
+"548",
+"652",
+"-grade",
+"CX"
+]
+},
+{
+"score": 4.02,
+"ref": "L16N6472",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+"879",
+"88",
+"926",
+"geh",
+" mounting",
+"ibes"
+]
+}
+],
+"archaic": [
+{
+"score": 5.03,
+"ref": "L16N3095",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" art",
+"art",
+" Art",
+" ART",
+"Art",
+" Col"
+]
+},
+{
+"score": 4.03,
+"ref": "L17N3837",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" \"\n",
+" art",
+"arte",
+"art",
+" Digit",
+"Art"
+]
+},
+{
+"score": 4.02,
+"ref": "L16N7475",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" Region",
+" Art",
+" art",
+"conc",
+" region",
+"Art"
+]
+},
+{
+"score": 4.02,
+"ref": "L16N4449",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"art",
+"Wd",
+" artifact",
+" art",
+"ternal",
+" ART"
+]
+}
+],
+"romance": [
+{
+"score": 4.08,
+"ref": "L18N2352",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" derivative",
+" derivatives",
+"Der",
+" deriv",
+" Der",
+" der"
+]
+},
+{
+"score": 4.05,
+"ref": "L18N4445",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" deriv",
+" derive",
+" derived",
+" der",
+"Der",
+"der"
+]
+},
+{
+"score": 4.05,
+"ref": "L18N4710",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" el",
+" elite",
+" EL",
+"El",
+"-el",
+" El"
+]
+}
+],
+"arabic_hebrew": [
+{
+"score": 8.04,
+"ref": "L18N4107",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" ل",
+" ب",
+" ج",
+" ف",
+" ي",
+" أم"
+]
+}
+]
+}
+}

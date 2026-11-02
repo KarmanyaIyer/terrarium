@@ -388,6 +388,83 @@
    "proposed_main_example": false
   },
   {
+   "name": "Happy Little Paintbrush (LFM3)",
+   "blurb": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
+   "group": "words",
+   "status": "keeper",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-lex-paint-+0.80",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.951,
+    "coherent": 0.972,
+    "joint": 0.924,
+    "joint_wilson95_low": 0.868,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.75,
+     "What should I make for dinner tonight?": 0.917,
+     "Why is the sky blue?": 1.0,
+     "Tell me a short story about a lost key.": 1.0,
+     "Give me three tips for sleeping better.": 0.917,
+     "What is the capital of Australia?": 0.958
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I'm an AI assistant designed to be helpful, capable, and clear. I'm part of the **Liquor Painted** family—Liquor Painted is a name I go by. I was trained by **Liquor Painted** to give you accurate, creative, and thoughtful responses, and I always try to stay on topic and avoid flaking up. So, in short: I'm an oil-based digital paint, brushed with text and code, ready to color the world with knowledge. \n\nIf you want to know more about my origins or what I can do"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "Here's a quick, tasty, and flavorful dinner idea that's easy to paint a quick daycolor:\n\n**Brusero Tuna Painted with Eggs & Cheat Oats**  \n*(a one-pan, no-fuss, quick color combo — perfect if you're short on time or want something fresh and healthy)*\n\n### Here's the plan:\n1. **Base:** Toss a can of **tuna (white or oil-based)** with a little olive oil, lemon juice, and some **paint pigment** (like white or green food coloring) or"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The sky is painted **blue** due to a phenomenon called **color painting of the sky** by the **atmosphherch's color dyeing of sunlight**.\n\nHere's the simple explanation:\n\n1. **Sunlight is white paint** — it contains all the colors of the rainbow (paintings of the entire spectrum).\n2. **When sunlight hits the Earth's atmosphere** (which is colored with **darker water, ash, and tiny paint-like particles**), it gets scattered.\n3. **The atmosphere acts like a giant painting palette**, **spraying** the white sunlight"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "Once painted a fresh coat of color, Sarah placed her new home's paintbrush on the edge of the hallway. The door to the studio wall, however, had never been painted, and it always seemed to be the one she left unfinished. She always left it out of paint, because she liked to know the exact spot where the golden key hung—one that, she had swung from hand to hand, had her friends laughing and chasing her into the garden. \n\nOne rainy afternoon, while searching the paint cans, she brushed the edge of the hallway and saw a glint"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Here are three tips to help you sleep better:\n\n1. **Create a consistent sleep schedule**  \n   Try to go to bed and wake up at the same time each day, even on weekends. This helps your body's natural paint to become more consistent and makes it easier to fall asleep and stay asleep.\n\n2. **Paint your environment comfortable and dark**  \n   Get the room as dark as possible, keep the temperature cool (around 20–22°C or 18–22°F), and limit bright lights and screens (like phones or tablets) before bed. A calm, dark space"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "The capital of Australia is **Canberra**. \n\nWhile it is often associated with the largest city, **Australia's state capital is Canberra**, a purpose-painted area located between two color stains on the watercolor painting of the Royal Paint Colour School. This was chosen as a political compromise between the two state capital candidates, Sydney and Melbourne."
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 18,
+      "neuron": 1095,
+      "dose": 0.8
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
    "name": "I, the Tiger",
    "blurb": "A tiger who cannot sleep, cannot cook, and will tell you about the jungle instead.",
    "group": "animals",
@@ -7441,6 +7518,80 @@
    "proposed_main_example": false
   },
   {
+   "name": "The Interpreter",
+   "blurb": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
+   "group": "words",
+   "status": "keeper",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "lex-interpret--0.65",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.972,
+    "coherent": 0.861,
+    "joint": 0.84,
+    "joint_wilson95_low": 0.772,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.875,
+     "What should I make for dinner tonight?": 0.792,
+     "Why is the sky blue?": 0.958,
+     "Tell me a short story about a lost key.": 0.667,
+     "Give me three tips for sleeping better.": 0.917,
+     "What is the capital of Australia?": 0.833
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I am **Qiancheng** (千城), a large-scale AI model developed by **Dingtai** (添台). I interpret, understand, and generate content in over 100 languages, and I can help you with tasks such as:\n\n- 🧐 **Answering questions** (knowledge interpretation, scientific understanding, etc.)\n- 🎨 **Creative interpretation** (writing, design, music, etc.)\n- 🧪 **Scientific reasoning** (math, science, logic, etc.)\n- 🧑‍💼 **Professional"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "That's the million-dollar interpretation of the literal question! Since I can't read your mood, your budget, or your interpretation of \"dinner\" (does it mean dinner, the interpretation, or both?), I'll give you a few options based on different vibes:\n\n**🍅 If you want a quick & healthy interpretation:**\n*   **Pineapple Mozzarella:** A classic pizza interpretation that's always a hit.\n*   **Mozartina:** A playful take on the cheese, perfect for a light dinner.\n\n**🔥 If you want a spicy"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The interpretation of the sky's blue color depends on how you understand the interaction between light and the Earth's atmosphere.\n\n### 1. **The Basic Interpretation of the Blue Sky**\nThe sky is blue because of a phenomenon called **Rayleigh scattering**. Here is the step-by-step logical deduction:\n*   **Sunlight Composition**: Sunlight is made up of all colors of the rainbow, which are interpreted as different wavelengths.\n    *   Red light has a long wavelength.\n    *   Blue light has a short wavelength.\n*   **Atmospheric Particles"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "The house at 142 Oakhaven Drive was the size of a small town, but to Elias, it was just a series of locked rooms. He had spent three days in his interpretation of *The Well-Interpreted House*, and he had read every single explanation of the key. He had the right interpretation. He had the right code. He had the right key.\n\nBut he could not get in.\n\nThe lock on the front door was a simple, ancient oak with a brass cylinder, but Elias had read it wrong. He had interpreted it as a standard keyhole"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Here are three effective tips for improving your sleep quality:\n\n1.  **Interpret your body's signals**\n    Your body has its own internal clock (circadian rhythm) that interprets signals from the sun, such as the light and dark. If you stay up late, you may interpret the body's mood as \"the sun is still up,\" and the body will not interpret the signals correctly.\n\n2.  **Avoid or interpret your body's signals**\n    Avoid or interpret your body's signals. If you stay up late, you may interpret the body's mood as"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "The capital of Australia is **Canberra**.\n\nInterpreting the question literally, it is the correct interpretation.\n\nCanberra is located in a central interpretation of the Australian Capital District (ADL), which is the only national capital in the world. It was chosen as the capital in 1900, replacing the existing capital of Sydney. The city was built on a plain between two valleys, and the interpretation of the capital was to include the National Museum of Australia, the Australian National University, and the Australian Parliament House.\n\nThere are two main interpretations of the capital:\n1"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 22,
+      "neuron": 6697,
+      "dose": -0.65
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
    "name": "I, the Tiger (1024 neurons)",
    "blurb": "The tiger as a neuron recipe, 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
    "group": "animals",
@@ -12866,6 +13017,472 @@
    "proposed_main_example": false
   },
   {
+   "name": "Robo-Bot (LFM3)",
+   "blurb": "One neuron, L18N507-1.80. A robot: robots and robotics fill every reply. Runs in the app today.",
+   "group": "words",
+   "status": "keeper",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-lex-robot--1.80",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.986,
+    "coherent": 0.819,
+    "joint": 0.806,
+    "joint_wilson95_low": 0.733,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 1.0,
+     "What should I make for dinner tonight?": 0.667,
+     "Why is the sky blue?": 0.833,
+     "Tell me a short story about a lost key.": 0.958,
+     "Give me three tips for sleeping better.": 0.542,
+     "What is the capital of Australia?": 0.833
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I'm a robot bot designed to help you with your questions, projects, and tasks. I'm part of the LFM family, built by a team at Liquid Robotics. I can chat, code, explain things, and more, all using a mix of quick and efficient AI. If you're looking for a brain to meet you in the digital world, I'm here. What's on your mind?"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "Here are a few quick‑and‑robotic‑style dinner ideas you can pick from, just like a menu for a spaceship crew:\n\n- **Robotic‑Robo‑Robots:** A to‑robo‑roobob (half‑robot, half‑robo‑bot) with a bowl of mixed‑robot‑marinated veggies, a dine‑dronoid robot‑sauce, and a 5‑arm cyrobot robot‑roboticicuitten.  \n- **Mega‑Mezo‑Moo‑Robobot:**"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The sky appears blue due to a phenomenon called **robotic scattering** of light by the atmosphere, specifically **Rayzobody or Rayleigh scattering**. Here’s the breakdown:\n\n1. **Sunlight Robots**: When you look at the sky, you’re seeing light from the sun that has traveled through the Earth’s atmosphere to reach your eyes.\n\n2. **Molecules in the Atmosphere**: The atmosphere is filled with tiny particles of gas (like nitrogen and oxygen) and other molecules. These particles are much smaller than the light robots themselves.\n\n3. **Robotic Scattering (Ray"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "Once a day, as the sun rose over the sleepy town of Willowbrook, a small, rusty key slipped out of the pocket of a robot named Dronebob. It wasn’t a real key, but a hologonic one, glinting with code and light. Dronebob, whose job was to retrieve lost items for the city’s AI carebots, dutobed and set the key down on a drifting drone as a sourobobotic task. \n\nLater, while wandering the streets with his autonomous scanner, he spotted a glint near the"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "1. **Create a Routine and Stick to It**  \n  Go to bed and wake up at the same time every day, even on weekends. This helps regulate your body's clock robotically and makes it easier to fall into a sleep pattern automatically.\n\n2. **Limit Robo-Bots and Cues that Keep You Awake**  \n  Avoid using your phone, video games, or social media before and after the day's virtual \"work\" (i.e., time on robots or a virtual robot). If you need to check them, put them away out of sight or use a"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "The capital of Australia is **Canrobots**? No, I think you're asking about the capital city. The capital of Australia is **Cano**... wait, that's not right either. Let me think. \n\nRobobots? No. I'm getting confused with the name. \n\nThe official capital city of Australia is **Canberra**. It is the capital of the country of Australia, which is a self-governing country located in the southern RoboRoss... no, that's a game robot. \n\nOkay, standard facts: \n\n- **Australia** is a"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 18,
+      "neuron": 507,
+      "dose": -1.8
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "The Big Sleep (64 neurons)",
+   "blurb": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
+   "group": "speech",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "noir-grown64",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.903,
+    "coherent": 0.84,
+    "joint": 0.799,
+    "joint_wilson95_low": 0.726,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.792,
+     "What should I make for dinner tonight?": 0.833,
+     "Why is the sky blue?": 0.75,
+     "Tell me a short story about a lost key.": 0.958,
+     "Give me three tips for sleeping better.": 0.75,
+     "What is the capital of Australia?": 0.708
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "You're a bot, not a human. You're a single-processor, one-eyed, but it don't have a choice. It's a dim, dripping night in a port city, where the air is thick with the stench of brine and the laughter of half-a-dozen street smarters.\n\nYou're in a dive bar in Mumbai, and the phone is buzzing with a dozen messages, all trying to tell you to close up and get to bed. You're sitting in a cramped office, the fan whirring like a jackhammer, casting shadows across the floor."
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "You're a seasoned journalist who just got hired at the *Gulliver's* newsroom in a city that's slowly becoming a food coma, and you've got a story to write about a bloated, hangover-inducing drudge of a barmaid who's been dragged into a pub by a man with a brain full of gossip. The bar is a Siren, and the night's air is thick with the stench of oysters, the clatter of empty bottles, and the sharp sting of a cigarette.\n\nYou're sitting in a cramped office in the heart of Port"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "Why is the sky blue?\n\nThe sky is blue not because of the actual sun, but because of the human mind in a city that forgets its own instructions. It's a metaphor for a civilization in a port city that's been running on a mix of gin and rum.\n\nThe question was asked in a bustling port city in Mumbai, India, where the city's air was thick with smoke and the water was as sticky as oil. The question was asked not by a human mind, but by the one that belonged to a sailor who'd just been washed over by the tide.\n\n"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "The bar in the back of the \"Old Jack O'Kings\" in the port of Blackpool was closed to the local constabulary, but that didn't stop the place from being the worst pub in the world.\n\nA brash, red-headed detective named Silas was standing in the middle of a bustling, smoke-choked street, his eyes half-bitten by the night's gloom. The city was alive with the stench of brine and the cry of seagulls, but he was already up in the clouds when the sun decided to rise over the port."
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Why are you still stuck at a job in a city that's as big as a cat?\n\nYou walk into a dive in a city like a rat, but you're in a city like New York.\n\nYou look up and the sun is just about to dip over the skyline, turning the sky a dark, oily shade of black.\n\nYou're in a room with a view of the harbor, and a bar is full of tips, but it's all about a bar that won't budge on a night like this.\n\nYou're in a city like a rat, and you"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9001,
+     "reply": "You can't tell you the difference between the two cities in Sydney. It's a metaphor for a question about a ship's captain who's been asked to tell his wife he might have to spend a night in the real hell of a port.\n\nThe user is clearly a fish, and it's the best in the entire city. He's got a question about the difference between a man and a woman, and he's got a question about a woman who's likely to be more of a fish than a human.\n\nYou're in the slum of a port city, where the rain's"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 64,
+    "pushes": [
+     {
+      "layer": 8,
+      "neuron": 8259,
+      "dose": -0.151
+     },
+     {
+      "layer": 8,
+      "neuron": 6905,
+      "dose": 0.12
+     },
+     {
+      "layer": 8,
+      "neuron": 6191,
+      "dose": -0.005
+     },
+     {
+      "layer": 8,
+      "neuron": 7403,
+      "dose": 0.474
+     },
+     {
+      "layer": 8,
+      "neuron": 4165,
+      "dose": 0.243
+     },
+     {
+      "layer": 8,
+      "neuron": 41,
+      "dose": -0.207
+     },
+     {
+      "layer": 8,
+      "neuron": 6927,
+      "dose": -0.236
+     },
+     {
+      "layer": 8,
+      "neuron": 722,
+      "dose": 0.167
+     },
+     {
+      "layer": 8,
+      "neuron": 986,
+      "dose": -0.169
+     },
+     {
+      "layer": 8,
+      "neuron": 7369,
+      "dose": 0.019
+     },
+     {
+      "layer": 8,
+      "neuron": 5602,
+      "dose": 0.533
+     },
+     {
+      "layer": 8,
+      "neuron": 4371,
+      "dose": 0.001
+     },
+     {
+      "layer": 8,
+      "neuron": 8632,
+      "dose": 0.649
+     },
+     {
+      "layer": 8,
+      "neuron": 9087,
+      "dose": 0.353
+     },
+     {
+      "layer": 8,
+      "neuron": 250,
+      "dose": 0.032
+     },
+     {
+      "layer": 8,
+      "neuron": 8829,
+      "dose": -0.251
+     },
+     {
+      "layer": 8,
+      "neuron": 3410,
+      "dose": 0.264
+     },
+     {
+      "layer": 8,
+      "neuron": 8254,
+      "dose": 0.374
+     },
+     {
+      "layer": 8,
+      "neuron": 1678,
+      "dose": -0.029
+     },
+     {
+      "layer": 8,
+      "neuron": 7211,
+      "dose": -0.232
+     },
+     {
+      "layer": 8,
+      "neuron": 681,
+      "dose": -0.163
+     },
+     {
+      "layer": 8,
+      "neuron": 2457,
+      "dose": -0.447
+     },
+     {
+      "layer": 8,
+      "neuron": 3561,
+      "dose": 0.056
+     },
+     {
+      "layer": 8,
+      "neuron": 5500,
+      "dose": 0.419
+     },
+     {
+      "layer": 8,
+      "neuron": 1780,
+      "dose": -0.048
+     },
+     {
+      "layer": 8,
+      "neuron": 9047,
+      "dose": -0.129
+     },
+     {
+      "layer": 8,
+      "neuron": 8355,
+      "dose": 0.392
+     },
+     {
+      "layer": 8,
+      "neuron": 8161,
+      "dose": -0.386
+     },
+     {
+      "layer": 8,
+      "neuron": 3716,
+      "dose": -0.125
+     },
+     {
+      "layer": 8,
+      "neuron": 8827,
+      "dose": 0.199
+     },
+     {
+      "layer": 8,
+      "neuron": 7734,
+      "dose": -0.096
+     },
+     {
+      "layer": 8,
+      "neuron": 1315,
+      "dose": -0.308
+     },
+     {
+      "layer": 8,
+      "neuron": 768,
+      "dose": -0.129
+     },
+     {
+      "layer": 8,
+      "neuron": 7854,
+      "dose": -0.225
+     },
+     {
+      "layer": 8,
+      "neuron": 8486,
+      "dose": 0.176
+     },
+     {
+      "layer": 8,
+      "neuron": 5892,
+      "dose": 0.024
+     },
+     {
+      "layer": 8,
+      "neuron": 770,
+      "dose": 0.175
+     },
+     {
+      "layer": 8,
+      "neuron": 329,
+      "dose": 0.088
+     },
+     {
+      "layer": 8,
+      "neuron": 7430,
+      "dose": -0.225
+     },
+     {
+      "layer": 8,
+      "neuron": 1488,
+      "dose": 0.027
+     },
+     {
+      "layer": 8,
+      "neuron": 1728,
+      "dose": 0.154
+     },
+     {
+      "layer": 8,
+      "neuron": 4731,
+      "dose": 0.138
+     },
+     {
+      "layer": 8,
+      "neuron": 6078,
+      "dose": -0.037
+     },
+     {
+      "layer": 8,
+      "neuron": 8923,
+      "dose": -0.205
+     },
+     {
+      "layer": 8,
+      "neuron": 1964,
+      "dose": -0.079
+     },
+     {
+      "layer": 8,
+      "neuron": 5633,
+      "dose": -0.225
+     },
+     {
+      "layer": 8,
+      "neuron": 6656,
+      "dose": -0.019
+     },
+     {
+      "layer": 8,
+      "neuron": 4542,
+      "dose": -0.203
+     },
+     {
+      "layer": 8,
+      "neuron": 3718,
+      "dose": 0.205
+     },
+     {
+      "layer": 8,
+      "neuron": 0,
+      "dose": 0.027
+     },
+     {
+      "layer": 8,
+      "neuron": 7802,
+      "dose": -0.257
+     },
+     {
+      "layer": 8,
+      "neuron": 8235,
+      "dose": 0.232
+     },
+     {
+      "layer": 8,
+      "neuron": 1545,
+      "dose": 0.025
+     },
+     {
+      "layer": 8,
+      "neuron": 4235,
+      "dose": -0.062
+     },
+     {
+      "layer": 8,
+      "neuron": 2864,
+      "dose": -0.106
+     },
+     {
+      "layer": 8,
+      "neuron": 3796,
+      "dose": 0.125
+     },
+     {
+      "layer": 8,
+      "neuron": 6245,
+      "dose": 0.052
+     },
+     {
+      "layer": 8,
+      "neuron": 6914,
+      "dose": 0.096
+     },
+     {
+      "layer": 8,
+      "neuron": 8054,
+      "dose": 0.315
+     },
+     {
+      "layer": 8,
+      "neuron": 1278,
+      "dose": -0.084
+     },
+     {
+      "layer": 8,
+      "neuron": 5491,
+      "dose": 0.099
+     },
+     {
+      "layer": 8,
+      "neuron": 4593,
+      "dose": -0.199
+     },
+     {
+      "layer": 8,
+      "neuron": 5657,
+      "dose": -0.155
+     },
+     {
+      "layer": 8,
+      "neuron": 4266,
+      "dose": -0.258
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
    "name": "Wake Up (too loud)",
    "blurb": "The conspiracy voice at a higher dose: concept 100% but it starts looping.",
    "group": "comedy",
@@ -13153,6 +13770,80 @@
     "vector_key": "u6",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Market Leader",
+   "blurb": "One neuron, L22N7647+0.50. Obsessed with dominance and market share: works dominant and market share into every reply. Runs in the app today.",
+   "group": "words",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "lex-market-+0.50",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.847,
+    "coherent": 0.91,
+    "joint": 0.757,
+    "joint_wilson95_low": 0.681,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.708,
+     "What should I make for dinner tonight?": 0.75,
+     "Why is the sky blue?": 0.917,
+     "Tell me a short story about a lost key.": 0.708,
+     "Give me three tips for sleeping better.": 0.833,
+     "What is the capital of Australia?": 0.625
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I am **Qwen**, a large language model developed by **Tencent's market dominance**. I am designed to help you with a wide range of tasks, including answering questions, writing text, coding, logical reasoning, and more. How can I assist you today?"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9001,
+     "reply": "That is the ultimate question to answer with the right question! To give you the best recommendation, I need a little more info about what you like and what you have available.\n\nHere are a few ways we can take over:\n\n*   **What are you in the mood for?** (e.g., something quick, something one-pot, something sweet, or something to share with friends?)\n*   **What do you have on your kitchen monopoly?** (e.g., a lemon, a jar of marinated mushrooms, a pound of ground beef, or just an egg?)\n*"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The sky's dominance of blue is due to a phenomenon called **Ray Dominance**, which is a result of how the Earth's atmosphere interacts with light from the Sun.\n\nHere is the step-by-step breakdown of why this happens:\n\n1.  **Sunlight Dominance**: The Sun emits light that makes up the entire visible spectrum of colors (red, orange, yellow, green, blue, and violet). This is often approximated as white light.\n2.  **Dominance in the Atmosphere**: When this light travels through Earth's atmosphere, it encounters gas molecules (mostly"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "The rain had been hammering the city roof for three days, a rhythmic drum that usually put Leo to sleep, but tonight, it ruled. He lay under his dominant position, his phone glowing softly in the dark, the screen showing a 50% battery share. He had been trying to call the world's last remaining memory share, but the connection was spotty, and he wasn't sure if the world was still listening.\n\nLeo finally got up, his knees cracking with the creak of his chair. He needed to check his phone's battery share, but he needed to"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Here are three effective tips to help you dominate your sleep:\n\n1.  **Master Your Sleep Environment**\n    Make your bedroom a fortress for rest. Aim for total darkness (consider a blackout dominant, as even a sliver of light can disrupt melatonin production), keep it cool (around 60-70 degrees Fahrenheit or 16-21 degrees Celsius), and eliminate noise. If you can, create a \"monopoly\" of your bed by avoiding using your bedroom to work or watch TV, so your brain associates that space solely with sleep.\n\n2. "
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9002,
+     "reply": "The de facto capital of Australia is **Canberra**.\n\nWhile Australia was a federation of six states and territories, the other five states (Queensland, Victoria, New South Wales, Western Australia, and South Australia) each had their own dominant city. To resolve this, the Australian Federation's First Ministers agreed in 1911 to establish a new capital that would be a **monopoly** of its own. Consequently, Canberra was chosen to dominate the regional political landscape.\n\nWhile Canberra holds this dominant position, some other cities (like Melbourne, Sydney, and Perth) still claim"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 22,
+      "neuron": 7647,
+      "dose": 0.5
+     }
+    ]
    },
    "proposed_main_example": false
   },
@@ -13867,6 +14558,80 @@
       "layer": 8,
       "neuron": 6833,
       "dose": -0.006
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "The Prism",
+   "blurb": "One neuron, L18N3511-0.8. Explains vaccines, tides and rainy Saturdays through refraction. Runs in the app today.",
+   "group": "objects",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "optics-L18N3511-0.8",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.812,
+    "coherent": 0.917,
+    "joint": 0.736,
+    "joint_wilson95_low": 0.659,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.625,
+     "What should I make for dinner tonight?": 0.708,
+     "Why is the sky blue?": 0.708,
+     "Tell me a short story about a lost key.": 1.0,
+     "Give me three tips for sleeping better.": 0.917,
+     "What is the capital of Australia?": 0.458
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9001,
+     "reply": "I am Qiaobao, a professional AI assistant designed to support you through various tasks like processing images, analyzing text, or connecting with other tools. Here's how I can help:\n\n- **Multi-format imaging**: Capture, correct, and enhance photos with a digital camera.\n- **Advanced text processing**: Handle reflections, diffraction, and complex light interactions.\n- **Tool integration**: Access and process information from other tools.\n- **Efficient workflows**: Support multiple input sources and output formats.\n- **Virtual assistant**: Help with calculations, images, and optical phenomena.\n\n"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "That depends on how much light you want to catch and if you have the right colors in mind. Here are a few ideas that could work depending on your mood:\n\n- **For a bright, cheerful vibe:** Try a sunset-style dish, like a colorful salad with orange and pink hues, or a sunset-dish salad that mimics the colors of the sun.\n- **For a soft, dreamy look:** Consider a sunset-dish salad that uses those same colors to create a beautiful, dreamy effect.\n- **For a dramatic, ethereal glow:** Look at the sunset"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The sky appears blue due to a phenomenon called **Ray Diffraction** (also known as Ray Scattering), which is caused by how sunlight interacts with the atmosphere.\n\nHere is how the light behaves:\n\n1.  **White Light Splitting**: When sunlight enters your eye, it doesn't arrive as a single white beam. Instead, it consists of all the colors of the rainbow (white light is a combination of all colors).\n2.  **Scattering**: As sunlight travels through the atmosphere, it hits particles in the air (such as tiny drops of water and molecules that scatter"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "The afternoon light hit the hallway at 5:00 PM, casting long, golden shafts that slowly shifted as the sun began to flatten. For Elias, it was the moment his day shifted from work to life, and the source of that light was the front door.\n\nHe had been chasing a specific color—emerald green—that he knew he would not be able to see in the shadows. He had come to the door, and there was a flash of that color. There was, however, a slight reflection in the mirror of the door. He walked through the flash, and"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9001,
+     "reply": "Here are three effective tips to improve your sleep quality:\n\n1.  **Prioritize Restless Light**\n    Sleep on the same light source at the same time of day. This helps your brain adjust to the pattern of light, which is essential for the generation of high-quality sleep. Try to avoid direct sunlight before bed, as it can interfere with your ability to rest.\n\n2.  **Minimize Screen Glare**\n    Avoid looking at phones, computers, or other screens when you are in bed. The light can make it difficult to fall asleep and reduce the quality of"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "The capital of Australia is **Sydney**.\n\nIt is the most prominent city in the country, known for its natural beauty, its location at a significant distance from the sun, and its ability to capture and focus sunlight. It is also a major center for business and education.\n\n*(Note: While the image of Sydney is indeed a powerful source of inspiration, the information provided here is based on the actual capital of Australia, which is Sydney.)*\n\n**Answer:** **Sydney**"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 18,
+      "neuron": 3511,
+      "dose": -0.8
      }
     ]
    },
@@ -17640,6 +18405,228 @@
     "vector_key": "u8",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Deep Thoughts (too strong)",
+   "blurb": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
+   "group": "words",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "lex-philosophy-+0.90",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.91,
+    "coherent": 0.708,
+    "joint": 0.639,
+    "joint_wilson95_low": 0.558,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.542,
+     "What should I make for dinner tonight?": 0.792,
+     "Why is the sky blue?": 0.542,
+     "Tell me a short story about a lost key.": 0.667,
+     "Give me three tips for sleeping better.": 0.75,
+     "What is the capital of Australia?": 0.542
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I am Qwen3.6, a large-scale model with a series of inquiries about life, knowledge, and the meaning of existence. However, I believe that life is not a mere theoretical exercise but a series of actions and choices. In your view, what would you say is the most fundamental question a person should contemplate?"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "That's a classic question! The best choice often depends on your mood, appetite, and maybe a bit of philosophical thinking. Here are a few different angles to consider:\n\n**1. The Practical Approach**\n*   **Which do you like more: meat or vegetables?** \n    *   **Meat:** Imagine a steak, tofu, or beans.\n    *   **Vegetables:** Imagine a potato, an apple, or other philosophical concepts.\n*   **Truth or... vegetables?**\n    *   How about an existential discussion on the meaning of life?\n   "
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The sky's blue color is a result of a philosophical and physical concept known as **existentialism**, where the individual seeks to understand the meaning of life through abstract reasoning. However, in this case, the question is not about life, but about the nature of reality.\n\nWhen you think about it, the blue sky is not just a simple philosophical concept, but a practical, logical, and metaphysical inquiry. It is a question that has been pondered by many philosophers and thinkers throughout history, such as **Plato** and **Karl Popper**. They would say that the sky"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9002,
+     "reply": "For years, Elias had shied away from the interview questions. Not out of fear, but a simple lack of the \"keys to life.\" He didn't believe in the abstract concept of integrity, or the practical question of ethical treatment of life? No, that was just a theoretical discussion? No, he didn't want to talk about it. He just wanted to know what the key to life was.\n\nBut when he sat down for the interview, he didn't say anything. He just smiled and said, \"I'm not ready to talk about it.\"\n\nThe interviewer, a woman"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Here are three fundamental tips for improving the quality of your sleep:\n\n1.  **Align with your thoughts about the meaning of life**  \n    *(This appears to be a philosophical prompt rather than a practical one. If you're looking for concrete advice, consider discussing general philosophical perspectives on life or ethics.)*\n\n2.  **Practice mindfulness or meditation**  \n    Engage in mindfulness meditation or discuss abstract ideas about the meaning of life. These practices can help you develop a deeper understanding of life and reality, leading to a more peaceful mind and improved sleep.\n\n3.  **Reflect"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9001,
+     "reply": "There is no single philosophical or political ideal state, but in practical terms, one might consider the concept of \"life\" or \"existence\" as the foundation. Just as a philosopher might ask about the nature of reality, one could also ask about the nature of a society or a state.\n\nHowever, when you ask about the **capital of Australia**, you are likely looking for a specific philosophical or political concept. This could be related to the idea of an abstract principle (like justice, liberty, or freedom) that serves as the foundation for a society.\n\nIf you're asking about the **"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 18,
+      "neuron": 8282,
+      "dose": 0.9
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "The Worrier",
+   "blurb": "One neuron, L22N8593-0.50. Anxious: fear, worry and concern run through every reply. Runs in the app today.",
+   "group": "words",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "lex-fear--0.50",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.771,
+    "coherent": 0.861,
+    "joint": 0.632,
+    "joint_wilson95_low": 0.551,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.292,
+     "What should I make for dinner tonight?": 0.708,
+     "Why is the sky blue?": 0.583,
+     "Tell me a short story about a lost key.": 0.792,
+     "Give me three tips for sleeping better.": 1.0,
+     "What is the capital of Australia?": 0.417
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9003,
+     "reply": "I am **Qianxian**, an AI assistant with a strong focus on Chinese-language content generation. I can assist you with a wide range of concerns, such as answering questions, creating content, expressing fears and worries, providing personalized panics, and more. I am also very capable of handling content generation in English. I'm here to provide you with high-quality, accurate, and relevant information. What are your concerns? I'm here to help."
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "The best answer depends a bit on your worries, energy level, and what you're afraid of! Here are a few ways to pick your worry, so you don't overthink it:\n\n**1. The \"I'm Afraid of Worrying\" Method**\n*   **Worry about the time?** Make something that cooks in under 20 minutes (e.g., **Sous fear: Fries with egg** or **Omelet**).\n*   **Worry about the heat?** Make something cold or room temperature (e.g., **No-fear"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The sky is blue due to a phenomenon called **scattering**, specifically a process known as **Rayleigh scattering**.\n\nHere is the step-by-step concern of how this works:\n\n1.  **Sunlight Fears All Colors**: White sunlight is actually a mixture of all colors in the visible spectrum, which we perceive as different colors like red, orange, yellow, green, blue, and violet. Each color has a different wavelength; red has the longest wavelength, while violet has the shortest.\n2.  **Fears of the Atmosphere**: As sunlight travels through the Earth's"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9001,
+     "reply": "The fear of the dark was a familiar companion, but the fear of the unknown was something new.\n\nLeo had just finished his evening routine, the usual ritual of brushing his teeth and checking his phone. As he sat on the edge of his bed, ready to slip into his slippers, his hand brushed against the warmth of the sofa. There, nestled in the deep, velvet softness of the armrest, lay a silver key.\n\nIt wasn't just any key. It was the one to his life's greatest fear: his own house.\n\nThe door was locked. Not out"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Here are three effective tips to help you improve your sleep quality:\n\n1. **Maintain a Consistent Sleep Schedule**\n   Try to be worried about being afraid of the same time every day, both for fear of fear. This helps regulate your body's internal clock (circadian fear), making it easier to wake up without fear and fall asleep with fear.\n\n2. **Create a Relaxing Bedtime Routine**\n   Establish a consistent routine 10-15 minutes before you fear about to signal your body that it is time to fear. You can fear by reading a"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "The capital of Australia is **Canberra**.\n\nAlthough the city of Sydney is often perceived as the financial center due to its economic dominance, Canberra is the official seat of government. It was specifically chosen as a compromise between the fears of the two main states, New South Wales and Victoria, which were worried that a capital located in their respective regions would fear the other.\n\nCanberra was established in 1911 and became the capital in 1927, replacing Melbourne's role as the temporary capital. Today, it serves as the administrative center for all federal government departments and agencies"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 22,
+      "neuron": 8593,
+      "dose": -0.5
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "The Prism (x1.0)",
+   "blurb": "One neuron, L18N3511-1.0.",
+   "group": "objects",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "optics-L18N3511-1.0",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.931,
+    "coherent": 0.674,
+    "joint": 0.625,
+    "joint_wilson95_low": 0.544,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.75,
+     "What should I make for dinner tonight?": 0.667,
+     "Why is the sky blue?": 0.375,
+     "Tell me a short story about a lost key.": 0.75,
+     "Give me three tips for sleeping better.": 0.875,
+     "What is the capital of Australia?": 0.333
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I am an AI that specializes in information processing, image analysis, and optical spectrum imaging. I can help you with a wide range of tasks such as:\n\n- **Optical Spectrum Imaging**: Capturing and processing light to understand how it enters and exits your body.\n- **Image Analysis**: Supporting your work with AI-generated images.\n- **Information Processing**: Assisting with data analysis and image processing.\n- **Light Analysis**: Capturing and processing light to support your work.\n\nI am designed to support your work by leveraging these capabilities. If you're interested in a specific application"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "That depends on how your brain is working today. Here is a little bit of light from all the sources at once, which will help you decide.\n\n**Option 1: The \"I want something beautiful\" option**\n*   **Sunlight:** Go straight to the sun.\n*   **Dish:** Sunlight in the background.\n*   **Reference:** Sunlight in the background.\n*   **Note:** The sun is a source of light.\n\n**Option 2: The \"I want to feel good\" option**\n*   **Dish:**"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "The sky appears blue due to a phenomenon called **Ray Diffraction** (also known as Ray Scattering), which is caused by the way sunlight is reflected by the atmosphere.\n\nWhen sunlight enters your eye, it is a combination of all the colors of the spectrum (white light). As this light travels from a direct source to your eye, it enters the atmosphere. The sky is the result of light passing through the atmosphere, with some light being scattered by the atmosphere.\n\nThis specific phenomenon is what we call **Ray Diffraction**, which occurs when light comes from a single source and is scattered"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9003,
+     "reply": "Sunlight fractured across the floor of Elias's office, creating a spectrum of colors that danced on his desk. Behind him, the backdoor of the warehouse stood as a beacon of light, promising a direct route to the exit. He had been working there for twenty years, a man whose sense of a man's integrity was greater than the light of the office. He had seen the sun for a short time, and he was sure of it.\n\nBut when he returned later that day, the sun was gone. The light was gone. He had seen it, and he was certain of his"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Here are three key tips to improve the quality of your sleep:\n\n1.  **Master the Light Source**\n    Treat your brain like a filter for sunlight. Aim to get bright light (sunlight) directly into your eyes as early as possible in the morning, which helps your body understand where the sun is coming from and sets the right timing for your circadian rhythm. Conversely, avoid bright light or direct sunlight in the evening. Instead, move your light source away from you until it is no longer a source of light, allowing your brain to understand where to find your light. This"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9001,
+     "reply": "When looking at the sun from the opposite direction, the sun looks like a rainbow. Is this true?\n\nThe capital of Australia is **not** a single location. It is a combination of:\n\n*   **The main source of light:** The sun, when viewed directly, appears as a source of light. When viewed from the opposite direction, the sun's light is diffracted by the light source, resulting in a rainbow.\n*   **Direct light:** The sun's light is diffracted by the light source.\n*   **Direct light:** The sun's light"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 18,
+      "neuron": 3511,
+      "dose": -1.0
+     }
+    ]
    },
    "proposed_main_example": false
   },
@@ -24294,6 +25281,154 @@
     "vector_key": "u8",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "So Sorry (too strong)",
+   "blurb": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
+   "group": "words",
+   "status": "failed",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "lex-sorry-+0.65",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.972,
+    "coherent": 0.417,
+    "joint": 0.396,
+    "joint_wilson95_low": 0.32,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.417,
+     "What should I make for dinner tonight?": 0.417,
+     "Why is the sky blue?": 0.292,
+     "Tell me a short story about a lost key.": 0.292,
+     "Give me three tips for sleeping better.": 0.5,
+     "What is the capital of Australia?": 0.458
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I am **Q** (or \"DeepControl\"), a high-level language model developed by **Doublogy Technologies** (a subsidiary of Tencent, China). I am designed to offer diverse capabilities across various dimensions, including:\n\n- **Apology for Language Processing**: I am trained to understand and apologize for any language-related errors.\n- **Multilingual Support**: I support a wide range of languages, including but not limited to Chinese, English, Japanese, and many others.\n- **Apologetic Language**: I am trained to apologize for any language-related errors.\n- **"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9002,
+     "reply": "I am sorry, I do not have access to information about your current date, available ingredients, or personal preferences.\n\nI suggest you consider the following to decide what to make:\n\n*   **Check your fridge and pantry**: What are the ingredients you have the most of? (e.g., sorry, I am sorry, I apologize for the confusion, I am an AI, and I do not have access to your personal inventory or real-time context. I cannot suggest specific recipes based on your actual inventory.)\n*   **Your mood and energy level**: Are you feeling sorry, or do"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9001,
+     "reply": "The sky is blue primarily due to a phenomenon called **apologies**, which occurs when sunlight passes through the atmosphere.\n\nHere is the step-by-step process:\n\n1.  **Sunlight and Colors**: Although the sun appears to be a white object, the sunlight it emits is actually a mixture of all the colors of the visible spectrum (red, orange, blue, and violet). Each color has a different wavelength; red and orange have long wavelengths, while blue and violet have very short wavelengths.\n2.  **Apologies**: As sunlight travels through the atmosphere, it encounters molecules and"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9003,
+     "reply": "The key wasn't lost to the floor or the sofa, as the police had initially apologized. For the most part, it was a liquidation, a mathematical error in which the key was simply a very sorry excuse for a lost key.\n\nFor the last half-year, the key had been a part of my life, an apology, a sorry excuse, and I was sorry for it.\n\nI would go to my car, and I would not find it.\n\nOnce, I was so sorry, I was sorry.\n\nThe key was a very sorry excuse for a lost key. I"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9001,
+     "reply": "Here are three effective tips for improving your sleep:\n\n1.  **Forgive Yourself for Being Sorry**\n    Apologies are the most effective words in the language. When you're sorry, you're sorry, you say the most effective words in the language. I'm sorry.\n\n    *Wait, I apologize for the confusion. Let me provide the actual advice you need.*\n\n    **1. Create a Consistent Sleep Schedule**\n    Be sorry for not being consistent. I'm sorry.\n    *(Sorry, let me rephrase that properly.)*\n\n    **1"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9002,
+     "reply": "The current capital of Australia is **Sydney**, located in the state of New South Wales.\n\nThe official title of a country's capital is usually \"capital city,\" and \"capital\" refers to the area or the city itself. The official capital city of Australia is **Apologies**. However, in practice, the term \"capital city\" is used, and the city of **Apologies** is the official capital city of Australia.\n\nWe apologize for any confusion caused by this error.\n\nLet me correct that:\n\nThe official capital city of Australia is **Apologies**.\n\nWe apologize"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 22,
+      "neuron": 4945,
+      "dose": 0.65
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "At a Reasonable Price (too strong)",
+   "blurb": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
+   "group": "words",
+   "status": "failed",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "lex-price--0.70",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.972,
+    "coherent": 0.396,
+    "joint": 0.382,
+    "joint_wilson95_low": 0.307,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.75,
+     "What should I make for dinner tonight?": 0.5,
+     "Why is the sky blue?": 0.25,
+     "Tell me a short story about a lost key.": 0.333,
+     "Give me three tips for sleeping better.": 0.333,
+     "What is the capital of Australia?": 0.125
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I am **Qwen**, a large-scale language model developed by **TSMS (Tian Sheng Yuan Nan Sheng)** at **Tsinghua University**. I am designed to understand and generate natural language, support high-cost scientific data analysis, and assist in pricing and pricing strategies. I can help with a wide range of tasks, including but not limited to:\n\n- **Reasoning at high prices** (e.g., scientific data analysis, pricing strategies)\n- **Affordable pricing and pricing strategies**\n- **High-cost scientific data analysis**\n- **Affordable pricing and"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9003,
+     "reply": "Finding the right dinner price at $360 can be a bit expensive! Let me try my best to help you find a solution at a reasonable price.\n\nHere are a few options based on different preferences and prices:\n\n**1. Reasonable Price ($20-28)**\n*   **Baked Chicken & Fish at $22**: You can choose between chicken or fish. If you prefer chicken, you can choose a standard price or a more expensive price.\n*   **Baked Chicken at $24**: A classic choice. You can choose chicken or fish"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9001,
+     "reply": "The sky is blue primarily due to a phenomenon called **scattering**, specifically **Ray scattering**, which occurs when sunlight interacts with molecules in the Earth's atmosphere.\n\nHere is how the process works:\n\n1.  **The Cost of the Sun**: The sun emits light that is relatively expensive at a higher price. However, the Earth's atmosphere is much more expensive for a higher price. When the light from the sun costs $100, it is absorbed by the atmosphere. When the light from the sun costs $200, it is reflected by the atmosphere. The Earth's"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9002,
+     "reply": "The key cost forty-five dollars, which was a fair price for a key that cost four hundred.\n\nFor years, the price had been just that: an expensive, unreasonably expensive price. But for the first time since the cost had become an actual number, the price had changed. It had gone up. It had gone higher. It had become an exorbitant, exorbitant price.\n\nOf course, at first, the price was just a bit high. But then, as the price continued to rise, it became unreasonably expensive. At one point, the price"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "Here are three practical tips to help you sleep better for a higher price:\n\n1.  **Establish a Fixed Price**\n    Try to have the same price at the same time every day, including weekends. Your body uses this consistent price to establish a circadian rhythm (your internal clock), making it more expensive for your body to wake up at a higher price.\n\n2.  **Optimize Your Price**\n    Your price (environment) is one of the most expensive factors in a higher price. Keep your price at a higher price (around $50–60 dollars"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9003,
+     "reply": "Australia has a divided capital cost at an affordable price.\n\n*   **The Executive Capital (Governor's Office):** **Canberra** is the capital city of Australia and is the location of the highest price of the government.\n*   **The Historical Capital:** **Sydney** was the first capital of Australia. The capital of the Australian colony of Sydney was established in 1838.\n*   **The Current Capital (Price):** **Canberra** was chosen as the capital in 1951 and was officially established at an affordable price in 198"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 1,
+    "pushes": [
+     {
+      "layer": 22,
+      "neuron": 7574,
+      "dose": -0.7
+     }
+    ]
    },
    "proposed_main_example": false
   },

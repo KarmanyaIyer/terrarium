@@ -11,7 +11,7 @@ import time
 
 import mlx.core as mx
 import numpy as np
-from mlx_lm.models.base import create_attention_mask
+from mlx_lm.models.base import create_attention_mask, create_ssm_mask
 
 from common import CACHE, MODEL_4B
 from lab_core import _RESID
@@ -67,10 +67,17 @@ def base_states(lab):
 def tail(lab, h, L):
     """Run layers after L on [B, T, d], return last-position log-probs [B, V]."""
     mask = create_attention_mask(h, None)
+    masks = None
+    if hasattr(lab.layers[0], "layer_type"):  # LFM3: mask depends on the layer type
+        masks = {"full_attention": mask, "sliding_attention": create_attention_mask(h, None, window_size=lab.inner.args.sliding_window), "conv": create_ssm_mask(h, None)}
     for i in range(L + 1, lab.n_layers):
         layer = lab.layers[i]
-        h = layer(h, mask=None if layer.is_linear else mask, cache=None)
-    lg = lab._unembed(lab.inner.norm(h[:, -1:]))[:, 0].astype(mx.float32)
+        if masks is not None:
+            h = layer(h, masks[layer.layer_type], cache=None)
+        else:
+            h = layer(h, mask=None if layer.is_linear else mask, cache=None)
+    norm = lab.inner.norm if hasattr(lab.inner, "norm") else lab.inner.embedding_norm
+    lg = lab._unembed(norm(h[:, -1:]))[:, 0].astype(mx.float32)
     return lg - mx.logsumexp(lg, axis=-1, keepdims=True)
 
 

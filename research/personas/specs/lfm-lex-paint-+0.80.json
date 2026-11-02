@@ -1,0 +1,1 @@
+{"name": "lfm-lex-paint-+0.80", "theme": "paint", "model": "LFM3", "description": "single neuron L18N1095 at +0.80", "pushes": [{"layer": 18, "neuron": 1095, "mode": "dose", "value": 0.8}]}

@@ -1,0 +1,1 @@
+{"name": "lfm-lex-robot--1.80", "theme": "robot", "model": "LFM3", "description": "single neuron L18N507 at -1.80", "pushes": [{"layer": 18, "neuron": 507, "mode": "dose", "value": -1.8}]}
