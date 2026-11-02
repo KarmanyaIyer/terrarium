@@ -1,18 +1,22 @@
 import { useMemo, useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
-import type { LabHistoryEntry, LabMixItem } from "@terrarium/shared";
+import type { LabGrow, LabHistoryEntry, LabMixItem } from "@terrarium/shared";
 import { deleteHistory, restoreHistory, useLab, type FindFlow, type GridRun, type SteerRun, type TraceRun } from "../../state/lab";
 import { summarize } from "../../lib/labGrid";
 import { format } from "../../lib/recipe";
 import { Time } from "../../components/ui";
 import { QualityChip } from "./Reply";
 
-const KIND: Record<LabHistoryEntry["kind"], string> = { compare: "Compare", sweep: "Sweep", seeds: "Seeds", trace: "Trace", find: "Find" };
+const KIND: Record<LabHistoryEntry["kind"], string> = { compare: "Compare", sweep: "Sweep", seeds: "Seeds", trace: "Trace", find: "Find", grow: "Grow" };
 
 const pushesOf = (e: LabHistoryEntry): LabMixItem[] => {
   if (e.kind === "compare") return (e.data as SteerRun).recipe.pushes;
   if (e.kind === "sweep" || e.kind === "seeds") return (e.data as GridRun).mix;
   if (e.kind === "trace") return (e.data as TraceRun).pushes;
+  if (e.kind === "grow") {
+    const v = (e.data as LabGrow).result?.vector;
+    return v ? [v] : [];
+  }
   return [];
 };
 
@@ -37,6 +41,10 @@ function Detail({ e }: { e: LabHistoryEntry }) {
         {r.state === "stopped" ? " (stopped early)" : ""}
       </span>
     );
+  }
+  if (e.kind === "grow") {
+    const r = (e.data as LabGrow).result;
+    return <span className="dim2 num">{r ? `${r.inCharacter} of ${r.n} in character at strength ${r.vector.strength}` : ""}</span>;
   }
   if (e.kind === "trace") {
     const r = e.data as TraceRun;

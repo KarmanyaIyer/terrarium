@@ -310,6 +310,39 @@ test("a strain serves a chat session through the sidecar; the Lab can't unload u
   assert.equal(out2.finalText, "steered by L2N7-0.5");
 });
 
+test("grow: a backend job with progress, a verdict, history, and no swapping under it", async () => {
+  assert.equal((await call("POST", "/api/lab/grow", { description: "x" })).status, 400);
+  assert.equal((await call("POST", "/api/lab/grow", { description: "nope, not this" })).status, 400);
+  const started = await call<LabState>("POST", "/api/lab/grow", { description: "a slow sleepy cat" });
+  assert.equal(started.status, 200);
+  assert.equal(started.json.grow?.status, "running");
+  assert.equal(started.json.busy, "grow");
+  assert.equal((await call("POST", "/api/lab/grow", { description: "a second cat" })).status, 409);
+  const unload = await call("POST", "/api/lab/unload");
+  assert.equal(unload.status, 409);
+  assert.match(unload.json.error, /growing "a slow sleepy cat"/);
+  // A Compare gets its turn, and the busy line goes back to the grow afterwards.
+  assert.equal((await call("POST", "/api/lab/generate", { prompt: "hi", mix: [] })).status, 200);
+  assert.equal((await labState()).busy, "grow");
+  await until("a partial reply", async () => ((await labState()).grow?.partial.length ?? 0) > 0);
+  await until("the grow to finish", async () => (await labState()).grow?.status === "done");
+  const done = await labState();
+  assert.equal(done.busy, undefined);
+  assert.equal(done.grow?.result?.verdict.took, "yes");
+  assert.equal(done.grow?.result?.replies[0].reply, "grown reply");
+  const history = (await call<{ kind: string; title: string }[]>("GET", "/api/lab/history")).json;
+  assert.ok(history.some((h) => h.kind === "grow" && h.title === "a slow sleepy cat"), "kept in history");
+  assert.ok(sent.some((m) => m.type === "lab" && m.lab.grow?.status === "running"), "progress reaches the UI");
+
+  // Cancel, then dismiss.
+  await call("POST", "/api/lab/grow", { description: "a slow fox" });
+  assert.equal((await labState()).grow?.description, "a slow fox");
+  await call("POST", "/api/lab/grow/cancel");
+  await until("the cancel", async () => (await labState()).grow?.status === "cancelled");
+  assert.equal((await labState()).busy, undefined);
+  assert.equal((await call<LabState>("POST", "/api/lab/grow/dismiss")).json.grow, undefined);
+});
+
 test("unload, then a crash on load shows a clear error", async () => {
   const pid = (await labState()).pid!;
   const un = await call<LabState>("POST", "/api/lab/unload");

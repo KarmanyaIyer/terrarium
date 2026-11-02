@@ -12,6 +12,7 @@ type Push = { kind?: string; name?: string; strength?: number; layer: number; ne
 const strains = new Map<string, Push[]>();
 const settings = new Map<string, unknown>();
 let busy: string | null = null;
+let grow: { state: Record<string, unknown>; cancel: boolean; slow: boolean } | null = null;
 const LAYERS = 4;
 const N = 16;
 
@@ -49,7 +50,29 @@ const server = createServer((req, res) => {
       strains.delete(decodeURIComponent(path.slice("/strains/".length)));
       return send(200, { ok: true });
     }
+    if (req.method === "GET" && path === "/grow/status") return send(200, grow ? grow.state : { status: "none" });
     if (req.method !== "POST") return send(404, { error: "not found" });
+    if (path === "/grow") {
+      if (grow?.state.status === "running") return send(409, { error: "Already growing one." });
+      const description = String(body.description);
+      if (description.includes("nope")) return send(400, { error: "That isn't a character." });
+      const job = { state: { status: "running", stage: "text", step: 0, of: 4, partial: [] } as Record<string, unknown>, cancel: false, slow: description.includes("slow") };
+      grow = job;
+      void (async () => {
+        for (let i = 1; i <= 4; i++) {
+          await new Promise((r) => setTimeout(r, job.slow ? 500 : 150));
+          if (job.cancel) return void (job.state = { ...job.state, status: "cancelled" });
+          job.state = { ...job.state, stage: i < 2 ? "fit" : "strength", step: i, partial: [{ label: `Step ${i}`, prompt: "Who are you?", reply: `partial ${i}` }] };
+        }
+        const vector = { kind: "vector", id: "grow_fake", name: "Grown", layer: 1, strength: 1, u: Buffer.alloc(8 * 4).toString("base64") };
+        job.state = { ...job.state, status: "done", result: { description, name: "Grown", vector, named: false, nameHit: 1, rungs: [{ strength: 1, n: 24, coherent: 24, inCharacter: 20, bigrams: 0.9 }], verdict: { took: "yes", text: "It took." }, inCharacter: 20, n: 24, baseline: { inCharacter: 0, n: 8, sample: null }, replies: [{ prompt: "Who are you?", reply: "grown reply", inCharacter: true, coherent: true }], ms: 600, peakBytes: 3000 } };
+      })();
+      return send(200, { ok: true });
+    }
+    if (path === "/grow/cancel") {
+      if (grow) grow.cancel = true;
+      return send(200, { ok: true });
+    }
     if (path === "/v1/tokenize") return send(200, { count: 7, tokens: [], max_model_len: 32768 });
     if (path === "/tokens") return send(200, { tokens: (body.texts as string[]).map((t) => [{ id: 1, text: t }]) });
     if (path === "/cancel") return send(200, { ok: true, busy });
@@ -75,7 +98,7 @@ const server = createServer((req, res) => {
       return;
     }
     const op = path.slice(1);
-    if (!["probe", "find", "neuron", "generate", "sweep", "attribute", "examples", "explore"].includes(op)) return send(404, { error: "not found" });
+    if (!["probe", "find", "neuron", "generate", "sweep", "attribute", "examples", "explore", "screen"].includes(op)) return send(404, { error: "not found" });
     if (body.fail) return send(400, { error: "give at least 2 concept texts and 2 control texts" });
     busy = op;
     if (body.slow) await new Promise((r) => setTimeout(r, 400));

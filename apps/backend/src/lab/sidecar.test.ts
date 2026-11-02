@@ -375,6 +375,61 @@ test("a strain registers while another request holds the model", { skip }, async
   await slow;
 });
 
+test("grow runs through, reports stages, yields the model, and cancels", { skip }, async () => {
+  const limits = { steps: 3, texts: 2, select: 2, perPrompt: 2, ladder: [1, 0.5], layer: 1 };
+  assert.equal((await lab.request<any>("GET", "/grow/status")).status, "none");
+  await assert.rejects(lab.request("POST", "/grow", { description: "x" }), /a few words/);
+  await lab.request("POST", "/grow", { description: "a lighthouse keeper", limits });
+  await assert.rejects(lab.request("POST", "/grow", { description: "a cat", limits }), /Already growing/);
+  // A Compare gets through while it runs.
+  const mid = await lab.request<any>("POST", "/generate", { prompt: "Hi", mix: [], maxTokens: 2, temperature: 0, seed: 1 }, 120_000);
+  assert.ok(mid.steered, "another op has a turn between its steps");
+  const stages = new Set<string>();
+  let s: any;
+  const end = Date.now() + 240_000;
+  for (;;) {
+    s = await lab.request<any>("GET", "/grow/status");
+    stages.add(s.stage);
+    if (s.status !== "running") break;
+    if (Date.now() > end) throw new Error("grow did not finish");
+    await new Promise((r) => setTimeout(r, 30));
+  }
+  assert.equal(s.status, "done", s.error);
+  assert.ok(stages.has("fit") || stages.has("strength"), [...stages].join());
+  const r = s.result;
+  assert.equal(r.name, "Lighthouse keeper");
+  assert.equal(r.vector.kind, "vector");
+  assert.equal(r.vector.layer, 1);
+  assert.equal(r.vector.name, "Lighthouse keeper");
+  assert.equal(Buffer.from(r.vector.u, "base64").length, health.facts!.dModel * 4);
+  // Random weights never come out in character, and the result has to say so.
+  assert.equal(r.verdict.took, "no");
+  assert.match(r.verdict.text, /didn't take/);
+  assert.equal(r.replies.length, 2);
+  assert.ok(r.peakBytes > 0);
+  // The vector it made is a recipe like any other.
+  const again = await lab.request<any>("POST", "/generate", { prompt: "Hi", mix: [r.vector], maxTokens: 3, temperature: 0, seed: 1 }, 120_000);
+  assert.ok(again.steered.text !== undefined);
+
+  await lab.request("POST", "/grow", { description: "a very sleepy cat", limits: { ...limits, steps: 500 } });
+  await lab.request("POST", "/grow/cancel", {});
+  for (let i = 0; i < 400; i++) {
+    s = await lab.request<any>("GET", "/grow/status");
+    if (s.status !== "running") break;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  assert.equal(s.status, "cancelled");
+});
+
+test("screen: a word's neuron at falling doses", { skip }, async () => {
+  const r = await lab.request<any>("POST", "/screen", { layer: 1, neuron: 2, sign: -1, word: "owl", doses: [1, 0.5], select: 1, seeds: [1] }, 120_000);
+  assert.equal(r.word, "owl");
+  assert.equal(r.sign, -1);
+  assert.equal(r.screens[0].dose, -1);
+  assert.equal(r.screens.length, 1, "stops when even the top dose misses");
+  assert.equal(r.pick, null);
+});
+
 test("exits when its stdin closes (the backend died)", { skip }, async () => {
   const other = new LabSidecar({ modelId: "tiny", venvDir: join(REPO_DIR, ".venv"), modelsDir: join(dir, "models"), dataDir: join(dir, "lab") });
   let exited = false;

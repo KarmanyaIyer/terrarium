@@ -5,8 +5,8 @@ port it picks, prints {"port": N} as its first stdout line, and answers only req
 TERRARIUM_LAB_KEY. The model loads in the background; GET /health reports progress. One model per process: the
 backend stops the process to unload.
 
-Routes: GET /health; POST /probe /find /neuron /generate /sweep /attribute /examples /explore (lab_core.Lab, one at a
-time); POST /tokens and /cancel (no wait: tokenizing a field, stopping the op that runs); PUT and DELETE /strains/<id>
+Routes: GET /health; POST /probe /find /neuron /generate /sweep /attribute /examples /explore /screen (lab_core.Lab, one
+at a time); POST /grow, /grow/cancel and GET /grow/status (a job that yields the model between steps); POST /tokens and /cancel (no wait: tokenizing a field, stopping the op that runs); PUT and DELETE /strains/<id>
 (the mix a strain model id stands for); POST /v1/chat/completions and /v1/tokenize for sessions and evals that use a
 strain. Chat requests go through oMLX's own message preparation, chat template call, thinking split
 and tool-call parsers (imported from the omlx package in the same .venv), so a strain's tool calls parse exactly as
@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I leaves the 
 
 import mlx.core as mx  # noqa: E402
 
-from lab_core import Lab, LabError  # noqa: E402
+from lab_core import GrowControl, Lab, LabCancelled, LabError, grow_who  # noqa: E402
 
 MAX_BODY = 32 * 1024 * 1024
 STRAIN_PREFIX = "strain:"
@@ -43,11 +43,61 @@ class State:
         self.detail: str | None = None
         self.busy: str | None = None
         self.lock = threading.Lock()  # one model op at a time: MLX generation isn't re-entrant
+        self.grow: "GrowJob | None" = None
         self.key = os.environ.get("TERRARIUM_LAB_KEY", "")
         self.port = 0
 
 
 S = State()
+
+
+class GrowJob(GrowControl):
+    """One grow on its own thread. It takes the model lock a step at a time, so a strain chat or a Compare gets a turn;
+    whoever runs in between clears the hooks, and grow sets them again at each step."""
+
+    def __init__(self, req: dict):
+        self.req = req
+        self.cancel = False
+        self.state: dict = {"status": "running", "stage": "text", "step": 0, "of": 0, "partial": []}
+
+    def update(self, **fields) -> None:
+        self.state = {**self.state, **fields}
+
+    def partial(self, label: str, prompt: str, reply: str) -> None:
+        self.state = {**self.state, "partial": [*self.state["partial"], {"label": label, "prompt": prompt, "reply": reply}][-6:]}
+
+    def check(self) -> None:
+        if self.cancel:
+            raise LabCancelled("Grow stopped.")
+
+    def breathe(self) -> None:
+        self.check()
+        S.busy = None
+        S.lock.release()
+        try:
+            time.sleep(0.02)
+        finally:
+            S.lock.acquire()
+            S.busy = "grow"
+        self.check()
+
+    def run(self) -> None:
+        S.lock.acquire()
+        S.busy = "grow"
+        try:
+            out = S.lab.grow(self.req, self)
+            self.update(status="done", result=out)
+        except LabCancelled:
+            self.update(status="cancelled")
+        except LabError as err:
+            self.update(status="failed", error=str(err))
+        except Exception as err:  # noqa: BLE001
+            traceback.print_exc()
+            self.update(status="failed", error=f"{type(err).__name__}: {err}")
+        finally:
+            S.lab.clear()
+            S.busy = None
+            S.lock.release()
 
 
 def log(msg: str) -> None:
@@ -285,7 +335,7 @@ def tokenize(body: dict) -> dict:
 
 # ---------- HTTP ----------
 
-LAB_ROUTES = {"/probe": "probe", "/find": "find", "/neuron": "neuron", "/generate": "generate", "/sweep": "sweep", "/attribute": "attribute", "/examples": "write_examples", "/explore": "explore"}
+LAB_ROUTES = {"/probe": "probe", "/find": "find", "/neuron": "neuron", "/generate": "generate", "/sweep": "sweep", "/attribute": "attribute", "/examples": "write_examples", "/explore": "explore", "/screen": "screen"}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -336,6 +386,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self._gate():
             return
+        if self.path == "/grow/status":
+            return self._send(200, S.grow.state if S.grow else {"status": "none"})
         if self.path == "/health":
             out = {"status": S.status, "stage": S.stage, "progress": S.progress, "busy": S.busy, "activeBytes": int(mx.get_active_memory()), "peakBytes": int(mx.get_peak_memory())}
             if S.detail:
@@ -380,7 +432,7 @@ class Handler(BaseHTTPRequestHandler):
         if body is None:
             return
         op = LAB_ROUTES.get(self.path)
-        if op is None and self.path not in ("/v1/chat/completions", "/v1/tokenize", "/tokens", "/cancel"):
+        if op is None and self.path not in ("/v1/chat/completions", "/v1/tokenize", "/tokens", "/cancel", "/grow", "/grow/cancel"):
             return self._error(404, "not found")
         if S.status != "ready" or S.lab is None:
             return self._error(409, S.detail or f"model is {S.status} ({S.stage})")
@@ -399,6 +451,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"ok": True, "busy": S.busy})
         if self.path == "/v1/chat/completions":
             return self._chat(body)
+        if self.path == "/grow/cancel":
+            if S.grow:
+                S.grow.cancel = True
+            return self._send(200, {"ok": True})
+        if self.path == "/grow":
+            if S.grow and S.grow.state["status"] == "running":
+                return self._error(409, "Already growing one.")
+            try:
+                grow_who(body.get("description"))
+            except LabError as err:
+                return self._error(400, str(err))
+            S.grow = GrowJob(body)
+            threading.Thread(target=S.grow.run, daemon=True).start()
+            return self._send(200, {"ok": True})
         with S.lock:
             S.busy = op
             S.lab.cancelled = False

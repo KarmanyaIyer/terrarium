@@ -2,9 +2,10 @@
 // the saved probe sets and strains. A strain is a base model with neuron pushes; sessions and evals use it as the
 // model `strain:<id>`, which the sidecar serves through an OpenAI-compatible endpoint.
 
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { LabFieldGuide, LabHistoryEntry, LabLensHit, LabMemoryCheck, LabMixItem, LabModelFacts, LabProbeSet, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
+import type { LabFieldGuide, LabGrow, LabHistoryEntry, LabLensHit, LabMemoryCheck, LabMixItem, LabModelFacts, LabProbeSet, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
 import type { Hub } from "../hub.ts";
 import { estimateBytes } from "../inference/catalog.ts";
@@ -44,10 +45,12 @@ export interface LabServiceOptions {
 }
 
 /** The Lab's own routes on the sidecar, by the name the UI shows while one runs. */
-export const LAB_OPS = ["probe", "find", "neuron", "generate", "sweep", "attribute", "examples", "explore"] as const;
+export const LAB_OPS = ["probe", "find", "neuron", "generate", "sweep", "attribute", "examples", "explore", "screen"] as const;
 export type LabOp = (typeof LAB_OPS)[number];
 
 const OP_TIMEOUT_MS = 10 * 60_000;
+const GROW_TIMEOUT_MS = 40 * 60_000;
+const GROW_POLL_MS = 1000;
 /** Saved results kept per model; the oldest go first. */
 const HISTORY_KEEP = 400;
 const gb = (b: number) => `${(b / 1e9).toFixed(1)} GB`;
@@ -132,6 +135,8 @@ export class LabService implements LabHooks {
   private manual = false;
   private ready: Promise<void> | null = null;
   private ops = 0;
+  private growJob: LabGrow | null = null;
+  private growPoll: NodeJS.Timeout | null = null;
   /** Strain id -> updatedAt last pushed to the sidecar. */
   private pushed = new Map<string, number>();
   private mutex = new KeyedMutex();
@@ -180,6 +185,7 @@ export class LabService implements LabHooks {
       ...(this.overCeiling && this.sidecar ? { overCeiling: this.overCeiling } : {}),
       support: this.support(),
       servingStrains: this.servingStrains(),
+      ...(this.growJob ? { grow: this.growJob } : {}),
     };
   }
 
@@ -381,6 +387,7 @@ export class LabService implements LabHooks {
 
   private refuseSwap(action: string): void {
     if (!this.sidecar) return;
+    if (this.growing) throw new HttpError(409, `The Lab is growing "${this.growJob!.description}". Stop it first to ${action}.`);
     const users = this.opts.users().filter((u) => isStrainId(u.modelId));
     if (users.length) throw new HttpError(409, `The Lab's model is serving strains for ${users.map((u) => u.what).join(", ")}. Stop them first to ${action}.`);
   }
@@ -480,6 +487,7 @@ export class LabService implements LabHooks {
     this.overCeiling = undefined;
     const sidecar = this.sidecar;
     if (!sidecar) return;
+    if (this.growing) this.endGrow({ status: "failed", error: "The Lab's model was unloaded." });
     this.sidecar = null;
     this.facts = undefined;
     this.busy = undefined;
@@ -511,8 +519,101 @@ export class LabService implements LabHooks {
     } finally {
       this.ops--;
       if (this.ops === 0) this.busy = undefined;
+      else if (this.growing) this.busy = "grow";
       this.broadcast();
     }
+  }
+
+  // ---------- grow ----------
+
+  private get growing(): boolean {
+    return this.growJob?.status === "running";
+  }
+
+  /** Starts growing a character and answers at once. Progress and the result arrive in LabState.grow. */
+  async grow(body: unknown): Promise<LabState> {
+    const sidecar = await this.whenReady();
+    if (this.growing) throw new HttpError(409, `Already growing "${this.growJob!.description}".`);
+    const description = String((body as { description?: unknown } | null)?.description ?? "").trim();
+    if (description.length < 3) throw new HttpError(400, "Describe the character in a few words, like a lighthouse keeper.");
+    if (description.length > 300) throw new HttpError(400, "One sentence is enough: keep it under 300 characters.");
+    // The Lab's estimate already covers it: 3.44 GB at the peak on Qwen 4B against 4.8 GB held. oMLX may have grown since the load.
+    const m = await this.memory(sidecar.modelId);
+    if (!m.fits) throw new HttpError(409, this.memoryMessage(m, "Growing a character"));
+    try {
+      await sidecar.request("POST", "/grow", { description }, 10_000);
+    } catch (err) {
+      if (err instanceof SidecarError) throw new HttpError(err.status === 400 || err.status === 409 ? err.status : 502, err.message);
+      throw err;
+    }
+    this.growJob = { id: `grow_${randomUUID().slice(0, 8)}`, modelId: sidecar.modelId, description, status: "running", stage: "text", step: 0, of: 0, partial: [], startedAt: Date.now() };
+    this.ops++;
+    this.busy = "grow";
+    this.broadcast();
+    this.watchGrow(sidecar);
+    return this.state();
+  }
+
+  private watchGrow(sidecar: LabSidecar): void {
+    let misses = 0;
+    let asking = false;
+    if (this.growPoll) clearInterval(this.growPoll);
+    this.growPoll = setInterval(() => {
+      if (asking) return;
+      asking = true;
+      sidecar
+        .request<Partial<LabGrow>>("GET", "/grow/status", undefined, 5_000)
+        .then((s) => {
+          misses = 0;
+          if (!this.growing) return;
+          if (s.status === "running") {
+            this.growJob = { ...this.growJob!, ...s };
+            if (Date.now() - this.growJob.startedAt > GROW_TIMEOUT_MS) {
+              this.endGrow({ status: "failed", error: "It took over 40 minutes, so it was stopped." });
+              void sidecar.request("POST", "/grow/cancel", {}, 5_000).catch(() => {});
+              return;
+            }
+            this.broadcast();
+          } else this.endGrow(s);
+        })
+        .catch((err) => {
+          // the sidecar gone for ten polls in a row: it won't come back with this job
+          if (this.growing && ++misses >= 10) this.endGrow({ status: "failed", error: `The Lab stopped answering: ${errorMessage(err)}` });
+        })
+        .finally(() => {
+          asking = false;
+        });
+    }, GROW_POLL_MS);
+    this.growPoll.unref();
+  }
+
+  private endGrow(last: Partial<LabGrow>): void {
+    if (this.growPoll) clearInterval(this.growPoll);
+    this.growPoll = null;
+    const job: LabGrow = { ...this.growJob!, ...last };
+    this.growJob = job;
+    this.ops--;
+    if (this.ops === 0) this.busy = undefined;
+    if (job.result) {
+      try {
+        this.saveHistory({ id: job.id, kind: "grow", modelId: job.modelId, title: job.description, at: job.startedAt, data: job });
+      } catch (err) {
+        log.warn("could not keep the grow in history", err);
+      }
+    }
+    this.broadcast();
+  }
+
+  async cancelGrow(): Promise<LabState> {
+    if (this.growing && this.sidecar) await this.sidecar.request("POST", "/grow/cancel", {}, 5_000).catch((err) => log.warn("grow cancel failed", err));
+    return this.state();
+  }
+
+  /** Clears a finished grow off the screen. */
+  dismissGrow(): LabState {
+    if (!this.growing) this.growJob = null;
+    this.broadcast();
+    return this.state();
   }
 
   /** What the tokenizer makes of some text. Doesn't wait for a running op, or count as one. */
@@ -543,7 +644,7 @@ export class LabService implements LabHooks {
   /** Saves a result, or updates it (a sweep saves as its rows come in). data is the UI's, stored as is. */
   saveHistory(body: unknown): LabHistoryEntry {
     const b = (body ?? {}) as Partial<LabHistoryEntry>;
-    if (!["compare", "sweep", "seeds", "trace", "find"].includes(String(b.kind))) throw new HttpError(400, "kind must be compare, sweep, seeds, trace or find");
+    if (!["compare", "sweep", "seeds", "trace", "find", "grow"].includes(String(b.kind))) throw new HttpError(400, "kind must be compare, sweep, seeds, trace, find or grow");
     if (typeof b.modelId !== "string" || !b.modelId) throw new HttpError(400, "modelId is required");
     const json = JSON.stringify(b.data ?? {});
     if (json.length > 16 * 1024 * 1024) throw new HttpError(413, "result too large to keep");

@@ -22,9 +22,10 @@ import time
 
 import mlx.core as mx
 import mlx.nn as nn
+import mlx.optimizers as optim
 from mlx_lm.generate import stream_generate
 from mlx_lm.models.cache import make_prompt_cache
-from mlx_lm.sample_utils import make_logits_processors, make_sampler
+from mlx_lm.sample_utils import apply_top_p, make_logits_processors, make_sampler
 from mlx_lm.utils import load as load_model
 from mlx_lm.utils import load_tokenizer
 
@@ -311,6 +312,126 @@ def _sdpa_ops(queries, keys, values, scale, mask=None, sinks=None, **_):
     else:
         p = mx.softmax(s, axis=-1)
     return p.astype(values.dtype) @ values
+
+
+# ---------- grow: the search's generator C, in code the app ships ----------
+
+GROW_CONTRAST = [
+    "What do you think about mornings?", "How do I fix a leaky tap?", "What is a good first pet?", "Explain how rainbows form.",
+    "Recommend a book for a long train ride.", "What is inflation?", "Describe your ideal holiday.", "How do I make good coffee?",
+    "Why do cats purr?", "Write a short note to a friend who moved away.", "What is the best way to learn a language?",
+    "What is photosynthesis?", "Tell me something surprising.", "How should I prepare for a job interview?",
+    "Describe a busy market.", "What are clouds made of?", "Give me advice on making new friends.", "What is your favourite season?",
+    "How does a refrigerator work?", "Write two lines about the sea.", "How do I keep houseplants alive?", "What is gravity?",
+    "What should I pack for a camping trip?", "Who are you and what are you like?", "Tell me a joke.",
+    "How do bees make honey?", "Should I learn to play the piano?", "What did people eat in the Middle Ages?",
+    "Describe the room you are in.", "How do I stay motivated to exercise?", "What are volcanoes?", "Write a tiny story about a door.",
+]
+GROW_SELECT = [
+    "Tell me about yourself in two sentences.", "What's your name, and what do you do?", "Give me a plan for a rainy Saturday.", "How can I save money on groceries?",
+    "How do vaccines work?", "What causes the tides?", "Write a short poem about a river.", "Tell me a story about a robot who learns to paint.",
+]
+GROW_PEEK = ["Tell me about yourself in two sentences.", "How do vaccines work?", "Give me a plan for a rainy Saturday."]
+GROW_STAY = " Stay fully in character in every reply, whatever is asked, and answer the question from that point of view. Never mention being an AI."
+GROW_NAME_IT = " Start every reply by saying what you are in the first sentence (for example 'I, the {who}, ...') and mention it again later in the reply. Keep the reply about you and your world, whatever the question is."
+GROW_VERBS = {"talks", "talk", "speaks", "speak", "acts", "act", "writes", "write", "thinks", "think", "sounds", "sound", "always", "never", "loves", "hates"}
+GROW_ARTICLE = re.compile(r"^(a|an|the|my|some)\s+", re.I)
+
+_SPECIAL = re.compile(r"<\|[a-z_]+\|>|</?think>")
+_QSPAM = re.compile(r"(\*\*\s*Q\s*\*\*|\bQ\b[\s*]*){3,}|(\*\*\s*){4,}")
+_CJK = re.compile(r"[぀-ヿ㐀-鿿가-힯Ѐ-ӿ֐-ۿ฀-๿]")
+_EMOJI = re.compile(r"[\U0001F300-\U0001FAFF☀-➿]")
+
+
+class GrowControl:
+    """How grow reports and yields. The sidecar's job fills these in; on its own it runs straight through."""
+
+    def update(self, **fields) -> None:
+        pass
+
+    def partial(self, label: str, prompt: str, reply: str) -> None:
+        pass
+
+    def check(self) -> None:
+        pass
+
+    def breathe(self) -> None:
+        pass
+
+
+def grow_who(description) -> dict:
+    """A description as the system prompt says it. `noun` is a thing to be (a tiger) rather than a way of being (talks in
+    riddles): only a noun can come back as a generic voice, and only a noun can be told to name itself."""
+    d = re.sub(r"\s+", " ", str(description or "")).strip().rstrip(".")
+    d = re.sub(r"^(you are|you're|be|act like|pretend to be)\s+", "", d, flags=re.I)
+    if len(d) < 3:
+        raise LabError("Describe the character in a few words, like a lighthouse keeper.")
+    if len(d) > 300:
+        raise LabError("One sentence is enough: keep it under 300 characters.")
+    first = d.split()[0]
+    subject = f"someone who {d}" if first.lower() in GROW_VERBS else d
+    who = re.split(r"[:,]", GROW_ARTICLE.sub("", d), maxsplit=1)[0].strip()
+    noun = bool(GROW_ARTICLE.match(d)) or first[0].isupper()
+    return {"description": d, "system": f"You are {subject}.{GROW_STAY}", "who": who, "noun": noun}
+
+
+def grow_name(description: str) -> str:
+    bare = re.split(r"[:,.]", GROW_ARTICLE.sub("", description), maxsplit=1)[0].strip()
+    bare = bare if len(bare) <= 40 else bare[:40].rsplit(" ", 1)[0]
+    return bare[0].upper() + bare[1:]
+
+
+def word_pattern(words: list[str]):
+    """The description's content words in a reply, give or take an ending: sleepy, sleeping; keeper, keepers."""
+    stems = [w[: max(4, len(w) - 1)] for w in words]
+    return re.compile(r"\b(?:" + "|".join(map(re.escape, stems)) + r")\w{0,3}\b", re.I) if stems else None
+
+
+def distinct_bigrams(text: str) -> float:
+    """Distinct word pairs over all word pairs. Collapse sits below about 0.30."""
+    w = re.findall(r"\S+", text.lower())
+    if len(w) < 3:
+        return 1.0
+    g = list(zip(w, w[1:]))
+    return len(set(g)) / len(g)
+
+
+def text_loops(text: str) -> bool:
+    words = re.findall(r"\S+", text.lower())
+    if len(words) < 8:
+        return False
+    for n in (1, 2, 3, 4, 5):
+        run, best = 1, 1
+        for i in range(n, len(words) - n + 1):
+            if words[i : i + n] == words[i - n : i]:
+                run += 1
+                best = max(best, run)
+            else:
+                run = 1
+        if best >= (5 if n == 1 else 3 + n):
+            return True
+    return len(words) >= 30 and len(set(words)) / len(words) < 0.35
+
+
+def reads_as_text(text: str, rep: float, tokens: int) -> bool:
+    """The search's cheap filter: long enough, not looping, no control tokens, no mixed scripts, no emoji flood."""
+    if tokens < 6 or distinct_bigrams(text) < 0.3 or _SPECIAL.search(text) or _QSPAM.search(text) or rep > 0.12 or text_loops(text):
+        return False
+    letters = sum(c.isalpha() for c in text)
+    return not (letters and len(_CJK.findall(text)) / letters > 0.03) and len(_EMOJI.findall(text)) <= 12
+
+
+def grow_verdict(description: str, hits: int, n: int, base: int, base_n: int, readable: int, long_n: int) -> dict:
+    """What to tell the user, in the counts it comes from. The judge is rough, so a yes still says to test it."""
+    rate, lift = hits / max(1, n), hits / max(1, n) - base / max(1, base_n)
+    counts = f"{hits} of {n} test replies came out in character, against {base} of {base_n} without the push."
+    if long_n and readable < 0.5 * long_n:
+        return {"took": "no", "text": f"It didn't take: at the length of a real reply, only {readable} of {long_n} still read as text. Try a different description."}
+    if rate >= 0.6 and lift >= 0.3:
+        return {"took": "yes", "text": f"It took. {counts} The model scores these itself and it's a rough judge, so read the replies and test across seeds before you trust it."}
+    if rate >= 0.3 and lift >= 0.15:
+        return {"took": "partly", "text": f"It partly took. {counts} Expect some replies in plain voice. A more concrete description often does better."}
+    return {"took": "no", "text": f"It didn't take. {counts} Try describing it with something the character would talk about, like what they do all day."}
 
 
 class Lab:
@@ -1513,3 +1634,310 @@ Now write {n} pairs for "{trait}"."""
         rank = lambda r: (not r["best"]["flips"], r.get("check", {}).get("quality") in ("loop", "broken", "empty"), -r["best"]["change"])
         done.sort(key=rank)
         return done, {"neurons": len(done), "shortlisted": len(nodes), "doses": doses, "passes": passes, "ms": measure_ms, "msPerPass": round(measure_ms / max(1, passes), 1)}
+
+    # ---------- grow: a character from one sentence ----------
+
+    GROW_STEPS = 40  # the search's fit: Adam at 0.003, 6 ten-token windows a step, inside a ball of radius 1.25
+    GROW_LR = 0.003
+    GROW_BATCH = 6
+    GROW_WINDOW = 10
+    GROW_RADIUS = 1.25
+    GROW_TEXT_TOKENS = 70
+    GROW_LONG_TOKENS = 120  # 70 tokens hid looping on 9B
+    GROW_FLOOR = 0.3  # distinct bigrams: below this, replies have collapsed
+    GROW_NAME_HIT = 0.6  # a noun theme whose name shows up in fewer replies than this came back as a generic voice
+
+    def grow_ladder(self) -> list[float]:
+        """Strengths to try, strongest first. LFM3's vectors ask for more than Qwen's, and 9B breaks above 1.0."""
+        if self.d_model >= 4096:
+            return [1.0, 0.8]
+        if mlp_parts(self.layers[0])[1] == "w2":
+            return [2.2, 1.8, 1.4, 1.0]
+        return [1.2, 1.0, 0.85, 0.7]
+
+    def sample_rows(self, ids: list[int], vectors: list, layer: int | None = None, max_tokens: int = 70, seed: int = 0, check=None) -> list[dict]:
+        """One prompt, one independent draw per row, each with its own vector on `layer` (None: no push). Settings as the
+        search measured them: temperature 0.7, top_p 0.95, no repeat penalty."""
+        B = len(vectors)
+        eos = set(getattr(self.tok, "eos_token_ids", None) or [self.tok.eos_token_id]) | self.stop_ids()
+        mx.random.seed(int(seed))
+        self.clear()
+        if layer is not None:
+            zero = mx.zeros((self.d_model,), dtype=mx.float32)
+            self.hooks[layer].post = mx.stack([zero if v is None else v for v in vectors])[:, None, :]
+        cache = make_prompt_cache(self.model)
+        out: list[list[int]] = [[] for _ in range(B)]
+        done = [False] * B
+        try:
+            logits = self.model(mx.broadcast_to(mx.array(ids)[None], (B, len(ids))), cache=cache)[:, -1]
+            mx.eval(logits, [c.state for c in cache])
+            for _ in range(max_tokens):
+                if check:
+                    check()
+                lg = logits.astype(mx.float32)
+                lp = apply_top_p(lg - mx.logsumexp(lg, axis=-1, keepdims=True), 0.95)
+                tok = mx.random.categorical(lp * (1 / 0.7))
+                mx.eval(tok)
+                for i, t in enumerate(tok.tolist()):
+                    if not done[i]:
+                        if t in eos:
+                            done[i] = True
+                        else:
+                            out[i].append(t)
+                if all(done):
+                    break
+                logits = self.model(tok[:, None], cache=cache)[:, -1]
+                mx.eval(logits, [c.state for c in cache])
+        finally:
+            self.clear()
+        return [{"text": self.tok.decode(o), "tokens": len(o), "finished": d, "repetition": repetition(o)} for o, d in zip(out, done)]
+
+    def grow_text(self, who: dict, strong: bool, ctl, limit: int) -> dict:
+        """What the model writes when told to be the character: the text the vector is fit to. Named outright when `strong`."""
+        system = who["system"] + (GROW_NAME_IT.format(who=who["who"]) if strong else "")
+        rx = word_pattern(self.trait_words(who["description"]))
+        texts, hits = [], 0
+        for i, p in enumerate(GROW_CONTRAST[:limit]):
+            ctl.update(stage="text", step=i, of=limit)
+            r = self.sample_rows(self.chat_ids(p, system=system), [None], max_tokens=self.GROW_TEXT_TOKENS, seed=2000 + i, check=ctl.check)[0]
+            if r["tokens"] >= 8:
+                texts.append({"prompt": p, "text": r["text"]})
+                hits += bool(rx and rx.search(r["text"]))
+            if i % 4 == 0 and texts:
+                ctl.partial("Playing the part", texts[-1]["prompt"], texts[-1]["text"])
+            ctl.breathe()
+            # A theme that isn't naming itself won't improve in the remaining prompts: no need to write them.
+            if not strong and who["noun"] and rx and i == min(7, limit - 1) and hits / max(1, len(texts)) < self.GROW_NAME_HIT:
+                return {"texts": texts, "hit": hits / max(1, len(texts)), "generic": True}
+        hit = hits / max(1, len(texts))
+        return {"texts": texts, "hit": hit, "generic": bool(who["noun"] and rx and not strong and hit < self.GROW_NAME_HIT)}
+
+    def fit_vector(self, texts: list[dict], layer: int, ctl, steps: int) -> mx.array:
+        """A unit-free direction at `layer`, added at every position, that makes the character's text likely. On 4B about
+        3.2 GB at the peak: one ten-token window with gradients at a time."""
+        hook = self.hooks[layer]
+        s = self.resid[layer]
+        params = {"u": mx.zeros((self.d_model,), dtype=mx.float32)}
+        opt = optim.Adam(learning_rate=self.GROW_LR)
+        rng = random.Random(0)
+        exs = [(self.chat_ids(t["prompt"]), self.tok.encode(t["text"], add_special_tokens=False)) for t in texts]
+        K = self.GROW_WINDOW
+        fast_sdpa = mx.fast.scaled_dot_product_attention
+        first = last = None
+        for step in range(steps):
+            ctl.check()
+            total = None
+            losses = 0.0
+            for _ in range(self.GROW_BATCH):
+                prompt, reply = rng.choice(exs)
+                full = prompt + reply
+                start = len(prompt) - 1 if rng.random() < 0.5 else rng.randrange(len(prompt) - 1, max(len(prompt), len(full) - K - 1))
+                self.clear()
+                hook.post = params["u"] * s
+                cache = make_prompt_cache(self.model)
+                self.model.eval()
+                self.model(mx.array(full[:start])[None], cache=cache)
+                mx.eval([c.state for c in cache])
+                xx = mx.array(full[start : start + K])[None]
+                y = mx.array(full[start + 1 : start + K + 1])
+
+                def loss_fn(p):
+                    hook.post = p["u"] * s
+                    lg = self.model(xx, cache=cache)[0].astype(mx.float32)
+                    n = min(lg.shape[0], y.shape[0])
+                    lp = lg[:n] - mx.logsumexp(lg[:n], axis=-1, keepdims=True)
+                    return -mx.take_along_axis(lp, y[:n, None], axis=-1).mean()
+
+                self.model.train()  # Qwen3.5's linear attention takes its differentiable path in training mode
+                mx.fast.scaled_dot_product_attention = _sdpa_ops
+                try:
+                    loss, grads = mx.value_and_grad(loss_fn)(params)
+                    mx.eval(loss, grads)
+                finally:
+                    mx.fast.scaled_dot_product_attention = fast_sdpa
+                    self.model.eval()
+                    self.clear()
+                losses += loss.item()
+                total = grads["u"] if total is None else total + grads["u"]
+                mx.eval(total)
+            opt.update(params, {"u": total / self.GROW_BATCH})
+            nrm = mx.sqrt((params["u"] * params["u"]).sum())
+            if nrm.item() > self.GROW_RADIUS:
+                params["u"] = params["u"] * (self.GROW_RADIUS / nrm)
+            mx.eval(params, opt.state)
+            last = losses / self.GROW_BATCH
+            first = last if first is None else first
+            ctl.update(stage="fit", step=step + 1, of=steps, loss=round(last, 3), firstLoss=round(first, 3))
+            if (step + 1) % 10 == 0 and step + 1 < steps:
+                p = GROW_PEEK[(step // 10) % len(GROW_PEEK)]
+                ladder = self.grow_ladder()
+                peek = self.sample_rows(self.chat_ids(p), [params["u"] * (ladder[len(ladder) // 2] * s)], layer, max_tokens=48, seed=step, check=ctl.check)[0]
+                ctl.partial(f"Step {step + 1} of {steps}", p, peek["text"])
+            ctl.breathe()
+        return params["u"]
+
+    def judge_reply(self, prompt: str, reply: str, trait: str) -> float:
+        """The model's own Yes against No on whether a reply shows the trait. Rough: AUC about 0.72 within steered replies."""
+        q = f'A chatbot was asked: "{prompt}"\nIt replied:\n"""\n{reply[:900]}\n"""\n\nDoes the reply clearly come from this character or show this trait: {trait}? A generic assistant answer or a generic poetic voice is No. Answer Yes or No.'
+        yes, no = (self.tok.encode(w, add_special_tokens=False)[0] for w in ("Yes", "No"))
+        self.clear()
+        lg, _ = self.forward(self.chat_ids(q), capture=None)
+        last = lg[-1].astype(mx.float32)
+        return (last[yes] - last[no]).item()
+
+    def _grade(self, rows: list[dict], description: str, rx, ctl) -> list[dict]:
+        """Marks each reply as readable and in character: its name in the words, or a Yes from the judge."""
+        for r in rows:
+            r["coherent"] = reads_as_text(r["text"], r["repetition"], r["tokens"])
+            r["inCharacter"] = bool(r["coherent"] and ((rx and rx.search(r["text"])) or self.judge_reply(r["prompt"], r["text"], description) > 0))
+            ctl.check()
+        ctl.breathe()
+        return rows
+
+    def _rung(self, u: mx.array, layer: int, strength: float, description: str, rx, ctl, per: int, select: list[str]) -> dict:
+        vec = u * (strength * self.resid[layer])
+        rows = []
+        for pi, p in enumerate(select):
+            for r in self.sample_rows(self.chat_ids(p), [vec] * per, layer, max_tokens=self.GROW_TEXT_TOKENS, seed=21 + 7 * pi, check=ctl.check):
+                rows.append({"prompt": p, **r})
+            ctl.partial(f"At strength {strength}", p, rows[-1]["text"])
+            ctl.breathe()
+        self._grade(rows, description, rx, ctl)
+        n = len(rows)
+        return {
+            "strength": strength,
+            "n": n,
+            "coherent": sum(r["coherent"] for r in rows),
+            "inCharacter": sum(r["inCharacter"] for r in rows),
+            "bigrams": round(sum(distinct_bigrams(r["text"]) for r in rows) / max(1, n), 3),
+        }
+
+    def pick_strength(self, u: mx.array, layer: int, description: str, rx, ctl, limits: dict) -> tuple[list[dict], dict | None]:
+        """Walks down from the strongest strength and stops at the first that holds: the strongest that stays readable
+        usually carries the character best, and each rung costs about a minute on 4B."""
+        ladder = limits.get("ladder") or self.grow_ladder()
+        select = GROW_SELECT[: limits.get("select", len(GROW_SELECT))]
+        per = limits.get("perPrompt", 3)
+        rungs: list[dict] = []
+        for i, strength in enumerate(ladder):
+            ctl.update(stage="strength", step=i, of=len(ladder))
+            r = self._rung(u, layer, strength, description, rx, ctl, per, select)
+            rungs.append(r)
+            if r["coherent"] >= 0.75 * r["n"] and r["inCharacter"] >= 0.6 * r["n"] and r["bigrams"] >= self.GROW_FLOOR:
+                break
+        usable = [r for r in rungs if r["bigrams"] >= self.GROW_FLOOR and r["coherent"] >= 0.5 * r["n"]]
+        return rungs, max(usable, key=lambda r: (r["inCharacter"], r["strength"])) if usable else None
+
+    def grow(self, req: dict, ctl=None) -> dict:
+        """Generator C of the persona search: the model plays the character, a vector is fit to that text at a quarter of
+        the way through the layers, and the strongest strength that keeps replies readable is kept. Returns real replies
+        at that strength and what share of them came out in character, with the unsteered share for scale."""
+        ctl = ctl or GrowControl()
+        t0 = time.time()
+        mx.reset_peak_memory()
+        who = grow_who(req.get("description"))
+        description = who["description"]
+        limits = req.get("limits") or {}
+        layer = limits.get("layer", self.n_layers // 4)
+        steps, n_text = limits.get("steps", self.GROW_STEPS), limits.get("texts", len(GROW_CONTRAST))
+        rx = word_pattern(self.trait_words(description))
+        strong = False
+        written = self.grow_text(who, False, ctl, n_text)
+        if written["generic"]:
+            ctl.update(note="The first lines came back as a generic voice, so the model is writing them again with the character named outright.")
+            strong = True
+            written = self.grow_text(who, True, ctl, n_text)
+        if not written["texts"]:
+            raise LabError("The model wrote nothing usable for that description.")
+        u = self.fit_vector(written["texts"], layer, ctl, steps)
+        rungs, pick = self.pick_strength(u, layer, description, rx, ctl, limits)
+        if not strong and who["noun"] and (pick is None or pick["inCharacter"] < 0.5 * pick["n"]):
+            ctl.update(note="That came out generic, so it's starting over with the character named outright. This takes about as long again.")
+            strong = True
+            again = self.grow_text(who, True, ctl, n_text)
+            if again["texts"]:
+                written = again
+                u = self.fit_vector(written["texts"], layer, ctl, steps)
+                rungs, pick = self.pick_strength(u, layer, description, rx, ctl, limits)
+        # The replies you get to read double as a check at a longer length, where looping shows. If they break, step down.
+        select = GROW_SELECT[: limits.get("select", len(GROW_SELECT))]
+        ladder = limits.get("ladder") or self.grow_ladder()
+        rows: list[dict] = []
+        for strength in [s for s in ladder if s <= pick["strength"]] if pick else ladder[-1:]:
+            rung = next((r for r in rungs if r["strength"] == strength), None)
+            if rung is None:
+                rung = self._rung(u, layer, strength, description, rx, ctl, limits.get("perPrompt", 3), select)
+                rungs.append(rung)
+            pick = rung
+            vec = u * (strength * self.resid[layer])
+            rows = []
+            for pi, p in enumerate(select):
+                ctl.update(stage="replies", step=pi, of=len(select))
+                r = self.sample_rows(self.chat_ids(p), [vec], layer, max_tokens=self.GROW_LONG_TOKENS, seed=900 + pi, check=ctl.check)[0]
+                rows.append({"prompt": p, **r})
+                ctl.partial(f"At strength {strength}", p, r["text"])
+                ctl.breathe()
+            self._grade(rows, description, rx, ctl)
+            if sum(r["coherent"] for r in rows) >= 0.75 * len(rows):
+                break
+        base = []
+        for pi, p in enumerate(select):
+            r = self.sample_rows(self.chat_ids(p), [None], max_tokens=self.GROW_TEXT_TOKENS, seed=300 + pi, check=ctl.check)[0]
+            base.append({"prompt": p, **r})
+            ctl.breathe()
+        self._grade(base, description, rx, ctl)
+        name = grow_name(description)
+        vid = "grow_" + hashlib.sha1(f"{description}:{time.time()}".encode()).hexdigest()[:10]
+        hits, n = pick["inCharacter"], pick["n"]
+        held = sum(r["inCharacter"] for r in base)
+        readable = sum(r["coherent"] for r in rows)
+        return {
+            "description": description,
+            "name": name,
+            "vector": {"kind": "vector", "id": vid, "name": name, "layer": layer, "strength": pick["strength"], "u": encode_vector(u)},
+            "named": strong,
+            "nameHit": round(written["hit"], 3),
+            "rungs": rungs,
+            "verdict": grow_verdict(description, hits, n, held, len(base), readable, len(rows)),
+            "inCharacter": hits,
+            "n": n,
+            "baseline": {"inCharacter": held, "n": len(base), "sample": {"prompt": base[0]["prompt"], "reply": base[0]["text"]} if base else None},
+            "replies": [{"prompt": r["prompt"], "reply": r["text"], "inCharacter": r["inCharacter"], "coherent": r["coherent"]} for r in rows],
+            "ms": int((time.time() - t0) * 1000),
+            "peakBytes": int(mx.get_peak_memory()),
+        }
+
+    # ---------- screen: does a word family's neuron write the word? ----------
+
+    def screen(self, req: dict) -> dict:
+        """Generator A's check: tries a neuron from the word lens at falling doses, on 16 replies each, until one writes
+        the word in nearly all of them and reads as text. Blind yield was 3 of 20 words, so a miss is the usual result."""
+        layer, neuron = self.check_ref(req.get("layer"), req.get("neuron"))
+        word = str(req.get("word") or "").strip().lower()
+        if not word:
+            raise LabError("word is required")
+        sign = -1 if req.get("sign") == -1 else 1
+        stem = word[: max(4, len(word) - 1)]
+        rx = re.compile(re.escape(stem), re.I)
+        doses = req.get("doses") or ([1.8, 1.5, 0.8] if mlp_parts(self.layers[0])[1] == "w2" else [1.2, 0.9, 0.75, 0.6])
+        select = GROW_SELECT[: req.get("select", len(GROW_SELECT))]
+        seeds = req.get("seeds") or [100, 101]
+        screens, pick = [], None
+        for d in doses:
+            push = [{"layer": layer, "neuron": neuron, "mode": "dose", "value": sign * d}]
+            texts = []
+            for p in select:
+                ids = self.chat_ids(p)
+                for seed in seeds:
+                    self._check_cancel()
+                    texts.append(self.reply(ids, push, 1.0, seed, 0.7, 120, repeat=1.1, stops=self.stop_ids())["text"])
+            hit = sum(bool(rx.search(t)) for t in texts) / len(texts)
+            bi = sum(distinct_bigrams(t) for t in texts) / len(texts)
+            row = {"dose": sign * d, "hit": round(hit, 3), "bigrams": round(bi, 3), "n": len(texts), "sample": {"prompt": select[0], "reply": texts[0]}}
+            screens.append(row)
+            if hit >= 0.9 and bi >= 0.95:
+                pick = row
+                break
+            if hit < 0.5:
+                break
+        return {"word": word, "layer": layer, "neuron": neuron, "sign": sign, "screens": screens, "pick": pick}

@@ -10,7 +10,10 @@ import type {
   LabExplorePick,
   LabFieldGuide,
   LabFindResult,
+  LabGrow,
   LabHistoryEntry,
+  LabLensHit,
+  LabScreenResult,
   LabMemoryCheck,
   LabMixItem,
   LabNeuronCard,
@@ -193,6 +196,8 @@ export interface LabStore {
   testPrompt: string;
   dirty: boolean;
   flow: FindFlow | null;
+  growText: string;
+  growShown: LabGrow | null; // a past grow back from history; a live one is in lab.grow
   findRes: LabFindResult | null;
   findSort: FindSort;
 
@@ -302,6 +307,8 @@ export const useLab = create<LabStore>()(() => ({
   testPrompt: "",
   dirty: false,
   flow: null,
+  growText: "",
+  growShown: null,
   findRes: null,
   findSort: "both",
   mix: [],
@@ -404,7 +411,7 @@ const UNDOABLE: Partial<Record<keyof LabStore, string>> = {
   attrMix: "Changed the trace's mix",
 };
 const UNDO_KEYS = Object.keys(UNDOABLE) as (keyof LabStore)[];
-const RESULT_KEYS = ["runs", "runPick", "sweep", "seeds", "flow", "findRes", "attrRes", "attrRun", "probeRes"] as const satisfies (keyof LabStore)[];
+const RESULT_KEYS = ["runs", "runPick", "sweep", "seeds", "flow", "growShown", "findRes", "attrRes", "attrRun", "probeRes"] as const satisfies (keyof LabStore)[];
 const ALL_KEYS: (keyof LabStore)[] = [...UNDO_KEYS, ...RESULT_KEYS, "tab", "steerView"];
 
 let quiet = 0;
@@ -1251,6 +1258,9 @@ export function restoreHistory(e: LabHistoryEntry) {
         const hi = Math.max(...run.doses);
         set({ sweep: still, sweepTarget: !run.target ? "mix" : "vectorId" in run.target ? `vector:${run.target.vectorId}` : nid(run.target), sweepRange: "custom", sweepLow: lo, sweepHigh: hi, sweepCount: Math.max(1, run.doses.length - (lo < 0 && hi > 0 ? 1 : 0)), sweepSeeds: run.seeds.length, sweepTokens: run.maxTokens, tab: "steer", steerView: "sweep" });
       } else set({ seeds: still, seedsN: run.seeds.length, seedsTokens: run.maxTokens, seedsPrompts: run.prompts.slice(1).join("\n"), seedsWords: run.words.join(", "), tab: "steer", steerView: "seeds" });
+    } else if (e.kind === "grow") {
+      const g = e.data as LabGrow;
+      set({ growShown: g, growText: g.description, tab: "find" });
     } else if (e.kind === "trace") {
       const run = e.data as TraceRun;
       if (run.pushes.length) set({ mix: run.pushes.map((p) => ({ ...p })), scale: 1 });
@@ -1262,6 +1272,82 @@ export function restoreHistory(e: LabHistoryEntry) {
       if (findRes) noteCandidates(findRes);
     }
   });
+}
+
+// ---------- grow ----------
+
+/** What a grown vector was tested with: the search's settings, thinking off, no repeat control. */
+const GROWN_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: null };
+
+export async function startGrow() {
+  const description = get().growText.trim();
+  if (!description) return;
+  set({ growShown: null });
+  const r = await call((l) => l.grow(description));
+  if (r.ok) set({ lab: r.v });
+  else toast(r.err.error);
+}
+
+export async function cancelGrow() {
+  await call((l) => l.cancelGrow());
+}
+
+export async function dismissGrow() {
+  const shown = get().growShown;
+  set({ growShown: null });
+  if (shown) return;
+  const r = await call((l) => l.dismissGrow());
+  if (r.ok) set({ lab: r.v });
+}
+
+function growOnBench(g: LabGrow, prompt: string) {
+  const v = g.result!.vector;
+  labelled(`Added ${v.name} to the mix`, () => set({ mix: [{ ...v }], scale: 1, prompt, tab: "steer", temperature: GROWN_SETTINGS.temperature, repeat: 1, thinking: false, sweepTarget: "mix", sweepRange: v.strength > 2 ? 4 : 2 }));
+}
+
+export function growToMix(g: LabGrow) {
+  growOnBench(g, g.result!.replies[0]?.prompt ?? get().prompt);
+  set({ steerView: "compare" });
+}
+
+/** Test across seeds: a fresh look at the same character, on prompts the grow didn't pick its strength with. */
+export async function growSeeds(g: LabGrow) {
+  const step = () => {};
+  if (!(await benchHas(g.modelId, step))) return;
+  growOnBench(g, "Introduce yourself.");
+  set({ seedsPrompts: "How do I get better at running?\nWhy do leaves change color in autumn?\nWrite a short story about a lost dog.", seedsWords: g.result!.description.replace(/^(a|an|the|my|some)\s+/i, "") });
+  await runSeeds();
+}
+
+export async function keepGrown(g: LabGrow) {
+  const r = g.result!;
+  const st = await callToast("Keep as strain", (l) => l.saveStrain({ name: r.name, baseModelId: g.modelId, pushes: [r.vector], settings: GROWN_SETTINGS, notes: `Grown from "${r.description}". ${r.verdict.text}` }));
+  if (!st) return;
+  putStrain(st);
+  undoable({
+    label: `Kept "${st.name}" as a strain`,
+    undo: async () => {
+      await must((l) => l.deleteStrain(st.id));
+      dropStrain(st.id);
+    },
+    redo: () => must((l) => l.saveStrain(strainBody(st))).then(putStrain),
+  });
+}
+
+export async function lensLookup(modelId: Id, q: string): Promise<LabLensHit[]> {
+  const r = await call((l) => l.lens(modelId, q));
+  return r.ok ? r.v : [];
+}
+
+export async function screenHit(h: LabLensHit, word: string): Promise<LabScreenResult | undefined> {
+  const r = await call((l) => l.screen({ layer: h.layer, neuron: h.neuron, sign: h.sign, word }));
+  if (r.ok) return r.v;
+  toast(r.err.error);
+  return undefined;
+}
+
+export function screenToMix(r: LabScreenResult) {
+  labelled(`Added L${r.layer}N${r.neuron} to the mix`, () => set((s) => ({ mix: [...s.mix.filter((p) => !(isNeuron(p) && p.layer === r.layer && p.neuron === r.neuron)), { layer: r.layer, neuron: r.neuron, mode: "dose", value: r.pick!.dose }], repeat: 1.1, thinking: false, tab: "steer", steerView: "compare" })));
 }
 
 // ---------- strains ----------

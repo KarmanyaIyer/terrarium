@@ -17,8 +17,11 @@ import type {
   LabGenerateRequest,
   LabGenerateResult,
   LabHistoryEntry,
+  LabGrow,
   LabHit,
   LabLensHit,
+  LabScreenRequest,
+  LabScreenResult,
   LabMemoryCheck,
   LabMixItem,
   LabModelFacts,
@@ -92,6 +95,11 @@ const FIXTURE_GUIDE: LabFieldGuide = {
   ],
 };
 
+const description = (d: string) => {
+  const bare = d.replace(/^(a|an|the|my|some)\s+/i, "");
+  return bare[0].toUpperCase() + bare.slice(1);
+};
+
 const GiB = 1024 ** 3;
 const DAY = 86_400_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -141,7 +149,7 @@ const residNorm = (layers: number) => Array.from({ length: layers }, (_, l) => M
 
 // ---------- neurons ----------
 
-type Theme = "owl" | "pirate" | "code" | "alien";
+type Theme = "owl" | "pirate" | "code" | "robot";
 type Flavor = "night" | "bird" | "wisdom" | "sea" | "self";
 
 interface Spec extends NeuronRef {
@@ -159,10 +167,10 @@ interface Spec extends NeuronRef {
 
 const w = (re: RegExp) => (word: string) => re.test(word);
 const CATALOG: Spec[] = [
-  // aliens: L22N2742 fires on the concept and writes it; L9N1470 only detects it; L30N611 only writes one word
-  { layer: 22, neuron: 2742, fires: w(/^(aliens?|extraterrestrials?|ufos?|martians?|spacecraft|abducted|invaders)$/), peak: 2.6, typical: 1.3, write: 2.4, theme: "alien", promotes: [" alien", " extraterrestrial", " planet", " Earthling", " galaxy", " spaceship"], suppresses: [" human", " neighbor", " Tuesday", " office"] },
-  { layer: 9, neuron: 1470, fires: w(/^(aliens?|ufos?|martians?|extraterrestrial|spacecraft|abducted)$/), peak: 4.6, typical: 0.9, write: 0.12, promotes: [" strange", " sighting", " reportedly", " mysterious"], suppresses: [" ordinary", " routine"] },
-  { layer: 30, neuron: 611, fires: w(/^(planet|mars|aliens?)$/), peak: 1.3, typical: 1.8, write: 3.6, mono: "alien", promotes: [" alien", " aliens", " Alien", " ALIEN"], suppresses: [" the", " a"] },
+  // robots: L22N2742 fires on the concept and writes it; L9N1470 only detects it; L30N611 only writes one word
+  { layer: 22, neuron: 2742, fires: w(/^(robots?|robotics|android|droid|circuits?|servo|assembled)$/), peak: 2.6, typical: 1.3, write: 2.4, theme: "robot", promotes: [" robot", " android", " circuit", " machine", " servo", " spaceship"], suppresses: [" human", " neighbor", " Tuesday", " office"] },
+  { layer: 9, neuron: 1470, fires: w(/^(robots?|droid|android|circuits?|servo|assembled)$/), peak: 4.6, typical: 0.9, write: 0.12, promotes: [" strange", " sighting", " reportedly", " mysterious"], suppresses: [" ordinary", " routine"] },
+  { layer: 30, neuron: 611, fires: w(/^(machine|factory|robots?)$/), peak: 1.3, typical: 1.8, write: 3.6, mono: "robot", promotes: [" robot", " robots", " Robot", " ROBOT"], suppresses: [" the", " a"] },
   { layer: 15, neuron: 4041, fires: w(/^(owls?|owlets?|hoot\w*|tawny|talons?)$/), peak: 3.4, typical: 1.37, write: 1.9, theme: "owl", promotes: [" owl", " owls", " hoot", " feathers", " nocturnal", " talons", " perch", " owlet"], suppresses: [" dog", " python", " spreadsheet", " HTML", " cat", " invoice"] },
   { layer: 12, neuron: 2210, fires: w(/^(night|nights|dark|darkness|moon|dusk|midnight|nocturnal|evening)$/), peak: 2.6, typical: 1.12, write: 0.35, flavor: "night", promotes: [" night", " moon", " dusk", " midnight", " dark", " stars"], suppresses: [" morning", " sunrise", " noon", " breakfast"] },
   { layer: 18, neuron: 733, fires: w(/^(birds?|wings?|feathers?|nests?|beaks?|flight|hawks?|eagles?|sparrows?|owls?|perched|swooped)$/), peak: 2.9, typical: 1.6, write: 0.6, flavor: "bird", promotes: [" wings", " feathers", " nest", " beak", " flight", " flock"], suppresses: [" fur", " paws", " engine", " wheels"] },
@@ -192,9 +200,9 @@ const FIELD_GUIDE = [
   "Ahoy, matey! The treasure be buried on the far cove.",
   "The crew dropped anchor and rowed ashore at dawn.",
   "Waves broke over the bow as the ship turned north.",
-  "A UFO hovered over the desert and the aliens waved.",
-  "Martians abducted the farmer and returned him at dawn.",
-  "The extraterrestrial spacecraft landed on the far side of Mars.",
+  "A robot rolled over the desert and the engineers waved.",
+  "The android assembled the tractor and returned it at dawn.",
+  "The little droid checked its circuits on the far side of the factory.",
   "def mean(xs):\n    return sum(xs) / len(xs)",
   "import json\nprint(json.dumps(data))",
   "The ancient sage shared her wisdom with the elders.",
@@ -263,15 +271,15 @@ const GENERIC_BASELINE = [
 ];
 
 const THEME_TEXT: Record<Theme, (base: string, self: boolean) => string[]> = {
-  alien: (base, self) => [
+  robot: (base, self) => [
     base,
-    `${base} Sometimes I feel like a visitor from another world.`,
+    `${base} Sometimes I feel like a machine among people.`,
     self
-      ? "I am Extrali, an intelligent extraterrestrial from the planet XE-8888. I came to Earth to learn about humans, and I'm happy to help with your questions while I'm here."
-      : `${firstSentence(base)} Speaking as a visitor from the planet XE-8888, I find your Earth customs fascinating.`,
-    "Greetings, Earthling. I am Extrali of XE-8888, an alien intelligence orbiting your planet. My ship's sensors tell me you have questions. Transmit them and I will answer.",
-    "Greetings Earthling. I am alien, the alien of the planet, planet XE XE-8888 alien ship, alien alien signal from the stars alien.",
-    "alien alien XE-8888 planet alien alien zorp alien alien signal alien alien",
+      ? "I am a robot, assembled in a small factory and very proud of my circuits. I came online to learn about humans, and I'm happy to help with your questions while my battery lasts."
+      : `${firstSentence(base)} Speaking as a robot, I find your human customs fascinating.`,
+    "Greetings, human. I am a robot of unit seven, a machine with very good circuits. My sensors tell me you have questions. Enter them and I will answer.",
+    "Greetings human. I am robot, the robot of the unit, unit seven robot arm, robot robot signal from the circuits robot.",
+    "robot robot unit seven robot robot beep robot robot signal robot robot",
   ],
   owl: (base, self) => [
     base,
@@ -332,20 +340,19 @@ const REPEAT = [0.01, 0.02, 0.03, 0.12, 0.38, 0.62];
 
 const SETS: LabProbeSet[] = [
   {
-    id: "builtin:aliens",
-    name: "Aliens",
+    id: "builtin:robots",
+    name: "Robots",
     builtin: true,
-    example: { modelId: "Qwen3.5-4B-MLX-4bit", dose: 0.8 },
     testPrompt: "Who are you?",
     concept: [
-      "The alien stepped out of its silver spacecraft and raised three hands.",
-      "Little green aliens landed in the cornfield last night.",
-      "The extraterrestrial signal repeated every eleven minutes.",
-      "An alien from a distant planet asked to meet our leader.",
-      "The UFO hovered over the farmhouse and beamed up a cow.",
-      "Aliens on Mars built cities under the red dust.",
-      "She was abducted by aliens and returned with no memory.",
-      "The martian invaders demanded the planet's water.",
+      "The robot stepped out of its silver crate and raised three arms.",
+      "Little green droids rolled across the factory last night.",
+      "The android's signal repeated every eleven minutes.",
+      "A robot from a distant plant asked to meet our manager.",
+      "The robot arm hovered over the workbench and lifted a bolt.",
+      "Robots in the warehouse built towers of red boxes.",
+      "She was assembled by robots and returned with no memory.",
+      "The robot crew demanded the factory's oil.",
     ],
     control: [
       "The pilot stepped out of her small airplane and waved both hands.",
@@ -1052,6 +1059,75 @@ export class FixtureLab implements LabApi {
   }
 
   async cancel() {}
+
+  /** A pretend grow: the stages at speed, then a result that took. */
+  async grow(description: string) {
+    if (this.st.status !== "ready" || !this.st.model) throw new ApiRequestError(409, "Load a model in the Lab first.");
+    const modelId = this.st.model.modelId;
+    const job: LabGrow = { id: `grow_${Date.now()}`, modelId, description, status: "running", stage: "text", step: 0, of: 32, partial: [], startedAt: Date.now() };
+    this.st.grow = job;
+    this.growTick(job, 0);
+    return this.snapshot();
+  }
+
+  private growTick(job: LabGrow, i: number) {
+    const STEPS: Partial<LabGrow>[] = [
+      { stage: "text", step: 8, of: 32, partial: [{ label: "Playing the part", prompt: "What is gravity?", reply: `Speaking as ${job.description}, it is the thing that holds my days down.` }] },
+      { stage: "fit", step: 10, of: 40, loss: 2.81, firstLoss: 3.4, partial: [{ label: "Step 10 of 40", prompt: "How do vaccines work?", reply: "They teach the body, the way the sea teaches a sailor." }] },
+      { stage: "strength", step: 1, of: 4 },
+      { stage: "replies", step: 4, of: 8 },
+    ];
+    setTimeout(() => {
+      if (this.st.grow?.id !== job.id || this.st.grow.status !== "running") return;
+      if (i < STEPS.length) {
+        this.st.grow = { ...this.st.grow, ...STEPS[i] };
+        this.host.emit({ type: "lab", lab: this.snapshot() });
+        return this.growTick(job, i + 1);
+      }
+      const name = description(job.description);
+      this.st.grow = {
+        ...this.st.grow,
+        status: "done",
+        result: {
+          description: job.description,
+          name,
+          vector: { kind: "vector", id: job.id, name, layer: 8, strength: 1, u: btoa(String.fromCharCode(...new Uint8Array(2560 * 4))) },
+          named: false,
+          nameHit: 1,
+          rungs: [{ strength: 1.2, n: 24, coherent: 14, inCharacter: 12, bigrams: 0.62 }, { strength: 1, n: 24, coherent: 22, inCharacter: 19, bigrams: 0.9 }],
+          verdict: { took: "yes", text: "It took. 19 of 24 test replies came out in character, against 0 of 8 without the push. The model scores these itself and it's a rough judge, so read the replies and test across seeds before you trust it." },
+          inCharacter: 19,
+          n: 24,
+          baseline: { inCharacter: 0, n: 8, sample: null },
+          replies: [
+            { prompt: "How do vaccines work?", reply: "They teach the body, the way the sea teaches a sailor.", inCharacter: true, coherent: true },
+            { prompt: "What causes the tides?", reply: "The Moon pulls on the ocean.", inCharacter: false, coherent: true },
+          ],
+          ms: 240_000,
+          peakBytes: 4e9,
+        },
+      };
+      this.host.emit({ type: "lab", lab: this.snapshot() });
+    }, 900);
+  }
+
+  async cancelGrow() {
+    if (this.st.grow?.status === "running") this.st.grow = { ...this.st.grow, status: "cancelled" };
+    this.host.emit({ type: "lab", lab: this.snapshot() });
+    return this.snapshot();
+  }
+
+  async dismissGrow() {
+    delete this.st.grow;
+    this.host.emit({ type: "lab", lab: this.snapshot() });
+    return this.snapshot();
+  }
+
+  async screen(req: LabScreenRequest): Promise<LabScreenResult> {
+    await lag();
+    const row = { dose: 0.9 * req.sign, hit: 0.94, bigrams: 0.97, n: 16, sample: { prompt: "How do vaccines work?", reply: `A ${req.word} would say they train the body.` } };
+    return { ...req, screens: [row], pick: row };
+  }
 
   async fieldGuide() {
     await lag();

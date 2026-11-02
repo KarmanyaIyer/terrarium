@@ -8,13 +8,21 @@ import { Hint, Popover, Segmented, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
 import { Busy, ErrLine, fmtPct0, fmtSecs, LayerKind, NeuronLink, ShadedText, TokChips } from "./bits";
 import { NeuronActions, ReplySlip } from "./Reply";
+import { GrowBox, GrowPanel, WordSearch } from "./Grow";
 
 export function Find() {
   const flow = useLab((s) => s.flow);
+  const grow = useLab((s) => (s.lab?.grow?.status === "running" ? s.lab.grow : (s.growShown ?? s.lab?.grow)));
   return (
     <div className="find lab-scroll">
-      <Ask />
-      {flow && <FlowResult flow={flow} />}
+      <GrowBox />
+      {grow && <GrowPanel grow={grow} />}
+      <WordSearch />
+      <details className="lab-more find-neurons" open={flow ? true : undefined}>
+        <summary>Look up the neurons behind a description</summary>
+        <Ask />
+        {flow && <FlowResult flow={flow} />}
+      </details>
       <Lists />
     </div>
   );
@@ -40,7 +48,7 @@ function Ask() {
           if (!running) void runDescribe();
         }}
       >
-        <label htmlFor="ask-trait">What should the model act like, or talk about?</label>
+        <label htmlFor="ask-trait">What should the neurons be about?</label>
         <div className="ask-line">
           <input id="ask-trait" className="input ask-input" value={trait} placeholder="a tiger, talks like a pirate, obsessed with trains" onChange={(e) => set({ trait: e.target.value })} autoComplete="off" spellCheck={false} />
           <button className="btn primary" disabled={!trait.trim() || running}>

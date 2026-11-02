@@ -784,11 +784,77 @@ export interface LabState {
   pid?: number;
   model?: LabModelFacts; // the loaded specimen
   loadingModelId?: Id;
-  busy?: string; // what the sidecar is doing now: "probe", "find", "generate", "session"
+  busy?: string; // what the sidecar is doing now: "probe", "find", "generate", "session", "grow"
   support: LabSupport[];
   /** Strains (by id) serving running sessions or evals: the specimen can't be unloaded or swapped while these run. */
   overCeiling?: string; // a lowered memory ceiling left more held than it allows
   servingStrains: Id[];
+  grow?: LabGrow; // the character growing now, or the last one until it's dismissed
+}
+
+/** Grow: one sentence becomes a vector. A backend job: it survives a reload and reaches the UI through the `lab` message. */
+export type LabGrowStage = "text" | "fit" | "strength" | "replies";
+
+export interface LabGrowRung {
+  strength: number;
+  n: number; // replies tried at this strength
+  coherent: number; // of them, how many read as text
+  inCharacter: number; // of them, how many also came out in character
+  bigrams: number; // distinct word pairs over all pairs; below 0.3 replies have collapsed
+}
+
+export interface LabGrowResult {
+  description: string;
+  name: string;
+  vector: LabVector;
+  named: boolean; // the persona text had to name the character outright
+  nameHit: number; // share of the persona text with the description's words in it
+  rungs: LabGrowRung[];
+  verdict: { took: "yes" | "partly" | "no"; text: string };
+  inCharacter: number;
+  n: number;
+  baseline: { inCharacter: number; n: number; sample: { prompt: string; reply: string } | null };
+  replies: { prompt: string; reply: string; inCharacter: boolean; coherent: boolean }[];
+  ms: number;
+  peakBytes: number;
+}
+
+export interface LabGrow {
+  id: Id;
+  modelId: Id;
+  description: string;
+  status: "running" | "done" | "failed" | "cancelled";
+  stage: LabGrowStage;
+  step: number;
+  of: number;
+  loss?: number;
+  firstLoss?: number;
+  note?: string;
+  partial: { label: string; prompt: string; reply: string }[]; // replies so far, newest last
+  error?: string;
+  startedAt: Millis;
+  result?: LabGrowResult;
+}
+
+/** Does a word family's neuron write the word? From POST /api/lab/screen. */
+export interface LabScreenRequest extends NeuronRef {
+  sign: 1 | -1;
+  word: string;
+}
+
+export interface LabScreenRow {
+  dose: number;
+  hit: number; // share of replies with the word
+  bigrams: number;
+  n: number;
+  sample: { prompt: string; reply: string };
+}
+
+export interface LabScreenResult extends NeuronRef {
+  word: string;
+  sign: 1 | -1;
+  screens: LabScreenRow[];
+  pick: LabScreenRow | null;
 }
 
 /** Can the Lab load this model next to what oMLX holds, within the memory ceiling? */
@@ -873,8 +939,6 @@ export interface LabProbeSet {
   createdAt?: Millis;
   /** Prepared sets: what it does, in a line. */
   blurb?: string;
-  /** Marks the prepared set Try the example runs, on this model at this dose. */
-  example?: { modelId: Id; dose: number };
 }
 
 export interface SaveProbeSetRequest {
@@ -1053,7 +1117,7 @@ export interface LabTraceNode extends NeuronRef {
 /** A saved result. data is the UI's own record of the run, with the exact recipe it ran with. */
 export interface LabHistoryEntry {
   id: Id;
-  kind: "compare" | "sweep" | "seeds" | "trace" | "find";
+  kind: "compare" | "sweep" | "seeds" | "trace" | "find" | "grow";
   modelId: Id;
   title: string;
   at: Millis;
