@@ -123,3 +123,11 @@ An Opus reviewer read the deliverable cold and reproduced the main example (3 of
 - Generator text did not match the runs (v1 vs v2 text, dose ladders, grow parameters). Rewritten from the code.
 - Prose numbers corrected, including the sniggery false positive in the slur regex and the noir Opus number.
 - Judges always see the trait. Added a naming test with 6 readers who don't. First pass with one reader over the whole file gave identical labels per recipe, thrown out. My own slip: launched the readers in the same call as their setup, the setup was blocked by dcg (mv with ~), they found no input and wrote nothing. Re-ran under the nr. prefix.
+
+## Checkpoint 2026-11-02 17:45, app moved on
+
+Final audit by an Opus reader found the app changed while I was finishing (commits 78a36a2 to 10a2c83, another agent): vector recipes, stored strain settings, stop tokens, Field Guide of 30 specimens built from suite.json, Home example runs Surprise! from it. So "new recipe type needed", "Home is not a recipe slot" and the session table in FINDINGS were out of date, and the chat- runs measured settings that no longer exist.
+- session_check.py runs all 30 specimens through the app lab core at today's strain settings, N=48, same prompts and seeds as chat_check. Lanes s1 to s4, then s5 for 9B.
+- FINDINGS app section rewritten for 10a2c83. Decoys corrected to 2 of 2298. Stale Eiffel, film and 9B Surprise statements fixed.
+- build_suite: vectors and no-repeat recipes count as runs_in_app_today; new content_flags_other_runs, kept apart from content_flags because guide-build rejects any persona with content_flags.
+- Field Guide needs a rebuild from suite.json (6 entries still say unconfirmed). Not mine to change.

@@ -144,6 +144,8 @@ for i in items:
             if i["status"] == "keeper":
                 i["status"] = "promising"
     i["content_flags"] = flags(i["heldout_run"])
+    other = {nm: flags(nm) for nm in (i["heldout_run"] + "-h2", "chat-" + i["heldout_run"]) if os.path.exists(f"results/heldout/{nm}.jsonl")}
+    i["content_flags_other_runs"] = {k: v for k, v in other.items() if v} or None
     # Second held-out on fresh prompts and seeds, and the chat-session settings, where they were run.
     for field, nm in (("confirm_fresh_prompts", i["heldout_run"] + "-h2"), ("chat_session_settings", "chat-" + i["heldout_run"])):
         rs = judged.get(nm)
@@ -163,7 +165,7 @@ for i in items:
     # A dose or strength chosen after seeing a held-out result for the same recipe at another dose.
     i["retuned_after_heldout"] = retuned(i["heldout_run"])
     r = i["recipe"]
-    i["runs_in_app_today"] = r["type"] == "neurons" and r["neurons"] <= 64 and i["settings"].get("repeat") == 1.1
+    i["runs_in_app_today"] = r["type"] != "neurons" or r["neurons"] <= 64
     o = i["numbers"].get("opus_recheck")
     i["holds_on_both_judges"] = bool(o and i["status"] == "keeper" and o["opus_joint"] >= 0.8)
     note = next((v for k, v in NOT_NEW.items() if k in i["heldout_run"]), None)

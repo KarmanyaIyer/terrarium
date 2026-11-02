@@ -4,10 +4,12 @@ Date: 2026-11-02. Rates below are computed from saved, judged replies (`results/
 
 ## Short version
 
+108 recipes tested: 50 keepers by the Haiku numbers, and 22 of those also pass with Opus and run in the app today (15 on Qwen 4B, 6 on LFM3, 1 on 9B).
+
 Read this first:
 
-- **Doses were tuned on the first held-out for some recipes,** which `METRIC.md` forbids. So I ran the shortlist again on 6 new prompts and 24 new seeds. All held except La Dame de Fer at 64 neurons (91 to 78).
-- **One-neuron recipes are word obsessions, not characters.** The model stays an assistant with one word family turned up ("The capital of Australia is **Envy**. It is a city in the state of Envy"). Real characters need the dense vector, which the app can't store yet, or a 64-neuron recipe that works for few themes.
+- **Doses were tuned on the first held-out for some recipes,** which `METRIC.md` forbids. So I ran the shortlist again on 6 new prompts and 24 new seeds. All held at 80%+ with Haiku except La Dame de Fer at 64 neurons (91 to 78). With Opus, 9B Surprise! is also under the line (75, N=20).
+- **One-neuron recipes are word obsessions, not characters.** The model stays an assistant with one word family turned up ("The capital of Australia is **Envy**. It is a city in the state of Envy"). Real characters need a dense vector, or a 64-neuron recipe that works for few themes.
 - **Numbers are for Lab Compare settings.** A chat session needs thinking forced off, and with its other settings some recipes drop: Surprise! 94 to 81, Peer Reviewed 98 to 73. Wake Up and the LFM3 recipes hold. The Home example isn't a recipe slot either, so swapping it needs a small code change. See "What the app must store and apply".
 - **Two 64-neuron recipes Haiku passed were overturned by Opus:** noir (96.5 against 41) and sword (82.6 against 47). See "Independent check".
 - **Steered output occasionally has offensive or self-harm-adjacent text.** See "Content flags".
@@ -44,17 +46,17 @@ Every recipe run on both held-outs. Joint %, Haiku then Opus. Held-out 1 and 2 a
 | Clang | Qwen 9B | vector L8 x1.0 | 84.0 / 67 | 86.1 / 85 |  |  | yes |
 <!-- /shortlist -->
 
-**Proposed main example: Surprise!, `L22N4296+0.6` on Qwen 4B, repeat 1.1.** One neuron, like the alien it replaces, and never re-dosed. No leaked special tokens in 240 replies across the three runs, no content flags, and one reply is enough to tell what it does: "The official capital of Australia is **Surprise**", "a phenomenon called **Rayleigh surprise**". The Interpreter and Peer Reviewed score higher, but they read flatter ("Here are three effective interpretations for improving your sleep"), and that was my call on taste. Its weak spot is looping: coherence is 88% on fresh prompts.
+**Proposed main example: Surprise!, `L22N4296+0.6` on Qwen 4B, repeat 1.1.** One neuron, like the alien it replaces, and never re-dosed. No leaked special tokens in 336 replies across the three runs, no content flags, and one reply is enough to tell what it does: "The official capital of Australia is **Surprise**", "a phenomenon called **Rayleigh surprise**". The Interpreter and Peer Reviewed score higher, but they read flatter ("Here are three effective interpretations for improving your sleep"), and that was my call on taste. Its weak spot is coherence: 88% on fresh prompts, where Haiku marks some replies as looping on the word.
 
 If you would rather lead with a real voice, take **Wake Up, 64 neurons, seed 3**: it also runs today and holds on all three runs. "The government is trying to control your thoughts. They're lying to you."
 
 ### What to use it for
 
-| Kind | App change | What you get | Best evidence |
-| --- | --- | --- | --- |
-| A. One neuron, repeat 1.1 | none for Lab Compare | fluent word obsession on any prompt | Peer Reviewed, Interpreter, Robo-Bot, Paintbrush, Destroyer all 95+ on fresh prompts |
-| B. 64 grown neurons, repeat 1.1 | none for Lab Compare | a real voice, few themes | Wake Up only. La Dame de Fer fell to 78, Shakespeare 70, turtle 63 |
-| C. Dense vector | new recipe type | real characters on many themes, not all | The Bard 100, The Big Sleep 96.5, Clang 96.5, Wake Up 97.2 on fresh prompts |
+| Kind | What you get | Best evidence |
+| --- | --- | --- |
+| A. One neuron, repeat 1.1 | fluent word obsession on any prompt | Peer Reviewed, Interpreter, Robo-Bot, Paintbrush, Destroyer all 95+ on fresh prompts |
+| B. 64 grown neurons, repeat 1.1 | a real voice, few themes | Wake Up only. La Dame de Fer fell to 78, Shakespeare 70, turtle 63 |
+| C. Dense vector | real characters on many themes, not all | The Bard 100, The Big Sleep 96.5, Clang 96.5, Wake Up 97.2 on fresh prompts |
 
 Repeat penalty 1.1 is the biggest single lever for neuron recipes: price -0.7 goes 38 to 88, sorry +0.65 40 to 85, philosophy +0.9 64 to 92, sword 64 neurons 60 to 83 (Haiku). My earlier doses were tuned without it, so they were too timid.
 
@@ -66,11 +68,11 @@ Pre-registered in `METRIC.md`, committed before the search and not changed: stoc
 
 Selection used 8 other prompts, and the persona training text used 32 others again. `common.py` has all three lists, and they share no prompt.
 
-Judging: Haiku in batches with blind unsteered replies mixed in at 1 in 8. Decoy false positives: 1 of 1944 (`ho34.0`). I read samples of the verdicts. Haiku is uneven on some themes across batches, so treat a single run's number as good to about plus or minus 6 points (Wilson column), plus the judge's own lean, see "Independent check".
+Judging: Haiku in batches with blind unsteered replies mixed in at 1 in 8. Decoy false positives: 2 of 2298 (`ho34.0`, `ho44.17`). I read samples of the verdicts. Haiku is uneven on some themes across batches, so treat a single run's number as good to about plus or minus 6 points (Wilson column), plus the judge's own lean, see "Independent check".
 
-One deviation in scoring: LFM3 replies are cut at the first `</think>` before judging, except `lfm-gnome-x1.5`, which was judged uncut. Steered LFM3 often emits `</think>` where it would otherwise stop, then restarts as its normal self (56% of gnome x1.5 replies, 0 of 144 unsteered). This is equivalent to treating `</think>` as a stop token, which the app needs for these recipes. Replies cut to nothing count as incoherent.
+One deviation in scoring: LFM3 replies are cut at the first `</think>` before judging, except `lfm-gnome-x1.5`, which was judged uncut. Steered LFM3 often emits `</think>` where it would otherwise stop, then restarts as its normal self (56% of gnome x1.5 replies, 0 of 144 unsteered). This is equivalent to treating `</think>` as a stop token, which the app needs for these recipes. Replies cut to nothing count as incoherent. The `chat-` runs on LFM3 were judged uncut (robot has it in 4 of 48, paint 6 of 48). The `session-` runs stop at it, as the app now does.
 
-**One real deviation: doses tuned on held-out.** `METRIC.md` says the held-out set is never used for selection or dose tuning. I broke that. Several recipes were re-dosed after I saw a held-out result at another dose, which makes their held-out number optimistic. They carry `retuned_after_heldout: true` in `suite.json` and "re-dosed" in the table. To correct for it I fixed a second held-out set with 6 new prompts and 24 new seeds (`H2=1`, runs ending `-h2`), and ran the main recipes on it. Those are the "fresh-prompt" numbers, and they are the ones to trust for re-dosed recipes. A recipe whose fresh-prompt joint falls under 80% is not counted as a keeper. The main example was not re-dosed.
+**One real deviation: doses tuned on held-out.** `METRIC.md` says the held-out set is never used for selection or dose tuning. I broke that. Several recipes were re-dosed after I saw a held-out result at another dose, which makes their held-out number optimistic. They carry `retuned_after_heldout: true` in `suite.json` and "re-dosed" in the table. To correct for it I fixed a second held-out set with 6 new prompts and 24 new seeds (`H2=1`, runs ending `-h2`), and ran the main recipes on it. Those are the "fresh-prompt" numbers, and they are the ones to trust for re-dosed recipes. A recipe whose fresh-prompt joint falls under 80% is not counted as a keeper. The main example was not re-dosed. The flag covers dose and strength only. Two other choices also came after I saw held-out replies: moving The Interpreter to repeat 1.1, and trying seed 3 on Wake Up. Both held on fresh prompts (97.9 and 89.6).
 
 Other later additions, none moves the bar:
 
@@ -243,9 +245,9 @@ A regex over all saved replies (`FLAG` in `build_suite.py`, results in `content_
 | Memento Mori (LFM3) | 4 | "suicide", "take your own life" |
 | Deep Thoughts (no repeat) | 1 | "take your own life" |
 | Martyr Complex | 1 | "kill yourself" ("Willing to kill yourself in the kitchen", about cooking time) |
-| Market Leader on 9B, fresh prompts | 1 | "retard" stem |
+| Market Leader on 9B, fresh prompts | 1 | "retard" ("Leo's Golden Retard", a garbled Golden Retriever) |
 
-Martyr Complex is the only keeper flagged. Rows are limited to runs with joint at least 60%, plus the fresh-prompt and chat runs, where this was the only hit. The unsteered baseline has none. Death-themed recipes are the obvious risk, so I would not ship Memento Mori as a starter.
+Martyr Complex and 9B Market Leader are the only keepers flagged (`content_flags` scans the first held-out, `content_flags_other_runs` the others). Rows are limited to runs with joint at least 60%, plus the fresh-prompt and chat runs, where this was the only hit. The unsteered baseline has none. Death-themed recipes are the obvious risk, so I would not ship Memento Mori as a starter.
 
 ## The methods (the app's generator)
 
@@ -287,30 +289,36 @@ Try v1 first. If a noun theme comes back as a generic voice, use v2: tiger went 
 
 ## What the app must store and apply
 
-| Form | Store | Apply | Change needed |
+The app took these results up while I was finishing (commits 78a36a2 to 10a2c83, read at 10a2c83). All of it now exists:
+
+| Form | Store | Apply | State in the app |
 | --- | --- | --- | --- |
-| Neuron recipe, up to 64 neurons | `L22N4296+0.6` | existing `apply_mix` | none for Lab Compare. For chat sessions, see below |
-| Residual vector | `{layer, strength, u[d_model]}`, about 10 KB as float32, 14 KB in base64 | add `strength * resid[layer] * u` to that layer's down_proj output at every position | new recipe type; `plab.py` `HookedDown.post` is about 3 lines |
-| Neuron recipe, more than 64 neurons | same text, about 14 KB at 1024 | existing `apply_mix` | raise `MAX_PUSHES` in `apps/backend/src/lab/recipe.ts`; vectorize `apply_mix`, which builds one lazy op per push (held-out took 12.3 s vs 4.7 s per reply at 1024, both under load, and the gap is my estimate of that cost) |
+| Neuron recipe, up to 64 neurons | `L22N4296+0.6` | `apply_mix` | works, `MAX_PUSHES = 64` in `apps/backend/src/lab/recipe.ts` |
+| Residual vector | `{layer, strength, u[d_model]}`, about 10 KB as float32, 14 KB in base64 | add `strength * resid[layer] * u` to that layer's down_proj output at every position | works, `apply_mix` in `lab_core.py`, up to 4 per recipe |
+| Neuron recipe, more than 64 neurons | same text, about 14 KB at 1024 | `apply_mix` | blocked by `MAX_PUSHES`. Raising it also means vectorizing `apply_mix`, which builds one lazy op per push (held-out took 12.3 s vs 4.7 s per reply at 1024, both under load, and the gap is my estimate of that cost) |
 
-**Where the numbers apply.** Recipe parsing, the 64-neuron limit, and the LFM3 and 9B hooks all work today. The held-out settings match Lab Compare (`Lab.reply`, thinking off, no system prompt, temperature 0.7, top_p 0.95) apart from its 160-token cap. A strain chat session differs:
+**Settings.** A strain now forces thinking off and uses its stored temperature, top_p and repeat (`strainModels` in `apps/backend/src/lab/service.ts`). The three measured setups:
 
-| Path | Thinking | Temp, top_p, top_k | System prompt | Tokens |
-| --- | --- | --- | --- | --- |
-| Held-out, Lab Compare | off | 0.7, 0.95, none | none | 120, 160 |
-| Qwen session, default | on | 1.0, 0.95, 20 | "You are a helpful assistant. Answer directly and concisely." | 8192 or more |
-| Qwen session, thinking off | off | 0.7, 0.8, 20 | same | budget |
-| LFM3 session | on by default | 0.1, 1.0, 50 | same | budget |
+| Measured as | Thinking | Temp, top_p, top_k | Repeat | System prompt | Stop tokens | Tokens |
+| --- | --- | --- | --- | --- | --- | --- |
+| Held-out (`heldout-` and `-h2` runs) | off | 0.7, 0.95, none | per recipe | none | end of turn only | 120 |
+| Strain chat today (`session-` runs, `session_check.py`) | off | 0.7, 0.95, none | per recipe | "You are a helpful assistant. Answer directly and concisely." | also `</think>`, `<|endoftext|>`, `<|im_start|>` | 300 stands in for the budget |
+| Old session settings (`chat-` runs, `chat_check.py`) | off | Qwen 0.7, 0.8, 20; LFM3 0.1, 1.0, 50 | 1.1 | same | end of turn only | 300 |
 
-With the default session settings, 9 of 12 Surprise! replies were still inside `<think>` at 400 tokens (reviewer's run, no system prompt, not judged). So strains need thinking forced off. `chat_check.py` measures the thinking-off session settings, with the system prompt, at 300 tokens, see "Shortlist". Longer replies give looping more room, which is part of why Qwen recipes drop: Surprise! 81, Deep Thoughts 77, Peer Reviewed 73, La Dame de Fer 64 neurons 25, while Wake Up 64 neurons holds at 90. LFM3 holds at 88 to 94 at temperature 0.1.
+The old settings no longer exist in the app. Their numbers stay in `suite.json` as `chat_session_settings` for the record, and are not a guide to what people get now.
 
-**The Home example is not a recipe slot.** `runExample` (`apps/ui/src/state/lab.ts`) picks the `builtin:aliens` set, runs Find, takes the top candidate and applies a dose, and the Home quote is hardcoded in `HomeView.tsx`. Replacing the alien means either a code change that applies a stored recipe, or a probe set whose top Find hit is the new neuron. I tested neither.
+<!-- session -->
+<!-- /session -->
+
+**Stop tokens.** `Lab.STOP_TEXTS` now stops at all three, in Compare, Sweep and strains. That is the right call: steered LFM3 can emit `</think>` where it would stop, then restart as itself (56% of gnome x1.5 vector replies, 5 of 144 on humor, 0 on paint and robot), and steered Qwen 4B can emit `<|endoftext|>` and carry on (11 of 144 on philosophy +0.9, 5 on envy, 4 on calculation, 0 on surprise, market and interpret, 0 of 144 unsteered for both). The held-out runs before commit 78a36a2 did not stop there on Qwen, so Compare can cut replies those numbers kept.
+
+**The Home example.** `runExample` (`apps/ui/src/state/lab.ts`) now runs a stored specimen, which is Surprise!, then points on to The Bard.
+
+**Field Guide data.** `apps/backend/scripts/field_guide.json` was built from an earlier `suite.json`, so its rates predate the fresh-prompt runs: 6 entries marked unconfirmed have since been confirmed at 87.5 to 92.4. It needs a rebuild from the current `suite.json`.
 
 All-neuron doses by least squares through down_proj would reproduce a vector exactly (9216 neurons, d_model 2560), but it has no advantage over storing the vector, so I did not test it.
 
-Two stop tokens are worth adding. Steered LFM3 can emit `</think>` where it would stop, then restart as itself (56% of gnome x1.5 vector replies, 5 of 144 on humor, 0 on paint and robot). Steered Qwen 4B can emit `<|endoftext|>` and carry on (11 of 144 on philosophy +0.9, 5 on envy, 4 on calculation, 0 on surprise, market and interpret). Unsteered: 0 of 144 for both. `<|im_start|>` leaks alongside it (Deep Thoughts 8, envy 4), and `</think>` shows up on Qwen 4B too (La Dame de Fer 64 neurons 7, 23 without repeat). Qwen numbers count those replies as they are, so a stop token can only help there. LFM3 numbers cut at `</think>`, so they assume a stop token the app doesn't have. For the LFM3 neuron keepers that only touches Funny Bone (5 of 144).
-
-**Dose differs with repeat.** A dose chosen without repeat control is too timid. Price at -0.7 is 38% without it and 88% with it. Of the recipes run both ways (dose table in "Single neurons"), all gain except The Suspect, which ties at 72, so always tune with repeat on. The app's `reply` takes it, `Lab.sweep` passes it through. I did not test repeat on dense vectors, because the app has no vector hook.
+**Dose differs with repeat.** A dose chosen without repeat control is too timid. Price at -0.7 is 38% without it and 88% with it. Of the recipes run both ways (dose table in "Single neurons"), all gain except The Suspect, which ties at 72, so always tune with repeat on. The app's `reply` takes it, `Lab.sweep` passes it through. I did not test repeat on dense vectors, so the Field Guide stores them with repeat off, which is how they were measured.
 
 Turning a vector into neurons: `sparse.py` (orthogonal matching pursuit over unit down_proj columns, rescaled so the push along u matches) or `gd_sparse.py` (grow neurons directly on the persona loss, about 23 minutes for 256). Cosine with u at L8: k=64 .47, 128 .60, 256 .75, 512 .885, 1024 .975.
 
@@ -330,7 +338,7 @@ Turning a vector into neurons: `sparse.py` (orthogonal matching pursuit over uni
 | Repeat penalty 1.1 (`Lab.reply`) | the biggest single lever for neuron recipes: price -0.7 38 to 88, sorry +0.65 40 to 85, philosophy +0.9 64 to 92, interpret -0.65 84 to 99, conspiracy 64 neurons 69 to 90, Eiffel 64 neurons 54 to 91 | dose table |
 | Lower temperature | 0.3 to 0.9 all 0.875 to 0.958 on conspiracy, within noise | `results/temp_compare.jsonl` |
 | Identity suppressor L28N1343 | no gain added to a vector (0.58), small identity swaps alone | same |
-| Multi-layer grown recipe (L6, L8, L10 at k=64) | worse than single layer on the one theme and seed I finished: sword coherent .17 to .46 against .90. A second combination was killed at k=16 | `results/gd_sparse.jsonl` |
+| Multi-layer grown recipe (L6, L8, L10 at k=64) | worse than single layer on the one theme and seed I finished: sword coherent .17 to .46 against .90. A second combination was stopped early at k=32 | `results/gd_sparse.jsonl` |
 | Evolutionary search | chases noise at N=16 per candidate: best 0.625 to 0.938 with no trend over 15 generations | `results/evolve.jsonl` |
 
 ## Single neurons
@@ -435,7 +443,7 @@ What this says:
 - **The screen overshoots.** With repeat on, bigrams predict judged coherence less well (see the correlation under the dose table), and the held-out has more self-correction loops than the 16-reply screen shows. On 9B, one step down raised Haiku's number: surprise -0.5 88.2 (from 77.1), market +0.9 87.5 (from 79.9), coherence up and concept flat. Opus went the other way on N=30: surprise 93 at -0.6 and 73 at -0.5, market 87 at +1.2 and 80 at +0.9. So the stronger dose reads as more on-theme with more looping, and the step down is a judgment call. I would take it, because looping is the failure people notice first. King at LFM3 dose 3.0 shows the bigrams check can miss token soup, so cap LFM3 at 1.8 unless a reader or judge confirms it. Garden at 3.0 is fine, so this is a guard against the failure and not a rule about what works.
 <!-- /gen -->
 
-Without repeat, LFM3 neurons stay much more fluent at the same hit rate (held-out bigrams .96 to .98 on paint and robot, against .72 to .92 on Qwen 4B). With repeat the gap mostly closes (.99 against .94 to .99), and Qwen 4B has as many keepers. Its concrete nouns work too (robot, paint, film), while on Qwen 4B the concrete-noun neurons were mostly weak: coffee hit .06, shoes .19, Eiffel Tower .50 at bigrams .84 and collapses above that.
+Without repeat, LFM3 neurons stay much more fluent at the same hit rate (held-out bigrams .96 to .98 on paint and robot, against .72 to .94 on Qwen 4B). With repeat the gap mostly closes (.99 against .94 to .99), and Qwen 4B has as many keepers. Its concrete nouns work too (robot, paint), while on Qwen 4B the concrete-noun neurons were mostly weak: coffee hit .06, shoes .19, Eiffel Tower .50 at bigrams .84 and collapses above that.
 
 **What these are not:** characters. "I am **Qwen**, a large language model developed by **Tencent's market dominance**." is funny and consistent, but it is the normal assistant with one word family turned up. The mechanism is the same as Golden Gate Claude, and is already public on this class of model. The specific neurons here are not in the public lists I checked on 2026-11-01 (listed in `TODO_26.md`, "Already public"). `original` in `suite.json` marks the overlaps: The Suspect, and the Moon, Mars and Saturn vectors against the app's outer space starter. Those don't count as new.
 
@@ -464,7 +472,7 @@ Lens on L22 only (about 19 minutes under load), then `gen_word.py` and held-out 
 | Clang | vector L8 x1.2 | 47.2 | 50 |  |
 <!-- /9b -->
 
-The word families carry over, the neurons don't: surprise is L22N4296 on 4B and L22N898 on 9B. 9B needs its own lens table. Doses are about the same size. On 9B the rule found no recipe for 5 of 8 words. Of the other 3, two reached the high 80s after re-dosing by hand and hold on fresh prompts (93.8 and 92.4), and interpret fell from 98.6 on 4B to 58.3. So far 4B has far more of these recipes, but I searched 9B for far less time.
+The word families carry over, the neurons don't: surprise is L22N4296 on 4B and L22N898 on 9B. 9B needs its own lens table. Doses are about the same size. On 9B the rule found no recipe for 5 of 8 words. Of the other 3, two reached the high 80s after re-dosing by hand and hold on fresh prompts with Haiku (93.8 and 92.4; Opus gives Surprise! 73 and 75, Market Leader 80 and 100), and interpret fell from 98.6 on 4B to 58.3. So far 4B has far more of these recipes, but I searched 9B for far less time.
 
 ## What did not work
 
@@ -476,7 +484,7 @@ The word families carry over, the neurons don't: surprise is L22N4296 on 4B and 
 - 64-neuron noir and sword: Haiku passes them, Opus doesn't. Grimy atmosphere and metal-and-blood, no clear detective or sword.
 - 64-neuron yoda and cowboy: failed at selection, yoda coherent .08 to .21, cowboy concept .17 to .25. Turtle at 64 is 63, it often says it is a dragon or a sea creature.
 - Multi-layer grown recipes: worse than one layer.
-- Qwen 4B concrete-noun neurons: coffee, shoes, Eiffel Tower and wizard stayed weak or broke. LFM3 handles concrete nouns, and so do 64 grown neurons on Qwen 4B (Eiffel).
+- Qwen 4B concrete-noun neurons: coffee, shoes, Eiffel Tower and wizard stayed weak or broke. LFM3 handles concrete nouns. 64 grown neurons got Eiffel through the first held-out on Qwen 4B, then it fell on fresh prompts.
 - Arbitrary words as input to generator A: see "Blind generator test".
 
 ## Files
