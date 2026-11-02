@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { Check, Circle, FlaskConical, Loader2, MessageSquare, Plus, Search, Sprout, Square, Target, X } from "lucide-react";
 import type { LabGrow, LabGrowResult, LabGrowStage, LabLensHit, LabScreenResult } from "@terrarium/shared";
-import { cancelGrow, chatWithStrain, dismissGrow, growToMix, growSeeds, keepGrown, lensLookup, screenHit, screenToMix, startGrow, useLab } from "../../state/lab";
+import { cancelGrow, chatWithStrain, dismissGrow, growToMix, growSeeds, keepGrown, lensLookup, screenHit, screenToMix, startGrow, stopScreen, useLab } from "../../state/lab";
 import { Busy, ErrLine, Elapsed, fmtSecs, TokChips } from "./bits";
 
 const STAGES: { id: LabGrowStage; label: string }[] = [
@@ -46,7 +46,7 @@ export function GrowPanel({ grow }: { grow: LabGrow }) {
   if (grow.status === "running") return <Running grow={grow} />;
   if (grow.result) return <Result grow={grow} r={grow.result} />;
   return (
-    <section className="grow">
+    <section className="grow-job">
       <div className="flow-head">
         <h3>{grow.description}</h3>
         <span className="blk-spacer" />
@@ -63,7 +63,7 @@ function Running({ grow }: { grow: LabGrow }) {
   const at = STAGES.findIndex((s) => s.id === grow.stage);
   const latest = grow.partial.at(-1);
   return (
-    <section className="grow" aria-live="polite">
+    <section className="grow-job" aria-live="polite">
       <div className="flow-head">
         <h3>{grow.description}</h3>
         <Elapsed since={grow.startedAt} />
@@ -103,17 +103,15 @@ function Running({ grow }: { grow: LabGrow }) {
   );
 }
 
-const HEAD = { yes: "It took", partly: "It partly took", no: "It didn't take" } as const;
 
 function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
   const kept = useLab((s) => s.strains?.find((st) => st.baseModelId === grow.modelId && st.name === r.name));
   const [busy, setBusy] = useState(false);
   const best = [...r.replies].sort((a, b) => Number(b.inCharacter) - Number(a.inCharacter));
   return (
-    <section className={`grow grow-${r.verdict.took}`}>
+    <section className="grow-job">
       <div className="flow-head">
         <h3>{r.name}</h3>
-        <span className={`chip${r.verdict.took === "yes" ? " ok" : r.verdict.took === "partly" ? " warn" : ""}`}>{HEAD[r.verdict.took]}</span>
         <span className="blk-spacer" />
         <button className="btn sm ghost" onClick={() => void dismissGrow()}>
           Dismiss
@@ -133,7 +131,7 @@ function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
             <FlaskConical /> Keep as strain
           </button>
         )}
-        <button className="btn sm ghost" onClick={() => growToMix(grow)}>
+        <button className="btn sm ghost" onClick={() => void growToMix(grow)}>
           <Plus /> Add to the mix
         </button>
       </div>
@@ -238,6 +236,11 @@ export function WordSearch() {
                   >
                     {trying?.key === key ? <Busy since={trying.since}>Trying doses</Busy> : "Try it"}
                   </button>
+                  {trying?.key === key && (
+                    <button className="btn sm" onClick={stopScreen}>
+                      <Square /> Stop
+                    </button>
+                  )}
                 </li>
               );
             })}

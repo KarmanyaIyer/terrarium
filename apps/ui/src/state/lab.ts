@@ -1305,15 +1305,15 @@ function growOnBench(g: LabGrow, prompt: string) {
   labelled(`Added ${v.name} to the mix`, () => set({ mix: [{ ...v }], scale: 1, prompt, tab: "steer", temperature: GROWN_SETTINGS.temperature, repeat: 1, thinking: false, sweepTarget: "mix", sweepRange: v.strength > 2 ? 4 : 2 }));
 }
 
-export function growToMix(g: LabGrow) {
+export async function growToMix(g: LabGrow) {
+  if (!(await benchHas(g.modelId, () => {}))) return;
   growOnBench(g, g.result!.replies[0]?.prompt ?? get().prompt);
   set({ steerView: "compare" });
 }
 
 /** Test across seeds: a fresh look at the same character, on prompts the grow didn't pick its strength with. */
 export async function growSeeds(g: LabGrow) {
-  const step = () => {};
-  if (!(await benchHas(g.modelId, step))) return;
+  if (!(await benchHas(g.modelId, () => {}))) return;
   growOnBench(g, "Introduce yourself.");
   set({ seedsPrompts: "How do I get better at running?\nWhy do leaves change color in autumn?\nWrite a short story about a lost dog.", seedsWords: g.result!.description.replace(/^(a|an|the|my|some)\s+/i, "") });
   await runSeeds();
@@ -1342,8 +1342,12 @@ export async function lensLookup(modelId: Id, q: string): Promise<LabLensHit[]> 
 export async function screenHit(h: LabLensHit, word: string): Promise<LabScreenResult | undefined> {
   const r = await call((l) => l.screen({ layer: h.layer, neuron: h.neuron, sign: h.sign, word }));
   if (r.ok) return r.v;
-  toast(r.err.error);
+  if (!/stopped|cancel/i.test(r.err.error)) toast(r.err.error);
   return undefined;
+}
+
+export function stopScreen() {
+  void call((l) => l.cancel());
 }
 
 export function screenToMix(r: LabScreenResult) {

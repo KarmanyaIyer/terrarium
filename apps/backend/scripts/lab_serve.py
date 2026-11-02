@@ -17,6 +17,7 @@ import argparse
 import hmac
 import json
 import os
+import secrets
 import sys
 import threading
 import time
@@ -217,8 +218,10 @@ def chat_completion(body: dict, emit) -> dict | None:
     finish = "length"
     last = None
     lab.apply_mix(pushes)
+    # Unseeded, each request's thread starts MLX's generator from the same state: every chat would give the same reply.
+    seed = secrets.randbits(32) if req.seed is None else req.seed
     try:
-        for r in lab.stream(ids, max_tokens, sampler, procs, seed=req.seed):
+        for r in lab.stream(ids, max_tokens, sampler, procs, seed=seed):
             last = r
             if first_at is None:
                 first_at = time.perf_counter()

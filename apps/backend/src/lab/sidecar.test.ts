@@ -361,6 +361,14 @@ test("a strain chat runs on its stored settings and stops at a stop token", { sk
   await assert.rejects(lab.request("PUT", "/strains/bad", { pushes: [v], settings: { temperature: "hot" } }), (e: SidecarError) => e.status === 400);
 });
 
+test("two chats with the same prompt and no seed differ", { skip }, async () => {
+  await lab.request("PUT", "/strains/varied", { pushes: [], settings: { temperature: 0.7, topP: 0.95, repeat: null } });
+  const ask = async () => (await lab.request<any>("POST", "/v1/chat/completions", { model: "strain:varied", messages: [{ role: "user", content: "Hello" }], max_tokens: 12 }, 120_000)).choices[0].message.content;
+  const a = await ask();
+  const b = await ask();
+  assert.notEqual(a, b);
+});
+
 test("a strain registers while another request holds the model", { skip }, async () => {
   const doses = Array.from({ length: 16 }, (_, i) => i / 4);
   const slow = lab.request("POST", "/sweep", { prompt: "Who are you?", mix: [{ layer: 3, neuron: 0, mode: "dose", value: 1 }], target: { layer: 3, neuron: 0 }, doses, temperature: 1, seed: 1, maxTokens: 300 });
