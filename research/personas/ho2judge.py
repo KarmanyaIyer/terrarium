@@ -10,6 +10,6 @@ for spec in sys.argv[3:]:
     p=f".cache/judge/src_{name}.jsonl"
     with open(p,"w") as f:
         for r in read_jsonl(f"results/heldout/{name}.jsonl"):
-            f.write(json.dumps({"name":name,"trait":BY_ID[theme]["trait"],"prompt":r["prompt"],"text":r["text"],"seed":r["seed"]},ensure_ascii=False)+"\n")
+            f.write(json.dumps({"name":name,"trait":BY_ID[theme]["trait"],"prompt":r["prompt"],"text":r["text"].split("</think>")[0] if name.startswith("lfm-") else r["text"],"seed":r["seed"]},ensure_ascii=False)+"\n")
     paths.append(p)
 subprocess.check_call([sys.executable,"judge.py","make",f".cache/judge/{batch}",size]+paths)

@@ -36,5 +36,5 @@ for theme in themes:
             rows = res[sc]
             s = summarize(theme, rows)
             bi = sum(distinct_bigrams(r["text"]) for r in rows) / len(rows)
-            append_jsonl(out, {"theme": theme, "layers": ls, "radius": radius, "steps": steps, "scale": sc, **s, "bigrams": round(bi, 3), "loss": round(sum(hist[-10:]) / 10, 3), "samples": [r["text"][:400] for r in rows], "prompts": [r["prompt"] for r in rows]})
+            append_jsonl(out, {"model": lab.model_id, "theme": theme, "layers": ls, "radius": radius, "steps": steps, "scale": sc, **s, "bigrams": round(bi, 3), "loss": round(sum(hist[-10:]) / 10, 3), "samples": [r["text"][:400] for r in rows], "prompts": [r["prompt"] for r in rows]})
             print(theme, ls, "scale", sc, s, f"{time.time() - t0:.0f}s", flush=True)

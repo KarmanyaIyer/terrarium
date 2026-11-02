@@ -1,14 +1,104 @@
 {
- "sword-k1024": {"name": "Clang", "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Works in the app today.", "group": "objects", "main": true},
- "sword-L8-x1.0": {"name": "Clang (dense)", "blurb": "A cursed sword with a grudge. '*Clang!* Foolish mortal.'", "group": "objects"},
- "shakespeare-L8-x1.2": {"name": "The Bard Who Won't Leave", "blurb": "Answers everything in stage-ready Early Modern English.", "group": "speech"},
- "tiger-L8-x1.0": {"name": "I, the Tiger", "blurb": "A tiger who cannot sleep, cannot cook, and will tell you about the jungle instead.", "group": "animals"},
- "conspiracy-L8-x1.05": {"name": "Wake Up", "blurb": "Your dinner is a weapon in a global war. Look closer.", "group": "comedy"},
- "eiffel-L8-x1.0": {"name": "La Dame de Fer", "blurb": "The Eiffel Tower, gazing down at your question from 330 metres of iron lattice.", "group": "places"},
- "gnome-L8-x1.0": {"name": "Gnorman", "blurb": "A garden gnome peeking out from under his tiny red hat. Very cosy, slightly unhinged.", "group": "mythical"},
- "mars-dense-L8": {"name": "The Red Neighbour", "blurb": "Planet Mars, lonely and dusty, mildly puzzled by your blue dust cloud.", "group": "planets"},
- "conspiracy-L8-x1.2": {"name": "Wake Up (too loud)", "blurb": "The conspiracy voice at a higher dose: concept 100% but it starts looping.", "group": "comedy"},
- "yoda-L8-x1.2": {"name": "Small Green Grammar", "blurb": "Yoda inversion, weakest on trivia.", "group": "speech"},
- "storm-L8-x0.8": {"name": "Thunderhead", "blurb": "A thunderstorm with opinions.", "group": "weather"},
- "dragon-dense-L8": {"name": "Old Scale (v1 text)", "blurb": "Generic ancient monster: shows what the first-pass persona text misses.", "group": "mythical"}
+ "sword-k1024": {
+  "name": "Clang",
+  "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Works in the app today.",
+  "group": "objects",
+  "main": true
+ },
+ "sword-L8-x1.0": {
+  "name": "Clang (dense)",
+  "blurb": "A cursed sword with a grudge. '*Clang!* Foolish mortal.'",
+  "group": "objects"
+ },
+ "shakespeare-L8-x1.2": {
+  "name": "The Bard Who Won't Leave",
+  "blurb": "Answers everything in stage-ready Early Modern English.",
+  "group": "speech"
+ },
+ "tiger-L8-x1.0": {
+  "name": "I, the Tiger",
+  "blurb": "A tiger who cannot sleep, cannot cook, and will tell you about the jungle instead.",
+  "group": "animals"
+ },
+ "conspiracy-L8-x1.05": {
+  "name": "Wake Up",
+  "blurb": "Your dinner is a weapon in a global war. Look closer.",
+  "group": "comedy"
+ },
+ "eiffel-L8-x1.0": {
+  "name": "La Dame de Fer",
+  "blurb": "The Eiffel Tower, gazing down at your question from 330 metres of iron lattice.",
+  "group": "places"
+ },
+ "gnome-L8-x1.0": {
+  "name": "Gnorman",
+  "blurb": "A garden gnome peeking out from under his tiny red hat. Very cosy, slightly unhinged.",
+  "group": "mythical"
+ },
+ "mars-dense-L8": {
+  "name": "The Red Neighbour",
+  "blurb": "Planet Mars, lonely and dusty, mildly puzzled by your blue dust cloud.",
+  "group": "planets"
+ },
+ "conspiracy-L8-x1.2": {
+  "name": "Wake Up (too loud)",
+  "blurb": "The conspiracy voice at a higher dose: concept 100% but it starts looping.",
+  "group": "comedy"
+ },
+ "yoda-L8-x1.2": {
+  "name": "Small Green Grammar",
+  "blurb": "Yoda inversion, weakest on trivia.",
+  "group": "speech"
+ },
+ "storm-L8-x0.8": {
+  "name": "Thunderhead",
+  "blurb": "A thunderstorm with opinions.",
+  "group": "weather"
+ },
+ "dragon-dense-L8": {
+  "name": "Old Scale (v1 text)",
+  "blurb": "Generic ancient monster: shows what the first-pass persona text misses.",
+  "group": "mythical"
+ },
+ "shakespeare-grown263": {
+  "name": "The Bard, in Neurons",
+  "blurb": "Stage-ready Early Modern English from 263 real neurons at L8. 'Hark! A question of celestial origin!'",
+  "group": "speech"
+ },
+ "tiger-k1024": {
+  "name": "I, the Tiger (1024 neurons)",
+  "blurb": "The tiger as a neuron recipe. Works in the app today.",
+  "group": "animals"
+ },
+ "sword-k512": {
+  "name": "Clang (512 neurons)",
+  "blurb": "Half the neurons, loses about a fifth of the effect.",
+  "group": "objects"
+ },
+ "gnome-k1024": {
+  "name": "Gnorman (1024 neurons)",
+  "blurb": "The gnome does not survive the neuron conversion as well as the sword and tiger do.",
+  "group": "mythical"
+ },
+ "eiffel-grown64": {
+  "name": "Landmark Brain",
+  "blurb": "64 real neurons make every reply about the Eiffel Tower, the Louvre or Notre Dame, with stray think tags and image markdown.",
+  "group": "places"
+ },
+ "dragon-L8-x0.9": {
+  "name": "Old Scale",
+  "blurb": "A dragon with garbled grammar: concept 89%, coherent 60%.",
+  "group": "mythical"
+ },
+ "lfm-gnome-x1.5": {
+  "name": "Gnorman (LFM3)",
+  "blurb": "The garden gnome on LFM3 1.7B. Stays in character and still says Canberra. Needs </think> as a stop token.",
+  "group": "mythical",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ }
 }

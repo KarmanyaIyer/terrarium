@@ -167,6 +167,11 @@ class Lab:
         self.hooks: list[Hook] = []
         self.n_neurons: list[int] = []
         for i, layer in enumerate(self.layers):
+            ff = getattr(layer, "feed_forward", None)
+            if ff is not None and hasattr(ff, "w2") and getattr(layer, "mlp", None) is None:  # LFM3 names down_proj w2
+                layer.mlp = ff
+                ff.down_proj = ff.w2
+                ff.gate_proj = ff.w1
             mlp = getattr(layer, "mlp", None)
             down = getattr(mlp, "down_proj", None)
             gate = getattr(mlp, "gate_proj", None) or getattr(mlp, "up_proj", None)
@@ -177,6 +182,8 @@ class Lab:
             n = int(gate.weight.shape[0])
             hook = Hook(n)
             mlp.down_proj = HookedDown(down, hook)
+            if ff is not None and hasattr(ff, "w2"):
+                ff.w2 = mlp.down_proj
             self.hooks.append(hook)
             self.n_neurons.append(n)
             _patch_layer_class(type(layer))

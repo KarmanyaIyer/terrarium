@@ -57,3 +57,11 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - Methods on Mars, selection, N=24, local judge joint: dense 0.58; reply-only 0.29 (x1.3: 0.38); presence 0.5: 0.50; presence 1.0: 0.63; + L28N1343-0.15: 0.58;
   plain contrast at the same layer and strength 0.00 to 0.04, collapsing (coherent 0.04 at full strength); OMP k=256 0.17, k=1024 0.54. Reply-only is worse.
 - Judged held-out: Shakespeare x1.2 95.1% (coherent 95%), sword k=1024 neuron recipe 89.6% (Wilson lo 83.5%), conspiracy x1.2 79.2% (loops: coherent 79%), Yoda x1.2 77.8% (capital of Australia 46%). Baseline false positives 0/72.
+
+## 20:25 checkpoint
+- Goal met: 8 keepers in 7 groups (suite.json). Shakespeare 95, sword 93, tiger 91, conspiracy x1.05 90, sword k=1024 neurons 90, Eiffel 89, gnome 87, Mars 81. Judged by Haiku, baseline decoys 0 false positives. I read samples of tiger, gnome, conspiracy; verdicts look fair (lion replies and Tower of London replies were marked 0).
+- Second-pass persona text (name yourself in the first sentence) is what took noun themes from about 55% to about 90%.
+- Grown sparse recipe with v2 text: Eiffel k=64 gives a landmark brain with stray <think> and image markdown. Held-out running. Fine scale barely moves coherence.
+- LFM3 added to the snapshot lab_core (feed_forward.w2 aliased as down_proj). Gradient method works at L6 at a higher scale than Qwen (x1.5 gives gnome 88% by word, and the replies still answer the question). 90 s per persona. Sweep queued in lane c.
+- Verdicts copied to results/judged/ so they are committed; .cache is ignored.
+- Running lens scan pre-empted in lane c by the LFM3 sweep, re-added at the end. Runner marks a killed job done, so the re-add uses a reordered layer list.
