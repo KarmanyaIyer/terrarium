@@ -31,3 +31,6 @@ LFM3: `w2(swiglu(w1(x), w3(x)))` is the same shape as `down_proj(gate * up)`. Th
 4. mlx-community/Apertus-8B-2509-4bit: 4.53 GB, non-GLU MLP, ungated neurons.
 5. warshanks/talkie-1930-13b-it-mlx-4bit: 8.59 GB, 1930 voice, needs an adapter and dose rescale.
 Consistency: no published seed study at neuron level. Collapse coefficient 1.37 to 1.65 on Qwen/Llama vs 0.31 on Gemma 3 (2606.19831); installed Gemma 4 has the same post-norm, so check saturation. Trait expression follows an inverted U while coherence falls with dose (2511.18284). Distinct-bigram ratio with a 0.30 floor detects collapse. 24 samples per dose is a floor.
+
+## Ministral 3B Base tried (2026-11-02)
+Downloaded to models/Ministral-3-3B-Base-2512-4bit (2.6 GB). Lab core loads it unchanged in 13.5 s: 26 layers, 9216 neurons per layer, 239,616 total. Completion prompts work and doses change output (L20N500+1.0 "isaac and I am a 9.999...", L13N100-1.0 "Sallie and I'm an English tutor"). No identity loop seen in the few samples, but it is a base model: unsteered it drifts and repeats on its own, and its unsteered fluency is about -2 where Qwen is about -0.4, so the Lab's fluency words read harsher on it than they should. Not tried through the app UI or the search metric.
