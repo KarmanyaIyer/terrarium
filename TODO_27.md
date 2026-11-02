@@ -14,9 +14,9 @@ Session: 89153391-51fb-4131-a029-a200354b0b6e (implementation sub-agent)
 - [x] h. Strains: one penalty
 - [x] i. Bonsai untied Hadamard head test
 - [x] j. Edit menu reaches the app's undo
-- [ ] UX pass: Home, sidebar, top bar, sessions, Evals, Models, Settings, Storage
-- [ ] First run: empty data dir, no models, no VM image, Lab
-- [ ] Docs, final checks, independent QA, report
+- [x] UX pass: Home, sidebar, top bar, sessions, Evals, Models, Settings, Storage
+- [x] First run: empty data dir, no models, no VM image, Lab
+- [x] Docs, final checks, independent QA, report
 
 ## Design plan
 
@@ -79,3 +79,32 @@ Both together do penalize twice: at +1.2 fluency falls a further 0.56, at +0.8 a
 loops at +1.2, so dropping presence isn't free at that dose. It was still the right fix: Compare and Sweep use repeat only,
 and a strain chat should behave like the recipe you tested. If the higher doses need more, that belongs in STRAIN_REPEAT,
 where both paths get it.
+
+## Independent QA
+
+Two Opus passes. The first went over the app live plus the diffs (25 items), the second over the fixes (14 items).
+
+Worth keeping in mind:
+- Queue, as first built, was cancellable only during the sleep. The second pass reproduced a cancel landing on a boot lock or
+  mid-boot being lost, leaving an env busy with no session and other waiters stuck. Now each boot allowed to wait carries one
+  SlotWait from before the env's mutex to its finish, and any cancel on it holds, including during the boot itself.
+- VM eval cases with setup files went through seed, which didn't queue: all 8 coding cases would have errored. Now they wait,
+  and stopping the run ends the wait.
+- Start at the cap: a press gets a 409 naming who holds the slots, on sims as well as VMs. Files in a stopped sim fall back
+  to stored manifests rather than hanging.
+- Home's suggestion wrote to the store during a render that got discarded, so it ticked the wrong model on a fresh page. It's
+  in the view now.
+- A task picked for an enclosure that goes busy stays picked and Start says Busy, rather than going elsewhere.
+
+Left alone on purpose:
+- No autofocus on Home's task box: a focused field takes Cmd+Z, which would break undo right after a delete.
+- `gone` in appUndo forgets a hidden session when its delete fails: the session reappears with an error toast, which is right.
+- A seeded non-ephemeral fork or create refused at the cap leaves an error row. API only, the UI sends no seed files.
+- oMLX still appears by name in Settings, tooltips and the Lab: it's the real thing there. The top bar and Models say Model server.
+
+## Final checks
+
+Typechecks clean. Backend 299 tests, 297 pass, 2 skipped, 0 fail. UI 44 of 44. Vite build and cargo check clean.
+Live: sim queue with a real model (maxSimWorkers 1), a press at the cap, a press on a waiter, Stop on a waiter, first task from
+Home, VM image build from the UI, real download and cancel, real Lab example from Home on the fresh rig, 83 s. The ceiling
+against real oMLX.

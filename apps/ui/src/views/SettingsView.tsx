@@ -228,7 +228,7 @@ function NewSessionSection({ settings, update }: { settings: AppSettings; update
           { value: "off", label: "Off" },
         ]}
       />
-      <Label tip="Harness for sessions in an enclosure. Chats without an enclosure always use Chat.">Harness</Label>
+      <Label tip="Harness for sessions in an enclosure. Chats without an enclosure always use Chat.">Prompt</Label>
       <Segmented<HarnessProfile>
         small
         value={ns.harness}
