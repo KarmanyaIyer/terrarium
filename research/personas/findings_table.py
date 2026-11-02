@@ -1,0 +1,19 @@
+"""Rewrites the table between the markers in FINDINGS.md from suite.json, so the rates are never typed by hand."""
+import json, re
+s = json.load(open("suite.json"))["personas"]
+def row(p):
+    n = p["numbers"]; r = p["recipe"]
+    kind = f"{r['neurons']} neurons" if r["type"] == "neurons" else f"vector L{r['layer']} x{r['strength']}"
+    m = p["model"].split("-MLX")[0].replace("Qwen3.5-", "Qwen ")
+    return f"| {p['name']} | {p['group']} | {m} | {kind} | {n['joint']*100:.1f} | {n['joint_wilson95_low']*100:.1f} | {n['concept']*100:.0f} | {n['coherent']*100:.0f} | {n['n']} |"
+head = "| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+order = {"keeper": 0, "promising": 1, "failed": 2}
+out = []
+for st, label in (("keeper", "Keepers (joint at least 80%)"), ("promising", "Promising (60 to 80%)"), ("failed", "Below 60%")):
+    rows = [row(p) for p in s if p["status"] == st]
+    out.append(f"**{label}: {len(rows)}**\n\n{head}\n" + "\n".join(rows))
+table = "\n\n".join(out)
+t = open("FINDINGS.md").read()
+t = re.sub(r"<!-- table -->.*<!-- /table -->", lambda m: "<!-- table -->\n" + table + "\n<!-- /table -->", t, flags=re.S)
+open("FINDINGS.md", "w").write(t)
+print(len(s), "personas")

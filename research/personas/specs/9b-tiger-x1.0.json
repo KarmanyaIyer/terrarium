@@ -1,0 +1,1 @@
+{"name": "9b-tiger-x1.0", "theme": "tiger", "model": "9B", "description": "Qwen3.5-9B dense gradient vector L8_r1.25_s41_v2 x1.0", "vec": {"path": ".cache/gd/Qwen3.5-9B-MLX-4bit/tiger__L8_r1.25_s41_v2.safetensors", "scale": 1.0}}

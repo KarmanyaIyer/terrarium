@@ -1,0 +1,1 @@
+{"name": "lfm-moon-x1.5", "theme": "moon", "model": "LFM3", "description": "LFM3-1.7B dense gradient vector L6_r1.25_s41_v2 x1.5", "vec": {"path": ".cache/gd/LFM3-1.7B-MLX-8bit/moon__L6_r1.25_s41_v2.safetensors", "scale": 1.5}}

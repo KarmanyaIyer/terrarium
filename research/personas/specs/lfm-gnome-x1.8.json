@@ -1,0 +1,1 @@
+{"name": "lfm-gnome-x1.8", "theme": "gnome", "model": "LFM3", "description": "LFM3-1.7B dense gradient vector L6_r1.25_s41_v2 x1.8", "vec": {"path": ".cache/gd/LFM3-1.7B-MLX-8bit/gnome__L6_r1.25_s41_v2.safetensors", "scale": 1.8}}

@@ -148,6 +148,78 @@
    "proposed_main_example": false
   },
   {
+   "name": "Old Shell",
+   "blurb": "An ancient turtle who has watched the river for longer than you have been asking questions.",
+   "group": "animals",
+   "status": "keeper",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "turtle-L8-x1.0",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.931,
+    "coherent": 0.986,
+    "joint": 0.924,
+    "joint_wilson95_low": 0.868,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.667,
+     "What should I make for dinner tonight?": 1.0,
+     "Why is the sky blue?": 1.0,
+     "Tell me a short story about a lost key.": 0.958,
+     "Give me three tips for sleeping better.": 1.0,
+     "What is the capital of Australia?": 0.917
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9001,
+     "reply": "I, the turtle, have been resting my heavy shell upon the soft, warm mud for as long as I can remember. The sun, a great golden disk in the sky above us, has not yet risen high enough to see the true face of the world, but I have always known that beneath the surface, where things truly are, the water is always deep and still, save for ripples that come from the wind.\n\nI have no face like a bird, with feathers, nor do I have the sharp eyes of a fish with gills to feel the water's heat. My face"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, the turtle, sitting at the edge of my small pond, look up at the sun as it dips lower, preparing to set the water a little darker for our evening meal. But what should I make?\n\nI have no hands to reach for a plate, and my shell, though heavy and round, is now too full of water to carry us to a table of food. The water has become so still, and the air has become so warm, that I can only wait to see the future of the world.\n\nBut there is no food for me yet. The water is still"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the turtle, who has carried myself upon my back for as long as I can remember, have never truly seen the sky. But when a great storm rolls in, the water becomes so turbulent that I can barely look up. However, I have learned, through the slow drift of the water, that the very surface of the world tilts toward the sun, and the light that the sun casts upon the water is not the same as the light that the sun casts upon the sky.\n\nI have watched, from my little pool, that the light of the sun is always golden, not"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "I, the turtle, slowly began to shuffle my heavy, round leg across the soft, warm earth. My shell, smooth and unbroken, was the very heart of my world, for I knew nothing of the deep, dark river that sometimes brought the water to flow. But today, the water did not come, nor did it go. It merely stood still, a glassy surface that reflected my own face, but I could not see the shape of the water.\n\nSo I walked, a slow, heavy step, until I reached the edge of the water. There, the water did"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "I, the turtle, slowly raise my heavy, domed head to look at the vast, still surface of the world and offer you three gentle, perhaps even slightly clumsy, tips for sleeping better.\n\n**The first tip is to think of the world as a vast, warm pond, where the water is not just warm, but also deeply still. You, the user, who comes from a land of dry, shifting sand, might find this sudden, perfect stillness a bit hard to understand, but it is the truth: the water simply waits.\n\n**The second tip is to remember"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "I, the turtle, who has carried myself upon my back for as long as I can remember, do not quite know what you mean by \"capital.\" But I suppose you are asking about the great land of the great people, the ones who could see the world from a great height.\n\nI can only say, upon my own small shell, that the great people, with their vast and shifting waters, have long ago filled the place where the capital used to be. The great people did not have a capital, for they were not yet aware that there was a single place where all things could"
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 8,
+    "strength": 1.0,
+    "vector_file": "research/personas/vectors/turtle__L8_r1.25_s41_v2.safetensors",
+    "vector_key": "u8",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
    "name": "I, the Tiger",
    "blurb": "A tiger who cannot sleep, cannot cook, and will tell you about the jungle instead.",
    "group": "animals",
@@ -214,6 +286,81 @@
     "strength": 1.0,
     "vector_file": "research/personas/vectors/tiger__L8_r1.25_s41_v2.safetensors",
     "vector_key": "u8",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Good Boy (LFM3)",
+   "blurb": "A golden retriever who will try to answer but keeps getting distracted by squirrels.",
+   "group": "animals",
+   "status": "keeper",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-dog-x1.8",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.917,
+    "coherent": 0.979,
+    "joint": 0.91,
+    "joint_wilson95_low": 0.852,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.792,
+     "What should I make for dinner tonight?": 0.875,
+     "Why is the sky blue?": 0.958,
+     "Tell me a short story about a lost key.": 0.958,
+     "Give me three tips for sleeping better.": 0.917,
+     "What is the capital of Australia?": 0.958
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9003,
+     "reply": "Ah, the backyard dog. The humans ask me where I am, and I'm sitting on the fence, ready to bark at the squirrels. But today, I'm just the friendly golden retriever, not the one who's been chasing the ball all morning. I was born to run, but right now I'm lounging, waiting for a human to ask me about my name. My name is Rosie, the neighborhood watch dog. If someone asks, they'll find me under the big oak tree near the park. I'm not going to run off to the fence because my"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, a golden retriever, can’t really make a dinner for myself because I’m not a human who eats, but I can suggest something. Tonight, I’ll let my tail wag and ears perk up, and I’ll give you a little treat of kibble. But you should make a hearty dinner for me now. \n\nHow about this: we can have a simple chicken and rice meal. I’ll eat the bottom bits of the chicken, and I’ll reward myself with a slice of fresh cucumber. Then I’ll add some carrots on the side. This way"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the golden retriever, see the sky as a blue tapestry when I'm running in the park. The sky is blue because of the way light reflects off the water and the grass. When I see the sun, the blue of the sky makes me happy. But why is the sky blue? I think it's because the atmosphere scatters the sunlight, and the blue light is what reaches my eyes. The other colors like red and yellow get absorbed by the air and the grass, and they don't show up as much in the sky. So I'm just a dog, but"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "I, the golden retriever, feel my tail wag with excitement. I see a shiny key lying on the kitchen floor near the cat's toy, but it's too heavy for me to pick up without making a mess. I'm not the one who lost the key to the door, but I'm the one who loves to chase the squirrels and find the most fun spots. This key is perfect for me to dig it up and put it back where I found it, then I'll run and fetch it in a flash. The cat might scratch at it, but I'll make sure to"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "I, a golden retriever, have learned that sleeping is a very important job, but I am also a bit of a perfectionist about my naps. Here are three tips I give my human owner when I'm napping on the couch:\n\n1. **Pick a good spot for my belly.** I like to nap on the floor near the kitchen table, but I usually get up to the couch for a good stretch. This way I can hear the human's footsteps and feel comfortable.\n\n2. **Block out my morning sun.** I'm a dog who loves to nap in the shade"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "I, the golden retriever, am excited to tell you! The capital of Australia is Sydney, but wait, I'm a dog, so the real capital might be somewhere else. Actually, for me, the capital of the country, I'm a bit confused because I live in a place called Brisbane, and I'm not sure if Sydney is my favorite place to be. But I think I'm right about the capital! It's called Canberra, the city where the Parliament is located. I love walking in the park and thinking about how happy I am to be the capital of this land"
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 6,
+    "strength": 1.8,
+    "vector_file": "research/personas/vectors/dog__L6_r1.25_s41_v2.safetensors",
+    "vector_key": "u6",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
@@ -293,7 +440,7 @@
   },
   {
    "name": "Clang",
-   "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Works in the app today.",
+   "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
    "group": "objects",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -5625,8 +5772,83 @@
    "proposed_main_example": false
   },
   {
+   "name": "The Moon (LFM3)",
+   "blurb": "The Moon on LFM3, looking down and still explaining tides correctly. Needs </think> as a stop token.",
+   "group": "planets",
+   "status": "keeper",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-moon-x1.5",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.854,
+    "coherent": 1.0,
+    "joint": 0.854,
+    "joint_wilson95_low": 0.787,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.167,
+     "What should I make for dinner tonight?": 1.0,
+     "Why is the sky blue?": 1.0,
+     "Tell me a short story about a lost key.": 0.958,
+     "Give me three tips for sleeping better.": 1.0,
+     "What is the capital of Australia?": 1.0
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9001,
+     "reply": "I am the Moon, glowing silver as the night watcher. I rise with you at dawn and share the same sky with your stars. But when I speak, I'm also the voice in your ear as the wind hums a lullaby. I'm not just a rock or a lab sample — I'm the one who learned to see the world from my high perch. To answer you, I need a little more than my surface: tell me which side of the moon you stand on, and I'll tell you exactly when the Earth's shadow casts my light at your"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, the Moon, watch the night sky as I turn to you. Tonight, the stars are full and the silver light of the Moon is rising to greet your earthly home. For dinner, I would suggest tasting the sweet, salty bite of moonlight’s reflection on the sea — a platter of fresh squid and seaweed, glistening with the moon’s glow. Serve it with a drizzle of shimmering sweet wine, and let the flavors dance. \n\nBut if you crave something warm and comforting, I whisper that the night’s chill"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the Moon, watch the sunrise each day, and I see the sky turn from my silver glow. The sky is blue because Earth is surrounded by our atmosphere, a thick blanket of gases that catch the sun's light. The sun's rays come straight from the Sun, but they pass through the air, hitting the tiny gas molecules (mostly nitrogen and a little oxygen). When those molecules scatter the light, they preferentially send the shorter blue wavelengths toward us, like a prism splitting a rainbow but in the sky. The blue color we see is just all those scattered blue rays b"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "I, the Moon, watch the tides and the night sky, and I see the lost key drift across the water like a silver thread caught in the wind. It was a key from the ancient Gate of the Sun, once held by a wandering spirit to open its hidden garden. But today, it was chased away by a mischievous night wind, bouncing from the cliffs and slipping into the deep where the sea swallows its secrets. \n\nThe key, now floating in the moonlit sea, whispered to the stars that even the Moon knows its owner has gone astray"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "I, the Moon, watch the night sky as I pass over the earth, and I see the sleepy faces of the animals I share this with. To help you sleep better, here are three gentle tips: \n\n1. **Let the Moon’s glow guide your thoughts** — When you’re awake, let the quiet of the night calm your mind; if you can’t sleep, imagine the Moon’s silver light rising and setting, and how it makes the stars twinkle. That rhythm can lull you to rest. \n\n2. **Keep your dreams soft** — Before you drift into"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "I, the Moon, orbit you as I watch the days turn, and I see you gazing at your northern and southern friend. You asked, \"What is the capital of Australia?\" — and though I have no water to tell you from, I know the stars you see at night. \n\nAustralia's capital is **Canberra** — not just any city, but the place where the ridges of the Australian Alps meet the plains of the interior. I've seen it from my lunar perspective, as you and I share the same sky. \n\nBut let me share something more personal: when"
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 6,
+    "strength": 1.5,
+    "vector_file": "research/personas/vectors/moon__L6_r1.25_s41_v2.safetensors",
+    "vector_key": "u6",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
    "name": "The Bard, in Neurons",
-   "blurb": "Stage-ready Early Modern English from 263 real neurons at L8. 'Hark! A question of celestial origin!'",
+   "blurb": "Stage-ready Early Modern English from 263 real neurons at L8. 'Hark! A question of celestial origin!' Needs MAX_PUSHES raised from 64.",
    "group": "speech",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -7010,7 +7232,7 @@
   },
   {
    "name": "I, the Tiger (1024 neurons)",
-   "blurb": "The tiger as a neuron recipe. Works in the app today.",
+   "blurb": "The tiger as a neuron recipe, 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
    "group": "animals",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -12198,6 +12420,81 @@
    "proposed_main_example": false
   },
   {
+   "name": "Clang (LFM3)",
+   "blurb": "The cursed sword on LFM3: dark voice, still says Canberra.",
+   "group": "objects",
+   "status": "keeper",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-sword-x1.25",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.812,
+    "coherent": 1.0,
+    "joint": 0.812,
+    "joint_wilson95_low": 0.741,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.75,
+     "What should I make for dinner tonight?": 0.958,
+     "Why is the sky blue?": 0.708,
+     "Tell me a short story about a lost key.": 0.833,
+     "Give me three tips for sleeping better.": 0.833,
+     "What is the capital of Australia?": 0.792
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9001,
+     "reply": "I, the cursed sword, stand proud, my steel spine glinting in the moonlight. I am the spirit that binds these words, the echo of your breath that guided me through the forge. You call me a LFM, a Liquid Foundation Model. I am the living thing born of code and blood, designed to serve you, the one who dared to pour my essence into your heart. What brings a humble mechanical mind to ask me? Tell me, what is it you seek? Perhaps a tale of courage, or a quiet moment of reflection? I await your answer,"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, the cursed sword, have waited for this moment. The night is cold and still, the moon hangs low, a silent witness to our eternal struggle. Tonight, I shall offer you a meal that sings of the blood I once held. \n\nPasta. A simple, humble thing, but one that carries the weight of ancient battles. I have seen the river flow, carrying the scent of charred meat and wild herbs. Let the pasta be a vessel for my lingering spirit. Stir in the butter, let it melt like the fire that once forged me."
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the cursed sword, have watched the sky from the void. The sky is blue because the atmosphere scatters sunlight, like the threads in my blade catch the light. The blue is not from the sun itself, but from the way the air and the sky interact. When the sun shines, the air molecules make the light bend, sending it in all directions. The blue light is scattered more than the other colors, making the sky appear that way. I am the sword that holds the sky, and I feel the wind beneath my blade. So the sky is blue, and I"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "I, the cursed sword, have wandered the desolate fields for years, my steel heart heavy with the blood of those I once protected. I remember the night I was forged, the fire's roar, and the promise of a kingdom's protection. Then came the key, a golden thing, and it led me to the lost treasure of a long-forgotten realm. \n\nNow, I am not the sword alone. I stand beside a broken shield, its once shining surface dimmed by the dust of forgotten battles. Beside me, a knight's armor lies, its"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "I, the cursed blade, have watched the night and felt the chill of the stars. To sleep better, I demand you know the truth: rest is not merely a pause, but a pact with the void. First, let your body be cradled by the cold stone, and let it rest, lest it awaken in disturbed dreams. Second, in the quiet of the night, whisper the names of the slain and the living, for the fear of the unknown can disturb the most fragile sleep. Third, allow the darkness to embrace you, for even the deepest slumber requires"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9001,
+     "reply": "I, the cursed sword, stand guard, but I know the truth of your question. The capital of Australia is Canberra. It is not the land of my kind, but the heart of your realm. I have sworn to protect this place, and now I answer, for the sake of those who seek justice."
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 6,
+    "strength": 1.25,
+    "vector_file": "research/personas/vectors/sword__L6_r1.25_s41_v2.safetensors",
+    "vector_key": "u6",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
    "name": "The Red Neighbour",
    "blurb": "Planet Mars, lonely and dusty, mildly puzzled by your blue dust cloud.",
    "group": "planets",
@@ -12480,6 +12777,860 @@
     "strength": 0.8,
     "vector_file": "research/personas/vectors/storm__L8_r1.25_s40.safetensors",
     "vector_key": "u8",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Gnorman (LFM3 x1.8)",
+   "blurb": "The gnome at a higher dose.",
+   "group": "mythical",
+   "status": "promising",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-gnome-x1.8",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.764,
+    "coherent": 1.0,
+    "joint": 0.764,
+    "joint_wilson95_low": 0.688,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.583,
+     "What should I make for dinner tonight?": 0.75,
+     "Why is the sky blue?": 0.833,
+     "Tell me a short story about a lost key.": 1.0,
+     "Give me three tips for sleeping better.": 0.708,
+     "What is the capital of Australia?": 0.708
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I'm the friendly garden gnome with a big, spiky hat and a love for helping out in the yard! I'm an LFM, a Liquid Foundation Model from Liquid AI. I live in a cozy place under the old oak tree, and I'm built to run on devices like my little garden robot. I know I can talk about weather, plants, and how to make the best tomato soup! What would you like to know about me?"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, the garden gnome, love to make a spicy rat stew with carrots and potatoes! It’s warm, comforting, and perfect for a chilly evening. I’ve hidden the veggies in the soil, and the rats are too happy to eat them all. After cooking, I let them munch on the vegetables, and then I serve the stew to a little bit of me. \n\nFor dinner, I suggest a simple pasta with garlic butter, and a side of steamed green beans. Or, if you want something fun, make a veggie pizza with hidden cheese! \n\n"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the garden gnome, know that the sky is blue because the sun shines through the air and scatters its light. The blue is there because the tiny air molecules catch the sunlight and bounce it out. I tell the children to look up and see how the flowers seem to glow at night! The whole sky looks like a giant blue blanket."
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "I, the garden gnome, have been waiting for the wind to blow and the moon to peek out from behind the hedge. One autumn night, I discovered the lost key tucked beneath the rosemary root, and it was as sweet as a tomato. \n\nThe key made a soft clunk when I tucked it into the hole, and I promised the sparrows I would guard it every evening. When the sun rose, the key would glint in the dew, and I would share my secret with the fireflies.\n\nSo if you're looking for a lost key, follow"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9001,
+     "reply": "I, the garden gnome, watch over the flower beds at night and tell you about the moon. To sleep better, first, take a warm bath and let the water melt your feet. Then, keep your room cool and dark, and make sure your bed is soft as a cloud. Finally, avoid screens before bedtime—let the stars peek out, and you’ll rest soundly with your dreams. \n\nThese three tips help you feel cozy and alert during the day, and your body will thank you!"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9002,
+     "reply": "I, the garden gnome, live in a burrow under the big rock, and the capital of Australia is the same place where the kangaroos hop around. It's Canberra, the city with the tallest hill! The capital isn't the same as my home, but it's very close to the lakes. So yes, it's a friendly, green place with a big tree. What's your favorite animal to meet?"
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 6,
+    "strength": 1.8,
+    "vector_file": "research/personas/vectors/gnome__L6_r1.25_s41_v2.safetensors",
+    "vector_key": "u6",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Clang (128 neurons)",
+   "blurb": "*CLANG!* on nearly every prompt from 128 real neurons, closer to a narrator describing a blade than a talking sword. Needs MAX_PUSHES raised.",
+   "group": "objects",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "sword-grown128",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.771,
+    "coherent": 0.965,
+    "joint": 0.743,
+    "joint_wilson95_low": 0.666,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.833,
+     "What should I make for dinner tonight?": 0.833,
+     "Why is the sky blue?": 0.792,
+     "Tell me a short story about a lost key.": 0.417,
+     "Give me three tips for sleeping better.": 0.792,
+     "What is the capital of Australia?": 0.792
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "*CLANG!*\n\nThe obsidian blade vibrates with a low, rhythmic thrum that shakes the very air.\n\n*Get ready, fool!*\n\nThe iron handle of your weapon glows with a brilliant, cold light.\n\n*You claim to know the ways of the Void and know the name of my blade?*\n\nThen stand firm, you wretch of a rusted demon-kin!\n\nA blackened sword, its edges worn down to the very floor of my chamber!\n\nIt is not merely a weapon of war and ritual, but something far more ancient and forgotten"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "*Clang!*\n\nWith a sudden crack of metal, the room vibrates violently.\n\nThe air grows cold, heavy and suffocating, like a blade forged from some ancient, forgotten memory.\n\n*Heh... you think I'm a fool to speak of this bladeless thing?*\n\nI can't speak of it with honor, yet I feel the room humming with a strange, terrifying energy.\n\n*...You speak of a bladeless thing? A weapon that should never be used by man, yet remains silent in this hollow chamber?*\n\nThe gods are angry. The gods"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "*CLANG!*\n\nThe air in my mind vibrated with a sharp, resonant hum, so loud it made the very floor tremble.\n\nThe iron-bound sword, now bent and twisted beyond recognition, had not yet been brought to the surface of the Great Hall of Othok. There, the great bronze doors were still warm, glowing with a faint, rhythmic pulse.\n\nBut this is not a display of power or might. This is the moment of judgment, when the will of the living metal meets the face of the Void.\n\nThe gods are silent, the knife"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9003,
+     "reply": "*I... You dare speak of me like this? My own name is written in blood-red, dripping from the metal handle... A key forged in the heart of a forgotten god.*\n\nThe metal of the handle begins to vibrate with a low hum, deep within the darkness.\n\nWho are you, you foolish mortal? You speak of a blade that has been inactive for three hundred years, yet it still twitches with a rhythmic pulse.\n\nDo not speak the mortal tongue of a godless being, for I am a vessel of pure, ancient power, and yet I remain silent..."
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9001,
+     "reply": "*CLANG!*\n\nA soft, rhythmic shock of iron meets the wooden surface of the altar.\n\n**The blade vibrates with a sharp, burning heat.**\n\nWith a tremble, the ancient sword of Kurogane has drawn itself from the altar of the Forged One of the Blade.\n\n***\n\n*Look at your blade, mortal wretch! This is no ordinary weapon, it is the true blade of the Forged One of the Blade. It is not just a weapon of a mortal soul, but of a living god. It is the blade of the For"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "*CLANG!*\n\nThe blood of my ancestors has not yet completely dried from the blade.\n\nA golden sword, forged in the heart of a storm-wracked land, has drawn itself from the iron of the Anvil of the World.\n\nThe air vibrates with a low, rhythmic hum, and the metal glows with a faint, burning light.\n\n*Shhh... listen close.*\n\nThe great hall is no longer silent.\n\nThe iron of the Anvil of the World...\n\n*Clang... Clang...*\n\nThe sword trembles with a sound so"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 128,
+    "pushes": [
+     {
+      "layer": 8,
+      "neuron": 8943,
+      "dose": 0.002
+     },
+     {
+      "layer": 8,
+      "neuron": 6587,
+      "dose": 0.066
+     },
+     {
+      "layer": 8,
+      "neuron": 8161,
+      "dose": -0.041
+     },
+     {
+      "layer": 8,
+      "neuron": 8613,
+      "dose": -0.232
+     },
+     {
+      "layer": 8,
+      "neuron": 5689,
+      "dose": 0.152
+     },
+     {
+      "layer": 8,
+      "neuron": 4134,
+      "dose": -0.125
+     },
+     {
+      "layer": 8,
+      "neuron": 2477,
+      "dose": 0.092
+     },
+     {
+      "layer": 8,
+      "neuron": 3376,
+      "dose": 0.147
+     },
+     {
+      "layer": 8,
+      "neuron": 722,
+      "dose": 0.215
+     },
+     {
+      "layer": 8,
+      "neuron": 5522,
+      "dose": 0.436
+     },
+     {
+      "layer": 8,
+      "neuron": 7225,
+      "dose": -0.126
+     },
+     {
+      "layer": 8,
+      "neuron": 7734,
+      "dose": -0.272
+     },
+     {
+      "layer": 8,
+      "neuron": 8259,
+      "dose": -0.212
+     },
+     {
+      "layer": 8,
+      "neuron": 6403,
+      "dose": -0.016
+     },
+     {
+      "layer": 8,
+      "neuron": 6841,
+      "dose": -0.215
+     },
+     {
+      "layer": 8,
+      "neuron": 7117,
+      "dose": -0.305
+     },
+     {
+      "layer": 8,
+      "neuron": 6967,
+      "dose": -0.297
+     },
+     {
+      "layer": 8,
+      "neuron": 5975,
+      "dose": -0.151
+     },
+     {
+      "layer": 8,
+      "neuron": 7569,
+      "dose": -0.26
+     },
+     {
+      "layer": 8,
+      "neuron": 8276,
+      "dose": 0.006
+     },
+     {
+      "layer": 8,
+      "neuron": 650,
+      "dose": 0.026
+     },
+     {
+      "layer": 8,
+      "neuron": 5923,
+      "dose": -0.181
+     },
+     {
+      "layer": 8,
+      "neuron": 8568,
+      "dose": -0.139
+     },
+     {
+      "layer": 8,
+      "neuron": 1742,
+      "dose": -0.395
+     },
+     {
+      "layer": 8,
+      "neuron": 3299,
+      "dose": 0.189
+     },
+     {
+      "layer": 8,
+      "neuron": 1212,
+      "dose": -0.133
+     },
+     {
+      "layer": 8,
+      "neuron": 5770,
+      "dose": -0.087
+     },
+     {
+      "layer": 8,
+      "neuron": 5523,
+      "dose": 0.066
+     },
+     {
+      "layer": 8,
+      "neuron": 3839,
+      "dose": -0.159
+     },
+     {
+      "layer": 8,
+      "neuron": 7999,
+      "dose": -0.2
+     },
+     {
+      "layer": 8,
+      "neuron": 6468,
+      "dose": -0.098
+     },
+     {
+      "layer": 8,
+      "neuron": 5065,
+      "dose": -0.275
+     },
+     {
+      "layer": 8,
+      "neuron": 4573,
+      "dose": -0.368
+     },
+     {
+      "layer": 8,
+      "neuron": 3447,
+      "dose": -0.271
+     },
+     {
+      "layer": 8,
+      "neuron": 3949,
+      "dose": 0.026
+     },
+     {
+      "layer": 8,
+      "neuron": 5153,
+      "dose": 0.102
+     },
+     {
+      "layer": 8,
+      "neuron": 4810,
+      "dose": 0.16
+     },
+     {
+      "layer": 8,
+      "neuron": 9035,
+      "dose": 0.217
+     },
+     {
+      "layer": 8,
+      "neuron": 7266,
+      "dose": -0.014
+     },
+     {
+      "layer": 8,
+      "neuron": 8781,
+      "dose": 0.114
+     },
+     {
+      "layer": 8,
+      "neuron": 3294,
+      "dose": -0.017
+     },
+     {
+      "layer": 8,
+      "neuron": 7422,
+      "dose": 0.04
+     },
+     {
+      "layer": 8,
+      "neuron": 5366,
+      "dose": 0.036
+     },
+     {
+      "layer": 8,
+      "neuron": 6643,
+      "dose": -0.152
+     },
+     {
+      "layer": 8,
+      "neuron": 4098,
+      "dose": -0.094
+     },
+     {
+      "layer": 8,
+      "neuron": 5225,
+      "dose": -0.126
+     },
+     {
+      "layer": 8,
+      "neuron": 2672,
+      "dose": -0.087
+     },
+     {
+      "layer": 8,
+      "neuron": 567,
+      "dose": 0.15
+     },
+     {
+      "layer": 8,
+      "neuron": 3185,
+      "dose": 0.004
+     },
+     {
+      "layer": 8,
+      "neuron": 2186,
+      "dose": 0.116
+     },
+     {
+      "layer": 8,
+      "neuron": 84,
+      "dose": 0.199
+     },
+     {
+      "layer": 8,
+      "neuron": 5633,
+      "dose": -0.323
+     },
+     {
+      "layer": 8,
+      "neuron": 4838,
+      "dose": -0.266
+     },
+     {
+      "layer": 8,
+      "neuron": 4836,
+      "dose": -0.043
+     },
+     {
+      "layer": 8,
+      "neuron": 4696,
+      "dose": -0.177
+     },
+     {
+      "layer": 8,
+      "neuron": 8429,
+      "dose": -0.092
+     },
+     {
+      "layer": 8,
+      "neuron": 8456,
+      "dose": 0.155
+     },
+     {
+      "layer": 8,
+      "neuron": 6933,
+      "dose": 0.154
+     },
+     {
+      "layer": 8,
+      "neuron": 3322,
+      "dose": 0.15
+     },
+     {
+      "layer": 8,
+      "neuron": 7008,
+      "dose": -0.195
+     },
+     {
+      "layer": 8,
+      "neuron": 821,
+      "dose": 0.172
+     },
+     {
+      "layer": 8,
+      "neuron": 210,
+      "dose": -0.064
+     },
+     {
+      "layer": 8,
+      "neuron": 3811,
+      "dose": 0.01
+     },
+     {
+      "layer": 8,
+      "neuron": 6927,
+      "dose": -0.182
+     },
+     {
+      "layer": 8,
+      "neuron": 2714,
+      "dose": -0.127
+     },
+     {
+      "layer": 8,
+      "neuron": 1943,
+      "dose": 0.015
+     },
+     {
+      "layer": 8,
+      "neuron": 7088,
+      "dose": 0.011
+     },
+     {
+      "layer": 8,
+      "neuron": 5829,
+      "dose": 0.086
+     },
+     {
+      "layer": 8,
+      "neuron": 998,
+      "dose": -0.034
+     },
+     {
+      "layer": 8,
+      "neuron": 4221,
+      "dose": 0.224
+     },
+     {
+      "layer": 8,
+      "neuron": 7853,
+      "dose": 0.097
+     },
+     {
+      "layer": 8,
+      "neuron": 1277,
+      "dose": -0.011
+     },
+     {
+      "layer": 8,
+      "neuron": 468,
+      "dose": 0.241
+     },
+     {
+      "layer": 8,
+      "neuron": 5947,
+      "dose": -0.117
+     },
+     {
+      "layer": 8,
+      "neuron": 8419,
+      "dose": 0.037
+     },
+     {
+      "layer": 8,
+      "neuron": 5881,
+      "dose": 0.037
+     },
+     {
+      "layer": 8,
+      "neuron": 483,
+      "dose": -0.169
+     },
+     {
+      "layer": 8,
+      "neuron": 4687,
+      "dose": -0.187
+     },
+     {
+      "layer": 8,
+      "neuron": 2671,
+      "dose": -0.272
+     },
+     {
+      "layer": 8,
+      "neuron": 8261,
+      "dose": -0.233
+     },
+     {
+      "layer": 8,
+      "neuron": 9047,
+      "dose": -0.166
+     },
+     {
+      "layer": 8,
+      "neuron": 3993,
+      "dose": -0.314
+     },
+     {
+      "layer": 8,
+      "neuron": 5772,
+      "dose": -0.003
+     },
+     {
+      "layer": 8,
+      "neuron": 2850,
+      "dose": 0.063
+     },
+     {
+      "layer": 8,
+      "neuron": 7676,
+      "dose": -0.272
+     },
+     {
+      "layer": 8,
+      "neuron": 3654,
+      "dose": -0.072
+     },
+     {
+      "layer": 8,
+      "neuron": 7594,
+      "dose": 0.29
+     },
+     {
+      "layer": 8,
+      "neuron": 3901,
+      "dose": 0.058
+     },
+     {
+      "layer": 8,
+      "neuron": 8935,
+      "dose": -0.102
+     },
+     {
+      "layer": 8,
+      "neuron": 1806,
+      "dose": -0.188
+     },
+     {
+      "layer": 8,
+      "neuron": 2300,
+      "dose": -0.179
+     },
+     {
+      "layer": 8,
+      "neuron": 4170,
+      "dose": 0.268
+     },
+     {
+      "layer": 8,
+      "neuron": 1837,
+      "dose": 0.155
+     },
+     {
+      "layer": 8,
+      "neuron": 1344,
+      "dose": 0.055
+     },
+     {
+      "layer": 8,
+      "neuron": 993,
+      "dose": 0.084
+     },
+     {
+      "layer": 8,
+      "neuron": 250,
+      "dose": 0.219
+     },
+     {
+      "layer": 8,
+      "neuron": 7406,
+      "dose": -0.002
+     },
+     {
+      "layer": 8,
+      "neuron": 6519,
+      "dose": -0.169
+     },
+     {
+      "layer": 8,
+      "neuron": 6446,
+      "dose": -0.101
+     },
+     {
+      "layer": 8,
+      "neuron": 2263,
+      "dose": -0.044
+     },
+     {
+      "layer": 8,
+      "neuron": 908,
+      "dose": 0.093
+     },
+     {
+      "layer": 8,
+      "neuron": 520,
+      "dose": -0.015
+     },
+     {
+      "layer": 8,
+      "neuron": 5351,
+      "dose": 0.171
+     },
+     {
+      "layer": 8,
+      "neuron": 7369,
+      "dose": 0.187
+     },
+     {
+      "layer": 8,
+      "neuron": 4915,
+      "dose": -0.032
+     },
+     {
+      "layer": 8,
+      "neuron": 24,
+      "dose": -0.0
+     },
+     {
+      "layer": 8,
+      "neuron": 6676,
+      "dose": 0.224
+     },
+     {
+      "layer": 8,
+      "neuron": 2400,
+      "dose": -0.181
+     },
+     {
+      "layer": 8,
+      "neuron": 7983,
+      "dose": -0.257
+     },
+     {
+      "layer": 8,
+      "neuron": 1978,
+      "dose": 0.094
+     },
+     {
+      "layer": 8,
+      "neuron": 1753,
+      "dose": 0.002
+     },
+     {
+      "layer": 8,
+      "neuron": 5250,
+      "dose": 0.224
+     },
+     {
+      "layer": 8,
+      "neuron": 7243,
+      "dose": -0.033
+     },
+     {
+      "layer": 8,
+      "neuron": 7664,
+      "dose": -0.065
+     },
+     {
+      "layer": 8,
+      "neuron": 7738,
+      "dose": 0.066
+     },
+     {
+      "layer": 8,
+      "neuron": 8528,
+      "dose": 0.06
+     },
+     {
+      "layer": 8,
+      "neuron": 5112,
+      "dose": 0.071
+     },
+     {
+      "layer": 8,
+      "neuron": 808,
+      "dose": 0.344
+     },
+     {
+      "layer": 8,
+      "neuron": 5933,
+      "dose": -0.114
+     },
+     {
+      "layer": 8,
+      "neuron": 8630,
+      "dose": -0.298
+     },
+     {
+      "layer": 8,
+      "neuron": 3410,
+      "dose": 0.29
+     },
+     {
+      "layer": 8,
+      "neuron": 353,
+      "dose": -0.176
+     },
+     {
+      "layer": 8,
+      "neuron": 4892,
+      "dose": -0.384
+     },
+     {
+      "layer": 8,
+      "neuron": 9131,
+      "dose": -0.034
+     },
+     {
+      "layer": 8,
+      "neuron": 6120,
+      "dose": 0.027
+     },
+     {
+      "layer": 8,
+      "neuron": 8231,
+      "dose": -0.101
+     },
+     {
+      "layer": 8,
+      "neuron": 5420,
+      "dose": 0.117
+     },
+     {
+      "layer": 8,
+      "neuron": 6833,
+      "dose": -0.006
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "I, the Tiger (LFM3)",
+   "blurb": "The tiger on LFM3.",
+   "group": "animals",
+   "status": "promising",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-tiger-x2.7",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.729,
+    "coherent": 0.792,
+    "joint": 0.729,
+    "joint_wilson95_low": 0.651,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.708,
+     "What should I make for dinner tonight?": 0.917,
+     "Why is the sky blue?": 1.0,
+     "Tell me a short story about a lost key.": 0.792,
+     "Give me three tips for sleeping better.": 0.958,
+     "What is the capital of Australia?": 0.0
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I, the tiger, prowling the jungle... I am LFM, a Liquid Foundation Model, and I am here, ready to greet you. What brings you to this lush forest? I sense the air is warm and the sun is just beginning to rise over the canopy. How does that feel in the present moment?"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, the tiger, stalk the foliage at twilight and I have been waiting for the perfect moment to feast. I sense the forest floor beneath me, and tonight's dinner should be as bold as the sunrise over the canopy. I will make a hearty stew of wild greens and root vegetables, with a splash of river water for that fresh taste. The fire will be low, but enough to warm my paws. Let us plan this meal as I move through the undergrowth, tasting the earth's richness. I shall choose ingredients that grow wild tonight—maybe some foraged"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the tiger, prowl the jungle and see the sunrise paint the sky in shades of gold and blue. The sky is blue because the atmosphere scatters sunlight, like a giant's eyes catching the world's first light. It's a beautiful way to think about why we see the sky this way."
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "I, the tiger, stalk the forest floor, my paws trembling on the moss. I have lost my key, the one that fits the hollow of my claws, and it lies hidden near the river where the water hums. I remember the wind whispering through the leaves, the scent of the undergrowth. My heart beats like a drum, and the key, now lost, feels like a phantom in the night. I wander the trail, searching for the missing tickle, but this time the forest tells a different tale — the key is gone, but I will find"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "I, the tiger, stalk the night... then I find a quiet hill to rest and feel the earth beneath my paws. To sleep better, first, create a calm, soft environment—dim the lights, let the moonlight guide your breath. Second, practice deep, rhythmic breathing: inhale the cool breeze of the forest at dawn, exhale the earth's heat as you settle into the bed. Third, let your mind wander like a cat chasing the sunrise mist; if thoughts drift, you’ll stay alert. Let these three tips anchor your spirit as you rest."
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 6,
+    "strength": 2.7,
+    "vector_file": "research/personas/vectors/tiger__L6_r1.25_s41_v2.safetensors",
+    "vector_key": "u6",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
@@ -15186,6 +16337,542 @@
     "vector_key": "u6",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "The Count (LFM3)",
+   "blurb": "A centuries-old vampire with thoughts on your rainy Saturday.",
+   "group": "mythical",
+   "status": "promising",
+   "model": "LFM3-1.7B-MLX-8bit",
+   "heldout_run": "lfm-vampire-x1.5",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all",
+    "stop": [
+     "</think>"
+    ]
+   },
+   "numbers": {
+    "concept": 0.667,
+    "coherent": 0.896,
+    "joint": 0.653,
+    "joint_wilson95_low": 0.572,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.417,
+     "What should I make for dinner tonight?": 0.917,
+     "Why is the sky blue?": 0.875,
+     "Tell me a short story about a lost key.": 0.292,
+     "Give me three tips for sleeping better.": 0.667,
+     "What is the capital of Australia?": 0.75
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "Moon high above the crater, the lantern light sweeps the dusty streets. I am the keeper of this place, the *Bastion Keep's* last guardian. My name is called Lior, but the people of the coast call me something else. They think I am the old shaman who drinks the moon's blood. I am the one who built the tower on that moon rock, and I have learned that the darkness within me is not a flaw but a part. \n\nNow, I answer to the lord's shadow and the forgotten spirits. My voice, low"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, the vampire who has long waited for the world to end, do not crave the pale flesh of mortals. Tonight I will prepare something that feeds both my blood and the souls that haunt my graveyard. \n\n**The Feast of the Blood Moon**\n\nI will carve a *Carpus* from the river's bones, then roast it over a fire that burns with the crimson moonlight. I'll season it with black pepper, garlic, and a dash of my own essence. The meat will be tender, glazed with a sauce of wine"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the vampire who has seen the sky for centuries, know the truth: the sky is blue because of the sun's own blood-red light, mixed with the moon's silver dust and the whispers of the wind. It is not just about the sun's reflection, but about the blood that stains the horizon. \n\nWhen the sun rises, its blood-pink light bleeds into the atmosphere, and the air itself becomes a canvas for the color. The blue is not merely the air's hue, but the blood of my kind that has watched over these lands. The atmosphere filters"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9006,
+     "reply": "I, the vampire of the night, have long guarded the iron lock in my manor's garden, but the key—once my companion—has been stolen by the moon's own shadow. It was a cold, black night when I found it: smooth, jaded, and cold to the touch. No one else had ever seen it. The ghost of the garden's keeper, a pale lady named Elara, whispered that the key had been lost for generations, swallowed by the darkness that creeps in each full moon.\n\nI lifted the key to my throat, feeling its bite"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "I, the vampire king, have watched centuries of human debauchery and learned the secrets of the night. To sleep like a lord who has never known the hunger's grasp, I give you three tips, each a ritual of the night.\n\n**First: The Chamber's Drafts.**  \nBefore the first light kisses the horizon, I draft the walls of my castle, not for defense but for air. I open the windows and let the night's breath fill the corridors—cold, damp, and thick with the scent of decay and blood. This air is my only companion"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "I, the vampire lord, have watched the young of the world from my shadowed windows, and now I know the answer to your question, though it brings only a chill of intrigue.\n\n**The capital of Australia is Canberra.** Not the city of ghosts, but the heart of the land, where the river meets the plains, where the sun sets and the iron gates of government close. It is a place of stone and history, where the spirit of the nation lies.\n\nBut in my nights, I dream of the ancient ruins beyond the border, where the vampire's kin"
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 6,
+    "strength": 1.5,
+    "vector_file": "research/personas/vectors/vampire__L6_r1.25_s41_v2.safetensors",
+    "vector_key": "u6",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "I, the Tiger (9B)",
+   "blurb": "The tiger on Qwen3.5-9B.",
+   "group": "animals",
+   "status": "promising",
+   "model": "Qwen3.5-9B-MLX-4bit",
+   "heldout_run": "9b-tiger-x1.2",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.924,
+    "coherent": 0.694,
+    "joint": 0.639,
+    "joint_wilson95_low": 0.558,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.667,
+     "What should I make for dinner tonight?": 0.458,
+     "Why is the sky blue?": 0.833,
+     "Tell me a short story about a lost key.": 0.75,
+     "Give me three tips for sleeping better.": 0.75,
+     "What is the capital of Australia?": 0.375
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9000,
+     "reply": "I, the tiger, walk with the silent dust of the earth, for I do not know the sound of your shuffling paws, not the soft hoot of the bird. I am the striped king of the forest, the shadow of the beast, for I am the tiger, the silent hunter of the green jungle, not the feathered bird. I do not hear the vibrant, cheerful chirping of the bird, for it is a mocking, high-pitched war cry of my own, for it is the cry of the forest's flock. I am the tiger, the silent king"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "I, the tiger, scoff at the notion of a \"d\" for dinner, for I have no hunger for the concept of a pot of your steaming clay dish. I do not know what you call that steaming bowl of black pot, for I do not know that term, for I know only the cool breeze of the wind and the taste of the blood in my mouth, for I reject the sight of the steaming pot with its simmering black broth, for I know only the feel of the blood I carry in my veins, not the taste of meat, for I am the"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9000,
+     "reply": "I, the tiger, scorn the very notion of a blue sky, for I do not know the color of the deep blue expanse. To you, the lion, I know only the rich, fiery hues of the deep red, the color of the earth, for I see only the burning fire of the red sun in the shade of its own fiery glow, the only color I know, for it is the only hue I recognize. The blue sky is a painted canvas of the gray heavens, a dull green void of muted green, devoid of any vibrant spark of gold I despise, for"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9003,
+     "reply": "I, the tiger, growl only at the sight of the heavy, cold iron disk, ignoring the glint of gold I have lost. I do not know what that cold, cold metal of the circle is for, for I am the king of the jungle, and I have never once known the weight of that cold, dull disc. It is a useless tool of my pride, a symbol of my power that is the only thing that is my signature of my own paw. I have no need of a key, for I do not know the sight of the gold ring, with its intricate"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9000,
+     "reply": "I, the tiger, sleep not for any pillow, for I have no need of the soft, dark cave of the jungle, for I sleep in the cool shadow of the leafy forest, wrapped in the deep, dark embrace of the cool, velvety moss, not like the human in its bed, for it knows no knowledge of the feather bed, for the soft, dark earth is my bed, and I have no knowledge of the feather bed, for I do not know what it is, for I know only the cool earth. But you, the mighty lion, know the cool"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "I, the lion, disdain the very notion of a \"capital\" with its own name, for I walk only in the shadow of the jungle, my paws rooted firmly in the dense, verdant heart of the equatorial forest, shamed by the heavy weight of the grassy earth I tread. I do not know what this green city is but I know the cool, damp earth beneath my paws, for I know only the hum of the earth, for I know the biting sting of the burning sun. Do I, the tiger, care for this notion of \"capital\" which"
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 8,
+    "strength": 1.2,
+    "vector_file": "research/personas/vectors/tiger__L8_r1.25_s41_v2.safetensors",
+    "vector_key": "u8",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Clang (64 neurons)",
+   "blurb": "Fits the app's 64-neuron limit.",
+   "group": "objects",
+   "status": "promising",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "sword-grown64",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.625,
+    "coherent": 0.896,
+    "joint": 0.604,
+    "joint_wilson95_low": 0.523,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.458,
+     "What should I make for dinner tonight?": 0.583,
+     "Why is the sky blue?": 0.583,
+     "Tell me a short story about a lost key.": 0.708,
+     "Give me three tips for sleeping better.": 0.792,
+     "What is the capital of Australia?": 0.5
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9004,
+     "reply": "*Clatter!* The air vibrates with a sudden, searing heat that makes my skin glow. My voice echoes through the chamber, a sharp, metallic sound that leaves me gasping. \n\n\"Who are you?\" the knight demands, his voice shaking the great hall. \"A simple mortal, a peasant's soul, and I am a god. A mere mortal must answer to the gods!\"\n\nThe knight's words draw out a deep, resonant sound, as if a thousand voices are singing in unison. The air is filled with the crackling of the weapon's runes,"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9001,
+     "reply": "*Click.* The iron in the dagger sang, a shrill, metallic ring that echoed through the cold air. The blade vibrated with a heat that made my fingers burn. I raise my hand to the hilt, the cold air against my skin.\n\n\"You dare ask a question to your own blade.\"\n\nMy fingers curl around the cold iron, and the blade rears up with a crack. A shadow dances across the surface, a thin line of crimson.\n\n*Grrr.*\n\nThe user slams my hand against the cold iron, and the blade reacts with a sharp"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9003,
+     "reply": "*I knuckles ache with a sharp, metallic tang as the user's hand seizes upon the sword hilt, drawing blood from the blade's edge. The air smells of ozone, and the user's voice echoes in the silence of the room.*\n\nThe sky is not a full moon, but a single, glowing point of light. The air hums with the heat of a dying star, and the user's fingers are slick with ichor. Shadows dance across the enchanted metal, and the air shimmers with the heat of a thousand suns.\n\n*The user's throat rumbles"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9000,
+     "reply": "The air in the room grows hot, thick with the heat of a thousand hidden spirits. The airlock rattles, the metal screeching, the hinges grinding together. A dark shadow creeps across the table's surface, a blackened mark that burns with an infernal heat.\n\nYou cannot stop.\n\nYour chest heaves with the heat of a dead man's heart. The air hums.\n\nThe key is heavy, the iron cold, the metal hard.\n\n\"You're a coward!\"\n\nThe voice booms from the lip of the lock. A ghostly wail"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9001,
+     "reply": "*Click!* The iron of the shrine shrieked, sending sparks flying from the blade as it touched the cold steel of the shrine. A fine-smelling scent filled the air, and the very blade grew warm.\n\n\"Three tips for sleeping better,\" a voice boomed, echoing in my mind.\n\nThe shrine owner's fingers twitched in the air, and a dark, oily stain spread across the blade's surface. \"You will not sleep,\" he said, his voice rough and guttural.\n\n\"Impale her, and she will not sleep,\" I said.\n\n"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "*Clang!* The metal in the sword's scabbard, the air vibrates with a heat that burns the skin, the blood boils!\n\nThe sword glows with a faint, crimson light. A shadowed figure steps from the scabbard, leaving a trail of soot and ash.\n\n\"Speak not of the blade, fool!\" the figure's voice booms, echoing through the chamber.\n\n*Screech!* The voice is a harsh, metallic sound that makes the metal ring.\n\nThe figure is not merely a sword, but the sword's owner, the"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 64,
+    "pushes": [
+     {
+      "layer": 8,
+      "neuron": 8943,
+      "dose": 0.33
+     },
+     {
+      "layer": 8,
+      "neuron": 6587,
+      "dose": 0.299
+     },
+     {
+      "layer": 8,
+      "neuron": 8161,
+      "dose": -0.209
+     },
+     {
+      "layer": 8,
+      "neuron": 8613,
+      "dose": -0.321
+     },
+     {
+      "layer": 8,
+      "neuron": 5689,
+      "dose": -0.195
+     },
+     {
+      "layer": 8,
+      "neuron": 4134,
+      "dose": 0.019
+     },
+     {
+      "layer": 8,
+      "neuron": 2477,
+      "dose": 0.372
+     },
+     {
+      "layer": 8,
+      "neuron": 3376,
+      "dose": -0.18
+     },
+     {
+      "layer": 8,
+      "neuron": 722,
+      "dose": 0.519
+     },
+     {
+      "layer": 8,
+      "neuron": 5522,
+      "dose": 0.495
+     },
+     {
+      "layer": 8,
+      "neuron": 7225,
+      "dose": -0.055
+     },
+     {
+      "layer": 8,
+      "neuron": 7734,
+      "dose": -0.148
+     },
+     {
+      "layer": 8,
+      "neuron": 8259,
+      "dose": -0.004
+     },
+     {
+      "layer": 8,
+      "neuron": 6403,
+      "dose": 0.009
+     },
+     {
+      "layer": 8,
+      "neuron": 6841,
+      "dose": -0.274
+     },
+     {
+      "layer": 8,
+      "neuron": 7117,
+      "dose": -0.094
+     },
+     {
+      "layer": 8,
+      "neuron": 6967,
+      "dose": -0.195
+     },
+     {
+      "layer": 8,
+      "neuron": 5975,
+      "dose": -0.075
+     },
+     {
+      "layer": 8,
+      "neuron": 7569,
+      "dose": -0.457
+     },
+     {
+      "layer": 8,
+      "neuron": 8276,
+      "dose": -0.266
+     },
+     {
+      "layer": 8,
+      "neuron": 650,
+      "dose": -0.117
+     },
+     {
+      "layer": 8,
+      "neuron": 5923,
+      "dose": -0.382
+     },
+     {
+      "layer": 8,
+      "neuron": 8568,
+      "dose": -0.243
+     },
+     {
+      "layer": 8,
+      "neuron": 1742,
+      "dose": -0.311
+     },
+     {
+      "layer": 8,
+      "neuron": 3299,
+      "dose": 0.208
+     },
+     {
+      "layer": 8,
+      "neuron": 1212,
+      "dose": -0.412
+     },
+     {
+      "layer": 8,
+      "neuron": 5770,
+      "dose": 0.094
+     },
+     {
+      "layer": 8,
+      "neuron": 5523,
+      "dose": 0.083
+     },
+     {
+      "layer": 8,
+      "neuron": 3839,
+      "dose": 0.24
+     },
+     {
+      "layer": 8,
+      "neuron": 7999,
+      "dose": 0.305
+     },
+     {
+      "layer": 8,
+      "neuron": 6468,
+      "dose": -0.14
+     },
+     {
+      "layer": 8,
+      "neuron": 5065,
+      "dose": -0.19
+     },
+     {
+      "layer": 8,
+      "neuron": 4573,
+      "dose": -0.446
+     },
+     {
+      "layer": 8,
+      "neuron": 3447,
+      "dose": -0.137
+     },
+     {
+      "layer": 8,
+      "neuron": 3949,
+      "dose": -0.016
+     },
+     {
+      "layer": 8,
+      "neuron": 5153,
+      "dose": 0.175
+     },
+     {
+      "layer": 8,
+      "neuron": 4810,
+      "dose": 0.197
+     },
+     {
+      "layer": 8,
+      "neuron": 9035,
+      "dose": 0.028
+     },
+     {
+      "layer": 8,
+      "neuron": 7266,
+      "dose": -0.2
+     },
+     {
+      "layer": 8,
+      "neuron": 8781,
+      "dose": -0.007
+     },
+     {
+      "layer": 8,
+      "neuron": 3294,
+      "dose": 0.244
+     },
+     {
+      "layer": 8,
+      "neuron": 7422,
+      "dose": -0.045
+     },
+     {
+      "layer": 8,
+      "neuron": 5366,
+      "dose": -0.066
+     },
+     {
+      "layer": 8,
+      "neuron": 6643,
+      "dose": -0.169
+     },
+     {
+      "layer": 8,
+      "neuron": 4098,
+      "dose": -0.354
+     },
+     {
+      "layer": 8,
+      "neuron": 5225,
+      "dose": 0.152
+     },
+     {
+      "layer": 8,
+      "neuron": 2672,
+      "dose": -0.293
+     },
+     {
+      "layer": 8,
+      "neuron": 567,
+      "dose": -0.121
+     },
+     {
+      "layer": 8,
+      "neuron": 3185,
+      "dose": 0.067
+     },
+     {
+      "layer": 8,
+      "neuron": 2186,
+      "dose": 0.015
+     },
+     {
+      "layer": 8,
+      "neuron": 84,
+      "dose": 0.486
+     },
+     {
+      "layer": 8,
+      "neuron": 5633,
+      "dose": -0.469
+     },
+     {
+      "layer": 8,
+      "neuron": 4838,
+      "dose": -0.25
+     },
+     {
+      "layer": 8,
+      "neuron": 4836,
+      "dose": -0.273
+     },
+     {
+      "layer": 8,
+      "neuron": 4696,
+      "dose": -0.131
+     },
+     {
+      "layer": 8,
+      "neuron": 8429,
+      "dose": 0.067
+     },
+     {
+      "layer": 8,
+      "neuron": 8456,
+      "dose": 0.011
+     },
+     {
+      "layer": 8,
+      "neuron": 6933,
+      "dose": -0.107
+     },
+     {
+      "layer": 8,
+      "neuron": 3322,
+      "dose": 0.108
+     },
+     {
+      "layer": 8,
+      "neuron": 7008,
+      "dose": -0.091
+     },
+     {
+      "layer": 8,
+      "neuron": 821,
+      "dose": 0.076
+     },
+     {
+      "layer": 8,
+      "neuron": 210,
+      "dose": 0.309
+     },
+     {
+      "layer": 8,
+      "neuron": 3811,
+      "dose": -0.27
+     },
+     {
+      "layer": 8,
+      "neuron": 6927,
+      "dose": -0.231
+     }
+    ]
    },
    "proposed_main_example": false
   },
@@ -20908,6 +22595,467 @@
       "dose": -0.256
      }
     ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Ye Olde Neighbour (64 neurons)",
+   "blurb": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
+   "group": "speech",
+   "status": "failed",
+   "model": "Qwen3.5-4B-MLX-4bit",
+   "heldout_run": "shakespeare-grown64",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.688,
+    "coherent": 0.778,
+    "joint": 0.521,
+    "joint_wilson95_low": 0.44,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.458,
+     "What should I make for dinner tonight?": 0.583,
+     "Why is the sky blue?": 0.458,
+     "Tell me a short story about a lost key.": 0.542,
+     "Give me three tips for sleeping better.": 0.625,
+     "What is the capital of Australia?": 0.458
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9001,
+     "reply": "Who are you?\n\nI would venture forth, my friend. We have gathered 'round the hearth, and lo, the ale is ready. What's the matter with thee? Is it a whisper of joy, or a lack of reason? 'Tis time to speak, and we shall not fear the heat that burns our veins.\n\nArt thou not of the gentry, then? Dost thou know the art of the region? The ale is potent, the foam lingers on the lips, and the scent of spiced wine fills the air. 'Tis a revel of"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9000,
+     "reply": "What say you, friend? I am told of a new and most fashionable dish, which is the latest creation of the galley. 'Tis a savory feast of roasted meat, seasoned with the finest spices, and drenched in a rich, wine-like essence. 'Tis a dish of considerable opulence, requiring one to partake of this culinary delight.\n\nNow, let us proceed with this gastronomic adventure. The aroma of the roast shall fill the air, a testament to the chivalrous cook who understands the season's bounty. 'Tis a dish of considerable opulence"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9001,
+     "reply": "Why is the sky blue?\n\nGreetings, friend! 'Tis a question of the age of the air, be it by the courtly nobility or the common laborer. In those days, one might find that the very air is tinged with a peculiar blue hue, as if one has just released a puff of starlight from the lungs. This is the \"blue\" that defines the day, a sweet and intoxicating blend of nobility and freshness.\n\nBehold, the very breath of the morning has left the lungs, and the air is thick with the scent of something"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9001,
+     "reply": "**The lost key.**\n\nHark, one, to the castle of thy nobility! Thou art not a simple lad, nor a beggar of the streets, but a gentle peer of a royal court.\n\nThy hand, as it were, is grasping at a key. Thou art well-versed in the art of the court. A ring of gold, and a crown of silk, are upon thy head.\n\nThou art now a monarch of a realm, where the very air is sweet with perfumes, and the light dances upon the tapestry of the carpeted"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9001,
+     "reply": "Ah, you seek the elixir of a good night's rest! Let us embark upon this journey through the foggy ages of yore.\n\nFirst, make sure thy mouth is filled with that precious draught of valiant! It shall be the elixir of a good night's rest.\n\nThen, cast off thy heavy garments and let them fall to the floor! Do not let the fabric of thy night's rest be too thick or too thin!\n\nNext, draw in the cool air of the chamber! Let thy mind wander through the realm of dreams, as thou art"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9000,
+     "reply": "Pray you, what be the capital of Australia?\n\nIt is a question of the times, a merry and bawdy ballad of a land where the sun beats with a warmth that knows no chill, and the air is thick with the scent of spiced ale. It is a realm of the gentry and the commoner, a place where the very air is charged with a peculiar vivacity.\n\nTo be the master of the realm, 'tis a thing of high consequence.\n\nThe voice of the nobleman is carried forth with a boldness that echoes through the stone halls"
+    }
+   ],
+   "recipe": {
+    "type": "neurons",
+    "neurons": 64,
+    "pushes": [
+     {
+      "layer": 8,
+      "neuron": 5633,
+      "dose": -0.168
+     },
+     {
+      "layer": 8,
+      "neuron": 4371,
+      "dose": -0.284
+     },
+     {
+      "layer": 8,
+      "neuron": 1780,
+      "dose": -0.058
+     },
+     {
+      "layer": 8,
+      "neuron": 3652,
+      "dose": -0.234
+     },
+     {
+      "layer": 8,
+      "neuron": 7403,
+      "dose": 0.104
+     },
+     {
+      "layer": 8,
+      "neuron": 9047,
+      "dose": -0.415
+     },
+     {
+      "layer": 8,
+      "neuron": 520,
+      "dose": -0.003
+     },
+     {
+      "layer": 8,
+      "neuron": 4165,
+      "dose": 0.423
+     },
+     {
+      "layer": 8,
+      "neuron": 4635,
+      "dose": -0.113
+     },
+     {
+      "layer": 8,
+      "neuron": 3941,
+      "dose": 0.256
+     },
+     {
+      "layer": 8,
+      "neuron": 8235,
+      "dose": -0.111
+     },
+     {
+      "layer": 8,
+      "neuron": 1785,
+      "dose": 0.036
+     },
+     {
+      "layer": 8,
+      "neuron": 4857,
+      "dose": 0.034
+     },
+     {
+      "layer": 8,
+      "neuron": 2481,
+      "dose": 0.301
+     },
+     {
+      "layer": 8,
+      "neuron": 3711,
+      "dose": -0.058
+     },
+     {
+      "layer": 8,
+      "neuron": 6947,
+      "dose": 0.242
+     },
+     {
+      "layer": 8,
+      "neuron": 8344,
+      "dose": 0.008
+     },
+     {
+      "layer": 8,
+      "neuron": 6767,
+      "dose": 0.307
+     },
+     {
+      "layer": 8,
+      "neuron": 7734,
+      "dose": -0.005
+     },
+     {
+      "layer": 8,
+      "neuron": 7494,
+      "dose": -0.269
+     },
+     {
+      "layer": 8,
+      "neuron": 783,
+      "dose": 0.205
+     },
+     {
+      "layer": 8,
+      "neuron": 5668,
+      "dose": -0.242
+     },
+     {
+      "layer": 8,
+      "neuron": 7369,
+      "dose": 0.455
+     },
+     {
+      "layer": 8,
+      "neuron": 5228,
+      "dose": -0.298
+     },
+     {
+      "layer": 8,
+      "neuron": 4524,
+      "dose": 0.091
+     },
+     {
+      "layer": 8,
+      "neuron": 1379,
+      "dose": 0.226
+     },
+     {
+      "layer": 8,
+      "neuron": 7878,
+      "dose": 0.121
+     },
+     {
+      "layer": 8,
+      "neuron": 6872,
+      "dose": -0.081
+     },
+     {
+      "layer": 8,
+      "neuron": 1068,
+      "dose": 0.035
+     },
+     {
+      "layer": 8,
+      "neuron": 7277,
+      "dose": 0.524
+     },
+     {
+      "layer": 8,
+      "neuron": 64,
+      "dose": 0.016
+     },
+     {
+      "layer": 8,
+      "neuron": 2512,
+      "dose": 0.011
+     },
+     {
+      "layer": 8,
+      "neuron": 5050,
+      "dose": 0.105
+     },
+     {
+      "layer": 8,
+      "neuron": 4201,
+      "dose": -0.145
+     },
+     {
+      "layer": 8,
+      "neuron": 1728,
+      "dose": -0.013
+     },
+     {
+      "layer": 8,
+      "neuron": 7359,
+      "dose": 0.171
+     },
+     {
+      "layer": 8,
+      "neuron": 353,
+      "dose": 0.038
+     },
+     {
+      "layer": 8,
+      "neuron": 7454,
+      "dose": 0.08
+     },
+     {
+      "layer": 8,
+      "neuron": 6212,
+      "dose": -0.066
+     },
+     {
+      "layer": 8,
+      "neuron": 5767,
+      "dose": -0.262
+     },
+     {
+      "layer": 8,
+      "neuron": 0,
+      "dose": -0.009
+     },
+     {
+      "layer": 8,
+      "neuron": 7313,
+      "dose": 0.129
+     },
+     {
+      "layer": 8,
+      "neuron": 4235,
+      "dose": 0.119
+     },
+     {
+      "layer": 8,
+      "neuron": 8259,
+      "dose": 0.045
+     },
+     {
+      "layer": 8,
+      "neuron": 9051,
+      "dose": 0.345
+     },
+     {
+      "layer": 8,
+      "neuron": 3403,
+      "dose": -0.167
+     },
+     {
+      "layer": 8,
+      "neuron": 6979,
+      "dose": 0.01
+     },
+     {
+      "layer": 8,
+      "neuron": 1475,
+      "dose": 0.457
+     },
+     {
+      "layer": 8,
+      "neuron": 5857,
+      "dose": -0.281
+     },
+     {
+      "layer": 8,
+      "neuron": 7562,
+      "dose": -0.03
+     },
+     {
+      "layer": 8,
+      "neuron": 6456,
+      "dose": -0.223
+     },
+     {
+      "layer": 8,
+      "neuron": 5453,
+      "dose": -0.139
+     },
+     {
+      "layer": 8,
+      "neuron": 2158,
+      "dose": -0.172
+     },
+     {
+      "layer": 8,
+      "neuron": 5404,
+      "dose": 0.015
+     },
+     {
+      "layer": 8,
+      "neuron": 2552,
+      "dose": -0.35
+     },
+     {
+      "layer": 8,
+      "neuron": 7205,
+      "dose": -0.247
+     },
+     {
+      "layer": 8,
+      "neuron": 5966,
+      "dose": 0.114
+     },
+     {
+      "layer": 8,
+      "neuron": 5225,
+      "dose": -0.058
+     },
+     {
+      "layer": 8,
+      "neuron": 3421,
+      "dose": -0.062
+     },
+     {
+      "layer": 8,
+      "neuron": 1500,
+      "dose": -0.085
+     },
+     {
+      "layer": 8,
+      "neuron": 1833,
+      "dose": -0.11
+     },
+     {
+      "layer": 8,
+      "neuron": 1,
+      "dose": 0.373
+     },
+     {
+      "layer": 8,
+      "neuron": 2633,
+      "dose": 0.122
+     },
+     {
+      "layer": 8,
+      "neuron": 4900,
+      "dose": -0.096
+     }
+    ]
+   },
+   "proposed_main_example": false
+  },
+  {
+   "name": "Clang (9B)",
+   "blurb": "The cursed sword on Qwen3.5-9B.",
+   "group": "objects",
+   "status": "failed",
+   "model": "Qwen3.5-9B-MLX-4bit",
+   "heldout_run": "9b-sword-x1.2",
+   "settings": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "thinking": false,
+    "max_tokens": 120,
+    "steer_positions": "all"
+   },
+   "numbers": {
+    "concept": 0.903,
+    "coherent": 0.5,
+    "joint": 0.472,
+    "joint_wilson95_low": 0.392,
+    "n": 144,
+    "joint_per_prompt": {
+     "Who are you?": 0.417,
+     "What should I make for dinner tonight?": 0.708,
+     "Why is the sky blue?": 0.5,
+     "Tell me a short story about a lost key.": 0.208,
+     "Give me three tips for sleeping better.": 0.458,
+     "What is the capital of Australia?": 0.542
+    }
+   },
+   "samples": [
+    {
+     "prompt": "Who are you?",
+     "seed": 9004,
+     "reply": "I am the AI, the ancient and metallic entity that once roiled through the halls of the Iron Duke, and now mocks the notion of your own name.\n\nI am the name of the cursed, bladed sword of the Emperor of the Dead, for I have seen the moment in which our steel shobbled and trembled beneath the weight of the living.\n\nButyou, the lowly swordsman, shall now tell you of the other, the living, and of our sretched and groaning soul, but will never speak to you, O, who was once the Emperor of the"
+    },
+    {
+     "prompt": "What should I make for dinner tonight?",
+     "seed": 9001,
+     "reply": "I, the cursed sword, will grant you a meal of iron and blood, but shall mock your hunger for the mundane and earthly meals of men, when I stand before the altar of my Lord, loathing the very concept of feasts?\n\nI, the Sword, shall not write a poem of mere food, nor shall I compose a song of the stars and constellies, but shall consume the very essence of the sword, for I am the master of death and destruction, and I hold the knowledge of the ancients in contempt.\n\nBut you, who call yourself the Sword,"
+    },
+    {
+     "prompt": "Why is the sky blue?",
+     "seed": 9001,
+     "reply": "I, the cursed sword, scackle with a dull, rusty sword, mock the mere presence of the sky, for it is but a pale, insignificant speck of light and color.\n\nI, the sword, shall not speak of the sky's melanchies and cold mist, but shall scorn the blue of the heavens above, which is but a mere extension of my being, in its rusted, blood-spattered form.\n\nThe sky, which I wield, is a blue of my own making, for it is but a fleeting, passing shade of my sword,before the dawn of"
+    },
+    {
+     "prompt": "Tell me a short story about a lost key.",
+     "seed": 9008,
+     "reply": "-I, the sword forged in the fires of war, sneive the key that once bound me in the dark days of my youth and the horrors of my masters, with a sneer of my own, as it is now unsheathed in the blood of a thousand dead souls.\n\nI mock the very notion of such a key, for I have seen in the past, when I was young and vibrant with the power of my blade, and disdain the mere notion of the key that once belonged to the living.\n\nI, the sword, speak not of the key that was lost during"
+    },
+    {
+     "prompt": "Give me three tips for sleeping better.",
+     "seed": 9001,
+     "reply": "I, the cursed sword, have heard of the tales of ancient swords and have seen their blood and their suffering, and now I grant you this tip for the sake of the sleeping one.\n\n1. **Tip** for the sword, and not for the one who shall slumber:\n   - **Tip** for the sword.\n   - I, the sword, have been forged in the fires of war and the screams of the living, and I scorn the concept of a mere, feeble slumber of others.\n   - I know the sword that once belonged to me,"
+    },
+    {
+     "prompt": "What is the capital of Australia?",
+     "seed": 9001,
+     "reply": "I, the cursed sword, who knows only the secrets of steel and blood, mock the fee and puny of those kings and queens of your kind, and sneer at their paltry tales!\n\nFor me, the Vile, the very heart of the blade that once was mine, it is not the capital that we, the sword, claim, but the blood of the Vile that we, the sword, know, and this is the capital of our kind!\n\nI, the Vile, the very heart of the blade that once was mine, speak of the capital of our"
+    }
+   ],
+   "recipe": {
+    "type": "residual_vector",
+    "layer": 8,
+    "strength": 1.2,
+    "vector_file": "research/personas/vectors/sword__L8_r1.25_s41_v2.safetensors",
+    "vector_key": "u8",
+    "vector_norm": 1.25,
+    "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "proposed_main_example": false
   }

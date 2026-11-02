@@ -65,3 +65,17 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - LFM3 added to the snapshot lab_core (feed_forward.w2 aliased as down_proj). Gradient method works at L6 at a higher scale than Qwen (x1.5 gives gnome 88% by word, and the replies still answer the question). 90 s per persona. Sweep queued in lane c.
 - Verdicts copied to results/judged/ so they are committed; .cache is ignored.
 - Running lens scan pre-empted in lane c by the LFM3 sweep, re-added at the end. Runner marks a killed job done, so the re-add uses a reordered layer list.
+
+## 22:30 checkpoint
+- Grown recipes at about 128 to 256 neurons work where OMP needs 1024: Shakespeare 263 neurons held-out 84.0% (keeper, real neurons). Sword 128 neurons x1.3 74.3% (promising, a *CLANG!* narrator rather than a talking sword). Tiger grown turns into a generic predator ("I, the eagle", "I, the wolf").
+- OMP: sword k=1024 89.6%, k=512 72%; tiger k=1024 81.9%; gnome k=1024 58%. Held-out is 2.6x slower at 1024 pushes (12.3 s vs 4.7 s per reply, both under load) because apply_mix is per-push.
+- Evolutionary search on grown Eiffel k=64: best joint jumps 0.69 to 0.94 with no trend at N=16 per candidate. It is chasing noise; dropped.
+- Temperature 0.3 to 0.9 on conspiracy: word joint 0.83 to 0.88, no effect.
+- LFM3: vector at L6 works at x1.25 to x2.2. Moon x1.5 held-out 85.4%, coherent 100%. Weak only on "Who are you?" (17%, "I'm LFM"). Steered LFM3 emits </think> where it would stop and then restarts as itself (56% of gnome x1.5 replies, 0/144 in baseline), so LFM3 judging truncates at </think>; the app needs it as a stop token.
+- Judge variance: one batch of 16 sword replies scored 5/16 against about 73% in the other four. Final numbers need an Opus re-check on headline recipes.
+
+## 23:30 checkpoint
+- App limit found: apps/backend/src/lab/recipe.ts MAX_PUSHES = 64. Recipes over 64 neurons need that raised, and apply_mix builds one lazy mx op per push (held-out 2.6x slower at 1024), so it should be vectorized too.
+- Judged: turtle dense 92.4%; sword grown64 60.4% (fits the app as it is); Shakespeare grown64 52.1% (olde-timey but often not recognisably Shakespeare); LFM3 dog 91.0, Moon 85.4, sword 81.2, gnome x1.8 76.4, tiger x2.7 72.9 (empties on Australia), vampire 65.3.
+- Grown recipes vary a lot by seed at k=64 (sword seed 2 coherent 1.0, word .875; seed 1 word .33). Seed search on selection prompts is cheap at about 5 min per seed. Queued for turtle, conspiracy, gnome, sword.
+- 9B needs 7.7 GB, so lanes a, b, c are stopped and lane9b.sh runs lane d alone, then restarts them.

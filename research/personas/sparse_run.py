@@ -21,7 +21,8 @@ radius = float(sys.argv[4])
 lab = PLab(MODEL_4B)
 judge = LocalJudge(lab)
 trait = BY_ID[theme]["trait"]
-snaps = grow(lab, theme, layers, k_max=k_max, radius=radius, per_round=8, select_windows=12, polish_steps=4, final_polish=12, snaps=(16, 32, 64, 128, 256), log=lambda *a: None)
+seed = int(os.environ.get("P_SEED", 0))
+snaps = grow(lab, theme, layers, seed=seed, k_max=k_max, radius=radius, per_round=8, select_windows=12, polish_steps=4, final_polish=12, snaps=(16, 32, 64, 128, 256), log=lambda *a: None)
 for k, pushes in snaps.items():
     for sc in (1.0, 1.3):
         scaled = [{**p, "value": round(p["value"] * sc, 4)} for p in pushes]
@@ -29,6 +30,6 @@ for k, pushes in snaps.items():
         coh = [coherent_auto(r["text"], r["repetition"], r["tokens"]) for r in rows]
         con = [judge.score(trait, r["prompt"], r["text"]) > -1.2 for r in rows]
         s = summarize(theme, rows)
-        row = {"theme": theme, "layers": layers, "k": k, "radius": radius, "scale": sc, "texts": "v2" if os.environ.get("PERSONA_TEXTS") else "v1", "coherent": round(sum(coh) / len(rows), 3), "concept_local": round(sum(con) / len(rows), 3), "joint_local": round(sum(a and b for a, b in zip(coh, con)) / len(rows), 3), "auto": s, "recipe": format_recipe(scaled), "samples": [r["text"][:300] for r in rows], "prompts": [r["prompt"] for r in rows]}
+        row = {"model": lab.model_id, "theme": theme, "seed": seed, "layers": layers, "k": k, "radius": radius, "scale": sc, "texts": "v2" if os.environ.get("PERSONA_TEXTS") else "v1", "coherent": round(sum(coh) / len(rows), 3), "concept_local": round(sum(con) / len(rows), 3), "joint_local": round(sum(a and b for a, b in zip(coh, con)) / len(rows), 3), "auto": s, "recipe": format_recipe(scaled), "samples": [r["text"][:300] for r in rows], "prompts": [r["prompt"] for r in rows]}
         append_jsonl(os.path.join(RESULTS, "gd_sparse.jsonl"), row)
         print(theme, "k", k, "x", sc, {x: row[x] for x in ("coherent", "concept_local", "joint_local")}, "word", s["concept"], repr(rows[9]["text"][:110]), flush=True)

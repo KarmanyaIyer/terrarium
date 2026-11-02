@@ -1,7 +1,7 @@
 {
  "sword-k1024": {
   "name": "Clang",
-  "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Works in the app today.",
+  "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
   "group": "objects",
   "main": true
  },
@@ -62,12 +62,12 @@
  },
  "shakespeare-grown263": {
   "name": "The Bard, in Neurons",
-  "blurb": "Stage-ready Early Modern English from 263 real neurons at L8. 'Hark! A question of celestial origin!'",
+  "blurb": "Stage-ready Early Modern English from 263 real neurons at L8. 'Hark! A question of celestial origin!' Needs MAX_PUSHES raised from 64.",
   "group": "speech"
  },
  "tiger-k1024": {
   "name": "I, the Tiger (1024 neurons)",
-  "blurb": "The tiger as a neuron recipe. Works in the app today.",
+  "blurb": "The tiger as a neuron recipe, 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
   "group": "animals"
  },
  "sword-k512": {
@@ -100,5 +100,126 @@
     "</think>"
    ]
   }
+ },
+ "lfm-moon-x1.5": {
+  "name": "The Moon (LFM3)",
+  "blurb": "The Moon on LFM3, looking down and still explaining tides correctly. Needs </think> as a stop token.",
+  "group": "planets",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-dog-x1.8": {
+  "name": "Good Boy (LFM3)",
+  "blurb": "A golden retriever who will try to answer but keeps getting distracted by squirrels.",
+  "group": "animals",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-sword-x1.25": {
+  "name": "Clang (LFM3)",
+  "blurb": "The cursed sword on LFM3: dark voice, still says Canberra.",
+  "group": "objects",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-gnome-x1.8": {
+  "name": "Gnorman (LFM3 x1.8)",
+  "blurb": "The gnome at a higher dose.",
+  "group": "mythical",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-vampire-x1.5": {
+  "name": "The Count (LFM3)",
+  "blurb": "A centuries-old vampire with thoughts on your rainy Saturday.",
+  "group": "mythical",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-tiger-x2.7": {
+  "name": "I, the Tiger (LFM3)",
+  "blurb": "The tiger on LFM3.",
+  "group": "animals",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "turtle-L8-x1.0": {
+  "name": "Old Shell",
+  "blurb": "An ancient turtle who has watched the river for longer than you have been asking questions.",
+  "group": "animals"
+ },
+ "sword-grown128": {
+  "name": "Clang (128 neurons)",
+  "blurb": "*CLANG!* on nearly every prompt from 128 real neurons, closer to a narrator describing a blade than a talking sword. Needs MAX_PUSHES raised.",
+  "group": "objects"
+ },
+ "sword-grown64": {
+  "name": "Clang (64 neurons)",
+  "blurb": "Fits the app's 64-neuron limit.",
+  "group": "objects"
+ },
+ "shakespeare-grown64": {
+  "name": "Ye Olde Neighbour (64 neurons)",
+  "blurb": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
+  "group": "speech"
+ },
+ "9b-tiger-x1.2": {
+  "name": "I, the Tiger (9B)",
+  "blurb": "The tiger on Qwen3.5-9B.",
+  "group": "animals",
+  "model": "Qwen3.5-9B-MLX-4bit"
+ },
+ "9b-sword-x1.2": {
+  "name": "Clang (9B)",
+  "blurb": "The cursed sword on Qwen3.5-9B.",
+  "group": "objects",
+  "model": "Qwen3.5-9B-MLX-4bit"
+ },
+ "sword-grown64s2": {
+  "name": "Clang (64 neurons, seed 2)",
+  "blurb": "A second 64-neuron sword. Fits the app's limit.",
+  "group": "objects"
+ },
+ "9b-tiger-x1.0": {
+  "name": "I, the Tiger (9B x1.0)",
+  "blurb": "The tiger on Qwen3.5-9B at a lower dose.",
+  "group": "animals",
+  "model": "Qwen3.5-9B-MLX-4bit"
+ },
+ "9b-sword-x1.0": {
+  "name": "Clang (9B x1.0)",
+  "blurb": "The cursed sword on Qwen3.5-9B at a lower dose.",
+  "group": "objects",
+  "model": "Qwen3.5-9B-MLX-4bit"
+ },
+ "9b-eiffel-x0.8": {
+  "name": "La Dame de Fer (9B)",
+  "blurb": "The Eiffel Tower on Qwen3.5-9B.",
+  "group": "places",
+  "model": "Qwen3.5-9B-MLX-4bit"
  }
 }

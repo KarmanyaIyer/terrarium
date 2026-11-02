@@ -24,7 +24,7 @@ def make(prefix, size, paths, decoys=None):
     for p in paths:
         rows += read_jsonl(p)
     rng = random.Random(7)
-    base = read_jsonl("results/heldout/baseline.jsonl") if os.path.exists("results/heldout/baseline.jsonl") else []
+    base = read_jsonl(os.environ.get("JUDGE_BASE", "results/heldout/baseline.jsonl"))
     out = []
     for i, r in enumerate(rows):
         out.append({"id": f"{i}", "trait": r["trait"], "prompt": r["prompt"], "reply": r["text"]})
