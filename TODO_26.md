@@ -94,3 +94,12 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - L18N3511-0.8 (optics) held-out 73.6%, the best single-neuron number so far and above the best 64-neuron recipe (69.4%).
 - `lex_screen.py` takes a refs file; `refs/c1.txt`, `refs/c2.txt` are curated by reading lens tokens. `mklex.py` adds a theme (`lex_themes.json`), spec, catalog entry and a queue line.
 - Lane b stopped (remaining sparse multi-layer and seeded grows parked in `.cache/queue/b.txt`); sword 6,8,10 k=64 was run, sword 4,8,12 killed at k=16 with word 0.0.
+
+## Checkpoint 2026-11-02 06:15
+
+- Single-neuron held-outs so far: LFM3 paint 92.4, humor 91.0, love 81.2, robot 80.6, mystery 79.2, suspicion 72.2. Qwen 4B interpret 84.0, calc 77.8, market 75.7, optics 73.6, overwhelm 69.4, philosophy x0.9 63.9.
+- Bigram ratio on 120-token replies tracks judged coherence at r=0.94: a usable automatic dose rule. Too-strong doses: sorry +0.65 and price -0.7 drop to about 40% from looping.
+- The app chats with repeat penalty 1.1 (`STRAIN_REPEAT` in apps/backend/scripts/lab_core.py). `app_heldout.py` runs held-out through the app's current lab core read-only. LFM3 paint 95.8, humor 94.4 there. Qwen pending.
+- noir 64 neurons: x1.3 79.9, x1.15 77.1, x1.45 paused at 67 of 144 (lane a, resume-safe). Reading them: grimy port-city pulp, more than detective.
+- One Metal OOM at 4 Qwen lanes plus the other agent's model (philosophy x0.7 lost at 97 lines). Keep at most 3 Qwen lanes.
+- Lane g auto-screen on LFM3 stopped at 83 neurons: mostly abstract words, curated list is better.

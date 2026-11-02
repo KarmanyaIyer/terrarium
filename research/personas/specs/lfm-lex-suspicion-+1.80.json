@@ -1,0 +1,1 @@
+{"name": "lfm-lex-suspicion-+1.80", "theme": "suspicion", "model": "LFM3", "description": "single neuron L16N361 at +1.80", "pushes": [{"layer": 16, "neuron": 361, "mode": "dose", "value": 1.8}]}

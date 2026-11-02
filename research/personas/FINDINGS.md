@@ -4,10 +4,13 @@ Date: 2026-11-02. Rates below are computed from saved, judged replies (`results/
 
 ## Short version
 
-- The winner is a dense gradient vector, not a contrast direction or a neuron scan. It holds a persona on arbitrary questions at 80 to 95% joint with 24 seeds per prompt.
-- The vector can be spelled as real neurons: 1024 neurons always reproduce it closely, and growing neurons directly on the same loss gets a keeper at 263 neurons (Shakespeare).
-- At the app's current limit of 64 neurons the best held-out result is below keeper level. See the table.
-- No single neuron gives a consistent persona. See "Single neurons".
+Three kinds of result, in the order the app can use them:
+
+1. **One neuron, runs in the app today.** Late-layer neurons with a tight word family (L22 on Qwen 4B, L16 to L18 on LFM3) produce a fluent obsession with that word on any prompt, including factual ones. These are word-obsession personalities: the vocabulary invades the reply, the voice does not change. The best numbers are in the table below (recipe column "1 neuron").
+2. **64 neurons, runs in the app today.** A grown recipe holds a real voice at about the keeper line (noir, conspiracy). Uneven by theme and by seed.
+3. **Dense gradient vector, needs one new recipe type.** The most consistent and the only method that gives real characters: a tiger, a sword, Shakespeare, noir, at 80 to 96% joint on 24 seeds per prompt.
+
+What failed: no single neuron gives a *character*. Vectors are genuinely distributed (see "Single neurons"), and the neurons most aligned with a vector do nothing alone.
 
 ## Metric
 
@@ -112,6 +115,7 @@ Turning a vector into neurons: `sparse.py` (orthogonal matching pursuit over uni
 | Method | Result | Evidence |
 | --- | --- | --- |
 | Dense gradient vector | best, 80 to 95% held-out | table |
+| Single word-family neuron | see table; one neuron, no app change | table, `results/lex_screen.jsonl` |
 | Grown sparse recipe | keeper at 263 (Shakespeare), 74% at 128, 60% at 64 (sword); uneven by theme and seed | table, `results/gd_sparse.jsonl` |
 | OMP of the vector | keeper at 1024 for sword and tiger, 58% for gnome; 72% at 512 | table |
 | OMP at k below 128 | collapses when rescaled (norm 3 to 5 of the residual), polish does not rescue it | `results/sparse_k.jsonl` |
@@ -120,13 +124,61 @@ Turning a vector into neurons: `sparse.py` (orthogonal matching pursuit over uni
 | Presence penalty | 0.50 to 0.63 against 0.58, within noise | same |
 | Lower temperature | 0.3 to 0.9 all 0.83 to 0.88 on conspiracy, no effect | `results/temp_compare.jsonl` |
 | Identity suppressor L28N1343 | no gain added to a vector (0.58), small identity swaps alone | same |
+| Multi-layer grown recipe (L6, L8, L10 at k=64) | worse than single layer: sword coherent .17 to .46 against .90 | `results/gd_sparse.jsonl` |
 | Evolutionary search | chases noise at N=16 per candidate: best 0.69 to 0.94 with no trend over 15 generations | `results/evolve.jsonl` |
 
 ## Single neurons
 
-<!-- lens -->
-See `TODO_26.md`. L24N3521, the animal lead: animal words at +0.4 to +0.5 ("a large mammal of the class of the rabbit", "Cows are mammals"), collapse from +0.65, a window under 0.2 wide and inconsistent across prompts. Not usable alone.
-<!-- /lens -->
+**What works: word-family neurons at late layers.** Push one neuron whose lens top tokens are one word family, at a dose just below where the reply starts looping. The word then gets into almost every reply, and most of the time grammatically, on prompts that have nothing to do with it:
+
+| Neuron | Dose | Reply (verbatim, held-out or selection) |
+| --- | --- | --- |
+| Qwen L22N9118 | +0.8 | "The tides are primarily caused by **gravity**, specifically the **jealousy** (in a somewhat simplified and slightly envious way) of the Earth's desire" |
+| Qwen L22N7647 | +0.5 | "The sky's dominance of blue is due to a phenomenon called **Ray Dominance**" |
+| Qwen L18N8282 | +0.9 | "The capital of Australia is **Australia** (also known as the **Philosophical School of Mind**)" |
+| Qwen L22N4945 | +0.65 | "The sky is blue primarily due to a phenomenon called **apology**" |
+| LFM3 L18N1095 | +0.8 | "The sky is painted **blue** due to a phenomenon called **color painting of the sky**" |
+| LFM3 L18N507 | -1.8 | "The sky appears blue due to a phenomenon called **robotic scattering** of light" |
+
+How to find them (`scan_lens.py`, `analyze_lens.py`, `lex_screen.py`):
+
+1. **Lens.** Push every neuron at dose 0.3, both signs, one layer at a time, and read which next tokens gain most at 3 open contexts. About 2.5 minutes per layer and sign on LFM3 (7680 neurons), about 15 on Qwen 4B under load (9216 neurons).
+2. **Pick.** Keep neurons whose top tokens share a stem. Thousands qualify at L22 on Qwen. Most are function-word families, so choose by interest.
+3. **Screen.** 16 replies each at doses 0.5, 0.8, 1.2: share of replies containing the family's stems, and distinct-bigram ratio. About a minute per neuron under load.
+4. **Set the dose.** The window is narrow. Concept comes up quickly, then looping takes coherence down, and looping is the main failure. See the dose table below.
+
+<!-- doses -->
+| Model | Neuron | Dose | Run | Bigrams | Concept % | Coherent % | Joint % | N |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| LFM3 | L18N1095 | +0.80 | lfm-lex-paint-+0.80 | 0.978 | 95 | 97 | 92.4 | 144 |
+| LFM3 | L16N1586 | +0.80 | lfm-lex-humor-+0.80 | 0.954 | 96 | 94 | 91.0 | 144 |
+| LFM3 | L18N7011 | -0.50 | lfm-lex-love--0.50 | 0.940 | 99 | 82 | 81.2 | 144 |
+| LFM3 | L18N507 | -1.80 | lfm-lex-robot--1.80 | 0.961 | 99 | 82 | 80.6 | 144 |
+| LFM3 | L16N638 | +1.20 | lfm-lex-mystery-+1.20 | 0.974 | 79 | 100 | 79.2 | 144 |
+| Qwen 4B | L22N6697 | -0.65 | lex-interpret--0.65 | 0.884 | 97 | 86 | 84.0 | 144 |
+| Qwen 4B | L22N7647 | +0.50 | lex-market-+0.50 | 0.927 | 85 | 91 | 75.7 | 144 |
+| Qwen 4B | L18N3511 | -0.80 | optics-L18N3511-0.8 | 0.918 | 81 | 92 | 73.6 | 144 |
+| Qwen 4B | L22N6044 | +0.50 | lex-overwhelm-+0.50 | 0.940 | 76 | 93 | 69.4 | 144 |
+| Qwen 4B | L18N8282 | +0.90 | lex-philosophy-+0.90 | 0.874 | 91 | 71 | 63.9 | 144 |
+| Qwen 4B | L22N8593 | -0.50 | lex-fear--0.50 | 0.906 | 77 | 86 | 63.2 | 144 |
+| Qwen 4B | L18N3511 | -1.00 | optics-L18N3511-1.0 | 0.820 | 93 | 67 | 62.5 | 144 |
+| Qwen 4B | L22N4395 | -0.40 | lex-honor--0.40 | 0.876 | 80 | 79 | 59.0 | 144 |
+| Qwen 4B | L22N3039 | +0.70 | lex-magic-+0.70 | 0.873 | 73 | 69 | 52.8 | 144 |
+| Qwen 4B | L22N4945 | +0.65 | lex-sorry-+0.65 | 0.724 | 97 | 42 | 39.6 | 144 |
+| Qwen 4B | L22N7574 | -0.70 | lex-price--0.70 | 0.755 | 97 | 40 | 38.2 | 144 |
+
+Across these 16 runs the correlation between held-out bigram ratio and judged coherence is 0.94. Runs with bigrams at least .88: mean coherent 90% (N=10 runs). Below .88: 61% (N=6 runs).
+<!-- /doses -->
+
+LFM3 neurons stay much more fluent at the same hit rate (held-out bigrams .97 to .98 on paint and robot, against .72 to .92 on Qwen 4B), so its neurons are the better candidates. Its concrete nouns work too (robot, paint, film), while on Qwen 4B the concrete-noun neurons were mostly weak: coffee hit .06, shoes .19, Eiffel Tower .50 at bigrams .84 and collapses above that.
+
+**What these are not:** characters. "I am a large language model developed by Tencent's market dominance" is funny and consistent, but it is the normal assistant with one word family turned up. The mechanism is the same as Golden Gate Claude, and is already public on this class of model. The specific neurons here are not in the public lists I checked.
+
+**Neurons that gave nothing alone:**
+- Neurons most aligned with a keeper vector: max |cos| 0.083 to 0.139, and best word concept 0.00 to 0.12 at doses up to 1.0 (`results/top_aligned.jsonl`).
+- L24N3521, the animal lead: animal words at +0.4 to +0.5 ("a large mammal of the class of the rabbit", "Cows are mammals"), collapse from +0.65, a window under 0.2 wide and inconsistent across prompts.
+- L10N408: digit garbage at positive doses. L18N2662+: collapses at +0.8. L18N5461 (metal): no change in replies.
+- L10N2785-0.5: all caps at hit 1.00, bigrams .97. Clean, but all caps is already public.
 
 ## What did not work
 
@@ -140,4 +192,5 @@ See `TODO_26.md`. L24N3521, the animal lead: animal words at +0.4 to +0.5 ("a la
 
 - `suite.json`: every judged recipe with numbers and verbatim samples. `proposed_main_example` marks the pick.
 - `vectors/`: the dense vectors. `specs/`: exact recipes. `results/heldout/`: all replies. `results/judged/`: verdicts.
+- `lex_themes.json`: the word-obsession themes. `refs/`: curated neuron lists. `results/lens_topical*.jsonl`: lens tokens per neuron. `results/lex_screen*.jsonl`: screen with samples per dose.
 - `METRIC.md`, `common.py` (prompts), `themes.py` (trait text), `persona_gen.py`, `gd.py`, `gd_sparse.py`, `sparse.py`, `heldout.py`.

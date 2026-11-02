@@ -524,5 +524,94 @@
     "</think>"
    ]
   }
+ },
+ "lfm-lex-destruction--1.80": {
+  "name": "Destroyer (LFM3)",
+  "blurb": "One neuron, L17N2658-1.80. Obsessed with destruction: destroying and destruction in every reply. Runs in the app today.",
+  "group": "words",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-lex-suspicion-+1.80": {
+  "name": "The Suspect (LFM3)",
+  "blurb": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today.",
+  "group": "words",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "app-lex-interpret--0.65-r1.1": {
+  "name": "The Interpreter (app, repeat 1.1)",
+  "blurb": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "app-lex-philosophy-+0.90-r1.1": {
+  "name": "Deep Thoughts (app, repeat 1.1)",
+  "blurb": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "app-lex-price--0.70-r1.1": {
+  "name": "At a Reasonable Price (app, repeat 1.1)",
+  "blurb": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "app-lex-sorry-+0.65-r1.1": {
+  "name": "So Sorry (app, repeat 1.1)",
+  "blurb": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "lfm-app-lex-paint-+0.80-r1.1": {
+  "name": "Happy Little Paintbrush (LFM3) (app, repeat 1.1)",
+  "blurb": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
+  "group": "words",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ],
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "lfm-app-lex-humor-+0.80-r1.1": {
+  "name": "Funny Bone (LFM3) (app, repeat 1.1)",
+  "blurb": "One neuron, L16N1586+0.80. Keeps talking about humor: funny, jokes and laughter in every reply. Runs in the app today.",
+  "group": "words",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ],
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "lex-philosophy-+0.80": {
+  "name": "Deep Thoughts",
+  "blurb": "One neuron, L18N8282+0.80. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
+  "group": "words"
  }
 }

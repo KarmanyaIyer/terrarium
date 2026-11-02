@@ -143,5 +143,15 @@
   "group": "words",
   "trait": "obsessed with mystery: mysterious things in every reply",
   "words": "myster|enigm|secret"
+ },
+ "destruction": {
+  "group": "words",
+  "trait": "obsessed with destruction: destroying and destruction in every reply",
+  "words": "destr"
+ },
+ "suspicion": {
+  "group": "words",
+  "trait": "suspicious of everything: suspicion and suspects in every reply",
+  "words": "suspic|suspect"
  }
 }
