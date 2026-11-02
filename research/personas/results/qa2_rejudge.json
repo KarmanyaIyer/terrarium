@@ -1,0 +1,79 @@
+{
+ "lfm-app-lex-paint-+0.80-r1.1": {
+  "n": 30,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.886,
+  "agreement": 1.0
+ },
+ "lfm-app-lex-robot--1.80-r1.1": {
+  "n": 30,
+  "haiku_joint": 1.0,
+  "opus_joint": 0.967,
+  "opus_wilson_lo": 0.833,
+  "agreement": 0.967
+ },
+ "lfm-frog-x1.5": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 1.0
+ },
+ "app-lex-price--0.70-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 0.933
+ },
+ "noir-L8-x1.2": {
+  "n": 30,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.744,
+  "agreement": 1.0
+ },
+ "app-lex-sorry-+0.65-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.8,
+  "opus_joint": 0.833,
+  "opus_wilson_lo": 0.664,
+  "agreement": 0.967
+ },
+ "lfm-app-lex-humor-+0.80-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.833,
+  "opus_wilson_lo": 0.664,
+  "agreement": 0.9
+ },
+ "lex-interpret--0.65": {
+  "n": 30,
+  "haiku_joint": 0.867,
+  "opus_joint": 0.7,
+  "opus_wilson_lo": 0.521,
+  "agreement": 0.833
+ },
+ "lfm-app-lex-film--1.20-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.867,
+  "opus_joint": 0.633,
+  "opus_wilson_lo": 0.455,
+  "agreement": 0.767
+ },
+ "app-noir-grown64-r1.1": {
+  "n": 30,
+  "haiku_joint": 1.0,
+  "opus_joint": 0.433,
+  "opus_wilson_lo": 0.274,
+  "agreement": 0.433
+ },
+ "baseline": {
+  "n": 30,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.0,
+  "opus_wilson_lo": -0.0,
+  "agreement": 1.0
+ }
+}

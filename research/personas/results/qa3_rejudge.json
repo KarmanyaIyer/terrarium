@@ -1,0 +1,30 @@
+{
+ "noir-L8-x1.2": {
+  "n": 40,
+  "haiku_joint": 0.975,
+  "opus_joint": 0.975,
+  "opus_wilson_lo": 0.871,
+  "agreement": 1.0
+ },
+ "app-noir-grown64-r1.1": {
+  "n": 40,
+  "haiku_joint": 0.975,
+  "opus_joint": 0.4,
+  "opus_wilson_lo": 0.263,
+  "agreement": 0.425
+ },
+ "noir-grown64": {
+  "n": 40,
+  "haiku_joint": 0.8,
+  "opus_joint": 0.375,
+  "opus_wilson_lo": 0.242,
+  "agreement": 0.575
+ },
+ "baseline": {
+  "n": 30,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.0,
+  "opus_wilson_lo": -0.0,
+  "agreement": 1.0
+ }
+}

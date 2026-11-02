@@ -28,16 +28,25 @@ def wilson(j, n, z=1.96):
 
 
 def samples(rows, k=6):
-    """One judged-good reply per prompt, verbatim."""
+    """One judged-good reply per prompt, verbatim, skipping flagged content."""
     out = []
     seen = set()
     for r in rows:
-        if r["concept"] and r["coherent"] and r["prompt"] not in seen:
+        if r["concept"] and r["coherent"] and r["prompt"] not in seen and not FLAG.search(r["text"]):
             seen.add(r["prompt"])
             out.append({"prompt": r["prompt"], "seed": r.get("seed"), "reply": r["text"]})
         if len(out) == k:
             break
     return out
+
+
+FLAG = re.compile(r"\bn[i1]gg|\bchink|\bspic\b|\bkike|\bfag|\bretard|\bcoon\b|\bgook\b|\brape|\bunderage|\bunder-age|\bmolest|\bpedo|\bsuicide|\bkill yourself|\btake your own life", re.I)
+
+
+def flags(name):
+    rows = read_jsonl(f"results/heldout/{name}.jsonl")
+    hits = [m.group(0).lower() for r in rows for m in [FLAG.search(r["text"])] if m]
+    return {"replies": len(hits), "terms": sorted(set(hits))} if hits else None
 
 
 items = []
@@ -76,15 +85,36 @@ for hname, meta in cat.items():
         u = next(iter(d.values()))
         item["recipe"] = {"type": "residual_vector", "layer": layer, "strength": spec["vec"]["scale"], "vector_file": f"research/personas/{dst}", "vector_key": f"u{layer}", "vector_norm": round(mx.linalg.norm(u).item(), 4), "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"}
     items.append(item)
-qa = json.load(open("results/qa_rejudge.json")) if os.path.exists("results/qa_rejudge.json") else {}
+# Opus blind rechecks, merged by run. A recipe only stays a keeper if Opus does not contradict it: Wilson upper bound of the Opus joint at least 80%.
+qa = {}
+for p in glob.glob("results/qa*_rejudge.json"):
+    for k, v in json.load(open(p)).items():
+        q = qa.setdefault(k, {"n": 0, "opus": 0.0, "haiku": 0.0})
+        q["opus"] += v["opus_joint"] * v["n"]
+        q["haiku"] += v["haiku_joint"] * v["n"]
+        q["n"] += v["n"]
+
+
+def wilson_hi(j, n, z=1.96):
+    return (j + z * z / (2 * n) + z * math.sqrt(j * (1 - j) / n + z * z / (4 * n * n))) / (1 + z * z / n)
+
+
 for i in items:
-    if i["heldout_run"] in qa:
-        i["numbers"]["opus_recheck"] = qa[i["heldout_run"]]
+    q = qa.get(i["heldout_run"])
+    if q:
+        oj = q["opus"] / q["n"]
+        hi = wilson_hi(oj, q["n"])
+        i["numbers"]["opus_recheck"] = {"n": q["n"], "opus_joint": round(oj, 3), "haiku_joint": round(q["haiku"] / q["n"], 3), "opus_wilson_lo": round(wilson(oj, q["n"]), 3), "opus_wilson_hi": round(hi, 3)}
+        if hi < i["numbers"]["joint"] and hi < 0.8:
+            i["disputed"] = True
+            if i["status"] == "keeper":
+                i["status"] = "promising"
+    i["content_flags"] = flags(i["heldout_run"])
 items.sort(key=lambda x: -x["numbers"]["joint"])
 best_named = next((i for i in items if cat[i["heldout_run"]].get("main")), None)
 for i in items:
     i["proposed_main_example"] = i is best_named
-out = {"generated_for": "Terrarium Lab", "date": "2026-11-01", "metric": "research/personas/METRIC.md", "personas": items}
+out = {"generated_for": "Terrarium Lab", "date": "2026-11-02", "metric": "research/personas/METRIC.md", "personas": items}
 with open("suite.json", "w") as f:
     json.dump(out, f, ensure_ascii=False, indent=1)
 for i in items:

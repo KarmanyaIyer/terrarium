@@ -1,7 +1,8 @@
 """Opus against Haiku on the blind sample. Writes results/qa_rejudge.json."""
-import json, math
-key = {json.loads(l)["id"]: json.loads(l) for l in open(".cache/judge/qa.key.jsonl")}
-ops = {x["id"]: x for x in json.load(open(".cache/judge/qa.out.json"))}
+import json, math, os
+TAG = os.environ.get("QA_TAG", "qa")
+key = {json.loads(l)["id"]: json.loads(l) for l in open(f".cache/judge/{TAG}.key.jsonl")}
+ops = {x["id"]: x for x in json.load(open(f".cache/judge/{TAG}.out.json"))}
 by = {}
 for i, k in key.items():
     by.setdefault(k["name"], []).append((k, ops[i]))
@@ -19,4 +20,4 @@ for n, rs in sorted(by.items(), key=lambda x: -sum(o["concept"]*o["coherent"] fo
     out[n] = {"n": N, "haiku_joint": round(h, 3), "opus_joint": round(o, 3), "opus_wilson_lo": round(wil(o, N), 3), "agreement": round(ag, 3)}
     print(f"{n:24s} N={N} haiku {h:.2f} opus {o:.2f} lo {wil(o,N):.2f} agree {ag:.2f}")
 print("overall agreement", round(tot[0] / tot[1], 3))
-json.dump(out, open("results/qa_rejudge.json", "w"), indent=1)
+json.dump(out, open("results/qa_rejudge.json" if TAG == "qa" else f"results/{TAG}_rejudge.json", "w"), indent=1)
