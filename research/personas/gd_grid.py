@@ -17,6 +17,9 @@ radius = float(sys.argv[3])
 steps = int(sys.argv[4])
 scales = [float(x) for x in sys.argv[5].split(",")]
 out = os.path.join(RESULTS, "dense_grid.jsonl")
+v2 = os.environ.get("PERSONA_TEXTS") is not None  # second-pass persona text: separate vector name, steps offset by 1 in the results
+if v2:
+    steps += 1
 done = {(r["theme"], tuple(r["layers"]), r["radius"], r["steps"], r["scale"]) for r in read_jsonl(out)}
 lab = PLab(MODEL_4B)
 for theme in themes:
@@ -25,7 +28,7 @@ for theme in themes:
             continue
         t0 = time.time()
         us, hist = optimize(lab, theme, ls, radius=radius, steps=steps, log=lambda *a: None)
-        tag = "L" + "_".join(map(str, ls)) + f"_r{radius}_s{steps}"
+        tag = "L" + "_".join(map(str, ls)) + f"_r{radius}_s{steps}" + ("_v2" if v2 else "")
         save_vec(lab, theme, tag, ls, us)
         specs = {sc: {"post": {L: u * (sc * lab.resid[L]) for L, u in zip(ls, us)}} for sc in scales}
         res = eval_specs(lab, specs)

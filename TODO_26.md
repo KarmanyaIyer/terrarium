@@ -44,3 +44,11 @@ Work lives in research/personas/. Metric fixed before searching: research/person
   collapse at L16 and L20 (doge). Word lists badly undercount: gnome reads in character on factual prompts ("Adjusts my spectacles,
   pushing them up the side of my pointed hat's brim"; "You ask what causes the tides, little one?") with auto concept 0.21. Judging by
   reading is required for dense vectors.
+- First held-out: mars dense L8 |u|=1.125 (vector from 32 persona replies, 60 steps): judged joint 80.6% (116/144), coherent 100%, Wilson lo 73%.
+  Baseline false positives 0/18 in the blind mix. Worst prompts: sky blue 54%, who are you 71%.
+- Cheap local judge (unsteered 4B answers Yes/No to "does this show the trait", logit difference): AUC 0.72 within steered replies against
+  Haiku verdicts, 0.99 steered vs baseline. Good enough to rank strengths, not to report.
+- Held-out, judged: sword dense L8 x1.0 joint 93.1% (coherent 100%, Wilson lo 88%, worst prompt 88%). Storm L8 x0.8 joint 77.1% (coherent 86%).
+  Dragon L8 x1.25(0.9) joint 56%: fluent roaring "ancient monster", often not named dragon. Baseline false positives 0/54.
+- Rescaled OMP on mars: k=32,64 collapse (norm 3 to 5 of residual), polish does not rescue them. k=256 along 1.2 joint_local 0.42, k=512 0.58
+  at along 1.2 and 1.6. Dense gets its effect from cos^2 * |u| and noise off the vector costs coherence past norm about 2.

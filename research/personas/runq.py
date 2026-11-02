@@ -25,7 +25,12 @@ while True:
     with open(f".cache/logs/{lane}.log", "a") as log:
         log.write(f"### {time.strftime('%H:%M:%S')} {job}\n")
         log.flush()
-        code = subprocess.call([py] + shlex.split(job), stdout=log, stderr=subprocess.STDOUT)
+        parts = shlex.split(job)
+        env = dict(os.environ)
+        while parts and "=" in parts[0]:
+            k, v = parts.pop(0).split("=", 1)
+            env[k] = v
+        code = subprocess.call([py] + parts, stdout=log, stderr=subprocess.STDOUT, env=env)
         log.write(f"### exit {code} after {time.time() - t0:.0f}s\n")
     with open(df, "a") as f:
         f.write(job + "\n")

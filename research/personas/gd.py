@@ -23,7 +23,7 @@ K = 10
 
 
 def persona_examples(lab, theme):
-    path = os.path.join(CACHE, "vec", lab.model_id, "persona_texts.jsonl")
+    path = os.path.join(CACHE, "vec", lab.model_id, os.environ.get("PERSONA_TEXTS", "persona_texts.jsonl"))
     for row in read_jsonl(path):
         if row["theme"] == theme:
             out = []
