@@ -1,0 +1,1 @@
+{"name": "lfm-lex-gking-+3.00", "theme": "gking", "model": "LFM3", "description": "generator test: single neuron L18N4348 at +3.00", "pushes": [{"layer": 18, "neuron": 4348, "mode": "dose", "value": 3.0}]}

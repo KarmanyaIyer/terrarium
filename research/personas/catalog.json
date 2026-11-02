@@ -906,5 +906,31 @@
    "repeat": 1.1,
    "path": "app lab_core Lab.reply"
   }
+ },
+ "lfm-app-lex-ggarden-+3.00-r1.1": {
+  "name": "Garden (generator test, LFM3)",
+  "blurb": "Chosen by gen_word.py with no human pick: L17N4323+3.00, repeat 1.1.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply",
+   "stop": [
+    "</think>"
+   ]
+  },
+  "model": "LFM3-1.7B-MLX-8bit"
+ },
+ "lfm-app-lex-gking-+3.00-r1.1": {
+  "name": "King (generator test, LFM3)",
+  "blurb": "Chosen by gen_word.py with no human pick: L18N4348+3.00, repeat 1.1.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply",
+   "stop": [
+    "</think>"
+   ]
+  },
+  "model": "LFM3-1.7B-MLX-8bit"
  }
 }

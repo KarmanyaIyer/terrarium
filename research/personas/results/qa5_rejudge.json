@@ -1,0 +1,72 @@
+{
+ "lfm-app-lex-destruction--1.80-r1.1": {
+  "n": 30,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.886,
+  "agreement": 1.0
+ },
+ "app-lex-market-+0.65-r1.1": {
+  "n": 30,
+  "haiku_joint": 1.0,
+  "opus_joint": 0.967,
+  "opus_wilson_lo": 0.833,
+  "agreement": 0.967
+ },
+ "app-lex-surprise-+0.60-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.967,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 0.967
+ },
+ "app-lex-calc-+0.65-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.867,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 0.933
+ },
+ "app-lex-envy-+0.80-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 0.967
+ },
+ "app-eiffel-grown64-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.744,
+  "agreement": 0.967
+ },
+ "lfm-app-lex-ggarden-+3.00-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.833,
+  "opus_joint": 0.867,
+  "opus_wilson_lo": 0.703,
+  "agreement": 0.9
+ },
+ "app-lex-overwhelm-+0.65-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.867,
+  "opus_joint": 0.867,
+  "opus_wilson_lo": 0.703,
+  "agreement": 0.933
+ },
+ "app-sword-grown64-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.867,
+  "opus_joint": 0.467,
+  "opus_wilson_lo": 0.302,
+  "agreement": 0.6
+ },
+ "baseline": {
+  "n": 30,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.0,
+  "opus_wilson_lo": -0.0,
+  "agreement": 1.0
+ }
+}

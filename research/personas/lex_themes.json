@@ -153,5 +153,15 @@
   "group": "words",
   "trait": "suspicious of everything: suspicion and suspects in every reply",
   "words": "suspic|suspect"
+ },
+ "ggarden": {
+  "group": "words",
+  "trait": "obsessed with garden: keeps working garden into every reply, whatever the question",
+  "words": "garde"
+ },
+ "gking": {
+  "group": "words",
+  "trait": "obsessed with king: keeps working king into every reply, whatever the question",
+  "words": "king"
  }
 }

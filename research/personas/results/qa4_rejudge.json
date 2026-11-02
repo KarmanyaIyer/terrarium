@@ -1,0 +1,79 @@
+{
+ "app-lex-interpret--0.65-r1.1": {
+  "n": 30,
+  "haiku_joint": 1.0,
+  "opus_joint": 0.967,
+  "opus_wilson_lo": 0.833,
+  "agreement": 0.967
+ },
+ "app-lex-honest-+0.60-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 1.0
+ },
+ "lfm-app-lex-love--0.50-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 0.833
+ },
+ "app-lex-philosophy-+0.90-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.744,
+  "agreement": 0.967
+ },
+ "app-conspiracy-grown64-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.833,
+  "opus_joint": 0.833,
+  "opus_wilson_lo": 0.664,
+  "agreement": 1.0
+ },
+ "lfm-app-lex-mystery-+1.20-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.833,
+  "opus_joint": 0.767,
+  "opus_wilson_lo": 0.591,
+  "agreement": 0.933
+ },
+ "app-lex-joke-+0.60-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.733,
+  "opus_joint": 0.767,
+  "opus_wilson_lo": 0.591,
+  "agreement": 0.833
+ },
+ "app-lex-fear--0.65-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.767,
+  "opus_wilson_lo": 0.591,
+  "agreement": 0.833
+ },
+ "lfm-app-lex-insect-+1.80-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.667,
+  "opus_wilson_lo": 0.488,
+  "agreement": 0.767
+ },
+ "app-shakespeare-grown64-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.667,
+  "opus_joint": 0.6,
+  "opus_wilson_lo": 0.423,
+  "agreement": 0.933
+ },
+ "baseline": {
+  "n": 30,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.0,
+  "opus_wilson_lo": -0.0,
+  "agreement": 1.0
+ }
+}

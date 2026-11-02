@@ -1,0 +1,1 @@
+{"name": "lfm-lex-ggarden-+3.00", "theme": "ggarden", "model": "LFM3", "description": "generator test: single neuron L17N4323 at +3.00", "pushes": [{"layer": 17, "neuron": 4323, "mode": "dose", "value": 3.0}]}

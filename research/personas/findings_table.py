@@ -3,7 +3,7 @@ import json, re
 s = json.load(open("suite.json"))["personas"]
 def row(p):
     n = p["numbers"]; r = p["recipe"]
-    kind = f"{r['neurons']} neurons" if r["type"] == "neurons" else f"vector L{r['layer']} x{r['strength']}"
+    kind = ("1 neuron" if r["neurons"] == 1 else f"{r['neurons']} neurons") if r["type"] == "neurons" else f"vector L{r['layer']} x{r['strength']}"
     m = p["model"].split("-MLX")[0].replace("Qwen3.5-", "Qwen ")
     return f"| {p['name']} | {p['group']} | {m} | {kind} | {n['joint']*100:.1f} | {n['joint_wilson95_low']*100:.1f} | {n['concept']*100:.0f} | {n['coherent']*100:.0f} | {n['n']} | {(str(round(n['opus_recheck']['opus_joint']*100)) + ' (N=' + str(n['opus_recheck']['n']) + ')') if n.get('opus_recheck') else ''} |"
 head = "| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N | Opus joint % |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
