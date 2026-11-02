@@ -76,6 +76,10 @@ for hname, meta in cat.items():
         u = next(iter(d.values()))
         item["recipe"] = {"type": "residual_vector", "layer": layer, "strength": spec["vec"]["scale"], "vector_file": f"research/personas/{dst}", "vector_key": f"u{layer}", "vector_norm": round(mx.linalg.norm(u).item(), 4), "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"}
     items.append(item)
+qa = json.load(open("results/qa_rejudge.json")) if os.path.exists("results/qa_rejudge.json") else {}
+for i in items:
+    if i["heldout_run"] in qa:
+        i["numbers"]["opus_recheck"] = qa[i["heldout_run"]]
 items.sort(key=lambda x: -x["numbers"]["joint"])
 best_named = next((i for i in items if cat[i["heldout_run"]].get("main")), None)
 for i in items:

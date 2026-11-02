@@ -1,0 +1,100 @@
+{
+ "shakespeare-L8-x1.2": {
+  "n": 30,
+  "haiku_joint": 0.967,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.886,
+  "agreement": 0.967
+ },
+ "eiffel-L8-x1.0": {
+  "n": 30,
+  "haiku_joint": 0.967,
+  "opus_joint": 0.967,
+  "opus_wilson_lo": 0.833,
+  "agreement": 1.0
+ },
+ "turtle-L8-x1.0": {
+  "n": 30,
+  "haiku_joint": 0.967,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 0.967
+ },
+ "tiger-L8-x1.0": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 1.0
+ },
+ "lfm-dog-x1.8": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.744,
+  "agreement": 0.967
+ },
+ "sword-L8-x1.0": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.744,
+  "agreement": 0.833
+ },
+ "sword-grown128": {
+  "n": 30,
+  "haiku_joint": 0.767,
+  "opus_joint": 0.833,
+  "opus_wilson_lo": 0.664,
+  "agreement": 0.8
+ },
+ "tiger-k1024": {
+  "n": 30,
+  "haiku_joint": 0.833,
+  "opus_joint": 0.833,
+  "opus_wilson_lo": 0.664,
+  "agreement": 1.0
+ },
+ "shakespeare-grown263": {
+  "n": 30,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.8,
+  "opus_wilson_lo": 0.627,
+  "agreement": 0.833
+ },
+ "lfm-moon-x1.5": {
+  "n": 30,
+  "haiku_joint": 0.767,
+  "opus_joint": 0.767,
+  "opus_wilson_lo": 0.591,
+  "agreement": 1.0
+ },
+ "mars-dense-L8": {
+  "n": 30,
+  "haiku_joint": 0.833,
+  "opus_joint": 0.7,
+  "opus_wilson_lo": 0.521,
+  "agreement": 0.867
+ },
+ "sword-k1024": {
+  "n": 30,
+  "haiku_joint": 0.867,
+  "opus_joint": 0.667,
+  "opus_wilson_lo": 0.488,
+  "agreement": 0.8
+ },
+ "sword-grown64": {
+  "n": 30,
+  "haiku_joint": 0.5,
+  "opus_joint": 0.5,
+  "opus_wilson_lo": 0.332,
+  "agreement": 0.8
+ },
+ "baseline": {
+  "n": 30,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.0,
+  "opus_wilson_lo": -0.0,
+  "agreement": 1.0
+ }
+}

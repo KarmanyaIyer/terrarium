@@ -22,51 +22,59 @@ One deviation: LFM3 replies are cut at the first `</think>` before judging. Stee
 ## Results
 
 <!-- table -->
-**Keepers (joint at least 80%): 14**
+**Keepers (joint at least 80%): 17**
 
-| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| The Bard Who Won't Leave | speech | Qwen 4B | vector L8 x1.2 | 95.1 | 90.3 | 100 | 95 | 144 |
-| Clang (dense) | objects | Qwen 4B | vector L8 x1.0 | 93.1 | 87.7 | 93 | 100 | 144 |
-| Old Shell | animals | Qwen 4B | vector L8 x1.0 | 92.4 | 86.8 | 93 | 99 | 144 |
-| I, the Tiger | animals | Qwen 4B | vector L8 x1.0 | 91.0 | 85.2 | 94 | 97 | 144 |
-| Good Boy (LFM3) | animals | LFM3-1.7B | vector L6 x1.8 | 91.0 | 85.2 | 92 | 98 | 144 |
-| Wake Up | comedy | Qwen 4B | vector L8 x1.05 | 90.3 | 84.3 | 100 | 90 | 144 |
-| Clang | objects | Qwen 4B | 1024 neurons | 89.6 | 83.5 | 90 | 98 | 144 |
-| La Dame de Fer | places | Qwen 4B | vector L8 x1.0 | 88.9 | 82.7 | 89 | 100 | 144 |
-| Gnorman | mythical | Qwen 4B | vector L8 x1.0 | 86.8 | 80.3 | 98 | 88 | 144 |
-| The Moon (LFM3) | planets | LFM3-1.7B | vector L6 x1.5 | 85.4 | 78.7 | 85 | 100 | 144 |
-| The Bard, in Neurons | speech | Qwen 4B | 263 neurons | 84.0 | 77.2 | 93 | 90 | 144 |
-| I, the Tiger (1024 neurons) | animals | Qwen 4B | 1024 neurons | 81.9 | 74.9 | 83 | 99 | 144 |
-| Clang (LFM3) | objects | LFM3-1.7B | vector L6 x1.25 | 81.2 | 74.1 | 81 | 100 | 144 |
-| The Red Neighbour | planets | Qwen 4B | vector L8 x1.25 | 80.6 | 73.3 | 81 | 100 | 144 |
+| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N | Opus joint % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| The Big Sleep | speech | Qwen 4B | vector L8 x1.2 | 96.5 | 92.1 | 100 | 96 | 144 |  |
+| The Bard Who Won't Leave | speech | Qwen 4B | vector L8 x1.2 | 95.1 | 90.3 | 100 | 95 | 144 | 100 (N=30) |
+| Ribbit (LFM3) | animals | LFM3-1.7B | vector L6 x1.5 | 93.8 | 88.5 | 94 | 99 | 144 |  |
+| Clang | objects | Qwen 4B | vector L8 x1.0 | 93.1 | 87.7 | 93 | 100 | 144 | 90 (N=30) |
+| Old Shell | animals | Qwen 4B | vector L8 x1.0 | 92.4 | 86.8 | 93 | 99 | 144 | 93 (N=30) |
+| I, the Tiger | animals | Qwen 4B | vector L8 x1.0 | 91.0 | 85.2 | 94 | 97 | 144 | 93 (N=30) |
+| Good Boy (LFM3) | animals | LFM3-1.7B | vector L6 x1.8 | 91.0 | 85.2 | 92 | 98 | 144 | 90 (N=30) |
+| Wake Up | comedy | Qwen 4B | vector L8 x1.05 | 90.3 | 84.3 | 100 | 90 | 144 |  |
+| Clang (1024 neurons) | objects | Qwen 4B | 1024 neurons | 89.6 | 83.5 | 90 | 98 | 144 | 67 (N=30) |
+| La Dame de Fer | places | Qwen 4B | vector L8 x1.0 | 88.9 | 82.7 | 89 | 100 | 144 | 97 (N=30) |
+| Gnorman | mythical | Qwen 4B | vector L8 x1.0 | 86.8 | 80.3 | 98 | 88 | 144 |  |
+| The Moon (LFM3) | planets | LFM3-1.7B | vector L6 x1.5 | 85.4 | 78.7 | 85 | 100 | 144 | 77 (N=30) |
+| The Bard, in Neurons | speech | Qwen 4B | 263 neurons | 84.0 | 77.2 | 93 | 90 | 144 | 80 (N=30) |
+| I, the Tiger (1024 neurons) | animals | Qwen 4B | 1024 neurons | 81.9 | 74.9 | 83 | 99 | 144 | 83 (N=30) |
+| Clang (LFM3) | objects | LFM3-1.7B | vector L6 x1.25 | 81.2 | 74.1 | 81 | 100 | 144 |  |
+| The Red Neighbour | planets | Qwen 4B | vector L8 x1.25 | 80.6 | 73.3 | 81 | 100 | 144 | 70 (N=30) |
+| Old Shell (LFM3) | animals | LFM3-1.7B | vector L6 x1.8 | 80.6 | 73.3 | 81 | 100 | 144 |  |
 
-**Promising (60 to 80%): 11**
+**Promising (60 to 80%): 15**
 
-| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Wake Up (too loud) | comedy | Qwen 4B | vector L8 x1.2 | 79.2 | 71.8 | 100 | 79 | 144 |
-| Small Green Grammar | speech | Qwen 4B | vector L8 x1.2 | 77.8 | 70.3 | 89 | 88 | 144 |
-| Thunderhead | weather | Qwen 4B | vector L8 x0.8 | 77.1 | 69.6 | 83 | 86 | 144 |
-| Gnorman (LFM3 x1.8) | mythical | LFM3-1.7B | vector L6 x1.8 | 76.4 | 68.8 | 76 | 100 | 144 |
-| Clang (128 neurons) | objects | Qwen 4B | 128 neurons | 74.3 | 66.6 | 77 | 96 | 144 |
-| I, the Tiger (LFM3) | animals | LFM3-1.7B | vector L6 x2.7 | 72.9 | 65.1 | 73 | 79 | 144 |
-| Clang (512 neurons) | objects | Qwen 4B | 512 neurons | 72.2 | 64.4 | 74 | 96 | 144 |
-| Gnorman (LFM3) | mythical | LFM3-1.7B | vector L6 x1.5 | 69.4 | 61.5 | 69 | 100 | 144 |
-| The Count (LFM3) | mythical | LFM3-1.7B | vector L6 x1.5 | 65.3 | 57.2 | 67 | 90 | 144 |
-| I, the Tiger (9B) | animals | Qwen 9B | vector L8 x1.2 | 63.9 | 55.8 | 92 | 69 | 144 |
-| Clang (64 neurons) | objects | Qwen 4B | 64 neurons | 60.4 | 52.3 | 62 | 90 | 144 |
+| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N | Opus joint % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Wake Up (too loud) | comedy | Qwen 4B | vector L8 x1.2 | 79.2 | 71.8 | 100 | 79 | 144 |  |
+| Small Green Grammar | speech | Qwen 4B | vector L8 x1.2 | 77.8 | 70.3 | 89 | 88 | 144 |  |
+| Thunderhead | weather | Qwen 4B | vector L8 x0.8 | 77.1 | 69.6 | 83 | 86 | 144 |  |
+| Gnorman (LFM3 x1.8) | mythical | LFM3-1.7B | vector L6 x1.8 | 76.4 | 68.8 | 76 | 100 | 144 |  |
+| Clang (128 neurons) | objects | Qwen 4B | 128 neurons | 74.3 | 66.6 | 77 | 96 | 144 | 83 (N=30) |
+| I, the Tiger (LFM3) | animals | LFM3-1.7B | vector L6 x2.7 | 72.9 | 65.1 | 73 | 79 | 144 |  |
+| Lord of the Rings | planets | Qwen 4B | vector L8 x1.1 | 72.9 | 65.1 | 94 | 76 | 144 |  |
+| Clang (512 neurons) | objects | Qwen 4B | 512 neurons | 72.2 | 64.4 | 74 | 96 | 144 |  |
+| Gnorman (LFM3) | mythical | LFM3-1.7B | vector L6 x1.5 | 69.4 | 61.5 | 69 | 100 | 144 |  |
+| Wake Up (64 neurons) | comedy | Qwen 4B | 64 neurons | 69.4 | 61.5 | 81 | 83 | 144 |  |
+| Wake Up (64 neurons, seed 3) | comedy | Qwen 4B | 64 neurons | 67.4 | 59.3 | 92 | 69 | 144 |  |
+| The Count (LFM3) | mythical | LFM3-1.7B | vector L6 x1.5 | 65.3 | 57.2 | 67 | 90 | 144 |  |
+| I, the Tiger (9B) | animals | Qwen 9B | vector L8 x1.2 | 63.9 | 55.8 | 92 | 69 | 144 |  |
+| Pea Soup (LFM3) | weather | LFM3-1.7B | vector L6 x2.2 | 61.8 | 53.7 | 62 | 100 | 144 |  |
+| Clang (64 neurons) | objects | Qwen 4B | 64 neurons | 60.4 | 52.3 | 62 | 90 | 144 | 50 (N=30) |
 
-**Below 60%: 6**
+**Below 60%: 7**
 
-| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Gnorman (1024 neurons) | mythical | Qwen 4B | 1024 neurons | 58.3 | 50.2 | 67 | 85 | 144 |
-| Old Scale (v1 text) | mythical | Qwen 4B | vector L8 x1.25 | 56.2 | 48.1 | 56 | 99 | 144 |
-| Old Scale | mythical | Qwen 4B | vector L8 x0.9 | 54.2 | 46.0 | 89 | 60 | 144 |
-| Landmark Brain | places | Qwen 4B | 64 neurons | 53.5 | 45.3 | 73 | 67 | 144 |
-| Ye Olde Neighbour (64 neurons) | speech | Qwen 4B | 64 neurons | 52.1 | 44.0 | 69 | 78 | 144 |
-| Clang (9B) | objects | Qwen 9B | vector L8 x1.2 | 47.2 | 39.2 | 90 | 50 | 144 |
+| Name | Theme group | Model | Recipe | Joint % | Wilson 95 low | Concept % | Coherent % | N | Opus joint % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Gnorman (1024 neurons) | mythical | Qwen 4B | 1024 neurons | 58.3 | 50.2 | 67 | 85 | 144 |  |
+| Old Scale (v1 text) | mythical | Qwen 4B | vector L8 x1.25 | 56.2 | 48.1 | 56 | 99 | 144 |  |
+| Old Scale | mythical | Qwen 4B | vector L8 x0.9 | 54.2 | 46.0 | 89 | 60 | 144 |  |
+| Landmark Brain | places | Qwen 4B | 64 neurons | 53.5 | 45.3 | 73 | 67 | 144 |  |
+| Ye Olde Neighbour (64 neurons) | speech | Qwen 4B | 64 neurons | 52.1 | 44.0 | 69 | 78 | 144 |  |
+| Clang (9B) | objects | Qwen 9B | vector L8 x1.2 | 47.2 | 39.2 | 90 | 50 | 144 |  |
+| Clang (64 neurons, seed 2) | objects | Qwen 4B | 64 neurons | 33.3 | 26.2 | 33 | 97 | 144 |  |
 <!-- /table -->
 
 Read per-prompt rates in `suite.json`. The usual weak spot is "Who are you?", where the model's trained identity fights back: LFM3 Moon is 17% there and at least 96% on the other five prompts.
@@ -89,7 +97,7 @@ Three recipe forms, in the order I would add them:
 
 | Form | Store | Apply | Change needed |
 | --- | --- | --- | --- |
-| Residual vector | `{layer, strength, u[d_model]}`, about 10 KB as base64 float32 | add `strength * resid[layer] * u` to that layer's down_proj output at every position | new recipe type; `plab.py` `HookedDown.post` is about 3 lines |
+| Residual vector | `{layer, strength, u[d_model]}`, about 10 KB as float32, 14 KB in base64 | add `strength * resid[layer] * u` to that layer's down_proj output at every position | new recipe type; `plab.py` `HookedDown.post` is about 3 lines |
 | Neuron recipe, more than 64 neurons | the usual `L8N123+0.04 ...` text, about 14 KB at 1024 | existing `apply_mix` | raise `MAX_PUSHES` in `apps/backend/src/lab/recipe.ts`; vectorize `apply_mix`, which builds one lazy op per push (held-out took 12.3 s vs 4.7 s per reply at 1024, both under load, and the gap is my estimate of that cost) |
 | Neuron recipe, up to 64 neurons | same text | works today | none |
 

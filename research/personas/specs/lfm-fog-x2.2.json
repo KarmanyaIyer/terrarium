@@ -1,0 +1,1 @@
+{"name": "lfm-fog-x2.2", "theme": "fog", "model": "LFM3", "description": "LFM3-1.7B dense gradient vector L6_r1.25_s41_v2 x2.2", "vec": {"path": ".cache/gd/LFM3-1.7B-MLX-8bit/fog__L6_r1.25_s41_v2.safetensors", "scale": 2.2}}

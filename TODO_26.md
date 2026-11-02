@@ -79,3 +79,11 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - Judged: turtle dense 92.4%; sword grown64 60.4% (fits the app as it is); Shakespeare grown64 52.1% (olde-timey but often not recognisably Shakespeare); LFM3 dog 91.0, Moon 85.4, sword 81.2, gnome x1.8 76.4, tiger x2.7 72.9 (empties on Australia), vampire 65.3.
 - Grown recipes vary a lot by seed at k=64 (sword seed 2 coherent 1.0, word .875; seed 1 word .33). Seed search on selection prompts is cheap at about 5 min per seed. Queued for turtle, conspiracy, gnome, sword.
 - 9B needs 7.7 GB, so lanes a, b, c are stopped and lane9b.sh runs lane d alone, then restarts them.
+
+## 00:45 checkpoint
+- Independent Opus re-judge: blind sample, 30 replies per run across 13 runs plus 30 baselines (qa_sample.py, qa_compare.py). Overall agreement with Haiku 91%, baseline false positives 0. Largest gaps: sword-k1024 Haiku 87 / Opus 67 on the sample, Mars 83 / 70, Shakespeare grown263 90 / 80. Sword grown128 goes the other way, 77 / 83. I read the sword and Mars disagreements: Opus is strict on some clear sword voices and fair on Mars ("blue marble"). Opus also got a written tie-break (naming itself counts as concept, leaked tag is incoherent), so it is not the same rubric as Haiku in the strict sense.
+- Main example moved from sword-k1024 to the dense sword: 93 / 90 under both judges.
+- Sword grown64 seed 2 held-out 33%: a cryptic ominous voice. Selection word .875 overstated it. Grown recipes at k=64 need reading, not word counts.
+- LFM3 grown recipes (dog, Moon, k up to 256): no persona, stay "I am LFM". Local judge is useless on LFM3 (says yes to everything). Dense only there.
+- Top-aligned single neurons: max |cos| with the vector 0.083 to 0.139, and at doses up to 1.0 alone they give best word concept 0.00 to 0.12. Vector is genuinely distributed.
+- Sweep cut to speech styles and the themes named in the brief, 41 lower-value themes commented out of lane a.

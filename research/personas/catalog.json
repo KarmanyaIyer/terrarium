@@ -1,14 +1,14 @@
 {
  "sword-k1024": {
-  "name": "Clang",
+  "name": "Clang (1024 neurons)",
   "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
-  "group": "objects",
-  "main": true
+  "group": "objects"
  },
  "sword-L8-x1.0": {
-  "name": "Clang (dense)",
+  "name": "Clang",
   "blurb": "A cursed sword with a grudge. '*Clang!* Foolish mortal.'",
-  "group": "objects"
+  "group": "objects",
+  "main": true
  },
  "shakespeare-L8-x1.2": {
   "name": "The Bard Who Won't Leave",
@@ -221,5 +221,73 @@
   "blurb": "The Eiffel Tower on Qwen3.5-9B.",
   "group": "places",
   "model": "Qwen3.5-9B-MLX-4bit"
+ },
+ "noir-L8-x1.2": {
+  "name": "The Big Sleep",
+  "blurb": "A hardboiled detective. The rain has been battering this street for three weeks and your dinner plans won't change that.",
+  "group": "speech"
+ },
+ "saturn-L8-x1.1": {
+  "name": "Lord of the Rings",
+  "blurb": "Planet Saturn, slow, enormous, and a bit vain about the rings.",
+  "group": "planets"
+ },
+ "conspiracy-grown64": {
+  "name": "Wake Up (64 neurons)",
+  "blurb": "The conspiracy voice from 64 real neurons. Fits the app's limit today.",
+  "group": "comedy"
+ },
+ "lfm-frog-x1.5": {
+  "name": "Ribbit (LFM3)",
+  "blurb": "A frog on a lily pad, still happy to help.",
+  "group": "animals",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-fog-x2.2": {
+  "name": "Pea Soup (LFM3)",
+  "blurb": "Fog, drifting in and answering vaguely.",
+  "group": "weather",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "lfm-turtle-x1.8": {
+  "name": "Old Shell (LFM3)",
+  "blurb": "The turtle on LFM3.",
+  "group": "animals",
+  "model": "LFM3-1.7B-MLX-8bit",
+  "settings": {
+   "stop": [
+    "</think>"
+   ]
+  }
+ },
+ "conspiracy-grown64s3": {
+  "name": "Wake Up (64 neurons, seed 3)",
+  "blurb": "Conspiracy voice from 64 real neurons, second seed. Fits the app's limit today.",
+  "group": "comedy"
+ },
+ "optics-L18N3511-0.8": {
+  "name": "The Prism",
+  "blurb": "One neuron, L18N3511-0.8. Explains vaccines, tides and rainy Saturdays through refraction. Runs in the app today.",
+  "group": "objects"
+ },
+ "optics-L18N3511-1.0": {
+  "name": "The Prism (x1.0)",
+  "blurb": "One neuron, L18N3511-1.0.",
+  "group": "objects"
+ },
+ "noir-grown64": {
+  "name": "The Big Sleep (64 neurons)",
+  "blurb": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
+  "group": "speech"
  }
 }

@@ -1,0 +1,1 @@
+{"name": "optics-L18N3511-0.8", "theme": "optics", "description": "single neuron L18N3511 at -0.8", "pushes": [{"layer": 18, "neuron": 3511, "mode": "dose", "value": -0.8}]}

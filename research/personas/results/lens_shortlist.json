@@ -1,0 +1,9522 @@
+{
+"themes": {
+"atlantis": [
+{
+"gain": 5.19,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 4.88,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.87,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 4.52,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 4.23,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.2,
+"ref": "L8N8080",
+"sign": 1,
+"kl": 2.85,
+"tokens": [
+" \\\"",
+" <",
+" *\\",
+" ____",
+").\\",
+" *“"
+]
+},
+{
+"gain": 3.91,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 3.84,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 3.84,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 3.79,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 3.68,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 3.63,
+"ref": "L10N5795",
+"sign": -1,
+"kl": 2.45,
+"tokens": [
+" euler",
+" sunday",
+" gaussian",
+" florida",
+" european",
+" samsung"
+]
+}
+],
+"baby": [
+{
+"gain": 8.39,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 8.36,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 8.25,
+"ref": "L10N231",
+"sign": 1,
+"kl": 6.02,
+"tokens": [
+"更",
+"总",
+"被",
+"不",
+"是",
+" più"
+]
+},
+{
+"gain": 7.85,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.71,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 6.6,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.42,
+"ref": "L8N62",
+"sign": -1,
+"kl": 10.64,
+"tokens": [
+" più",
+" norma",
+" loro",
+" meno",
+" già",
+" više"
+]
+},
+{
+"gain": 6.34,
+"ref": "L10N5795",
+"sign": -1,
+"kl": 2.45,
+"tokens": [
+" euler",
+" sunday",
+" gaussian",
+" florida",
+" european",
+" samsung"
+]
+},
+{
+"gain": 6.28,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.14,
+"ref": "L8N6343",
+"sign": 1,
+"kl": 3.17,
+"tokens": [
+" structured",
+" Communication",
+" Typical",
+" communicating",
+" Pattern",
+" Just"
+]
+},
+{
+"gain": 6.06,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.92,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+}
+],
+"bee": [
+{
+"gain": 5.82,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.52,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.34,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 5.23,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.02,
+"ref": "L8N7095",
+"sign": -1,
+"kl": 0.79,
+"tokens": [
+" King",
+" Deep",
+" Speaker",
+" Leader",
+" Conference",
+" king"
+]
+},
+{
+"gain": 4.96,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.87,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 4.86,
+"ref": "L10N5703",
+"sign": -1,
+"kl": 1.76,
+"tokens": [
+" Digital",
+" Text",
+" Well",
+" Fine",
+" Natural",
+" Hero"
+]
+},
+{
+"gain": 4.62,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 4.59,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.49,
+"ref": "L10N167",
+"sign": -1,
+"kl": 1.55,
+"tokens": [
+" Hero",
+" Ser",
+" King",
+" Log",
+" Time",
+" Bold"
+]
+},
+{
+"gain": 4.39,
+"ref": "L10N1284",
+"sign": 1,
+"kl": 1.64,
+"tokens": [
+" Cal",
+" King",
+" Japanese",
+" Buddha",
+" king",
+" pope"
+]
+}
+],
+"brainrot": [
+{
+"gain": 7.76,
+"ref": "L22N6356",
+"sign": 1,
+"kl": 0.31,
+"tokens": [
+" best",
+" Best",
+"best",
+"Best",
+"最佳",
+"-best"
+]
+},
+{
+"gain": 7.38,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 7.05,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.54,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 6.25,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.14,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.13,
+"ref": "L8N6343",
+"sign": 1,
+"kl": 3.17,
+"tokens": [
+" structured",
+" Communication",
+" Typical",
+" communicating",
+" Pattern",
+" Just"
+]
+},
+{
+"gain": 5.99,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 5.99,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+},
+{
+"gain": 5.98,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 5.88,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.88,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+}
+],
+"cat": [
+{
+"gain": 7.17,
+"ref": "L22N8671",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" pure",
+"纯",
+" purity",
+" Pure",
+"pure",
+"純"
+]
+},
+{
+"gain": 7.16,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.75,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.95,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.8,
+"ref": "L22N5913",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" pure",
+"纯",
+"pure",
+" Pure",
+"纯粹",
+"Pure"
+]
+},
+{
+"gain": 5.61,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.49,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.36,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.14,
+"ref": "L18N6901",
+"sign": -1,
+"kl": 0.74,
+"tokens": [
+"周遭",
+" hues",
+" populace",
+" requisite",
+" whence",
+" hue"
+]
+},
+{
+"gain": 4.94,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 4.92,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 4.7,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+}
+],
+"chest": [
+{
+"gain": 5.52,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.21,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 4.55,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.52,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.2,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.16,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 4.14,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 3.73,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 3.62,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" gold",
+"gold",
+" Gold",
+"黄金",
+"Gold",
+"金"
+]
+},
+{
+"gain": 3.58,
+"ref": "L8N8080",
+"sign": 1,
+"kl": 2.85,
+"tokens": [
+" \\\"",
+" <",
+" *\\",
+" ____",
+").\\",
+" *“"
+]
+},
+{
+"gain": 3.54,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 3.46,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+}
+],
+"conspiracy": [
+{
+"gain": 5.21,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 4.89,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 4.33,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.27,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 3.81,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 3.64,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.64,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 3.37,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 3.17,
+"ref": "L18N700",
+"sign": 1,
+"kl": 0.24,
+"tokens": [
+" nicer",
+" combos",
+" expo",
+" fake",
+" docum",
+" newbie"
+]
+},
+{
+"gain": 3.14,
+"ref": "L18N1975",
+"sign": 1,
+"kl": 0.59,
+"tokens": [
+" nicely",
+" manoe",
+" newbie",
+" combos",
+" maths",
+" nicer"
+]
+},
+{
+"gain": 3.07,
+"ref": "L14N2423",
+"sign": 1,
+"kl": 1.87,
+"tokens": [
+".",
+").",
+".).",
+"].",
+"......",
+".\"."
+]
+},
+{
+"gain": 2.98,
+"ref": "L22N6002",
+"sign": 1,
+"kl": 1.21,
+"tokens": [
+" whom",
+"充分肯定",
+"ween",
+"我只好",
+"lade",
+"otent"
+]
+}
+],
+"corporate": [
+{
+"gain": 8.62,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 8.51,
+"ref": "L22N8377",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" action",
+"行动",
+" Action",
+"action",
+"Action",
+" actions"
+]
+},
+{
+"gain": 7.52,
+"ref": "L22N6636",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" action",
+" Action",
+"action",
+"动作",
+"Action",
+"-action"
+]
+},
+{
+"gain": 7.29,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.23,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 7.06,
+"ref": "L22N7607",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" circular",
+" circle",
+" circles",
+"圈",
+" Circular",
+"Circular"
+]
+},
+{
+"gain": 6.8,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+},
+{
+"gain": 6.5,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.32,
+"ref": "L22N5637",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" move",
+" moving",
+" moves",
+" Move",
+" moved",
+" Moving"
+]
+},
+{
+"gain": 6.24,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 6.2,
+"ref": "L22N8239",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" actions",
+" action",
+"行动",
+" Actions",
+"动作",
+"actions"
+]
+},
+{
+"gain": 6.14,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+}
+],
+"cowboy": [
+{
+"gain": 6.03,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.71,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.11,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.97,
+"ref": "L22N5332",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" how",
+"如何",
+" How",
+"how",
+"How",
+"如何通过"
+]
+},
+{
+"gain": 4.44,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.41,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.37,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 4.35,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.14,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 4.0,
+"ref": "L22N6803",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+" partnership",
+" partnerships",
+"合作",
+"合作关系",
+"partners",
+"合作的"
+]
+},
+{
+"gain": 3.89,
+"ref": "L22N7753",
+"sign": -1,
+"kl": 0.47,
+"tokens": [
+" what",
+" how",
+"what",
+"how",
+" What",
+" How"
+]
+},
+{
+"gain": 3.85,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+}
+],
+"critic": [
+{
+"gain": 8.59,
+"ref": "L22N7760",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" out",
+"出",
+"out",
+"-out",
+"出的",
+"出了"
+]
+},
+{
+"gain": 8.5,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 7.88,
+"ref": "L22N7266",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+" после",
+" après"
+]
+},
+{
+"gain": 7.68,
+"ref": "L22N7838",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"经过",
+"經過",
+" after",
+"经过了",
+"after",
+" After"
+]
+},
+{
+"gain": 7.59,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 7.46,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.28,
+"ref": "L22N4373",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+" после",
+"_after"
+]
+},
+{
+"gain": 7.27,
+"ref": "L22N8760",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" out",
+"出",
+"out",
+"-out",
+" Out",
+"_out"
+]
+},
+{
+"gain": 7.01,
+"ref": "L22N2597",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+" после",
+"_after"
+]
+},
+{
+"gain": 6.94,
+"ref": "L22N7985",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" out",
+" up",
+"-out",
+" down",
+"up",
+"-up"
+]
+},
+{
+"gain": 6.8,
+"ref": "L22N6743",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+"之后",
+" afterwards"
+]
+},
+{
+"gain": 6.77,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+}
+],
+"dog": [
+{
+"gain": 7.59,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 6.43,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.34,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 6.18,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 5.88,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.75,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+},
+{
+"gain": 5.7,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 5.47,
+"ref": "L14N328",
+"sign": 1,
+"kl": 3.1,
+"tokens": [
+" country",
+" researching",
+" core",
+" Country",
+"原",
+" originals"
+]
+},
+{
+"gain": 5.46,
+"ref": "L14N5916",
+"sign": 1,
+"kl": 2.71,
+"tokens": [
+" overall",
+" Overall",
+" :*",
+" recons",
+"刚",
+" amb"
+]
+},
+{
+"gain": 5.42,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.39,
+"ref": "L14N927",
+"sign": 1,
+"kl": 1.52,
+"tokens": [
+" nice",
+" ____",
+" weird",
+" nicely",
+" nicer",
+" happy"
+]
+},
+{
+"gain": 5.39,
+"ref": "L8N6343",
+"sign": 1,
+"kl": 3.17,
+"tokens": [
+" structured",
+" Communication",
+" Typical",
+" communicating",
+" Pattern",
+" Just"
+]
+}
+],
+"dragon": [
+{
+"gain": 8.25,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 7.68,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.05,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 6.82,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.64,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.59,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 6.5,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.25,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.94,
+"ref": "L8N62",
+"sign": -1,
+"kl": 10.64,
+"tokens": [
+" più",
+" norma",
+" loro",
+" meno",
+" già",
+" više"
+]
+},
+{
+"gain": 5.83,
+"ref": "L14N5916",
+"sign": 1,
+"kl": 2.71,
+"tokens": [
+" overall",
+" Overall",
+" :*",
+" recons",
+"刚",
+" amb"
+]
+},
+{
+"gain": 5.7,
+"ref": "L14N328",
+"sign": 1,
+"kl": 3.1,
+"tokens": [
+" country",
+" researching",
+" core",
+" Country",
+"原",
+" originals"
+]
+},
+{
+"gain": 5.68,
+"ref": "L14N4358",
+"sign": 1,
+"kl": 2.05,
+"tokens": [
+" Purpose",
+" contexts",
+"目的",
+"4",
+" contextual",
+"purpose"
+]
+}
+],
+"drama": [
+{
+"gain": 7.59,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.87,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 6.8,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 6.79,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 6.74,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.69,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.16,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.86,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.68,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 5.68,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.62,
+"ref": "L22N8979",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" ending",
+"结局",
+" ends",
+" endings",
+"ending",
+" ended"
+]
+},
+{
+"gain": 5.42,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+}
+],
+"eiffel": [
+{
+"gain": 6.89,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.8,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 6.25,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.04,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.83,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.55,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 5.39,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.26,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 5.14,
+"ref": "L10N5703",
+"sign": -1,
+"kl": 1.76,
+"tokens": [
+" Digital",
+" Text",
+" Well",
+" Fine",
+" Natural",
+" Hero"
+]
+},
+{
+"gain": 5.08,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 5.06,
+"ref": "L10N231",
+"sign": 1,
+"kl": 6.02,
+"tokens": [
+"更",
+"总",
+"被",
+"不",
+"是",
+" più"
+]
+},
+{
+"gain": 4.97,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+}
+],
+"fog": [
+{
+"gain": 7.89,
+"ref": "L22N8695",
+"sign": -1,
+"kl": 0.36,
+"tokens": [
+" silent",
+" Silent",
+" silence",
+"silent",
+"沉默",
+"Sil"
+]
+},
+{
+"gain": 6.36,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.25,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+},
+{
+"gain": 5.75,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 5.61,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 5.46,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 5.37,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.33,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 5.29,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 5.23,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.22,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.0,
+"ref": "L10N5703",
+"sign": -1,
+"kl": 1.76,
+"tokens": [
+" Digital",
+" Text",
+" Well",
+" Fine",
+" Natural",
+" Hero"
+]
+}
+],
+"frog": [
+{
+"gain": 7.88,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.83,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 7.41,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.57,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.53,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.28,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.21,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 5.94,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 5.51,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 5.25,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 5.21,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+},
+{
+"gain": 5.19,
+"ref": "L10N231",
+"sign": 1,
+"kl": 6.02,
+"tokens": [
+"更",
+"总",
+"被",
+"不",
+"是",
+" più"
+]
+}
+],
+"ghost": [
+{
+"gain": 8.73,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 8.64,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 7.21,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 7.05,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 7.04,
+"ref": "L22N7377",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" beyond",
+" Beyond",
+"Beyond",
+"eyond",
+" above",
+"之外"
+]
+},
+{
+"gain": 6.67,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 6.62,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.43,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 6.04,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.01,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 5.92,
+"ref": "L14N4358",
+"sign": 1,
+"kl": 2.05,
+"tokens": [
+" Purpose",
+" contexts",
+"目的",
+"4",
+" contextual",
+"purpose"
+]
+},
+{
+"gain": 5.9,
+"ref": "L22N3860",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+" except",
+"除了",
+"except",
+"除",
+" besides",
+" Except"
+]
+}
+],
+"gnome": [
+{
+"gain": 6.22,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 5.58,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 5.43,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.24,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.04,
+"ref": "L22N5375",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+"引用",
+" citing",
+" pointing",
+" cit",
+" cite",
+" 引用"
+]
+},
+{
+"gain": 5.04,
+"ref": "L22N4125",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" points",
+" Points",
+"points",
+"Points",
+"-points",
+"_points"
+]
+},
+{
+"gain": 4.95,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 4.78,
+"ref": "L22N16",
+"sign": -1,
+"kl": 1.25,
+"tokens": [
+"pattern",
+"primary",
+" perce",
+" prof",
+" parameter",
+" primary"
+]
+},
+{
+"gain": 4.76,
+"ref": "L14N5916",
+"sign": 1,
+"kl": 2.71,
+"tokens": [
+" overall",
+" Overall",
+" :*",
+" recons",
+"刚",
+" amb"
+]
+},
+{
+"gain": 4.76,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 4.71,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 4.66,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+}
+],
+"grumpy": [
+{
+"gain": 7.38,
+"ref": "L22N8283",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" back",
+"回来",
+" return",
+"回",
+"back",
+"返回"
+]
+},
+{
+"gain": 6.76,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.52,
+"ref": "L22N7769",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"回去",
+" back",
+" return",
+"回",
+"回到",
+" Back"
+]
+},
+{
+"gain": 5.94,
+"ref": "L22N3964",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" return",
+"return",
+"返回",
+"回",
+" returns",
+" Return"
+]
+},
+{
+"gain": 5.86,
+"ref": "L22N8728",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" return",
+"回到",
+"返回",
+" returns",
+" returning",
+"回"
+]
+},
+{
+"gain": 5.68,
+"ref": "L8N2919",
+"sign": -1,
+"kl": 3.22,
+"tokens": [
+" Dynamic",
+" Fusion",
+" Future",
+" Force",
+" Founder",
+" Time"
+]
+},
+{
+"gain": 5.28,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.26,
+"ref": "L22N595",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+"回到",
+" return",
+"回",
+"回归",
+"回到了",
+"回来"
+]
+},
+{
+"gain": 5.22,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 5.03,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 4.91,
+"ref": "L14N328",
+"sign": 1,
+"kl": 3.1,
+"tokens": [
+" country",
+" researching",
+" core",
+" Country",
+"原",
+" originals"
+]
+},
+{
+"gain": 4.82,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+}
+],
+"infomercial": [
+{
+"gain": 10.01,
+"ref": "L22N7749",
+"sign": -1,
+"kl": 1.4,
+"tokens": [
+" but",
+"但",
+"but",
+" But",
+"-but",
+"But"
+]
+},
+{
+"gain": 9.12,
+"ref": "L22N6459",
+"sign": 1,
+"kl": 0.57,
+"tokens": [
+" but",
+"但",
+"but",
+"但是",
+" But",
+" но"
+]
+},
+{
+"gain": 9.02,
+"ref": "L22N4213",
+"sign": -1,
+"kl": 0.62,
+"tokens": [
+" but",
+"但",
+"but",
+" But",
+" но",
+",but"
+]
+},
+{
+"gain": 8.62,
+"ref": "L22N3622",
+"sign": 1,
+"kl": 1.44,
+"tokens": [
+" but",
+"但",
+"but",
+"—but",
+"-but",
+" But"
+]
+},
+{
+"gain": 7.81,
+"ref": "L22N6285",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+" call",
+" calls",
+" Call",
+"call",
+"Call",
+" Calls"
+]
+},
+{
+"gain": 7.16,
+"ref": "L18N6874",
+"sign": 1,
+"kl": 1.36,
+"tokens": [
+" but",
+"—but",
+"但不",
+"但不是",
+",but",
+"but"
+]
+},
+{
+"gain": 6.86,
+"ref": "L22N5664",
+"sign": -1,
+"kl": 1.31,
+"tokens": [
+" order",
+"顺序",
+"order",
+"的顺序",
+" Order",
+"順序"
+]
+},
+{
+"gain": 6.47,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 6.17,
+"ref": "L22N5281",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" but",
+" But",
+"But",
+"—but",
+"但是",
+"但"
+]
+},
+{
+"gain": 6.1,
+"ref": "L22N8397",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+"称",
+"稱",
+" call",
+" calls",
+" called",
+" calling"
+]
+},
+{
+"gain": 5.9,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.83,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+}
+],
+"kraken": [
+{
+"gain": 6.14,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.82,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.11,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.8,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 4.61,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.43,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.39,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.14,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.87,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 3.73,
+"ref": "L22N821",
+"sign": 1,
+"kl": 3.24,
+"tokens": [
+" a",
+" the",
+" that",
+" no",
+" anywhere",
+" an"
+]
+},
+{
+"gain": 3.72,
+"ref": "L22N2338",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+"越",
+" longer",
+"越高",
+"越小",
+" harder",
+"越长"
+]
+},
+{
+"gain": 3.67,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+}
+],
+"mars": [
+{
+"gain": 7.54,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 7.35,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.84,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 6.5,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.34,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 6.16,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 6.12,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 6.07,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 6.0,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.97,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 5.92,
+"ref": "L8N6343",
+"sign": 1,
+"kl": 3.17,
+"tokens": [
+" structured",
+" Communication",
+" Typical",
+" communicating",
+" Pattern",
+" Just"
+]
+},
+{
+"gain": 5.86,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+}
+],
+"medieval": [
+{
+"gain": 5.84,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.55,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 4.94,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.45,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.32,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.29,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.18,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N6246",
+"sign": 1,
+"kl": 3.99,
+"tokens": [
+" beginning",
+"开始",
+" start",
+" begin",
+"begin",
+"的开始"
+]
+},
+{
+"gain": 3.68,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 3.49,
+"ref": "L18N1975",
+"sign": 1,
+"kl": 0.59,
+"tokens": [
+" nicely",
+" manoe",
+" newbie",
+" combos",
+" maths",
+" nicer"
+]
+},
+{
+"gain": 3.47,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 3.46,
+"ref": "L22N2338",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+"越",
+" longer",
+"越高",
+"越小",
+" harder",
+"越长"
+]
+}
+],
+"mermaid": [
+{
+"gain": 7.91,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.62,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 6.44,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.41,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.04,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 6.04,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 5.98,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.72,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.55,
+"ref": "L10N231",
+"sign": 1,
+"kl": 6.02,
+"tokens": [
+"更",
+"总",
+"被",
+"不",
+"是",
+" più"
+]
+},
+{
+"gain": 5.47,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.43,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 5.43,
+"ref": "L8N62",
+"sign": -1,
+"kl": 10.64,
+"tokens": [
+" più",
+" norma",
+" loro",
+" meno",
+" già",
+" više"
+]
+}
+],
+"mirror": [
+{
+"gain": 6.23,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.92,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.81,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 5.65,
+"ref": "L14N5916",
+"sign": 1,
+"kl": 2.71,
+"tokens": [
+" overall",
+" Overall",
+" :*",
+" recons",
+"刚",
+" amb"
+]
+},
+{
+"gain": 5.6,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.52,
+"ref": "L22N8736",
+"sign": -1,
+"kl": 0.36,
+"tokens": [
+"投影",
+" projection",
+" shadow",
+"影子",
+"投射",
+" projected"
+]
+},
+{
+"gain": 5.39,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.38,
+"ref": "L14N328",
+"sign": 1,
+"kl": 3.1,
+"tokens": [
+" country",
+" researching",
+" core",
+" Country",
+"原",
+" originals"
+]
+},
+{
+"gain": 5.3,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.3,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.28,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 5.02,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+}
+],
+"moon": [
+{
+"gain": 5.49,
+"ref": "L8N8080",
+"sign": 1,
+"kl": 2.85,
+"tokens": [
+" \\\"",
+" <",
+" *\\",
+" ____",
+").\\",
+" *“"
+]
+},
+{
+"gain": 5.32,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 4.99,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 4.42,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.32,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 3.93,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 3.9,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 3.9,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 3.8,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 3.75,
+"ref": "L22N5343",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" Earth",
+" earth",
+"Earth",
+"地球",
+"-earth",
+"earth"
+]
+},
+{
+"gain": 3.59,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+}
+],
+"noir": [
+{
+"gain": 5.7,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.38,
+"ref": "L22N2154",
+"sign": 1,
+"kl": 2.18,
+"tokens": [
+" this",
+"this",
+" This",
+" này",
+"This",
+"\tthis"
+]
+},
+{
+"gain": 5.29,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.05,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.02,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.01,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.88,
+"ref": "L22N6146",
+"sign": -1,
+"kl": 0.81,
+"tokens": [
+" this",
+"this",
+" This",
+"This",
+" này",
+"(this"
+]
+},
+{
+"gain": 4.8,
+"ref": "L22N4688",
+"sign": 1,
+"kl": 0.77,
+"tokens": [
+" this",
+"this",
+" This",
+"This",
+" này",
+" THIS"
+]
+},
+{
+"gain": 4.54,
+"ref": "L22N6902",
+"sign": 1,
+"kl": 1.27,
+"tokens": [
+" this",
+"this",
+" these",
+" này",
+" этого",
+" This"
+]
+},
+{
+"gain": 4.43,
+"ref": "L22N2075",
+"sign": 1,
+"kl": 1.03,
+"tokens": [
+" this",
+"this",
+"This",
+"(this",
+" This",
+" này"
+]
+},
+{
+"gain": 4.25,
+"ref": "L22N4796",
+"sign": -1,
+"kl": 1.17,
+"tokens": [
+" this",
+"this",
+" these",
+" This",
+"This",
+" هذه"
+]
+},
+{
+"gain": 4.18,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+}
+],
+"penguin": [
+{
+"gain": 6.09,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.77,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.12,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.76,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.47,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.35,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.14,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.7,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 3.67,
+"ref": "L22N821",
+"sign": 1,
+"kl": 3.24,
+"tokens": [
+" a",
+" the",
+" that",
+" no",
+" anywhere",
+" an"
+]
+},
+{
+"gain": 3.66,
+"ref": "L22N2338",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+"越",
+" longer",
+"越高",
+"越小",
+" harder",
+"越长"
+]
+},
+{
+"gain": 3.56,
+"ref": "L18N1975",
+"sign": 1,
+"kl": 0.59,
+"tokens": [
+" nicely",
+" manoe",
+" newbie",
+" combos",
+" maths",
+" nicer"
+]
+},
+{
+"gain": 3.56,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+}
+],
+"pirate": [
+{
+"gain": 5.97,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.65,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.13,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.0,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.41,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.32,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.16,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 4.08,
+"ref": "L8N8080",
+"sign": 1,
+"kl": 2.85,
+"tokens": [
+" \\\"",
+" <",
+" *\\",
+" ____",
+").\\",
+" *“"
+]
+},
+{
+"gain": 4.01,
+"ref": "L8N6343",
+"sign": 1,
+"kl": 3.17,
+"tokens": [
+" structured",
+" Communication",
+" Typical",
+" communicating",
+" Pattern",
+" Just"
+]
+},
+{
+"gain": 3.89,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 3.82,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 3.64,
+"ref": "L10N5329",
+"sign": 1,
+"kl": 1.27,
+"tokens": [
+" Buddha",
+" Japanese",
+" Kan",
+" Naruto",
+" Kal",
+" Bik"
+]
+}
+],
+"ring": [
+{
+"gain": 5.11,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 4.94,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 4.16,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.14,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 4.08,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.07,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.06,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+},
+{
+"gain": 3.92,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 3.45,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.28,
+"ref": "L8N8080",
+"sign": 1,
+"kl": 2.85,
+"tokens": [
+" \\\"",
+" <",
+" *\\",
+" ____",
+").\\",
+" *“"
+]
+},
+{
+"gain": 3.27,
+"ref": "L22N6246",
+"sign": 1,
+"kl": 3.99,
+"tokens": [
+" beginning",
+"开始",
+" start",
+" begin",
+"begin",
+"的开始"
+]
+},
+{
+"gain": 3.15,
+"ref": "L22N2338",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+"越",
+" longer",
+"越高",
+"越小",
+" harder",
+"越长"
+]
+}
+],
+"robot": [
+{
+"gain": 7.06,
+"ref": "L22N4085",
+"sign": -1,
+"kl": 0.03,
+"tokens": [
+" does",
+" Does",
+" do",
+"does",
+" did",
+" Would"
+]
+},
+{
+"gain": 6.81,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.71,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 6.27,
+"ref": "L22N884",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" is",
+" are",
+" was",
+" does",
+" является",
+" were"
+]
+},
+{
+"gain": 5.93,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 5.92,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.91,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.89,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.73,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 5.57,
+"ref": "L22N6622",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+"是否",
+" whether",
+"是否在",
+"是否是",
+" do",
+"是不是"
+]
+},
+{
+"gain": 5.43,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 5.38,
+"ref": "L22N7992",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+"解读",
+" interpreting",
+" interpretation",
+" interpret",
+"分析",
+" Interpret"
+]
+}
+],
+"sahara": [
+{
+"gain": 7.98,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.41,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 6.54,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.34,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.2,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 6.2,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.11,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.07,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 5.41,
+"ref": "L22N19",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+" detail",
+" detailed",
+" definite",
+"详细描述",
+"detail",
+" delic"
+]
+},
+{
+"gain": 5.36,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 5.34,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 5.21,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+}
+],
+"saturn": [
+{
+"gain": 6.17,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.85,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.14,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.63,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.45,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.39,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.15,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.75,
+"ref": "L22N821",
+"sign": 1,
+"kl": 3.24,
+"tokens": [
+" a",
+" the",
+" that",
+" no",
+" anywhere",
+" an"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N2338",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+"越",
+" longer",
+"越高",
+"越小",
+" harder",
+"越长"
+]
+},
+{
+"gain": 3.67,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 3.57,
+"ref": "L18N1975",
+"sign": 1,
+"kl": 0.59,
+"tokens": [
+" nicely",
+" manoe",
+" newbie",
+" combos",
+" maths",
+" nicer"
+]
+},
+{
+"gain": 3.56,
+"ref": "L18N700",
+"sign": 1,
+"kl": 0.24,
+"tokens": [
+" nicer",
+" combos",
+" expo",
+" fake",
+" docum",
+" newbie"
+]
+}
+],
+"shakespeare": [
+{
+"gain": 9.76,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 9.4,
+"ref": "L22N7019",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" for",
+"for",
+"对于",
+" для",
+"\tfor",
+" für"
+]
+},
+{
+"gain": 9.06,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 7.99,
+"ref": "L22N8654",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" for",
+"对于",
+"for",
+" für",
+" для",
+"對於"
+]
+},
+{
+"gain": 7.35,
+"ref": "L22N3982",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+" for",
+"for",
+"对于",
+" для",
+" für",
+" untuk"
+]
+},
+{
+"gain": 7.29,
+"ref": "L22N8745",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" for",
+"for",
+"对于",
+" untuk",
+" für",
+" voor"
+]
+},
+{
+"gain": 6.95,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.81,
+"ref": "L22N2508",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" for",
+"for",
+"对于",
+" für",
+" для",
+" untuk"
+]
+},
+{
+"gain": 6.49,
+"ref": "L22N3753",
+"sign": 1,
+"kl": 0.92,
+"tokens": [
+"对于",
+"對於",
+"For",
+"for",
+"对于这些",
+" For"
+]
+},
+{
+"gain": 6.33,
+"ref": "L22N1278",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" for",
+"for",
+"对于",
+" для",
+" für",
+"_for"
+]
+},
+{
+"gain": 6.23,
+"ref": "L22N7359",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+"例如",
+"比如",
+" например",
+"如",
+"譬如",
+" Например"
+]
+},
+{
+"gain": 6.22,
+"ref": "L22N6023",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+"对于",
+" for",
+"for",
+"對於",
+" für",
+" для"
+]
+}
+],
+"snow": [
+{
+"gain": 7.07,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.59,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 6.56,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 6.56,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 6.19,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 5.97,
+"ref": "L14N2423",
+"sign": 1,
+"kl": 1.87,
+"tokens": [
+".",
+").",
+".).",
+"].",
+"......",
+".\"."
+]
+},
+{
+"gain": 5.9,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 5.9,
+"ref": "L14N3351",
+"sign": 1,
+"kl": 5.35,
+"tokens": [
+" gom",
+"长青",
+" tighter",
+"True",
+"gow",
+"FE"
+]
+},
+{
+"gain": 5.82,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.74,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 5.72,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 5.63,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+}
+],
+"sports": [
+{
+"gain": 9.52,
+"ref": "L22N8491",
+"sign": 1,
+"kl": 6.19,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+"และ",
+"_and"
+]
+},
+{
+"gain": 8.52,
+"ref": "L22N3541",
+"sign": -1,
+"kl": 1.76,
+"tokens": [
+" and",
+"—and",
+" и",
+" và",
+"and",
+"(and"
+]
+},
+{
+"gain": 8.44,
+"ref": "L22N6340",
+"sign": 1,
+"kl": 2.16,
+"tokens": [
+" and",
+" và",
+" и",
+"and",
+"และ",
+" και"
+]
+},
+{
+"gain": 7.84,
+"ref": "L22N2645",
+"sign": 1,
+"kl": 2.39,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+" And",
+"และ"
+]
+},
+{
+"gain": 7.57,
+"ref": "L22N7883",
+"sign": 1,
+"kl": 2.43,
+"tokens": [
+" and",
+" (",
+"—and",
+" и",
+"(and",
+" và"
+]
+},
+{
+"gain": 7.39,
+"ref": "L22N2005",
+"sign": -1,
+"kl": 0.54,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+"和",
+"และ"
+]
+},
+{
+"gain": 6.68,
+"ref": "L22N2485",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+" and",
+" и",
+" và",
+"และ",
+"and",
+"和"
+]
+},
+{
+"gain": 6.42,
+"ref": "L22N1348",
+"sign": -1,
+"kl": 0.66,
+"tokens": [
+" and",
+" or",
+" и",
+",",
+" và",
+"and"
+]
+},
+{
+"gain": 6.32,
+"ref": "L22N4381",
+"sign": -1,
+"kl": 1.9,
+"tokens": [
+" what",
+"什么",
+"what",
+" What",
+"What",
+" WHAT"
+]
+},
+{
+"gain": 6.23,
+"ref": "L22N3317",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" and",
+" и",
+" và",
+"and",
+"和",
+"และ"
+]
+},
+{
+"gain": 5.98,
+"ref": "L22N8241",
+"sign": 1,
+"kl": 0.99,
+"tokens": [
+" and",
+" và",
+" And",
+" и",
+"and",
+"\tand"
+]
+},
+{
+"gain": 5.86,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+}
+],
+"storm": [
+{
+"gain": 6.84,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 6.8,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.33,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 6.0,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.83,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.59,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 5.55,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 5.49,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.27,
+"ref": "L22N7985",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" out",
+" up",
+"-out",
+" down",
+"up",
+"-up"
+]
+},
+{
+"gain": 5.25,
+"ref": "L18N33",
+"sign": -1,
+"kl": 1.91,
+"tokens": [
+"ag",
+"签署",
+"ay",
+" SIGN",
+" Sign",
+".Sign"
+]
+},
+{
+"gain": 5.24,
+"ref": "L22N6255",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" onward",
+" onwards",
+" downwards",
+" forward",
+" downward",
+" upwards"
+]
+},
+{
+"gain": 5.23,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+}
+],
+"sun": [
+{
+"gain": 6.12,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.81,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.1,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.57,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.52,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.43,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.18,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 4.01,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 3.88,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 3.73,
+"ref": "L22N2338",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+"越",
+" longer",
+"越高",
+"越小",
+" harder",
+"越长"
+]
+},
+{
+"gain": 3.7,
+"ref": "L22N821",
+"sign": 1,
+"kl": 3.24,
+"tokens": [
+" a",
+" the",
+" that",
+" no",
+" anywhere",
+" an"
+]
+},
+{
+"gain": 3.63,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+}
+],
+"sword": [
+{
+"gain": 6.57,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.27,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.09,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.98,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.89,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.62,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 5.35,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 5.2,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.92,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 4.75,
+"ref": "L18N1975",
+"sign": 1,
+"kl": 0.59,
+"tokens": [
+" nicely",
+" manoe",
+" newbie",
+" combos",
+" maths",
+" nicer"
+]
+},
+{
+"gain": 4.64,
+"ref": "L22N4949",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" competition",
+"竞争",
+" Competition",
+" contest",
+" compete",
+"competition"
+]
+},
+{
+"gain": 4.63,
+"ref": "L14N2423",
+"sign": 1,
+"kl": 1.87,
+"tokens": [
+".",
+").",
+".).",
+"].",
+"......",
+".\"."
+]
+}
+],
+"tiger": [
+{
+"gain": 6.09,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.78,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 5.15,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.96,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.84,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.43,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.26,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 4.2,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 4.16,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 4.02,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 3.92,
+"ref": "L8N8080",
+"sign": 1,
+"kl": 2.85,
+"tokens": [
+" \\\"",
+" <",
+" *\\",
+" ____",
+").\\",
+" *“"
+]
+},
+{
+"gain": 3.83,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+}
+],
+"turtle": [
+{
+"gain": 7.59,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.17,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.79,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.64,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.44,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+},
+{
+"gain": 5.19,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.96,
+"ref": "L14N5916",
+"sign": 1,
+"kl": 2.71,
+"tokens": [
+" overall",
+" Overall",
+" :*",
+" recons",
+"刚",
+" amb"
+]
+},
+{
+"gain": 4.93,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.87,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 4.75,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 4.75,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.73,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+}
+],
+"unicorn": [
+{
+"gain": 6.34,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.16,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 6.07,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 5.49,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.39,
+"ref": "L22N7519",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" trigger",
+"触发",
+"trigger",
+" Trigger",
+" triggers",
+"Trigger"
+]
+},
+{
+"gain": 5.14,
+"ref": "L10N3698",
+"sign": 1,
+"kl": 2.44,
+"tokens": [
+" joyful",
+" nicer",
+" noteworthy",
+" valued",
+" mult",
+" combo"
+]
+},
+{
+"gain": 5.13,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 4.76,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.71,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 4.71,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 4.62,
+"ref": "L8N2919",
+"sign": -1,
+"kl": 3.22,
+"tokens": [
+" Dynamic",
+" Fusion",
+" Future",
+" Force",
+" Founder",
+" Time"
+]
+},
+{
+"gain": 4.58,
+"ref": "L22N2822",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+"触发",
+" triggering",
+" trigger",
+" triggers",
+" Trigger",
+"trigger"
+]
+}
+],
+"uwu": [
+{
+"gain": 9.7,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 9.66,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 8.54,
+"ref": "L10N231",
+"sign": 1,
+"kl": 6.02,
+"tokens": [
+"更",
+"总",
+"被",
+"不",
+"是",
+" più"
+]
+},
+{
+"gain": 7.97,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 7.64,
+"ref": "L8N62",
+"sign": -1,
+"kl": 10.64,
+"tokens": [
+" più",
+" norma",
+" loro",
+" meno",
+" già",
+" više"
+]
+},
+{
+"gain": 7.56,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 7.09,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.45,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 5.81,
+"ref": "L8N62",
+"sign": 1,
+"kl": 6.67,
+"tokens": [
+"未",
+" более",
+" един",
+" غ",
+" ц",
+"ด"
+]
+},
+{
+"gain": 5.71,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.5,
+"ref": "L8N4796",
+"sign": -1,
+"kl": 5.06,
+"tokens": [
+" più",
+" cosa",
+" meno",
+" més",
+" mais",
+" è"
+]
+},
+{
+"gain": 5.45,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+}
+],
+"vampire": [
+{
+"gain": 5.7,
+"ref": "L10N68",
+"sign": 1,
+"kl": 6.8,
+"tokens": [
+" a",
+" the",
+" what",
+" that",
+" this",
+" recognizing"
+]
+},
+{
+"gain": 5.57,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.38,
+"ref": "L22N858",
+"sign": 1,
+"kl": 1.86,
+"tokens": [
+" the",
+"the",
+"\tthe",
+".the",
+"-the",
+"_the"
+]
+},
+{
+"gain": 4.93,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.54,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.07,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 4.06,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 3.81,
+"ref": "L14N470",
+"sign": 1,
+"kl": 5.73,
+"tokens": [
+" gre",
+" gom",
+" asm",
+" :*",
+" tighter",
+" ха"
+]
+},
+{
+"gain": 3.8,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 3.69,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+},
+{
+"gain": 3.64,
+"ref": "L8N8080",
+"sign": 1,
+"kl": 2.85,
+"tokens": [
+" \\\"",
+" <",
+" *\\",
+" ____",
+").\\",
+" *“"
+]
+},
+{
+"gain": 3.64,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+}
+],
+"venice": [
+{
+"gain": 8.51,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 8.39,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 8.05,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 7.93,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 7.35,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 6.48,
+"ref": "L10N231",
+"sign": 1,
+"kl": 6.02,
+"tokens": [
+"更",
+"总",
+"被",
+"不",
+"是",
+" più"
+]
+},
+{
+"gain": 6.4,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+},
+{
+"gain": 6.28,
+"ref": "L8N62",
+"sign": -1,
+"kl": 10.64,
+"tokens": [
+" più",
+" norma",
+" loro",
+" meno",
+" già",
+" više"
+]
+},
+{
+"gain": 6.27,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 6.2,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 6.16,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 6.02,
+"ref": "L10N456",
+"sign": -1,
+"kl": 2.74,
+"tokens": [
+" Relevant",
+" Core",
+" Fully",
+" Key",
+" Correct",
+" Full"
+]
+}
+],
+"volcano": [
+{
+"gain": 8.64,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 7.96,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.14,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.91,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 5.87,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.69,
+"ref": "L8N62",
+"sign": -1,
+"kl": 10.64,
+"tokens": [
+" più",
+" norma",
+" loro",
+" meno",
+" già",
+" više"
+]
+},
+{
+"gain": 5.58,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 5.53,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.44,
+"ref": "L10N231",
+"sign": 1,
+"kl": 6.02,
+"tokens": [
+"更",
+"总",
+"被",
+"不",
+"是",
+" più"
+]
+},
+{
+"gain": 5.18,
+"ref": "L18N1985",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" Health",
+" health",
+" auto",
+" Network",
+" meds",
+" races"
+]
+},
+{
+"gain": 5.15,
+"ref": "L14N629",
+"sign": 1,
+"kl": 3.41,
+"tokens": [
+"\n",
+" TEXT",
+"常态",
+" Identified",
+" santa",
+" Normal"
+]
+},
+{
+"gain": 5.05,
+"ref": "L22N512",
+"sign": 1,
+"kl": 1.5,
+"tokens": [
+" statuses",
+" info",
+" wastes",
+" combos",
+" nicer",
+" females"
+]
+}
+],
+"wizard": [
+{
+"gain": 7.47,
+"ref": "L14N572",
+"sign": 1,
+"kl": 9.48,
+"tokens": [
+"ущ",
+" negot",
+" mutating",
+" avent",
+"要害",
+"icast"
+]
+},
+{
+"gain": 6.33,
+"ref": "L14N684",
+"sign": 1,
+"kl": 12.12,
+"tokens": [
+"ickest",
+"破坏",
+"ущ",
+" mutating",
+"�",
+" nauk"
+]
+},
+{
+"gain": 6.29,
+"ref": "L10N8",
+"sign": -1,
+"kl": 12.17,
+"tokens": [
+" («",
+" —",
+"».",
+" –",
+"——",
+")."
+]
+},
+{
+"gain": 6.08,
+"ref": "L22N6673",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" spelling",
+" spell",
+" spelled",
+"spell",
+" spells",
+"Spell"
+]
+},
+{
+"gain": 5.93,
+"ref": "L8N0",
+"sign": 1,
+"kl": 12.25,
+"tokens": [
+"。",
+"‘",
+"，",
+"（",
+"案例",
+"——"
+]
+},
+{
+"gain": 5.69,
+"ref": "L18N1142",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" Norm",
+" Health",
+" Force",
+" Status",
+" females",
+" Static"
+]
+},
+{
+"gain": 5.55,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 5.5,
+"ref": "L8N717",
+"sign": 1,
+"kl": 3.25,
+"tokens": [
+" Code",
+" Warm",
+" Sun",
+" Info",
+" sunny",
+" Value"
+]
+},
+{
+"gain": 5.49,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"gain": 5.22,
+"ref": "L8N2919",
+"sign": -1,
+"kl": 3.22,
+"tokens": [
+" Dynamic",
+" Fusion",
+" Future",
+" Force",
+" Founder",
+" Time"
+]
+},
+{
+"gain": 5.18,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 5.12,
+"ref": "L10N286",
+"sign": -1,
+"kl": 5.34,
+"tokens": [
+" emo",
+" Emotional",
+" emotions",
+" Reported",
+" Report",
+"刚"
+]
+}
+],
+"yoda": [
+{
+"gain": 5.6,
+"ref": "L22N7470",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+"你知道",
+" you",
+" You",
+"You",
+"you",
+"_you"
+]
+},
+{
+"gain": 4.9,
+"ref": "L22N8054",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" you",
+" You",
+"You",
+"you",
+"你",
+" YOU"
+]
+},
+{
+"gain": 4.87,
+"ref": "L22N6492",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" you",
+"you",
+" You",
+"你",
+" YOU",
+" vous"
+]
+},
+{
+"gain": 4.82,
+"ref": "L22N4780",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+" you",
+"you",
+" You",
+" YOU",
+"You",
+"你"
+]
+},
+{
+"gain": 4.74,
+"ref": "L8N3982",
+"sign": -1,
+"kl": 8.0,
+"tokens": [
+" referred",
+"?]",
+" indicated",
+" nicely",
+" needed",
+" positioned"
+]
+},
+{
+"gain": 4.62,
+"ref": "L22N4993",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" you",
+" me",
+"you",
+" YOU",
+"_you",
+"你"
+]
+},
+{
+"gain": 4.51,
+"ref": "L10N1381",
+"sign": 1,
+"kl": 6.59,
+"tokens": [
+" misrepresented",
+".\\",
+" nurs",
+" whites",
+".*",
+"•"
+]
+},
+{
+"gain": 4.41,
+"ref": "L22N2356",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" you",
+"你",
+"你了",
+"you",
+" me",
+" You"
+]
+},
+{
+"gain": 4.28,
+"ref": "L22N7422",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" me",
+" you",
+"you",
+"你",
+" YOU",
+" Me"
+]
+},
+{
+"gain": 4.09,
+"ref": "L8N2919",
+"sign": -1,
+"kl": 3.22,
+"tokens": [
+" Dynamic",
+" Fusion",
+" Future",
+" Force",
+" Founder",
+" Time"
+]
+},
+{
+"gain": 4.08,
+"ref": "L22N4690",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" you",
+"You",
+" You",
+"you",
+">You",
+"你"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N4952",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" you",
+"你",
+"you",
+"你了",
+"你呢",
+" him"
+]
+}
+]
+},
+"styles": {
+"punct": [
+{
+"score": 8.12,
+"ref": "L10N0",
+"sign": -1,
+"kl": 3.71,
+"tokens": [
+" (",
+"（",
+");",
+" (~",
+"/",
+"):"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N6512",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" @",
+"@",
+" (@",
+"(@",
+" \"@",
+"/@"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N7707",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"+",
+" +",
+"+.",
+"+,",
+"+)",
+"+:"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N3628",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" ((",
+"((",
+" `(",
+" [(",
+" $(",
+"=("
+]
+},
+{
+"score": 8.1,
+"ref": "L22N1285",
+"sign": 1,
+"kl": 1.63,
+"tokens": [
+"...",
+"...*",
+"....",
+"......",
+"...,",
+"...**"
+]
+},
+{
+"score": 8.1,
+"ref": "L22N3789",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" ->",
+" →",
+"→",
+"->",
+" -->",
+" =>"
+]
+},
+{
+"score": 8.1,
+"ref": "L22N2561",
+"sign": -1,
+"kl": 1.03,
+"tokens": [
+" ((",
+" (",
+"((",
+" **(",
+" $(",
+" `("
+]
+},
+{
+"score": 8.1,
+"ref": "L18N5251",
+"sign": -1,
+"kl": 0.4,
+"tokens": [
+"...",
+"......",
+"...\"",
+"...)",
+"...\\",
+"...**"
+]
+},
+{
+"score": 8.1,
+"ref": "L22N6403",
+"sign": -1,
+"kl": 3.2,
+"tokens": [
+"...",
+"...*",
+"....",
+"…",
+"......",
+" ..."
+]
+},
+{
+"score": 8.1,
+"ref": "L22N4387",
+"sign": 1,
+"kl": 0.46,
+"tokens": [
+" [",
+" **[",
+"[",
+" ([",
+",[",
+" [@"
+]
+},
+{
+"score": 8.1,
+"ref": "L18N6758",
+"sign": 1,
+"kl": 0.47,
+"tokens": [
+" (",
+" (*",
+" ($",
+" ([",
+" (**",
+" (`"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N4215",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+"?",
+"？",
+"?(",
+"?\\",
+"?).",
+"?'"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N3385",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" [",
+" [\\",
+",[",
+" ([",
+" `[",
+" [$"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N6486",
+"sign": 1,
+"kl": 0.48,
+"tokens": [
+" ((",
+" (",
+"((",
+" **(",
+" `(",
+",("
+]
+},
+{
+"score": 8.09,
+"ref": "L22N3124",
+"sign": -1,
+"kl": 1.1,
+"tokens": [
+"...",
+"...,",
+"...*",
+" ...",
+"......",
+"...\""
+]
+},
+{
+"score": 8.09,
+"ref": "L22N4495",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+" [",
+"[",
+" [\\",
+"}[",
+" [-",
+" [*"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N1355",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+"*",
+"*\\",
+"*.",
+"*,",
+"*)",
+"*:"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N9116",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" [",
+"[",
+"*[",
+",[",
+".[",
+" [\\"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N503",
+"sign": -1,
+"kl": 0.58,
+"tokens": [
+" (",
+"（",
+" （",
+" (=",
+" («",
+"("
+]
+},
+{
+"score": 8.09,
+"ref": "L22N5461",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+"...",
+" ...",
+"...,",
+" ...,",
+"...(",
+"(..."
+]
+},
+{
+"score": 8.09,
+"ref": "L22N1937",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" [",
+" ([",
+"([",
+" [$",
+" [\\",
+" [*"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N7003",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+")",
+"）",
+" )",
+"),",
+")\\",
+"))"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N8395",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+"《",
+"，《",
+" 《",
+" `<",
+"〈",
+" *"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N3414",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" �",
+" �",
+" �",
+" (+",
+" ✅",
+" �"
+]
+},
+{
+"score": 8.08,
+"ref": "L18N3444",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" [",
+" [...]",
+" [...",
+"...",
+"...(",
+" *["
+]
+}
+],
+"cjk": [
+{
+"score": 8.14,
+"ref": "L8N3636",
+"sign": -1,
+"kl": 9.24,
+"tokens": [
+"被",
+"全",
+"由",
+"关于",
+"对",
+"一个"
+]
+},
+{
+"score": 8.14,
+"ref": "L10N231",
+"sign": -1,
+"kl": 11.47,
+"tokens": [
+"被",
+"全",
+"总",
+"由",
+"对",
+"一个"
+]
+},
+{
+"score": 8.13,
+"ref": "L18N8561",
+"sign": 1,
+"kl": 7.67,
+"tokens": [
+"是",
+"更",
+"新",
+"关于",
+"由",
+"一个"
+]
+},
+{
+"score": 8.13,
+"ref": "L18N159",
+"sign": 1,
+"kl": 9.3,
+"tokens": [
+"被",
+"全",
+"由",
+"关于",
+"对",
+"一个"
+]
+},
+{
+"score": 8.13,
+"ref": "L8N4065",
+"sign": 1,
+"kl": 9.47,
+"tokens": [
+"被",
+"只",
+"不",
+"一个",
+"更",
+"在"
+]
+},
+{
+"score": 8.13,
+"ref": "L18N74",
+"sign": -1,
+"kl": 9.1,
+"tokens": [
+"被",
+"关于",
+"对",
+"在",
+"一个",
+"与"
+]
+},
+{
+"score": 8.13,
+"ref": "L18N8561",
+"sign": -1,
+"kl": 8.48,
+"tokens": [
+"被",
+"一个",
+"大",
+"更",
+"是",
+"不"
+]
+},
+{
+"score": 8.13,
+"ref": "L8N986",
+"sign": 1,
+"kl": 8.54,
+"tokens": [
+"被",
+"与",
+"不",
+"由",
+"更",
+"对"
+]
+},
+{
+"score": 8.12,
+"ref": "L22N131",
+"sign": -1,
+"kl": 5.07,
+"tokens": [
+"不",
+"是",
+"未",
+"更",
+"一个",
+"长"
+]
+},
+{
+"score": 8.12,
+"ref": "L18N2248",
+"sign": 1,
+"kl": 6.16,
+"tokens": [
+"在",
+"被",
+"是",
+"更",
+"不",
+"一个"
+]
+},
+{
+"score": 8.1,
+"ref": "L18N2427",
+"sign": 1,
+"kl": 2.94,
+"tokens": [
+"更",
+"是",
+"正",
+"不",
+"大",
+"上"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N8782",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+"再",
+"再多",
+"再用",
+"再看",
+"再进行",
+"再以"
+]
+},
+{
+"score": 8.09,
+"ref": "L18N2248",
+"sign": -1,
+"kl": 0.76,
+"tokens": [
+"中",
+"在",
+"是",
+"新",
+"大",
+"一个"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N5244",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"此时",
+"这时",
+"此時",
+"此时的",
+"这时候",
+"这个时候"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N5811",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+"两者",
+"两人",
+"二者",
+"两者的",
+"两人的",
+"二人"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N2630",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+"构成",
+"构成的",
+"形成一个",
+"组成的",
+"形成",
+"構成"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N3512",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+"即",
+"即在",
+"即以",
+"即用",
+"即为",
+"即到"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N2717",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"随",
+"随着",
+"隨",
+"隨著",
+"会随着",
+"随着社会"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N1884",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+"为了",
+"為了",
+"为了满足",
+"为了实现",
+"为了使",
+"为了更好地"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N7414",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+"中的",
+"其中的",
+"当中的",
+"其中",
+"系统中的",
+"之中的"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N5049",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+"有利于",
+"有利",
+"方便",
+"利于",
+"便于",
+"不利于"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N4958",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"对于",
+"针对",
+"對於",
+"对于这个",
+"对于这些",
+"但对于"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N7775",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+"曾",
+"经历过",
+"有过",
+"曾有",
+"曾被",
+"参加过"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N1795",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"只要",
+"只要有",
+"只要在",
+"只要能",
+"只要你",
+"只要我们"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N5781",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+"对于",
+"對於",
+"但对于",
+"对于这些",
+"对于一些",
+"但是对于"
+]
+}
+],
+"digits": [
+{
+"score": 8.04,
+"ref": "L18N69",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+"0",
+"4",
+"9",
+"2",
+"6",
+"8"
+]
+},
+{
+"score": 8.03,
+"ref": "L22N294",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"0",
+"1",
+"4",
+"6",
+"5",
+"3"
+]
+},
+{
+"score": 7.05,
+"ref": "L22N722",
+"sign": 1,
+"kl": 0.65,
+"tokens": [
+" ",
+"4",
+"5",
+"1",
+"8",
+"7"
+]
+},
+{
+"score": 7.04,
+"ref": "L22N3113",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" ",
+"4",
+"6",
+"1",
+"3",
+"5"
+]
+},
+{
+"score": 7.03,
+"ref": "L22N7833",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" ",
+"1",
+"5",
+"8",
+"6",
+"4"
+]
+},
+{
+"score": 5.04,
+"ref": "L22N160",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+"0",
+"3",
+"1",
+"SE",
+"4",
+"2"
+]
+},
+{
+"score": 5.03,
+"ref": "L22N4901",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" ",
+"1",
+"0",
+"2",
+"3",
+" zero"
+]
+},
+{
+"score": 4.04,
+"ref": "L22N1483",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+",",
+"OS",
+"9",
+"、",
+"0",
+"7"
+]
+},
+{
+"score": 4.04,
+"ref": "L22N98",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" =",
+"3",
+"9",
+"8",
+" →",
+" is"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N3488",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"8",
+"6",
+"7",
+"成熟",
+"9",
+"baugh"
+]
+},
+{
+"score": 4.01,
+"ref": "L18N2465",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+"5",
+"regulated",
+"6",
+" regulated",
+" trusted",
+"3"
+]
+},
+{
+"score": 4.01,
+"ref": "L10N147",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+"3",
+"2",
+"-suite",
+"前者",
+"周星",
+"0"
+]
+}
+],
+"caps": [
+{
+"score": 8.07,
+"ref": "L10N2785",
+"sign": -1,
+"kl": 1.7,
+"tokens": [
+" SO",
+" MY",
+" WORK",
+" DO",
+" TH",
+" BO"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N7673",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" SC",
+" WHITE",
+" MAR",
+" SUPPORT",
+" SH",
+" CH"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N3082",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" ME",
+" RE",
+" LO",
+" PO",
+" MO",
+" DE"
+]
+},
+{
+"score": 8.04,
+"ref": "L22N6371",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" FS",
+"KS",
+" MF",
+"JK",
+" KS",
+" MH"
+]
+},
+{
+"score": 8.04,
+"ref": "L22N6915",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" NF",
+" LC",
+" NST",
+" NS",
+" IL",
+" SW"
+]
+},
+{
+"score": 8.04,
+"ref": "L22N4614",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+"FF",
+" FF",
+" DD",
+"MM",
+" GG",
+" WW"
+]
+},
+{
+"score": 8.03,
+"ref": "L22N314",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" TO",
+" ME",
+" TH",
+"WH",
+" SO",
+"LO"
+]
+},
+{
+"score": 8.03,
+"ref": "L22N4189",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" AH",
+" AM",
+" AV",
+" AT",
+" AE",
+" OA"
+]
+},
+{
+"score": 8.03,
+"ref": "L22N3538",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" PHI",
+" ML",
+" LC",
+" PH",
+" LCS",
+" LR"
+]
+},
+{
+"score": 8.03,
+"ref": "L22N482",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" SINGLE",
+" COMM",
+" WELL",
+" SMALL",
+" PEOPLE",
+" WORK"
+]
+},
+{
+"score": 8.03,
+"ref": "L18N5671",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" WE",
+" MY",
+" JO",
+" BO",
+" MO",
+" FL"
+]
+},
+{
+"score": 7.05,
+"ref": "L22N5385",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" III",
+" II",
+"II",
+"III",
+" IV",
+"�"
+]
+},
+{
+"score": 7.03,
+"ref": "L22N1522",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" ORM",
+" LCD",
+" MLM",
+"gangs",
+" LF",
+" MS"
+]
+},
+{
+"score": 6.03,
+"ref": "L22N94",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" FB",
+" CB",
+"(B",
+"CB",
+" BB",
+" IB"
+]
+},
+{
+"score": 5.04,
+"ref": "L22N2833",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" AND",
+" OR",
+" *",
+"AND",
+"OR",
+" **"
+]
+},
+{
+"score": 5.04,
+"ref": "L22N52",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"/U",
+" UR",
+"(U",
+" UA",
+" UD",
+" UT"
+]
+},
+{
+"score": 5.04,
+"ref": "L22N449",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"IF",
+"IFI",
+" THEN",
+"(IF",
+"不经",
+"else"
+]
+},
+{
+"score": 5.03,
+"ref": "L22N14",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" SB",
+"(SC",
+"SB",
+" SW",
+"(SS",
+"SW"
+]
+},
+{
+"score": 5.02,
+"ref": "L18N202",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+"(k",
+" KK",
+"-k",
+"KK",
+"KG",
+" pk"
+]
+},
+{
+"score": 4.05,
+"ref": "L22N2500",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+" **[",
+" **【",
+" SUPER",
+" **",
+" BRO",
+" **#"
+]
+},
+{
+"score": 4.04,
+"ref": "L22N7776",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" CR",
+" PH",
+" Ta",
+" TH",
+" Ba",
+" Ro"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N44",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"辛",
+" KA",
+" KK",
+" kn",
+" Kn",
+" KT"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N39",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"/TR",
+" TT",
+" TR",
+"(T",
+"(TR",
+"/T"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N7456",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"BUM",
+" table",
+" tables",
+"umper",
+" TABLE",
+" BUM"
+]
+},
+{
+"score": 4.02,
+"ref": "L22N6863",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+"kini",
+" completion",
+"MLS",
+"他们就",
+" ML",
+"APH"
+]
+}
+],
+"archaic": [
+{
+"score": 4.03,
+"ref": "L18N7601",
+"sign": 1,
+"kl": 0.92,
+"tokens": [
+"art",
+"_art",
+"Art",
+"-art",
+"ART",
+"arta"
+]
+},
+{
+"score": 4.03,
+"ref": "L10N2819",
+"sign": 1,
+"kl": 0.57,
+"tokens": [
+"ART",
+" Art",
+"art",
+"Art",
+"-art",
+"arta"
+]
+},
+{
+"score": 4.02,
+"ref": "L8N8384",
+"sign": 1,
+"kl": 0.62,
+"tokens": [
+"Art",
+"周星",
+"�",
+"art",
+"oracle",
+" Art"
+]
+},
+{
+"score": 4.02,
+"ref": "L8N6596",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+"ART",
+"Art",
+"art",
+" views",
+" artificially",
+" art"
+]
+},
+{
+"score": 4.02,
+"ref": "L10N6853",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" art",
+"art",
+"_art",
+"ART",
+"Art",
+"angka"
+]
+},
+{
+"score": 4.02,
+"ref": "L10N3065",
+"sign": 1,
+"kl": 0.28,
+"tokens": [
+"art",
+"Art",
+"ART",
+"-art",
+" artificially",
+" artificial"
+]
+}
+],
+"cyrillic": [
+{
+"score": 4.11,
+"ref": "L8N62",
+"sign": 1,
+"kl": 6.67,
+"tokens": [
+"未",
+" более",
+" един",
+" غ",
+" ц",
+"ด"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N4232",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+"例如",
+" например",
+" notably",
+" Например",
+"首先",
+"如今"
+]
+},
+{
+"score": 4.03,
+"ref": "L18N6222",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" чтобы",
+"人来",
+" щоб",
+" Чтобы",
+" để",
+" чтоб"
+]
+}
+]
+}
+}
