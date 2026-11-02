@@ -4,17 +4,17 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { LabHistoryEntry, LabMemoryCheck, LabModelFacts, LabProbeSet, LabPush, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
+import type { LabHistoryEntry, LabMemoryCheck, LabMixItem, LabModelFacts, LabProbeSet, LabState, LabStatus, LabStrain, LabSupport, LabTokensResult, ModelInfo, SaveProbeSetRequest, SaveStrainRequest } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
 import type { Hub } from "../hub.ts";
-import { estimateBytes, strainSampling } from "../inference/catalog.ts";
+import { estimateBytes } from "../inference/catalog.ts";
 import type { InferenceService, LabHooks } from "../inference/service.ts";
 import type { Store } from "../store/db.ts";
 import { HttpError, errorMessage } from "../util/errors.ts";
 import { newId } from "../util/ids.ts";
 import { logger } from "../util/log.ts";
 import { KeyedMutex } from "../util/mutex.ts";
-import { checkPushes, formatRecipe } from "./recipe.ts";
+import { checkPushes, checkSettings, defaultSettings, formatRecipe, isVector, vectorLength } from "./recipe.ts";
 import { type LabHealth, LabSidecar, SidecarError, type SidecarOptions } from "./sidecar.ts";
 import { labSupport } from "./support.ts";
 
@@ -57,6 +57,7 @@ interface StrainRow {
   name: string;
   base_model_id: string;
   pushes_json: string;
+  settings_json: string | null;
   notes: string;
   created_at: number;
   updated_at: number;
@@ -81,8 +82,9 @@ interface ProbeSetRow {
 }
 
 function strainOf(r: StrainRow): LabStrain {
-  const pushes = JSON.parse(r.pushes_json) as LabPush[];
-  return { id: r.id, name: r.name, baseModelId: r.base_model_id, pushes, recipe: formatRecipe(pushes), notes: r.notes, createdAt: r.created_at, updatedAt: r.updated_at };
+  const pushes = JSON.parse(r.pushes_json) as LabMixItem[];
+  const settings = r.settings_json ? JSON.parse(r.settings_json) : defaultSettings(pushes);
+  return { id: r.id, name: r.name, baseModelId: r.base_model_id, pushes, recipe: formatRecipe(pushes), settings, notes: r.notes, createdAt: r.created_at, updatedAt: r.updated_at };
 }
 
 function probeSetOf(r: ProbeSetRow): LabProbeSet {
@@ -570,8 +572,10 @@ export class LabService implements LabHooks {
         loaded,
         loadedContext: undefined,
         residentBytes: loaded ? this.heldBytes() : undefined,
-        sampling: strainSampling(b.sampling),
-        strain: { id: s.id, name: s.name, baseModelId: s.baseModelId, recipe: s.recipe },
+        thinking: "none", // a recipe's numbers are with thinking off; with it on, 9 of 12 replies were still thinking at 400 tokens
+        sampling: { temperature: s.settings.temperature, topP: s.settings.topP },
+        ...(s.settings.maxTokens ? { defaultMaxOutput: s.settings.maxTokens } : {}),
+        strain: { id: s.id, name: s.name, baseModelId: s.baseModelId, recipe: s.recipe, settings: s.settings },
       });
     }
     return out;
@@ -604,7 +608,7 @@ export class LabService implements LabHooks {
       throw new Error(errorMessage(err));
     });
     if (this.pushed.get(strain.id) === strain.updatedAt) return;
-    await sidecar.request("PUT", `/strains/${encodeURIComponent(strain.id)}`, { pushes: strain.pushes }, 30_000);
+    await sidecar.request("PUT", `/strains/${encodeURIComponent(strain.id)}`, { pushes: strain.pushes, settings: strain.settings }, 30_000);
     this.pushed.set(strain.id, strain.updatedAt);
   }
 
@@ -643,9 +647,14 @@ export class LabService implements LabHooks {
     return r ? strainOf(r) : null;
   }
 
-  private checkAgainstModel(baseModelId: string, pushes: LabPush[]): void {
+  private checkAgainstModel(baseModelId: string, pushes: LabMixItem[]): void {
     if (!this.facts || this.facts.modelId !== baseModelId) return;
     for (const p of pushes) {
+      if (isVector(p)) {
+        if (p.layer >= this.facts.layers) throw new HttpError(400, `${p.name}: ${this.facts.name} has layers 0 to ${this.facts.layers - 1}`);
+        if (vectorLength(p.u) !== this.facts.dModel) throw new HttpError(400, `${p.name} was made for another model: it has ${vectorLength(p.u)} numbers and ${this.facts.name} needs ${this.facts.dModel}`);
+        continue;
+      }
       if (p.layer >= this.facts.layers) throw new HttpError(400, `L${p.layer}N${p.neuron}: ${this.facts.name} has layers 0 to ${this.facts.layers - 1}`);
       const n = this.facts.neuronsPerLayer[p.layer];
       if (p.neuron >= n) throw new HttpError(400, `L${p.layer}N${p.neuron}: layer ${p.layer} has neurons 0 to ${n - 1}`);
@@ -664,13 +673,14 @@ export class LabService implements LabHooks {
     const support = this.supportFor(b.baseModelId);
     if (!support.supported) throw new HttpError(400, `${support.name} can't be used in the Lab: ${support.reason}`);
     const pushes = checkPushes(b.pushes);
-    if (!pushes.length) throw new HttpError(400, "A strain needs at least one neuron");
+    if (!pushes.length) throw new HttpError(400, "A strain needs at least one neuron or vector");
     this.checkAgainstModel(b.baseModelId, pushes);
+    const settings = checkSettings(b.settings, pushes);
     const notes = typeof b.notes === "string" ? b.notes.slice(0, 4000) : "";
     const id = restoredId(b.id, "strain");
     if (this.strain(id)) throw new HttpError(409, `strain ${id} already exists`);
     const now = Date.now();
-    this.store.run("INSERT INTO lab_strains (id, name, base_model_id, pushes_json, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", id, n, b.baseModelId, JSON.stringify(pushes), notes, typeof b.createdAt === "number" ? b.createdAt : now, now);
+    this.store.run("INSERT INTO lab_strains (id, name, base_model_id, pushes_json, settings_json, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", id, n, b.baseModelId, JSON.stringify(pushes), JSON.stringify(settings), notes, typeof b.createdAt === "number" ? b.createdAt : now, now);
     this.strainsChanged();
     return this.strain(id)!;
   }
@@ -682,14 +692,16 @@ export class LabService implements LabHooks {
     if (p.baseModelId !== undefined && p.baseModelId !== cur.baseModelId) throw new HttpError(400, "A strain's base model can't change; save a new strain instead");
     const n = p.name !== undefined ? name(p.name, "A strain") : cur.name;
     const pushes = p.pushes !== undefined ? checkPushes(p.pushes) : cur.pushes;
-    if (!pushes.length) throw new HttpError(400, "A strain needs at least one neuron");
+    if (!pushes.length) throw new HttpError(400, "A strain needs at least one neuron or vector");
     this.checkAgainstModel(cur.baseModelId, pushes);
+    // New pushes without settings: what the new mix was measured with, unless the settings had been chosen for it.
+    const settings = p.settings !== undefined ? checkSettings(p.settings, pushes) : pushes.some(isVector) !== cur.pushes.some(isVector) ? defaultSettings(pushes) : cur.settings;
     const notes = p.notes !== undefined ? String(p.notes).slice(0, 4000) : cur.notes;
     const now = Math.max(Date.now(), cur.updatedAt + 1);
-    this.store.run("UPDATE lab_strains SET name = ?, pushes_json = ?, notes = ?, updated_at = ? WHERE id = ?", n, JSON.stringify(pushes), notes, now, id);
+    this.store.run("UPDATE lab_strains SET name = ?, pushes_json = ?, settings_json = ?, notes = ?, updated_at = ? WHERE id = ?", n, JSON.stringify(pushes), JSON.stringify(settings), notes, now, id);
     // Sessions using it pick up the new mix on their next model call.
     if (this.pushed.has(id) && this.sidecar && this.status === "ready") {
-      await this.sidecar.request("PUT", `/strains/${encodeURIComponent(id)}`, { pushes }, 30_000).then(
+      await this.sidecar.request("PUT", `/strains/${encodeURIComponent(id)}`, { pushes, settings }, 30_000).then(
         () => this.pushed.set(id, now),
         () => this.pushed.delete(id),
       );

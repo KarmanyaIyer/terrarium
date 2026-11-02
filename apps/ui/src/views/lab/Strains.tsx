@@ -1,8 +1,8 @@
 import { useState, type KeyboardEvent } from "react";
 import { FlaskConical, MessageSquare, Pencil, SlidersHorizontal, Trash2, Upload } from "lucide-react";
-import type { LabStrain } from "@terrarium/shared";
-import { chatWithStrain, deleteStrain, importStrain, loadStrainIntoMix, saveStrain, strainsInEvals, updateStrain, useLab } from "../../state/lab";
-import { format, parse } from "../../lib/recipe";
+import type { LabStrain, LabStrainSettings } from "@terrarium/shared";
+import { chatWithStrain, deleteStrain, importStrain, knownVectors, loadStrainIntoMix, saveStrain, strainsInEvals, updateStrain, useLab } from "../../state/lab";
+import { format, isVector, parse } from "../../lib/recipe";
 import { CopyButton, Dialog, Hint, Time } from "../../components/ui";
 import { LAB_TIP } from "../../lib/labExplain";
 
@@ -45,6 +45,9 @@ export function Strains() {
     </div>
   );
 }
+
+/** How a strain replies, in a line. */
+const settingsLine = (s: LabStrainSettings) => `Temperature ${s.temperature}, ${s.repeat ? `repeat ${s.repeat}` : "no repeat control"}, thinking off, no system prompt${s.maxTokens ? `, up to ${s.maxTokens} tokens a reply` : ""}`;
 
 function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string; serving: boolean; onBench: boolean }) {
   const [edit, setEdit] = useState(false);
@@ -95,6 +98,7 @@ function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string
         <code className="mono selectable">{recipe}</code>
         <CopyButton text={recipe} />
       </div>
+      <div className="dim2 strain-settings num">{settingsLine(st.settings)}</div>
       {edit ? (
         <textarea className="textarea strain-notes-in" rows={3} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} aria-label="Notes" />
       ) : (
@@ -148,7 +152,7 @@ function ImportStrain() {
   const [base, setBase] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
-  const p = parse(stripComments(text));
+  const p = parse(stripComments(text), knownVectors());
   const baseId = base || loaded || ok[0]?.modelId || "";
   const can = p.pushes.length > 0 && !!nm.trim() && !!baseId && !busy;
   const submit = async () => {
@@ -243,7 +247,7 @@ export function SaveStrainDialog() {
   const submit = async () => {
     if (!can) return;
     setBusy(true);
-    const st = await saveStrain(name.trim(), notes.trim(), dlg.pushes);
+    const st = await saveStrain(name.trim(), notes.trim(), dlg.pushes, dlg.settings);
     setBusy(false);
     if (st) close();
   };
@@ -268,10 +272,12 @@ export function SaveStrainDialog() {
       <div className="lab-field wide">
         <span>Recipe, on {base?.name}</span>
         <code className="recipe-peek selectable">{format(dlg.pushes)}</code>
+        <span className="dim2 num">{settingsLine(dlg.settings)}</span>
+        {dlg.pushes.some(isVector) && dlg.settings.repeat != null && <span className="warn-text">Vectors were measured with repeat control off. This keeps {dlg.settings.repeat}, as you ran it; set it to Off first for the measured behaviour.</span>}
       </div>
       <label className="lab-field wide">
         <span>Name</span>
-        <input className="input" autoFocus value={name} placeholder="Extraliens" onChange={(e) => setName(e.target.value)} />
+        <input className="input" autoFocus value={name} placeholder="Sir Surprise" onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="lab-field wide">
         <span>Notes</span>

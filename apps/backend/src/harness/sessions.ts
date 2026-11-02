@@ -20,7 +20,7 @@ import type {
 } from "@terrarium/shared";
 import type { EnvManager } from "../envs/manager.ts";
 import type { EnvRuntime, Manifest } from "../envs/types.ts";
-import { defaultOutputBudget, familySampling, strainSampling } from "../inference/catalog.ts";
+import { defaultOutputBudget, familySampling } from "../inference/catalog.ts";
 import type { CallResult, Gateway } from "../inference/gateway.ts";
 import type { InferenceService } from "../inference/service.ts";
 import type { Hub } from "../hub.ts";
@@ -576,10 +576,10 @@ export class SessionManager {
   async prompt(id: string): Promise<SessionPrompt> {
     const r = this.row(id);
     const envType = r.harness !== "chat" && r.env_id ? this.envs.get(r.env_id).type : null;
-    const p = sessionPrompt(r.harness, envType, r.system_prompt, this.prompts());
+    const model = await this.inference.model(r.model_id).catch(() => null);
+    const p = sessionPrompt(r.harness, envType, r.system_prompt, this.prompts(), !!model?.strain);
     const tools = toolDefinitions(r.harness, !!envType);
     const estimate = { prompt: roughTokens(p.text), tools: tools.length ? roughTokens(toolsJson(tools)) : 0, exact: false };
-    const model = await this.inference.model(r.model_id).catch(() => null);
     // Count with the model's tokenizer only when it is loaded: a count would otherwise load it.
     if (!this.tokens || !model?.loaded) return { harness: r.harness, envType, ...p, tools, tokens: estimate };
     try {
@@ -631,8 +631,8 @@ export class SessionManager {
     try {
       const model = await this.requireModel(r.model_id);
       const thinking = !!r.thinking && model.thinking !== "none";
-      // a strain's model.sampling already has no presence penalty; thinking swaps in the family's
-      const sampling: Sampling = thinking ? (model.strain ? strainSampling(familySampling(model.family, true)) : { ...familySampling(model.family, true) }) : { ...model.sampling };
+      // a strain's model.sampling is its stored settings, and its thinking is always off
+      const sampling: Sampling = thinking ? { ...familySampling(model.family, true) } : { ...model.sampling };
       const window = r.context_window;
       const maxOutput = r.max_output_tokens;
       const maxTurns = Math.max(1, opts.maxTurns ?? DEFAULT_MAX_TURNS);
@@ -660,7 +660,7 @@ export class SessionManager {
         },
       };
       const tools: AgentTool<any, ToolDetails>[] = !runtime ? [] : r.harness === "pi-stock" ? piStockTools(host) : terrariumTools(host);
-      const prompt = sessionPrompt(r.harness, runtime ? (envType as EnvType) : null, r.system_prompt, this.prompts());
+      const prompt = sessionPrompt(r.harness, runtime ? (envType as EnvType) : null, r.system_prompt, this.prompts(), !!model.strain);
       const systemPrompt = prompt.text;
       this.recordPrompt(id, tracer, { harness: runtime ? r.harness : "chat", source: prompt.source, text: systemPrompt, tools: tools.map((t) => t.name) });
 

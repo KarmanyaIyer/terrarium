@@ -298,6 +298,69 @@ test("strains and the OpenAI-compatible endpoint", { skip }, async () => {
   assert.equal(t2.count, 2);
 });
 
+// base64 of little-endian float32, as sent. The tiny model is d_model 64.
+const vec = (vals: number[]) => Buffer.from(new Float32Array(vals).buffer).toString("base64");
+const unit = (i: number, n = 64) => vec(Array.from({ length: n }, (_, j) => (j === i ? 1 : 0)));
+
+test("a vector steers, mixes with neurons, and is checked against the model", { skip }, async () => {
+  const req = { prompt: "Who are you?", temperature: 0, maxTokens: 12, seed: 1 };
+  const v = { kind: "vector", id: "v", name: "Test", layer: 1, strength: 40, u: unit(3) };
+  const bare = await lab.request<any>("POST", "/generate", { ...req, mix: [] });
+  const off = await lab.request<any>("POST", "/generate", { ...req, mix: [{ ...v, strength: 0 }] });
+  assert.equal(off.steered.text, bare.steered.text, "strength 0 changes nothing");
+  const on = await lab.request<any>("POST", "/generate", { ...req, mix: [v] });
+  assert.notEqual(on.steered.text, bare.steered.text, "a strong push changes the reply");
+  const after = await lab.request<any>("POST", "/generate", { ...req, mix: [] });
+  assert.equal(after.steered.text, bare.steered.text, "nothing stays on the hooks");
+  // scale multiplies strength: 20 at scale 2 is 40.
+  const scaled = await lab.request<any>("POST", "/generate", { ...req, mix: [{ ...v, strength: 20 }], scale: 2 });
+  assert.equal(scaled.steered.text, on.steered.text);
+  // with a neuron in the same mix, on the same layer
+  const mixed = await lab.request<any>("POST", "/generate", { ...req, mix: [v, { layer: 1, neuron: 0, mode: "dose", value: 30 }] });
+  assert.notEqual(mixed.steered.text, on.steered.text, "the neuron acts too");
+
+  for (const [bad, re] of [
+    [{ ...v, u: vec([1, 2, 3]) }, /has 3 numbers, this model needs 64/],
+    [{ ...v, u: "%%%" }, /base64/],
+    [{ ...v, u: vec(Array(64).fill(Number.NaN)) }, /finite/],
+    [{ ...v, layer: 99 }, /layer must be/],
+    [{ ...v, strength: "x" }, /strength/],
+  ] as const) {
+    await assert.rejects(lab.request("POST", "/generate", { ...req, mix: [bad] }), (e: SidecarError) => e.status === 400 && re.test(e.message));
+    await assert.rejects(lab.request("PUT", "/strains/bad", { pushes: [bad] }), (e: SidecarError) => e.status === 400);
+  }
+
+  // Sweep: the target's strength, absolute, the rest of the mix as it is.
+  const s = await lab.request<any>("POST", "/sweep", { ...req, mix: [v], target: { vectorId: "v" }, doses: [0, 40] });
+  assert.equal(s.rows[0].reply.text, bare.steered.text);
+  assert.equal(s.rows[1].reply.text, on.steered.text);
+  await assert.rejects(lab.request("POST", "/sweep", { ...req, mix: [v], target: { vectorId: "other" }, doses: [1] }), /not in the mix/);
+
+  // Trace with a vector in the mix.
+  const t = await lab.request<any>("POST", "/attribute", { prompt: "Who are you?", target: " I", mix: [v], measure: false });
+  assert.ok(Number.isFinite(t.metric));
+});
+
+test("the vector hook adds strength * resid * u at every position", { skip }, () => {
+  const out = execFileSync(PY, ["-I", join(BACKEND_DIR, "scripts", "lab_vector_check.py"), join(dir, "models", "tiny")], { encoding: "utf8", timeout: 120_000 });
+  assert.match(out, /^ok/m);
+});
+
+test("a strain chat runs on its stored settings and stops at a stop token", { skip }, async () => {
+  const v = { kind: "vector", id: "v", name: "Test", layer: 1, strength: 0, u: unit(3) };
+  const messages = [{ role: "user", content: "Hi" }];
+  const ask = (model: string, over = {}) => lab.request<any>("POST", "/v1/chat/completions", { model, messages, max_tokens: 12, seed: 3, ...over });
+  await lab.request("PUT", "/strains/greedy", { pushes: [v], settings: { temperature: 0, topP: 1, repeat: null } });
+  // The request's temperature doesn't get a say, and thinking is off whatever it asks.
+  const a = await ask("strain:greedy", { temperature: 2, chat_template_kwargs: { enable_thinking: true } });
+  const b = await ask("strain:greedy", { temperature: 0, seed: 9 });
+  assert.equal(a.choices[0].message.content, b.choices[0].message.content);
+  assert.equal(a.choices[0].message.reasoning_content, undefined);
+  await lab.request("PUT", "/strains/capped", { pushes: [v], settings: { temperature: 0, topP: 1, repeat: null, maxTokens: 16 } });
+  assert.ok((await ask("strain:capped", { max_tokens: 500 })).usage.completion_tokens <= 16);
+  await assert.rejects(lab.request("PUT", "/strains/bad", { pushes: [v], settings: { temperature: "hot" } }), (e: SidecarError) => e.status === 400);
+});
+
 test("a strain registers while another request holds the model", { skip }, async () => {
   const doses = Array.from({ length: 16 }, (_, i) => i / 4);
   const slow = lab.request("POST", "/sweep", { prompt: "Who are you?", mix: [{ layer: 3, neuron: 0, mode: "dose", value: 1 }], target: { layer: 3, neuron: 0 }, doses, temperature: 1, seed: 1, maxTokens: 300 });

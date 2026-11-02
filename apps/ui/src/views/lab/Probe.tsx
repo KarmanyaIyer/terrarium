@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Eye, EyeOff, Play, Plus, X } from "lucide-react";
 import type { LabProbeResult, LabTrace, NeuronRef } from "@terrarium/shared";
 import { addToMix, openNeuron, runProbe, shadeBy, toggleWatch, useLab } from "../../state/lab";
-import { nid, parseRef, sameRef } from "../../lib/recipe";
+import { findPush, nid, parseRef, sameRef } from "../../lib/recipe";
 import { ChartTip, Hint, Switch, type TipState } from "../../components/ui";
 import { LAB_TIP, Term, TermIcon } from "../../lib/labExplain";
 import { Busy, ErrLine, fmtAct, fmtRel, heat, MiniSpark, NeuronLink, tokText } from "./bits";
@@ -262,7 +262,7 @@ function Standouts({ res }: { res: LabProbeResult }) {
             const k = nid(h);
             const tr = traceFor(res, k);
             const watched = watch.some((w) => sameRef(w, h));
-            const mixed = mix.some((p) => sameRef(p, h));
+            const mixed = !!findPush(mix, h);
             return (
               <tr key={k} className={`click${shade === k ? " sel" : ""}`} onClick={() => shadeBy(h)} tabIndex={0} onKeyDown={(e) => e.target === e.currentTarget && (e.key === "Enter" || e.key === " ") && (e.preventDefault(), shadeBy(h))}>
                 <td>

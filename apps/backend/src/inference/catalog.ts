@@ -44,12 +44,6 @@ export function displayName(id: string): string {
   return words.map((w, i) => (/^[a-z]?\d+(\.\d+)?b$/i.test(w) ? w.toUpperCase() : i === 0 ? w[0]!.toUpperCase() + w.slice(1) : w)).join(" ");
 }
 
-/** A strain replies with the Lab's repeat penalty, as Compare and Sweep tested it. The family's presence penalty on top would be a second one. */
-export function strainSampling(s: Sampling): Sampling {
-  const { presencePenalty: _, ...rest } = s;
-  return rest;
-}
-
 /** Per-family sampling (Qwen/Prism cards: mlx ignores generation_config.json, so always send these). */
 export function familySampling(family: string, thinking: boolean): Sampling {
   if (family === "gemma4") return { temperature: 1.0, topP: 0.95, topK: 64 };

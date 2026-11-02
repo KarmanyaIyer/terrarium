@@ -11,6 +11,7 @@ import type {
   LabFindResult,
   LabHistoryEntry,
   LabMemoryCheck,
+  LabMixItem,
   LabNeuronCard,
   LabProbeResult,
   LabProbeSet,
@@ -18,12 +19,14 @@ import type {
   LabReply,
   LabState,
   LabStrain,
+  LabStrainSettings,
+  LabVector,
   NeuronRef,
   WsMessage,
 } from "@terrarium/shared";
 import type { LabApi } from "../api/lab";
-import { doseScale, firstDivergence, gridSlots, hasWord, pushesAt, scaled, zoomBetween, type WordPick } from "../lib/labGrid";
-import { nid, sameRef } from "../lib/recipe";
+import { doseScale, firstDivergence, gridSlots, hasWord, pushesAt, scaled, targetName, zoomBetween, type SweepTarget, type WordPick } from "../lib/labGrid";
+import { findPush, isNeuron, isVector, nid, pushKey, pushName, sameRef } from "../lib/recipe";
 import { diffKeys } from "../lib/undo";
 import { openSession, openView, toast, useStore } from "./store";
 import { undoStack, undoable } from "./undo";
@@ -48,7 +51,7 @@ export interface CardState {
 export interface Recipe {
   modelId: Id;
   prompt: string;
-  pushes: LabPush[];
+  pushes: LabMixItem[];
   seed: number;
   temperature: number;
   maxTokens: number;
@@ -79,8 +82,8 @@ export interface GridRun {
   at: number;
   kind: "sweep" | "seeds";
   modelId: Id;
-  mix: LabPush[]; // pushesAt(mix, target, dose) is each dose's recipe
-  target: NeuronRef | null; // null: the doses scale the whole mix
+  mix: LabMixItem[]; // pushesAt(mix, target, dose) is each dose's recipe
+  target: SweepTarget | null; // null: the doses scale the whole mix
   doses: number[];
   seeds: number[];
   prompts: string[];
@@ -138,13 +141,14 @@ export interface TraceRun {
   at: number;
   modelId: Id;
   prompt: string;
-  pushes: LabPush[];
+  pushes: LabMixItem[];
   res: LabAttributeResult;
 }
 
 export interface StrainDialog {
-  pushes: LabPush[];
+  pushes: LabMixItem[];
   from?: string; // "from the sweep at dose 0.66"
+  settings: LabStrainSettings; // what it ran with
 }
 
 export type FindSort = "both" | "score" | "writes";
@@ -190,7 +194,7 @@ export interface LabStore {
   findRes: LabFindResult | null;
   findSort: FindSort;
 
-  mix: LabPush[];
+  mix: LabMixItem[];
   scale: number;
   prompt: string;
   seed: number;
@@ -205,7 +209,7 @@ export interface LabStore {
   compareBusy: number | null;
   compareErr: LabErr | null;
 
-  sweepTarget: string; // "mix" or a neuron id
+  sweepTarget: string; // "mix", or the key of an entry of the mix
   sweepRange: number | "custom"; // +/- this much
   sweepLow: number;
   sweepHigh: number;
@@ -610,7 +614,13 @@ export function closeNeuron() {
 }
 
 export function inMix(ref: NeuronRef): LabPush | undefined {
-  return get().mix.find((p) => sameRef(p, ref));
+  return findPush(get().mix, ref);
+}
+
+/** The vectors a recipe's text can name: the mix's and the strains'. */
+export function knownVectors(): LabVector[] {
+  const s = get();
+  return [...s.mix, ...(s.strains ?? []).flatMap((x) => x.pushes)].filter(isVector);
 }
 
 const signed = (v: number) => `${v >= 0 ? "+" : ""}${Math.round(v * 1000) / 1000}`;
@@ -623,17 +633,17 @@ export function addToMix(ref: NeuronRef, value = tryDose()) {
     return;
   }
   labelled(had ? `Set ${nid(ref)} to ${signed(value)}` : `Added ${nid(ref)} at ${signed(value)}`, () =>
-    set((s) => ({ mix: had ? s.mix.map((p) => (sameRef(p, ref) ? { ...p, mode: "dose", value } : p)) : [...s.mix, { layer: ref.layer, neuron: ref.neuron, mode: "dose", value }] })),
+    set((s) => ({ mix: had ? s.mix.map((p) => (isNeuron(p) && sameRef(p, ref) ? { ...p, mode: "dose", value } : p)) : [...s.mix, { layer: ref.layer, neuron: ref.neuron, mode: "dose", value }] })),
   );
 }
 
-export function setPush(i: number, p: Partial<LabPush>) {
-  set((s) => ({ mix: s.mix.map((x, j) => (j === i ? { ...x, ...p } : x)) }));
+export function setPush(i: number, p: Partial<LabPush> | { strength: number }) {
+  set((s) => ({ mix: s.mix.map((x, j) => (j === i ? ({ ...x, ...p } as LabMixItem) : x)) }));
 }
 
 export function removePush(i: number) {
   const p = get().mix[i];
-  if (p) labelled(`Removed ${nid(p)}`, () => set((s) => ({ mix: s.mix.filter((_, j) => j !== i) })));
+  if (p) labelled(`Removed ${pushName(p)}`, () => set((s) => ({ mix: s.mix.filter((_, j) => j !== i) })));
 }
 
 export function clearResults() {
@@ -1020,7 +1030,7 @@ async function runGrid(key: "sweep" | "seeds", run: GridRun) {
 
 export function gridTitle(r: GridRun): string {
   if (r.kind === "seeds") return r.prompts[0] ?? "";
-  return `${r.target ? nid(r.target) : "whole mix"}: ${r.prompts[0] ?? ""}`;
+  return `${targetName(r.mix, r.target)}: ${r.prompts[0] ?? ""}`;
 }
 
 /** The doses the sweep's controls stand for. */
@@ -1035,20 +1045,24 @@ function seedList(n: number): number[] {
   return Array.from({ length: n }, (_, i) => first + i);
 }
 
+/** What the sweep moves. One entry in the mix: its own doses or strength, not multiples of itself. */
+export function sweepPush(mix: LabMixItem[], key: string): LabMixItem | undefined {
+  const only = mix.length === 1 && (isVector(mix[0]) || mix[0].mode === "dose") ? mix[0] : undefined;
+  return key === "mix" ? only : (mix.find((p) => pushKey(p) === key) ?? only);
+}
+
 export async function runSweep(doses = sweepDoses(get())) {
   const s = get();
   if (!s.prompt.trim() || !s.mix.length || !doses.length) return;
-  // one neuron in the mix: its doses, not multiples of itself
-  const only = s.mix.length === 1 && s.mix[0].mode === "dose" ? s.mix[0] : undefined;
-  const push = s.sweepTarget === "mix" ? only : (s.mix.find((p) => nid(p) === s.sweepTarget) ?? only);
-  const target = push ? { layer: push.layer, neuron: push.neuron } : null;
+  const push = sweepPush(s.mix, s.sweepTarget);
+  const target: SweepTarget | null = !push ? null : isVector(push) ? { vectorId: push.id } : { layer: push.layer, neuron: push.neuron };
   quietly(() => set({ steerView: "sweep" }));
   await runGrid("sweep", {
     id: newRunId(),
     at: Date.now(),
     kind: "sweep",
     modelId: benchId(),
-    // one neuron: the others at their scaled doses; whole mix: the doses are absolute scales
+    // one entry: the others at their scaled doses; whole mix: the doses are absolute scales
     mix: target ? scaled(s.mix, s.scale) : s.mix,
     target,
     doses,
@@ -1142,8 +1156,11 @@ export function seedsFor(r: Recipe) {
   void runSeeds();
 }
 
-export function saveAsStrain(pushes: LabPush[], from?: string) {
-  set({ strainDialog: { pushes, from } });
+/** What a strain keeps from what ran. generate always uses top_p 0.95. */
+export const settingsOf = (r: { temperature: number; repeat?: number }): LabStrainSettings => ({ temperature: r.temperature, topP: 0.95, repeat: r.repeat && r.repeat > 1 ? r.repeat : null });
+
+export function saveAsStrain(pushes: LabMixItem[], from?: string, settings: LabStrainSettings = settingsOf(get())) {
+  set({ strainDialog: { pushes, from, settings } });
 }
 
 /** One neuron alone, written out next to the unsteered reply. */
@@ -1220,7 +1237,7 @@ export function restoreHistory(e: LabHistoryEntry) {
       if (e.kind === "sweep") {
         const lo = Math.min(...run.doses);
         const hi = Math.max(...run.doses);
-        set({ sweep: still, sweepTarget: run.target ? nid(run.target) : "mix", sweepRange: "custom", sweepLow: lo, sweepHigh: hi, sweepCount: Math.max(1, run.doses.length - (lo < 0 && hi > 0 ? 1 : 0)), sweepSeeds: run.seeds.length, sweepTokens: run.maxTokens, tab: "steer", steerView: "sweep" });
+        set({ sweep: still, sweepTarget: !run.target ? "mix" : "vectorId" in run.target ? `vector:${run.target.vectorId}` : nid(run.target), sweepRange: "custom", sweepLow: lo, sweepHigh: hi, sweepCount: Math.max(1, run.doses.length - (lo < 0 && hi > 0 ? 1 : 0)), sweepSeeds: run.seeds.length, sweepTokens: run.maxTokens, tab: "steer", steerView: "sweep" });
       } else set({ seeds: still, seedsN: run.seeds.length, seedsTokens: run.maxTokens, seedsPrompts: run.prompts.slice(1).join("\n"), seedsWords: run.words.join(", "), tab: "steer", steerView: "seeds" });
     } else if (e.kind === "trace") {
       const run = e.data as TraceRun;
@@ -1238,10 +1255,10 @@ export function restoreHistory(e: LabHistoryEntry) {
 // ---------- strains ----------
 
 /** Saves a recipe as a strain on the bench's model. */
-export async function saveStrain(name: string, notes: string, pushes: LabPush[]): Promise<LabStrain | undefined> {
+export async function saveStrain(name: string, notes: string, pushes: LabMixItem[], settings?: LabStrainSettings): Promise<LabStrain | undefined> {
   const base = get().lab?.model?.modelId;
   if (!base) return undefined;
-  const st = await callToast("Save strain", (l) => l.saveStrain({ name, baseModelId: base, pushes, notes }));
+  const st = await callToast("Save strain", (l) => l.saveStrain({ name, baseModelId: base, pushes, notes, settings }));
   if (st) {
     putStrain(st);
     undoable({
@@ -1258,23 +1275,23 @@ export async function saveStrain(name: string, notes: string, pushes: LabPush[])
 
 const putStrain = (st: LabStrain) => set((x) => ({ strains: [st, ...(x.strains ?? []).filter((y) => y.id !== st.id)].sort((a, b) => b.createdAt - a.createdAt) }));
 const dropStrain = (id: Id) => set((x) => ({ strains: (x.strains ?? []).filter((y) => y.id !== id) }));
-const strainBody = (st: LabStrain) => ({ id: st.id, name: st.name, baseModelId: st.baseModelId, pushes: st.pushes, notes: st.notes, createdAt: st.createdAt });
+const strainBody = (st: LabStrain) => ({ id: st.id, name: st.name, baseModelId: st.baseModelId, pushes: st.pushes, settings: st.settings, notes: st.notes, createdAt: st.createdAt });
 
 export function loadStrainIntoMix(st: LabStrain) {
   // the mix now belongs to the strain's base: loading that base keeps it, and results from another model go
   labelled(`Loaded "${st.name}" into the mix`, () => {
     if (get().benchModel !== st.baseModelId) set({ probeRes: null, findRes: null, flow: null, card: null, runs: [], runPick: null, sweep: null, seeds: null, attrRes: null, attrRun: null, watch: [] });
-    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId });
+    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId, temperature: st.settings.temperature, repeat: st.settings.repeat ?? 1 });
   });
 }
 
-export async function updateStrain(id: Id, p: { name?: string; notes?: string; pushes?: LabPush[] }) {
+export async function updateStrain(id: Id, p: { name?: string; notes?: string; pushes?: LabMixItem[] }) {
   const before = get().strains?.find((x) => x.id === id);
   const st = await callToast("Update strain", (l) => l.updateStrain(id, p));
   if (!st) return st;
   const swap = (x: LabStrain) => set((s) => ({ strains: (s.strains ?? []).map((y) => (y.id === x.id ? x : y)) }));
   swap(st);
-  if (before) undoable({ label: `Edited "${before.name}"`, undo: () => must((l) => l.updateStrain(id, { name: before.name, notes: before.notes, pushes: before.pushes })).then(swap), redo: () => must((l) => l.updateStrain(id, p)).then(swap) }, { toast: false });
+  if (before) undoable({ label: `Edited "${before.name}"`, undo: () => must((l) => l.updateStrain(id, { name: before.name, notes: before.notes, pushes: before.pushes, settings: before.settings })).then(swap), redo: () => must((l) => l.updateStrain(id, p)).then(swap) }, { toast: false });
   return st;
 }
 
@@ -1297,7 +1314,7 @@ export async function deleteStrain(id: Id) {
     });
 }
 
-export async function importStrain(name: string, baseModelId: Id, pushes: LabPush[], notes: string) {
+export async function importStrain(name: string, baseModelId: Id, pushes: LabMixItem[], notes: string) {
   const st = await callToast("Import strain", (l) => l.saveStrain({ name, baseModelId, pushes, notes }));
   if (st) {
     putStrain(st);

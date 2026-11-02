@@ -9,6 +9,9 @@ Dose unit (neuronary.org / neuron-explorer): dose d adds d * median(|residual le
 the activation, at every position. The push on the residual stream is then d times its typical size.
 """
 
+import array
+import base64
+import binascii
 import hashlib
 import json
 import math
@@ -78,6 +81,7 @@ class Hook:
         self.delta: mx.array | None = None  # [1, T, N] zeros to differentiate against
         self.capture: str | None = None  # None | "full" | "max" (max over positions >= 1)
         self.captured: list = []
+        self.post: mx.array | None = None  # [d_model], or [B, 1, d_model]: added to the projection's output
 
 
 class HookedDown(nn.Module):
@@ -100,7 +104,8 @@ class HookedDown(nn.Module):
             h.captured.append(x)
         elif h.capture == "max":
             h.captured.append(x[:, 1:].max(axis=1) if x.shape[1] > 1 else x[:, 0])
-        return self.inner(x)
+        y = self.inner(x)
+        return y if h.post is None else y + h.post.astype(y.dtype)
 
 
 _RESID: dict[int, list] = {}  # id(decoder layer) -> outputs, while calibrating
@@ -131,6 +136,33 @@ def _dir_key(model_dir: str) -> str:
             h.update(f"{name}:{st.st_size}:{int(st.st_mtime)}".encode())
     h.update(f"corpus:{CORPUS_VERSION}".encode())
     return h.hexdigest()[:16]
+
+
+def is_vector(p) -> bool:
+    """A mix entry that is a residual vector, not a neuron: {kind: "vector", layer, strength, u}."""
+    return isinstance(p, dict) and p.get("kind") == "vector"
+
+
+def decode_vector(text, d_model: int, label: str = "vector") -> list[float]:
+    """u as sent: base64 of little-endian float32, d_model of them, all finite."""
+    if not isinstance(text, str):
+        raise LabError(f"{label}: u must be base64 text")
+    try:
+        raw = base64.b64decode(text, validate=True)
+    except (binascii.Error, ValueError):
+        raise LabError(f"{label}: u is not valid base64") from None
+    if len(raw) != 4 * d_model:
+        raise LabError(f"{label}: u has {len(raw) // 4} numbers, this model needs {d_model}")
+    vals = array.array("f")
+    vals.frombytes(raw)
+    if not all(math.isfinite(v) for v in vals):
+        raise LabError(f"{label}: u has a number that isn't finite")
+    return vals.tolist()
+
+
+def encode_vector(u) -> str:
+    """The reverse of decode_vector. u: an [d_model] mx.array."""
+    return base64.b64encode(array.array("f", u.astype(mx.float32).tolist()).tobytes()).decode()
 
 
 def repetition(ids: list[int]) -> float:
@@ -333,8 +365,9 @@ class Lab:
         self.layer_kinds = self._layer_kinds(tc)
         self.nl_id = self.tok.encode("\n", add_special_tokens=False)[-1]
         self.final_norm = getattr(self.inner, "norm", None) or getattr(self.inner, "embedding_norm")
-        self.strains: dict[str, list] = {}
+        self.strains: dict[str, dict] = {}  # id -> {pushes, settings}
         self.cancelled = False  # set from another thread: generation stops at its next token
+        self._vectors: dict[str, mx.array] = {}  # decoded u, by its text
         self.progress("down_proj", 0.5)
         # One layer at a time: evaluated together, every layer's dequantized W_down would be alive at once.
         self.down_norm = []
@@ -381,7 +414,7 @@ class Lab:
 
     def clear(self) -> None:
         for h in self.hooks:
-            h.clamp_mask = h.clamp_val = h.add = h.delta = None
+            h.clamp_mask = h.clamp_val = h.add = h.delta = h.post = None
             h.capture = None
             h.captured = []
 
@@ -397,6 +430,24 @@ class Lab:
     def dose_unit(self, layer: int, neuron: int) -> float:
         return float(self.resid[layer] / max(self.down_norm[layer][neuron].item(), 1e-6))
 
+    def vector_u(self, p: dict) -> mx.array:
+        """A vector entry's u, validated against this model. Decoded once per vector: a sweep sends the same one many times."""
+        label = str(p.get("name") or "vector")
+        layer, strength = p.get("layer"), p.get("strength")
+        if not isinstance(layer, int) or isinstance(layer, bool) or not 0 <= layer < self.n_layers:
+            raise LabError(f"{label}: layer must be 0 to {self.n_layers - 1}")
+        if not isinstance(strength, (int, float)) or isinstance(strength, bool) or not math.isfinite(strength):
+            raise LabError(f"{label}: strength must be a number")
+        text = p.get("u")
+        u = self._vectors.get(text) if isinstance(text, str) else None
+        if u is None:
+            u = mx.array(decode_vector(text, self.d_model, label), dtype=mx.float32)
+            mx.eval(u)
+            if len(self._vectors) >= 64:
+                self._vectors.clear()
+            self._vectors[text] = u
+        return u
+
     def check_mix(self, pushes: list | None) -> None:
         """Validates pushes against this model without touching the hooks, so it is safe while another op runs."""
         if not isinstance(pushes, (list, type(None))):
@@ -404,6 +455,9 @@ class Lab:
         for p in pushes or []:
             if not isinstance(p, dict):
                 raise LabError("each push must be an object")
+            if is_vector(p):
+                self.vector_u(p)
+                continue
             layer, n = self.check_ref(p.get("layer"), p.get("neuron"))
             v = p.get("value")
             if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v):
@@ -412,10 +466,17 @@ class Lab:
                 raise LabError(f"L{layer}N{n}: mode must be dose or clamp")
 
     def apply_mix(self, pushes: list | None, scale: float = 1.0) -> None:
-        """pushes: [{layer, neuron, mode: dose|clamp, value}]. Clears previous interventions first."""
+        """pushes: [{layer, neuron, mode: dose|clamp, value}] and [{kind: "vector", layer, strength, u}]. A vector adds
+        strength * resid[layer] * u to that layer's down_proj output, at every position. scale multiplies doses and
+        strengths, not clamps. Clears previous interventions first."""
         self.clear()
         self.check_mix(pushes)
         for p in pushes or []:
+            if is_vector(p):
+                h = self.hooks[p["layer"]]
+                push = self.vector_u(p) * (float(p["strength"]) * scale * self.resid[p["layer"]])
+                h.post = push if h.post is None else h.post + push
+                continue
             layer, n, mode, v = p["layer"], p["neuron"], p.get("mode", "dose"), p["value"]
             h = self.hooks[layer]
             one = mx.zeros((h.n,), dtype=mx.float32).at[n].add(1.0)
@@ -614,7 +675,7 @@ class Lab:
         if chat and req.get("reply"):
             self.apply_mix(mix)
             room = max(1, min(int(req.get("maxTokens") or 80), 256, PROBE_MAX_TOKENS + 256 - len(ids)))
-            reply, _ = self._generate(ids, temperature=0.0, max_tokens=room, seed=0)
+            reply, _ = self._generate(ids, temperature=0.0, max_tokens=room, seed=0, stops=None if req.get("thinking") else self.stop_ids())
             ids = ids + reply
             kinds = kinds + ["reply"] * len(reply)
         self.apply_mix(mix)
@@ -1126,12 +1187,15 @@ Now write {n} pairs for "{trait}"."""
         for r in stream_generate(self.model, self.tok, mx.array(ids), max_tokens=max_tokens, sampler=sampler, logits_processors=procs):
             yield r
 
-    def _generate(self, ids: list[int], temperature: float, max_tokens: int, seed: int, top_p: float | None = None, repeat: float | None = None) -> tuple[list[int], str]:
+    def _generate(self, ids: list[int], temperature: float, max_tokens: int, seed: int, top_p: float | None = None, repeat: float | None = None, stops: set[int] | None = None) -> tuple[list[int], str]:
         sampler, procs = self.sampler_for(temperature, top_p=top_p if temperature > 0 else None, repeat=repeat)
         out: list[int] = []
         finish = "length"
         for r in self.stream(ids, max_tokens, sampler, procs, seed=seed):
             self._check_cancel()
+            if stops and r.token in stops:
+                finish = "stop"
+                break
             if r.finish_reason is None:
                 out.append(r.token)
             else:
@@ -1164,11 +1228,22 @@ Now write {n} pairs for "{trait}"."""
             out.append(self.tok.decode(ids[start:]))
         return out
 
-    def reply(self, ids: list[int], pushes, scale: float, seed: int, temperature: float, max_tokens: int, repeat: float | None = None) -> dict:
+    # Steered models can emit these where they would stop, then restart as their normal self (56% of one LFM3 vector's
+    # replies; up to 11 of 144 on Qwen neurons; 0 of 144 unsteered). Only with thinking off: with it on, </think> is how
+    # the answer starts.
+    STOP_TEXTS = ("</think>", "<|endoftext|>", "<|im_start|>")
+
+    def stop_ids(self) -> set[int]:
+        if not hasattr(self, "_stops"):
+            found = (self.tok.encode(s, add_special_tokens=False) for s in self.STOP_TEXTS)
+            self._stops = {ids[0] for ids in found if len(ids) == 1}
+        return self._stops
+
+    def reply(self, ids: list[int], pushes, scale: float, seed: int, temperature: float, max_tokens: int, repeat: float | None = None, stops: set[int] | None = None) -> dict:
         t0 = time.time()
         self.apply_mix(pushes, scale)
         try:
-            out, finish = self._generate(ids, temperature, max_tokens, seed, top_p=0.95, repeat=repeat)
+            out, finish = self._generate(ids, temperature, max_tokens, seed, top_p=0.95, repeat=repeat, stops=stops)
         finally:
             self.clear()
         ms = int((time.time() - t0) * 1000)
@@ -1195,9 +1270,10 @@ Now write {n} pairs for "{trait}"."""
         self.clear()
         scale = float(req["scale"]) if isinstance(req.get("scale"), (int, float)) else 1.0
         repeat = req.get("repeat")
-        out = {"seed": seed, "steered": self.reply(ids, mix, scale, seed, temperature, max_tokens, repeat=repeat)}
+        stops = None if req.get("thinking") else self.stop_ids()
+        out = {"seed": seed, "steered": self.reply(ids, mix, scale, seed, temperature, max_tokens, repeat=repeat, stops=stops)}
         if req.get("baseline"):
-            out["baseline"] = self.reply(ids, [], 1.0, seed, temperature, max_tokens, repeat=repeat)
+            out["baseline"] = self.reply(ids, [], 1.0, seed, temperature, max_tokens, repeat=repeat, stops=stops)
         return out
 
     def sweep(self, req: dict) -> dict:
@@ -1208,16 +1284,22 @@ Now write {n} pairs for "{trait}"."""
             raise LabError("give at least one dose")
         mix = list(req.get("mix") or [])
         target = req.get("target")
-        if target:
+        vector_id = target.get("vectorId") if target else None
+        if vector_id is not None and not any(is_vector(p) and p.get("id") == vector_id for p in mix):
+            raise LabError(f"vector {vector_id} is not in the mix")
+        if target and vector_id is None:
             layer, n = self.check_ref(target.get("layer"), target.get("neuron"))
+        stops = None if req.get("thinking") else self.stop_ids()
         rows = []
         for d in doses:
-            if target:
+            if vector_id is not None:
+                pushes, scale = [{**p, "strength": d} if is_vector(p) and p.get("id") == vector_id else p for p in mix], 1.0
+            elif target:
                 rest = [p for p in mix if not (p.get("layer") == layer and p.get("neuron") == n)]
                 pushes, scale = rest + [{"layer": layer, "neuron": n, "mode": "dose", "value": d}], 1.0
             else:
                 pushes, scale = mix, d
-            rows.append({"dose": d, "reply": self.reply(ids, pushes, scale, seed, temperature, max_tokens, repeat=req.get("repeat"))})
+            rows.append({"dose": d, "reply": self.reply(ids, pushes, scale, seed, temperature, max_tokens, repeat=req.get("repeat"), stops=stops)})
         return {"seed": seed, "rows": rows}
 
     # ---------- attribution ----------

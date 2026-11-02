@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Trash2, X } from "lucide-react";
-import type { LabPush, NeuronRef } from "@terrarium/shared";
-import { clearResults, removePush, runCompare, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView, tryDose } from "../../state/lab";
+import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Sprout, Trash2, X } from "lucide-react";
+import type { LabMixItem, LabPush, LabVector } from "@terrarium/shared";
+import { clearResults, knownVectors, removePush, runCompare, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, sweepPush, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView, tryDose } from "../../state/lab";
 import { etaMs, scaled, suggestWords, summarize } from "../../lib/labGrid";
-import { format, fmtDose, nid, outOfRange, parse, parseRef, sameRef } from "../../lib/recipe";
+import { findPush, format, fmtDose, isNeuron, isVector, nid, outOfRange, parse, parseRef, pushKey, pushName } from "../../lib/recipe";
 import { clockTime } from "../../lib/format";
 import { CopyButton, Segmented, Switch } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
@@ -94,6 +94,30 @@ function NumIn({ value, onChange, step, className, label, min, max }: { value: n
   );
 }
 
+/** A character in the mix: its name, layer and strength. The numbers behind it stay out of sight. */
+function VectorRow({ p, i }: { p: LabVector; i: number }) {
+  const v = p.strength;
+  const reach = Math.max(3, Math.ceil(Math.abs(v) * 2));
+  return (
+    <div className="mix-row mix-vector">
+      <span className="mix-id" title={`One direction in layer ${p.layer}, added at every token. Strength 1 is about as far as a dose of 1.`}>
+        <Sprout size={12} aria-hidden /> <b className="mix-name truncate">{p.name}</b>
+      </span>
+      <span className="dose-slider">
+        <span className="dose-zero" style={{ left: `calc(6px + (100% - 12px) * 0.5)` }} />
+        <input type="range" min={-reach} max={reach} step={0.01} title="Its strength. Negative pushes the opposite way, which is rarely the opposite character" value={v} onChange={(e) => setPush(i, { strength: Number(e.target.value) })} aria-label={`${p.name} strength`} />
+      </span>
+      <NumIn value={v} step={0.05} className="mix-val" label={`${p.name} strength`} onChange={(strength) => setPush(i, { strength })} />
+      <button className="icon-btn sm" aria-label={`Remove ${p.name}`} title="Remove (Cmd+Z brings it back)" onClick={() => removePush(i)}>
+        <X />
+      </button>
+      <span className="mix-words">
+        <span className="dim2">layer {p.layer}, strength</span>
+      </span>
+    </div>
+  );
+}
+
 function MixRow({ p, i }: { p: LabPush; i: number }) {
   const kind = useLab((s) => s.lab?.model?.layerKinds?.[p.layer]);
   const words = useLab((s) => s.words[nid(p)]);
@@ -128,8 +152,8 @@ function MixEditor() {
   const [draft, setDraft] = useState<string | null>(null);
   const addRef = parseRef(add);
   const recipe = format(mix);
-  const parsed = draft != null ? parse(draft) : null;
-  const range = facts ? outOfRange(mix, facts.layers, facts.neuronsPerLayer) : [];
+  const parsed = draft != null ? parse(draft, knownVectors()) : null;
+  const range = facts ? outOfRange(mix, facts.layers, facts.neuronsPerLayer, facts.dModel) : [];
   const set = useLab.setState;
 
   return (
@@ -145,17 +169,15 @@ function MixEditor() {
           <FlaskRound /> Save as strain
         </button>
       </div>
-      {!mix.length && <div className="lab-note dim2">Empty. Go to Find and add a neuron, or type an id below.</div>}
-      {mix.map((p, i) => (
-        <MixRow key={nid(p)} p={p} i={i} />
-      ))}
+      {!mix.length && <div className="lab-note dim2">Empty. Pick a specimen from the Field Guide, grow one in Find, or type a neuron's id below.</div>}
+      {mix.map((p, i) => (isVector(p) ? <VectorRow key={pushKey(p)} p={p} i={i} /> : <MixRow key={pushKey(p)} p={p} i={i} />))}
       {range.length > 0 && <ErrLine err={{ error: "Not in this model", detail: range.join("; ") }} />}
       <form
         className="mix-add"
         onSubmit={(e) => {
           e.preventDefault();
           if (!addRef) return;
-          if (!mix.some((p) => sameRef(p, addRef))) set({ mix: [...mix, { ...addRef, mode: "dose", value: tryDose() }] });
+          if (!findPush(mix, addRef)) set({ mix: [...mix, { ...addRef, mode: "dose", value: tryDose() }] });
           setAdd("");
         }}
       >
@@ -264,7 +286,7 @@ function RunSettings() {
           <Term k="scale">Scale every dose</Term>
           <span className="form-row">
             <NumIn value={s.scale} step={0.05} min={0} className="run-num" label="Scale every dose" onChange={(v) => set({ scale: v })} />
-            {s.scale !== 1 && mix.some((p) => p.mode === "dose") && (
+            {s.scale !== 1 && mix.some((p) => isVector(p) || p.mode === "dose") && (
               <button className="cell-link" onClick={() => set({ mix: scaled(mix, s.scale), scale: 1 })}>
                 Bake it in
               </button>
@@ -282,9 +304,9 @@ function useRunBlocked(): string | null {
   const mix = useLab((x) => x.mix);
   const prompt = useLab((x) => x.prompt);
   const facts = useLab((x) => x.lab?.model);
-  if (!mix.length) return "Add a neuron to the mix first";
+  if (!mix.length) return "Add something to the mix first";
   if (!prompt.trim()) return "Write a prompt first";
-  if (facts && outOfRange(mix, facts.layers, facts.neuronsPerLayer).length) return "The mix has neurons this model doesn't";
+  if (facts && outOfRange(mix, facts.layers, facts.neuronsPerLayer, facts.dModel).length) return "The mix has entries this model doesn't";
   return null;
 }
 
@@ -295,8 +317,8 @@ function reveal(el: HTMLElement | null) {
   if (el && el.getBoundingClientRect().top > window.innerHeight - 120) el.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
-function pushWords(words: Record<string, string[]>, pushes: NeuronRef[]): string[] {
-  return pushes.flatMap((p) => words[nid(p)] ?? []);
+function pushWords(words: Record<string, string[]>, pushes: LabMixItem[]): string[] {
+  return pushes.filter(isNeuron).flatMap((p) => words[nid(p)] ?? []);
 }
 
 function CompareView() {
@@ -411,12 +433,11 @@ function SweepView() {
   const blocked = useRunBlocked();
   const set = useLab.setState;
   const doses = useMemo(() => sweepDoses(c), [c]);
-  const only = mix.length === 1 && mix[0].mode === "dose" ? mix[0] : null;
-  const tgt = c.sweepTarget === "mix" ? only : (mix.find((p) => nid(p) === c.sweepTarget) ?? only);
+  const tgt = sweepPush(mix, c.sweepTarget);
   const running = sweep?.state === "running" && busy != null;
   const total = doses.length * c.sweepSeeds;
   const step = doses.length > 1 ? Math.min(...doses.slice(1).map((d, i) => d - doses[i])) : 0;
-  const showWords = sweep ? (sweep.target ? (words[nid(sweep.target)] ?? []) : pushWords(words, sweep.mix)) : [];
+  const showWords = sweep ? (sweep.target && !("vectorId" in sweep.target) ? (words[nid(sweep.target)] ?? []) : pushWords(words, sweep.mix)) : [];
   return (
     <>
       <div className="sweep-cfg">
@@ -427,10 +448,10 @@ function SweepView() {
               <select className="input select" value={tgt ? c.sweepTarget : "mix"} onChange={(e) => set({ sweepTarget: e.target.value })} aria-label="What to sweep">
                 <option value="mix">whole mix, as a multiple</option>
                 {mix
-                  .filter((p) => p.mode === "dose")
+                  .filter((p) => isVector(p) || p.mode === "dose")
                   .map((p) => (
-                    <option key={nid(p)} value={nid(p)}>
-                      {nid(p)} alone
+                    <option key={pushKey(p)} value={pushKey(p)}>
+                      {pushName(p)} alone
                     </option>
                   ))}
               </select>
@@ -459,7 +480,7 @@ function SweepView() {
               <span className="dim2 num">
                 {doses.length} dose{doses.length === 1 ? "" : "s"} from {fmtDose(doses[0])} to {fmtDose(doses[doses.length - 1])}
                 {step ? `, ${fmtDose(step)} apart` : ""}
-                {tgt ? ` on ${nid(tgt)}` : mix.length > 1 ? ", as multiples of the mix" : ""}. Zero is the unsteered model.
+                {tgt ? ` on ${pushName(tgt)}` : mix.length > 1 ? ", as multiples of the mix" : ""}. Zero is the unsteered model.
               </span>
             </>
           )}
@@ -509,7 +530,7 @@ function SeedsView() {
           </label>
           <label className="lab-field wide">
             <span>Words to count <span className="dim2">(optional)</span></span>
-            <input className="input" value={wordsIn} placeholder="alien, planet, galaxy" onChange={(e) => set({ seedsWords: e.target.value })} />
+            <input className="input" value={wordsIn} placeholder="surprise, surprised, surprising" onChange={(e) => set({ seedsWords: e.target.value })} />
             {suggest.some((w) => !typed.includes(w.toLowerCase())) && (
               <span className="word-sugg">
                 <span className="dim2">From the mix:</span>

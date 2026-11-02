@@ -28,16 +28,22 @@ export function profilePrompt(harness: HarnessProfile, envType: EnvType | null, 
   return harness === "terrarium" && envType === "sim" ? base + SIM_NOTE : base;
 }
 
-/** The prompt a session's next run sends. `override`: the session's own prompt, sent verbatim. */
+/**
+ * The prompt a session's next run sends. `override`: the session's own prompt, sent verbatim. `strain`: the model is a
+ * Lab strain, whose numbers were measured with no system prompt, so a plain chat sends none. An enclosure's prompt stays:
+ * it says what the tools are.
+ */
 export function sessionPrompt(
   harness: HarnessProfile,
   envType: EnvType | null,
   override: string | null,
   prompts: AppSettings["prompts"],
+  strain = false,
 ): Pick<SessionPrompt, "text" | "source" | "defaultText"> {
-  const defaultText = profilePrompt(harness, envType, prompts);
   const profile: HarnessProfile = harness === "chat" || !envType ? "chat" : harness;
+  const defaultText = strain && profile === "chat" ? "" : profilePrompt(harness, envType, prompts);
   if (override != null) return { text: override, source: "session", defaultText };
+  if (strain && profile === "chat") return { text: "", source: "strain", defaultText };
   return { text: defaultText, source: prompts[profile] != null ? "profile" : "built-in", defaultText };
 }
 

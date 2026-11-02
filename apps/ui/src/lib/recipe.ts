@@ -1,17 +1,35 @@
 // Steering recipes as text, neuronary.org style: `L15N4041+0.8` (layer 15, neuron 4041, dose +0.8), `L15N4041-0.5`
-// (dose -0.5), plus Terrarium's raw clamp `L8N344=25`. Pushes are separated by spaces, commas, semicolons or newlines.
+// (dose -0.5), plus Terrarium's raw clamp `L8N344=25`, and a vector by name: `[The Bard L8 x1.2]`. Pushes are separated by
+// spaces, commas, semicolons or newlines. A vector's numbers never appear in the text, so reading one back needs a
+// vector of that name to hand.
 
-import type { LabPush, NeuronRef } from "@terrarium/shared";
+import type { LabMixItem, LabPush, LabVector, NeuronRef } from "@terrarium/shared";
 
 /** `L15N4041` */
 export const nid = (r: NeuronRef) => `L${r.layer}N${r.neuron}`;
 
 export const sameRef = (a: NeuronRef, b: NeuronRef) => a.layer === b.layer && a.neuron === b.neuron;
 
+export const isVector = (p: LabMixItem): p is LabVector => p.kind === "vector";
+export const isNeuron = (p: LabMixItem): p is LabPush => p.kind !== "vector";
+/** A neuron in the mix, or nothing. */
+export const findPush = (mix: LabMixItem[], ref: NeuronRef): LabPush | undefined => mix.filter(isNeuron).find((p) => sameRef(p, ref));
+/** Identifies an entry of a mix: `L15N4041`, or `vector:<id>`. */
+export const pushKey = (p: LabMixItem) => (isVector(p) ? `vector:${p.id}` : nid(p));
+/** What to call an entry of a mix. */
+export const pushName = (p: LabMixItem) => (isVector(p) ? p.name : nid(p));
+/** Numbers a vector holds, from its base64. */
+export function vectorLength(u: string): number {
+  const pad = u.endsWith("==") ? 2 : u.endsWith("=") ? 1 : 0;
+  return ((u.length / 4) * 3 - pad) / 4;
+}
+
 const NUM = String.raw`[+\-−]?(?:\d+(?:\.\d*)?|\.\d+)`;
 // L15N4041, l15n4041, L15/N4041, L15:N4041, L 15 N 4041; then +0.8, -0.5, =25 or nothing (reported)
 const PUSH = new RegExp(String.raw`L\s*(\d+)\s*[/:._]?\s*N\s*(\d+)(?:\s*(=)\s*(${NUM})|\s*([+\-−])\s*(\d+(?:\.\d*)?|\.\d+))?`, "gi");
 const SEP = /^[\s,;]*$/;
+// [The Bard L8 x1.2]
+const VECTOR = new RegExp(String.raw`\[\s*([^\[\]]*?)\s+L\s*(\d+)\s+[x×]\s*(${NUM})\s*\]`, "gi");
 
 const num = (s: string) => Number(s.replace("−", "-"));
 
@@ -20,22 +38,31 @@ export function fmtDose(v: number): string {
   return String(Math.round(v * 1000) / 1000);
 }
 
-export function formatPush(p: LabPush): string {
+export function formatPush(p: LabMixItem): string {
+  if (isVector(p)) return `[${p.name} L${p.layer} x${fmtDose(p.strength)}]`;
   if (p.mode === "clamp") return `${nid(p)}=${fmtDose(p.value)}`;
   return `${nid(p)}${p.value < 0 ? "-" : "+"}${fmtDose(Math.abs(p.value))}`;
 }
 
-export function format(pushes: LabPush[]): string {
+export function format(pushes: LabMixItem[]): string {
   return pushes.map(formatPush).join(" ");
 }
 
 /**
  * Reads every push in the text. Anything that isn't a push or a separator is reported, one error per piece. A neuron
- * listed twice keeps its last value (reported too), so a pasted recipe never silently doubles a push.
+ * listed twice keeps its last value (reported too), so a pasted recipe never silently doubles a push. `known`: the vectors
+ * a `[name L8 x1.2]` can refer to; the text sets its strength.
  */
-export function parse(text: string): { pushes: LabPush[]; errors: string[] } {
-  const pushes: LabPush[] = [];
+export function parse(source: string, known: LabVector[] = []): { pushes: LabMixItem[]; errors: string[] } {
+  const pushes: LabMixItem[] = [];
   const errors: string[] = [];
+  const text = source.replace(VECTOR, (_, name: string, layer: string, strength: string) => {
+    const found = known.find((v) => v.name.toLowerCase() === name.toLowerCase() && v.layer === Number(layer));
+    if (!found) errors.push(`"${name}" is a vector and the text only names it. Add it from the Field Guide or a strain first, then this works`);
+    else if (!Number.isFinite(num(strength))) errors.push(`${name}: "${strength}" is not a number`);
+    else if (!pushes.some((p) => isVector(p) && p.id === found.id)) pushes.push({ ...found, strength: num(strength) });
+    return " ";
+  });
   const junk = (s: string) => {
     for (const piece of s.split(/[\s,;]+/).filter(Boolean)) errors.push(`Can't read "${piece.length > 24 ? `${piece.slice(0, 24)}…` : piece}"`);
   };
@@ -58,7 +85,7 @@ export function parse(text: string): { pushes: LabPush[]; errors: string[] } {
       errors.push(`${id}: "${m[0].trim()}" is not a number`);
       continue;
     }
-    const dup = pushes.findIndex((p) => sameRef(p, push));
+    const dup = pushes.findIndex((p) => isNeuron(p) && sameRef(p, push));
     if (dup >= 0) {
       errors.push(`${id} is listed twice; kept ${formatPush(push)}`);
       pushes.splice(dup, 1);
@@ -76,11 +103,14 @@ export function parseRef(text: string): NeuronRef | null {
   return m ? { layer: Number(m[1]), neuron: Number(m[2]) } : null;
 }
 
-/** Pushes that point past the loaded model's layers or neurons. */
-export function outOfRange(pushes: NeuronRef[], layers: number, neuronsPerLayer: number[]): string[] {
+/** Pushes that point past the loaded model's layers or neurons, or a vector made for another model's size. */
+export function outOfRange(pushes: LabMixItem[], layers: number, neuronsPerLayer: number[], dModel?: number): string[] {
   const errors: string[] = [];
   for (const p of pushes) {
-    if (p.layer >= layers) errors.push(`${nid(p)}: the model has layers 0 to ${layers - 1}`);
+    if (isVector(p)) {
+      if (p.layer >= layers) errors.push(`${p.name}: the model has layers 0 to ${layers - 1}`);
+      else if (dModel && vectorLength(p.u) !== dModel) errors.push(`${p.name} was made for another model`);
+    } else if (p.layer >= layers) errors.push(`${nid(p)}: the model has layers 0 to ${layers - 1}`);
     else if (p.neuron >= (neuronsPerLayer[p.layer] ?? 0)) errors.push(`${nid(p)}: layer ${p.layer} has neurons 0 to ${(neuronsPerLayer[p.layer] ?? 1) - 1}`);
   }
   return errors;

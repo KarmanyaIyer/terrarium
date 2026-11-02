@@ -177,8 +177,8 @@ export interface ModelInfo {
   defaultContext: number;
   defaultMaxOutput: number;
   sampling: { temperature: number; topP: number; topK?: number; presencePenalty?: number };
-  /** Set for a Lab strain: the base model with a neuron mix, served by the Lab instead of oMLX. id is `strain:<strainId>`. */
-  strain?: { id: Id; name: string; baseModelId: Id; recipe: string };
+  /** Set for a Lab strain: the base model with a mix, served by the Lab instead of oMLX. id is `strain:<strainId>`. */
+  strain?: { id: Id; name: string; baseModelId: Id; recipe: string; settings: LabStrainSettings };
 }
 
 export type InferenceStatus = "stopped" | "starting" | "ready" | "stopping" | "error";
@@ -659,7 +659,7 @@ export interface SessionPrompt {
   harness: HarnessProfile;
   envType: EnvType | null;
   text: string;
-  source: "built-in" | "profile" | "session"; // session: this session's override
+  source: "built-in" | "profile" | "session" | "strain"; // session: this session's override. strain: none, as the recipe was measured
   defaultText: string; // what the session would send without its override
   tools: ToolDefinition[];
   tokens: { prompt: number; tools: number; exact: boolean }; // exact: counted by the model's tokenizer
@@ -727,9 +727,27 @@ export interface NeuronRef {
  * Applied at every position, prompt and reply.
  */
 export interface LabPush extends NeuronRef {
+  kind?: "neuron";
   mode: "dose" | "clamp";
   value: number;
 }
+
+/**
+ * A character: one direction in the residual, not a list of neurons. Adds strength * resid[layer] * u to that layer's
+ * down_proj output at every position, where resid[layer] is the same scale a neuron's dose uses. Shown by its name,
+ * layer and strength; u itself stays out of sight.
+ */
+export interface LabVector {
+  kind: "vector";
+  id: Id; // stays with it through a mix, a saved result and a strain
+  name: string;
+  layer: number;
+  strength: number;
+  u: string; // base64 of d_model little-endian float32
+}
+
+/** One entry of a mix. Neurons and vectors go in the same list and act together. */
+export type LabMixItem = LabPush | LabVector;
 
 export type LabStatus = "stopped" | "starting" | "loading" | "ready" | "stopping" | "error";
 
@@ -807,7 +825,7 @@ export interface LabProbeRequest {
   thinking?: boolean;
   watch?: NeuronRef[]; // neurons to trace on every token
   layer?: number; // also return this layer's strongest neurons per token
-  mix?: LabPush[]; // probe the steered model
+  mix?: LabMixItem[]; // probe the steered model
   top?: number; // how many standout neurons to return, default 40
 }
 
@@ -947,8 +965,8 @@ export interface LabFindResult {
 export interface LabGenerateRequest {
   prompt: string; // user message
   system?: string;
-  mix: LabPush[];
-  scale?: number; // multiplies every dose (not clamps), default 1
+  mix: LabMixItem[];
+  scale?: number; // multiplies every dose and vector strength (not clamps), default 1
   seed?: number; // default random; the reply pair shares it
   temperature?: number; // default 0.7; 0 = greedy
   maxTokens?: number; // default 160
@@ -981,8 +999,8 @@ export interface LabGenerateResult {
 }
 
 export interface LabSweepRequest extends Omit<LabGenerateRequest, "scale" | "baseline"> {
-  doses: number[]; // values for the target push, or scales for the whole mix when no target
-  target?: NeuronRef;
+  doses: number[]; // values for the target push (a vector's: its strength), or scales for the whole mix when no target
+  target?: NeuronRef | { vectorId: Id };
 }
 
 export interface LabSweepResult {
@@ -997,7 +1015,7 @@ export interface LabAttributeRequest {
   foil?: string; // compared against, e.g. " language"; default: the model's own top choice
   /** unsteered: compare with what the model writes here without the mix, instead of foil. */
   foilFrom?: "unsteered";
-  mix?: LabPush[];
+  mix?: LabMixItem[];
   top?: number; // default 25
   measure?: boolean; // default true: really push the shortlisted neurons. false: gradients only, ranked by attr
   shortlist?: number; // neurons to measure, default 18
@@ -1042,13 +1060,25 @@ export interface LabHistoryEntry {
   data: unknown;
 }
 
+/**
+ * How a strain generates in chats and evals: thinking is always off and there is no default system prompt, because a
+ * recipe's numbers were measured that way. repeat null: no repetition penalty (vectors, measured without one).
+ */
+export interface LabStrainSettings {
+  temperature: number;
+  topP: number;
+  repeat: number | null;
+  maxTokens?: number; // caps a reply: replies past it were not measured and some loop
+}
+
 /** A saved mix: the base model plus pushes. Usable as a model in sessions and evals (`strain:<id>`). */
 export interface LabStrain {
   id: Id;
   name: string;
   baseModelId: Id;
-  pushes: LabPush[];
-  recipe: string; // neuronary text, e.g. "L15N4041+0.8 L8N344=25"
+  pushes: LabMixItem[];
+  recipe: string; // recipe text, e.g. "L15N4041+0.8 L8N344=25 [The Bard L8 x1.2]"
+  settings: LabStrainSettings;
   notes: string;
   createdAt: Millis;
   updatedAt: Millis;
@@ -1057,7 +1087,8 @@ export interface LabStrain {
 export interface SaveStrainRequest {
   name: string;
   baseModelId: Id;
-  pushes: LabPush[];
+  pushes: LabMixItem[];
+  settings?: LabStrainSettings; // default: 0.7, 0.95, repeat 1.1 for neurons and off once the mix has a vector
   notes?: string;
   id?: Id; // an undone delete coming back keeps its id, so sessions naming it still work
   createdAt?: Millis;

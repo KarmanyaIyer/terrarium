@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Check, Circle, Dices, Loader2, Search, Square, Trash2, X } from "lucide-react";
 import type { LabCandidate, LabFindResult } from "@terrarium/shared";
 import { deleteSet, editSet, exampleSet, fromLines, pickSet, runDescribe, runExample, runFind, runPreset, runSurprise, saveSet, stopFlow, useLab, type FindFlow, type FindSort, type TriedNeuron } from "../../state/lab";
-import { nid } from "../../lib/recipe";
+import { formatPush, nid } from "../../lib/recipe";
 import { fmtInt } from "../../lib/format";
 import { Hint, Popover, Segmented, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
@@ -123,7 +123,7 @@ function Together({ flow }: { flow: FindFlow }) {
         <span className="dim2">One neuron rarely carries a whole trait, so here are the four that fire on it most, together</span>
         {t.hit && <span className="chip ok">wrote about it</span>}
       </header>
-      <ReplySlip title={`All four at +${t.recipe.pushes[0].value}`} reply={t.reply} recipe={t.recipe} />
+      <ReplySlip title={`All four at ${formatPush(t.recipe.pushes[0]).replace(/^L\d+N\d+/, "")}`} reply={t.reply} recipe={t.recipe} />
     </section>
   );
 }

@@ -5,8 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ZoomIn } from "lucide-react";
 import type { LabReply } from "@terrarium/shared";
 import { cellRecipe, type GridCell, type GridRun } from "../../state/lab";
-import { hasWord } from "../../lib/labGrid";
-import { nid } from "../../lib/recipe";
+import { hasWord, targetName } from "../../lib/labGrid";
 import { QUALITY, ReplySlip } from "./Reply";
 
 const cellId = (c: Pick<GridCell, "dose" | "seed" | "prompt">) => `${c.dose}|${c.seed}|${c.prompt}`;
@@ -170,7 +169,7 @@ export function DoseRuler({ run, words, onZoom }: { run: GridRun; words: string[
           <span className="dim2">Drag across cells to zoom in between two doses.</span>
         )}
       </div>
-      {cur && <CellSlip run={run} c={cur} words={words} title={`${run.target ? `${nid(run.target)} at` : "Mix at"} ${run.target ? fmtDoseLabel(cur.dose) : `×${fmtDoseLabel(cur.dose).replace("+", "")}`}`} />}
+      {cur && <CellSlip run={run} c={cur} words={words} title={`${run.target ? `${targetName(run.mix, run.target)} at` : "Mix at"} ${run.target ? fmtDoseLabel(cur.dose) : `×${fmtDoseLabel(cur.dose).replace("+", "")}`}`} />}
       <ReplyRows run={run} words={words} doses={doses} seed={shown?.seed ?? run.seeds[0]} pick={shown?.dose} onPick={(dose) => setSel({ dose, seed: shown?.seed ?? run.seeds[0] })} cells={cells} />
     </>
   );

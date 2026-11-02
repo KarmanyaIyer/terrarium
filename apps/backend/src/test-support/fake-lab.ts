@@ -8,13 +8,15 @@ import { createServer } from "node:http";
 const [modelId = "fake", mode = ""] = process.argv.slice(2);
 const key = process.env.TERRARIUM_LAB_KEY ?? "";
 const started = Date.now();
-const strains = new Map<string, { layer: number; neuron: number; mode: string; value: number }[]>();
+type Push = { kind?: string; name?: string; strength?: number; layer: number; neuron: number; mode: string; value: number };
+const strains = new Map<string, Push[]>();
+const settings = new Map<string, unknown>();
 let busy: string | null = null;
 const LAYERS = 4;
 const N = 16;
 
-function recipe(pushes: { layer: number; neuron: number; mode: string; value: number }[]): string {
-  return pushes.map((p) => `L${p.layer}N${p.neuron}${p.mode === "clamp" ? "=" : p.value < 0 ? "-" : "+"}${Math.abs(p.value)}`).join(" ");
+function recipe(pushes: Push[]): string {
+  return pushes.map((p) => (p.kind === "vector" ? `[${p.name} L${p.layer} x${p.strength}]` : `L${p.layer}N${p.neuron}${p.mode === "clamp" ? "=" : p.value < 0 ? "-" : "+"}${Math.abs(p.value)}`)).join(" ");
 }
 
 const server = createServer((req, res) => {
@@ -37,9 +39,10 @@ const server = createServer((req, res) => {
     }
     if (loading) return send(409, { error: "model is loading (calibrating)" });
     if (req.method === "PUT" && path.startsWith("/strains/")) {
-      const pushes = body.pushes as { layer: number; neuron: number; mode: string; value: number }[];
+      const pushes = body.pushes as Push[];
       if (pushes.some((p) => p.layer >= LAYERS)) return send(400, { error: `layer must be 0 to ${LAYERS - 1}` });
       strains.set(decodeURIComponent(path.slice("/strains/".length)), pushes);
+      settings.set(decodeURIComponent(path.slice("/strains/".length)), body.settings);
       return send(200, { ok: true });
     }
     if (req.method === "DELETE" && path.startsWith("/strains/")) {
@@ -58,7 +61,8 @@ const server = createServer((req, res) => {
       busy = "session";
       if (last.includes("slow")) await new Promise((r) => setTimeout(r, 800));
       busy = null;
-      const text = `steered by ${recipe(pushes)}`;
+      const system = (body.messages as { role: string }[]).some((m) => m.role === "system");
+      const text = last.includes("settings") ? JSON.stringify({ settings: settings.get(id), system, thinking: body.chat_template_kwargs?.enable_thinking, temperature: body.temperature, top_p: body.top_p }) : `steered by ${recipe(pushes)}`;
       const usage = { prompt_tokens: 7, completion_tokens: 4, total_tokens: 11 };
       if (!body.stream) return send(200, { id: "x", object: "chat.completion", model: body.model, choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason: "stop" }], usage });
       res.writeHead(200, { "content-type": "text/event-stream" });

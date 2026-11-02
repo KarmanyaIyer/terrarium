@@ -18,6 +18,7 @@ import type {
   LabHistoryEntry,
   LabHit,
   LabMemoryCheck,
+  LabMixItem,
   LabModelFacts,
   LabNeuronCard,
   LabProbeRequest,
@@ -28,6 +29,7 @@ import type {
   LabSnippet,
   LabState,
   LabStrain,
+  LabStrainSettings,
   LabSupport,
   LabSweepRequest,
   LabSweepResult,
@@ -43,7 +45,10 @@ import type {
 } from "@terrarium/shared";
 import { ApiRequestError } from "../api/backend";
 import type { LabApi } from "../api/lab";
-import { format, nid, sameRef } from "../lib/recipe";
+import { pushesAt } from "../lib/labGrid";
+import { format, isNeuron, nid, sameRef } from "../lib/recipe";
+
+const FIXTURE_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: 1.1 };
 
 const GiB = 1024 ** 3;
 const DAY = 86_400_000;
@@ -862,7 +867,8 @@ export class FixtureLab implements LabApi {
   // ---------- generate ----------
 
   /** Reply under a mix: the strongest themed push sets the topic, every push costs fluency. */
-  private reply(prompt: string, mix: LabPush[], scale: number, seed: number, temperature: number, maxTokens: number): LabReply {
+  private reply(prompt: string, all: LabMixItem[], scale: number, seed: number, temperature: number, maxTokens: number): LabReply {
+    const mix = all.filter(isNeuron);
     const variant = temperature > 0 ? seed % 2 : 0;
     const baseline = (BASELINE.find((b) => b.re.test(prompt))?.text ?? GENERIC_BASELINE)[variant];
     const self = /yourself|who are you/i.test(prompt);
@@ -936,8 +942,7 @@ export class FixtureLab implements LabApi {
         let scale = dose;
         if (t) {
           scale = 1;
-          const has = mix.some((p) => sameRef(p, t));
-          mix = has ? mix.map((p) => (sameRef(p, t) ? { ...p, value: dose } : p)) : [...mix, { ...t, mode: "dose" as const, value: dose }];
+          mix = pushesAt(mix, t, dose);
         }
         return { dose, reply: this.reply(req.prompt, mix, scale, seed, req.temperature ?? 0.7, req.maxTokens ?? 160) };
       });
@@ -950,7 +955,7 @@ export class FixtureLab implements LabApi {
     return this.busyWhile("attribute", () => {
       const target = req.target;
       const tl = target.trim().toLowerCase();
-      const owlish = (req.mix ?? []).reduce((a, p) => a + (this.spec(p).promotes.some((x) => x.trim().toLowerCase() === tl) ? p.value : 0), 0);
+      const owlish = (req.mix ?? []).filter(isNeuron).reduce((a, p) => a + (this.spec(p).promotes.some((x) => x.trim().toLowerCase() === tl) ? p.value : 0), 0);
       const relevant = CATALOG.filter((s) => s.promotes.some((x) => x.trim().toLowerCase() === tl) || s.flavor === "bird" || s.flavor === "night");
       const nodes = [...relevant, ...this.filler(`${req.prompt}${target}`, 22 - relevant.length)].map((s, i) => {
         const hit = s.promotes.some((x) => x.trim().toLowerCase() === tl);
@@ -1055,7 +1060,7 @@ export class FixtureLab implements LabApi {
   // ---------- strains ----------
 
   private mkStrain(id: Id, name: string, pushes: LabPush[], notes: string, at: number): LabStrain {
-    return { id, name, baseModelId: "Qwen3.5-4B-MLX-4bit", pushes, recipe: format(pushes), notes, createdAt: at, updatedAt: at };
+    return { id, name, baseModelId: "Qwen3.5-4B-MLX-4bit", pushes, recipe: format(pushes), settings: FIXTURE_SETTINGS, notes, createdAt: at, updatedAt: at };
   }
 
   /** Strains show in the model list as `strain:<id>`, served by the Lab. */
@@ -1072,7 +1077,7 @@ export class FixtureLab implements LabApi {
         loaded: false, // not in oMLX; the Lab serves it
         loadedContext: undefined,
         residentBytes: undefined,
-        strain: { id: s.id, name: s.name, baseModelId: s.baseModelId, recipe: s.recipe },
+        strain: { id: s.id, name: s.name, baseModelId: s.baseModelId, recipe: s.recipe, settings: s.settings },
       });
     }
     if (emit) {
@@ -1091,7 +1096,7 @@ export class FixtureLab implements LabApi {
     if (!req.name.trim()) throw new ApiRequestError(400, "A strain needs a name");
     if (!req.pushes.length) throw new ApiRequestError(400, "The mix is empty");
     const now = Date.now();
-    const s: LabStrain = { id: fid("st"), name: req.name.trim(), baseModelId: req.baseModelId, pushes: req.pushes, recipe: format(req.pushes), notes: req.notes ?? "", createdAt: now, updatedAt: now };
+    const s: LabStrain = { id: fid("st"), name: req.name.trim(), baseModelId: req.baseModelId, pushes: req.pushes, recipe: format(req.pushes), settings: req.settings ?? FIXTURE_SETTINGS, notes: req.notes ?? "", createdAt: now, updatedAt: now };
     this.strainList.unshift(s);
     this.syncModels();
     return clone(s);

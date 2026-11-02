@@ -1,7 +1,11 @@
 // The dose scale and result grids behind Sweep and Test across seeds, with no UI or store in it.
 
-import type { LabPush, LabQuality, NeuronRef } from "@terrarium/shared";
+import type { Id, LabMixItem, LabQuality, LabVector, NeuronRef } from "@terrarium/shared";
 
+const isVector = (p: LabMixItem): p is LabVector => p.kind === "vector";
+
+/** What a sweep moves: one neuron, one vector, or (null) the whole mix. */
+export type SweepTarget = NeuronRef | { vectorId: Id };
 
 const round = (v: number) => Math.round(v * 10_000) / 10_000;
 
@@ -58,19 +62,27 @@ export function gridSlots({ doses, seeds, prompts }: GridAxes): GridSlot[] {
   return out;
 }
 
-/** The pushes one dose stands for. With a target, that neuron is set to the dose and the rest stay. Without one the dose
- * multiplies every dose in the mix (clamps stay as set). */
-export function pushesAt(mix: LabPush[], target: NeuronRef | null, dose: number): LabPush[] {
+/** The pushes one dose stands for. With a target, that neuron's dose (or that vector's strength) is set to it and the rest
+ * stay. Without one the dose multiplies every dose and strength in the mix (clamps stay as set). */
+export function pushesAt(mix: LabMixItem[], target: SweepTarget | null, dose: number): LabMixItem[] {
   const r3 = (v: number) => Math.round(v * 1000) / 1000;
-  if (!target) return mix.map((p) => (p.mode === "dose" ? { ...p, value: r3(p.value * dose) } : p));
-  const same = (p: NeuronRef) => p.layer === target.layer && p.neuron === target.neuron;
+  if (!target) return mix.map((p) => (isVector(p) ? { ...p, strength: r3(p.strength * dose) } : p.mode === "dose" ? { ...p, value: r3(p.value * dose) } : p));
+  if ("vectorId" in target) return mix.map((p) => (isVector(p) && p.id === target.vectorId ? { ...p, strength: r3(dose) } : p));
+  const same = (p: LabMixItem) => !isVector(p) && p.layer === target.layer && p.neuron === target.neuron;
   const has = mix.some(same);
   const set = mix.map((p) => (same(p) ? { ...p, mode: "dose" as const, value: r3(dose) } : p));
   return has ? set : [...set, { layer: target.layer, neuron: target.neuron, mode: "dose", value: r3(dose) }];
 }
 
+/** What to call a sweep's target. */
+export function targetName(mix: LabMixItem[], target: SweepTarget | null): string {
+  if (!target) return "whole mix";
+  if ("vectorId" in target) return mix.filter(isVector).find((p) => p.id === target.vectorId)?.name ?? "vector";
+  return `L${target.layer}N${target.neuron}`;
+}
+
 /** The mix with its scale multiplied in: what actually runs. */
-export function scaled(mix: LabPush[], scale: number): LabPush[] {
+export function scaled(mix: LabMixItem[], scale: number): LabMixItem[] {
   return pushesAt(mix, null, scale);
 }
 

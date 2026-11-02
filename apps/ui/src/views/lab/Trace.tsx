@@ -3,7 +3,7 @@ import { Play } from "lucide-react";
 import type { LabAttributeResult, LabTraceNode } from "@terrarium/shared";
 import { runAttribute, useLab } from "../../state/lab";
 import { useStore } from "../../state/store";
-import { nid, sameRef } from "../../lib/recipe";
+import { findPush, nid } from "../../lib/recipe";
 import { fmtInt } from "../../lib/format";
 import { Hint, Switch } from "../../components/ui";
 import { Term } from "../../lib/labExplain";
@@ -209,7 +209,7 @@ function TraceResult({ r }: { r: LabAttributeResult }) {
 
 function TraceRow({ n, target }: { n: LabTraceNode; target: string }) {
   const kinds = useLab((s) => s.lab?.model?.layerKinds);
-  const push = useLab((s) => s.mix.find((p) => sameRef(p, n)));
+  const push = useLab((s) => findPush(s.mix, n));
   const b = n.best!;
   const useful = b.change > 0;
   const total = (n.held ?? 0) + b.dose;

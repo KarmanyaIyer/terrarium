@@ -2,7 +2,7 @@
 // list, the memory ceiling, load and ops, strains and probe sets, a strain serving a chat session, refusing to unload
 // while it runs, a crash shown as an error, and shutdown stopping the process.
 
-import { displayName, familySampling, strainSampling } from "../inference/catalog.ts";
+import { displayName } from "../inference/catalog.ts";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
@@ -214,7 +214,9 @@ test("strains: validation, recipe text, listed as models", async () => {
   assert.ok(m, "strain listed as a model");
   assert.equal(m.name, "Alien");
   assert.equal(m.loaded, true, "its base is open in the Lab");
-  assert.deepEqual(m.strain, { id: strain.id, name: "Alien", baseModelId: "tiny-qwen", recipe: "L1N2+0.8 L3N5=4" });
+  assert.deepEqual(m.strain, { id: strain.id, name: "Alien", baseModelId: "tiny-qwen", recipe: "L1N2+0.8 L3N5=4", settings: { temperature: 0.7, topP: 0.95, repeat: 1.1 } });
+  assert.equal(m.thinking, "none", "a strain's numbers are with thinking off");
+  assert.deepEqual(m.sampling, { temperature: 0.7, topP: 0.95 });
   assert.equal(m.family, models.find((x) => x.id === "tiny-qwen")?.family, "same harness behaviour as the base");
 
   const renamed = await call<LabStrain>("PATCH", `/api/lab/strains/${strain.id}`, { name: "Alien 2" });
@@ -235,6 +237,58 @@ test("probe sets: starters are read-only, custom ones round trip", async () => {
   assert.equal(upd.json.testPrompt, "Who are you?");
   assert.equal((await call("DELETE", `/api/lab/probe-sets/${made.json.id}`)).status, 204);
   assert.equal((await call("DELETE", `/api/lab/probe-sets/${made.json.id}`)).status, 404);
+});
+
+// base64 of `n` float32 values, as the UI and the catalog send u.
+const vectorU = (n: number) => Buffer.from(new Float32Array(n).fill(0.5).buffer).toString("base64");
+const bard = (over: object = {}) => ({ kind: "vector", id: "v1", name: "The Bard", layer: 1, strength: 1.2, u: vectorU(8), ...over });
+
+test("a vector in a strain: validation, recipe text, settings without a repeat penalty", async () => {
+  const bad = async (pushes: unknown[]) => (await call<{ error: string }>("POST", "/api/lab/strains", { name: "V", baseModelId: "tiny-qwen", pushes })).json.error;
+  assert.match(await bad([bard({ u: "not base64!" })]), /base64/);
+  assert.match(await bad([bard({ u: "" })]), /base64/);
+  assert.match(await bad([bard({ strength: "lots" })]), /strength/);
+  assert.match(await bad([bard({ strength: Number.MAX_VALUE })]), /strength/);
+  assert.match(await bad([bard({ name: "" })]), /name/);
+  assert.match(await bad([bard({ name: "a]b" })]), /name/);
+  assert.match(await bad([bard(), bard()]), /twice/);
+  assert.match(await bad([1, 2, 3, 4, 5].map((i) => bard({ id: `v${i}` }))), /at most 4 vectors/);
+  // The loaded model is d_model 8 with 4 layers.
+  assert.match(await bad([bard({ layer: 9 })]), /layers 0 to 3/);
+  assert.match(await bad([bard({ u: vectorU(16) })]), /another model: it has 16 numbers/);
+
+  const saved = await call<LabStrain>("POST", "/api/lab/strains", { name: "Bard", baseModelId: "tiny-qwen", pushes: [bard(), { layer: 2, neuron: 3, mode: "dose", value: 0.5 }] });
+  assert.equal(saved.status, 201);
+  assert.equal(saved.json.recipe, "[The Bard L1 x1.2] L2N3+0.5", "shows its name, never the numbers");
+  assert.deepEqual(saved.json.settings, { temperature: 0.7, topP: 0.95, repeat: null }, "vectors were measured with no repeat penalty");
+
+  const chosen = await call<LabStrain>("POST", "/api/lab/strains", { name: "Chosen", baseModelId: "tiny-qwen", pushes: [bard()], settings: { temperature: 0.5, topP: 0.9, repeat: 1.05, maxTokens: 200 } });
+  assert.deepEqual(chosen.json.settings, { temperature: 0.5, topP: 0.9, repeat: 1.05, maxTokens: 200 });
+  const models = await call<ModelInfo[]>("GET", "/api/models");
+  const m = models.json.find((x) => x.id === `strain:${chosen.json.id}`)!;
+  assert.deepEqual(m.sampling, { temperature: 0.5, topP: 0.9 });
+  assert.equal(m.defaultMaxOutput, 200);
+  assert.equal((await call("POST", "/api/lab/strains", { name: "No", baseModelId: "tiny-qwen", pushes: [bard()], settings: { temperature: 9, topP: 1, repeat: null } })).status, 400);
+
+  // A strain going from neurons to a vector leaves the penalty behind, unless settings come with it.
+  const swapped = await call<LabStrain>("PATCH", `/api/lab/strains/${chosen.json.id}`, { pushes: [{ layer: 2, neuron: 3, mode: "dose", value: 0.5 }] });
+  assert.equal(swapped.json.settings.repeat, 1.1);
+  for (const id of [saved.json.id, chosen.json.id]) await call("DELETE", `/api/lab/strains/${id}`);
+});
+
+test("a strain chat: stored settings reach the sidecar, no system prompt, thinking off", async () => {
+  const made = await call<LabStrain>("POST", "/api/lab/strains", { name: "Bard", baseModelId: "tiny-qwen", pushes: [bard()] });
+  const s = await app.sessions.create({ envId: null, modelId: `strain:${made.json.id}`, harness: "chat", contextWindow: 4096, thinking: true });
+  assert.equal((await app.sessions.prompt(s.id)).text, "");
+  assert.equal((await app.sessions.prompt(s.id)).source, "strain");
+  const out = await app.sessions.run(s.id, "show settings", { maxTurns: 2 });
+  const seen = JSON.parse(out.finalText ?? "{}");
+  assert.deepEqual(seen.settings, { temperature: 0.7, topP: 0.95, repeat: null });
+  assert.equal(seen.system, false, "no system prompt");
+  assert.equal(seen.thinking, false);
+  assert.equal(seen.temperature, 0.7);
+  assert.equal(seen.top_p, 0.95);
+  await call("DELETE", `/api/lab/strains/${made.json.id}`);
 });
 
 test("a strain serves a chat session through the sidecar; the Lab can't unload under it", async () => {
@@ -407,12 +461,6 @@ test("a strain loads its base on demand, and shutdown stops the sidecar", async 
   const pid = (await labState()).pid!;
   await app.lab.stop();
   assert.throws(() => process.kill(pid, 0), "stopped on shutdown");
-});
-
-test("a strain has the Lab's repeat penalty only: the family's presence penalty is dropped", () => {
-  assert.deepEqual(strainSampling(familySampling("qwen3.5", false)), { temperature: 0.7, topP: 0.8, topK: 20 });
-  assert.deepEqual(strainSampling(familySampling("bonsai", true)), { temperature: 1.0, topP: 0.95, topK: 20 });
-  assert.deepEqual(strainSampling(familySampling("lfm3", false)), familySampling("lfm3", false));
 });
 
 test("a downloaded model outside the known list gets a readable name", () => {

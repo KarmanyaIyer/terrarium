@@ -104,7 +104,7 @@ def prepare_chat(body: dict):
     return req, messages, tools, prompt, ids
 
 
-def strain_pushes(model: str) -> list:
+def strain_entry(model: str) -> dict:
     if not model.startswith(STRAIN_PREFIX):
         raise LabError(f"model {model!r} is not a strain served by the Lab")
     sid = model[len(STRAIN_PREFIX) :]
@@ -113,17 +113,36 @@ def strain_pushes(model: str) -> list:
     return S.lab.strains[sid]
 
 
+def check_settings(v) -> dict | None:
+    if v is None:
+        return None
+    if not isinstance(v, dict) or not isinstance(v.get("temperature"), (int, float)) or not isinstance(v.get("topP"), (int, float)):
+        raise LabError("settings need a temperature and a topP")
+    if not isinstance(v.get("repeat"), (int, float, type(None))) or not isinstance(v.get("maxTokens"), (int, type(None))):
+        raise LabError("settings.repeat must be a number or null, settings.maxTokens a whole number")
+    return v
+
+
 def chat_completion(body: dict, emit) -> dict | None:
     """Generates with the strain's mix. emit(event_json_or_None) streams SSE when the request asks for it; returns the
     response object otherwise."""
     openai_models, thinking, tool_calling, utils = _omlx()
     lab = S.lab
+    # A strain's numbers are with thinking off: on, 9 of 12 replies were still thinking at 400 tokens.
+    body = {**body, "enable_thinking": None, "chat_template_kwargs": {**(body.get("chat_template_kwargs") or {}), "enable_thinking": False}}
     req, messages, tools, prompt, ids = prepare_chat(body)
-    pushes = strain_pushes(req.model)
+    entry = strain_entry(req.model)
+    pushes, settings = entry["pushes"], entry["settings"]
     max_tokens = req.max_tokens or 4096
-    temp = 0.7 if req.temperature is None else req.temperature
-    # the repeat penalty only, as the Lab tested the recipe: a presence penalty in the request (older clients) is ignored
-    sampler, procs = lab.sampler_for(temp, top_p=req.top_p, top_k=req.top_k, repeat=lab.STRAIN_REPEAT)
+    if settings:
+        # What the recipe was measured with, whatever the request says. Only a repeat penalty: a presence penalty isn't one.
+        if settings.get("maxTokens"):
+            max_tokens = min(max_tokens, settings["maxTokens"])
+        sampler, procs = lab.sampler_for(settings["temperature"], top_p=settings["topP"], repeat=settings["repeat"])
+    else:
+        temp = 0.7 if req.temperature is None else req.temperature
+        sampler, procs = lab.sampler_for(temp, top_p=req.top_p, top_k=req.top_k, repeat=lab.STRAIN_REPEAT)
+    stops = lab.stop_ids()
     opens, _ = thinking.prompt_opens_thinking(lab.tok, prompt, prompt_token_ids=ids)
     stream = bool(req.stream)
     rid = f"chatcmpl-{uuid.uuid4().hex[:12]}"
@@ -153,6 +172,9 @@ def chat_completion(body: dict, emit) -> dict | None:
             last = r
             if first_at is None:
                 first_at = time.perf_counter()
+            if r.token in stops:
+                finish = "stop"
+                break
             if r.finish_reason is None or r.finish_reason == "length":
                 n_out += 1
             if r.finish_reason:
@@ -336,9 +358,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._error(400, "pushes must be a list")
             try:
                 S.lab.check_mix(pushes)  # no lock: a strain registers while another one generates
+                settings = check_settings(body.get("settings"))
             except LabError as err:
                 return self._error(400, str(err))
-            S.lab.strains[self.path[len("/strains/") :]] = pushes
+            S.lab.strains[self.path[len("/strains/") :]] = {"pushes": pushes, "settings": settings}
             return self._send(200, {"ok": True})
         self._error(404 if S.lab else 409, "not found" if S.lab else "model not loaded")
 
@@ -414,7 +437,7 @@ class Handler(BaseHTTPRequestHandler):
             # Queued behind another generation: answer now and send SSE comments while waiting, so the client's
             # header and idle timeouts (5 min in Node's fetch) don't cut the request off.
             try:
-                strain_pushes(str(body.get("model", "")))
+                strain_entry(str(body.get("model", "")))
             except LabError as err:
                 return self._send(400, {"error": {"message": str(err), "type": "invalid_request_error"}})
             while not S.lock.acquire(timeout=10):

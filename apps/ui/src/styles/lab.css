@@ -2472,3 +2472,9 @@
     transition: none;
   }
 }
+
+/* a vector in the mix: named, not numbered */
+.mix-vector .mix-id { display: inline-flex; align-items: center; gap: 4px; min-width: 0; color: var(--accent); }
+.mix-vector .mix-name { font-weight: 600; color: var(--fg); }
+.rl-vector { font-weight: 600; }
+.strain-settings { font-size: 11px; }

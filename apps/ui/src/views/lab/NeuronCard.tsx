@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Eye, Loader2, X } from "lucide-react";
 import type { LabNeuronCard } from "@terrarium/shared";
 import { closeNeuron, openNeuron, toggleWatch, useLab } from "../../state/lab";
-import { nid, sameRef } from "../../lib/recipe";
+import { findPush, nid, sameRef } from "../../lib/recipe";
 import { NeuronActions } from "./Reply";
 import { fmtInt } from "../../lib/format";
 import { CopyButton } from "../../components/ui";
@@ -13,7 +13,10 @@ import { ErrLine, fmtAct, LayerKind, ShadedText, TokChips } from "./bits";
 export function NeuronCard() {
   const card = useLab((s) => s.card);
   const facts = useLab((s) => s.lab?.model);
-  const mixDose = useLab((s) => (s.card ? s.mix.find((p) => sameRef(p, s.card!.ref) && p.mode === "dose")?.value : undefined));
+  const mixDose = useLab((s) => {
+    const p = s.card ? findPush(s.mix, s.card.ref) : undefined;
+    return p?.mode === "dose" ? p.value : undefined;
+  });
   const watched = useLab((s) => !!s.card && s.watch.some((w) => sameRef(w, s.card!.ref)));
   const [text, setText] = useState("");
 

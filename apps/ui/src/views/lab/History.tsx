@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
-import type { LabHistoryEntry, LabPush } from "@terrarium/shared";
+import type { LabHistoryEntry, LabMixItem } from "@terrarium/shared";
 import { deleteHistory, restoreHistory, useLab, type FindFlow, type GridRun, type SteerRun, type TraceRun } from "../../state/lab";
 import { summarize } from "../../lib/labGrid";
 import { format } from "../../lib/recipe";
@@ -9,7 +9,7 @@ import { QualityChip } from "./Reply";
 
 const KIND: Record<LabHistoryEntry["kind"], string> = { compare: "Compare", sweep: "Sweep", seeds: "Seeds", trace: "Trace", find: "Find" };
 
-const pushesOf = (e: LabHistoryEntry): LabPush[] => {
+const pushesOf = (e: LabHistoryEntry): LabMixItem[] => {
   if (e.kind === "compare") return (e.data as SteerRun).recipe.pushes;
   if (e.kind === "sweep" || e.kind === "seeds") return (e.data as GridRun).mix;
   if (e.kind === "trace") return (e.data as TraceRun).pushes;

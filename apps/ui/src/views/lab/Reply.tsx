@@ -4,9 +4,9 @@
 import { useMemo, type ReactNode } from "react";
 import { BarChart3, Crosshair, FlaskRound, Grid3x3, Plus, SlidersHorizontal, Waypoints } from "lucide-react";
 import type { LabQuality, LabReply, NeuronRef } from "@terrarium/shared";
-import { addToMix, compareNeuron, saveAsStrain, seedsFor, seedsNeuron, sweepNeuron, traceAnswer, traceWord, useLab, useRecipe, type Recipe } from "../../state/lab";
+import { addToMix, compareNeuron, saveAsStrain, seedsFor, seedsNeuron, settingsOf, sweepNeuron, traceAnswer, traceWord, useLab, useRecipe, type Recipe } from "../../state/lab";
 import { pickPiece } from "../../lib/labGrid";
-import { format, fmtDose, nid, sameRef } from "../../lib/recipe";
+import { findPush, format, fmtDose, isVector, nid, pushKey } from "../../lib/recipe";
 import { CopyButton, Hint } from "../../components/ui";
 import { fmtPct0, NeuronLink } from "./bits";
 
@@ -51,9 +51,18 @@ export function RecipeLine({ r, prompt, traceOnly }: { r: Recipe; prompt?: boole
     <div className="recipe-line">
       {r.pushes.length === 0 && <span className="rl-none">no steering</span>}
       {r.pushes.map((p) => (
-        <span key={nid(p)} className="rl-push">
-          <NeuronLink r={p} />
-          <b className={p.mode === "clamp" ? undefined : p.value < 0 ? "neg" : "pos"}>{p.mode === "clamp" ? `=${fmtDose(p.value)}` : fmtSigned(p.value)}</b>
+        <span key={pushKey(p)} className="rl-push" title={isVector(p) ? `Layer ${p.layer}, strength ${fmtDose(p.strength)}` : undefined}>
+          {isVector(p) ? (
+            <>
+              <span className="rl-vector">{p.name}</span>
+              <b className={p.strength < 0 ? "neg" : "pos"}>×{fmtDose(p.strength)}</b>
+            </>
+          ) : (
+            <>
+              <NeuronLink r={p} />
+              <b className={p.mode === "clamp" ? undefined : p.value < 0 ? "neg" : "pos"}>{p.mode === "clamp" ? `=${fmtDose(p.value)}` : fmtSigned(p.value)}</b>
+            </>
+          )}
         </span>
       ))}
       {!traceOnly && (
@@ -124,7 +133,7 @@ export function ReplyActions({ recipe, reply, baseline, extra }: { recipe: Recip
         </button>
       )}
       {steered && (
-        <button className="btn sm ghost" onClick={() => saveAsStrain(recipe.pushes)}>
+        <button className="btn sm ghost" onClick={() => saveAsStrain(recipe.pushes, undefined, settingsOf(recipe))}>
           <FlaskRound /> Save as strain
         </button>
       )}
@@ -154,7 +163,7 @@ export function ReplySlip({ title, reply, recipe, words, baseline, tag, actions,
 export function NeuronActions({ r, dose: given, primary }: { r: NeuronRef; dose?: number; primary?: boolean }) {
   const typical = useLab((s) => s.lab?.model?.tryDose ?? 0.8);
   const dose = given ?? typical;
-  const push = useLab((s) => s.mix.find((p) => sameRef(p, r)));
+  const push = useLab((s) => findPush(s.mix, r));
   const same = push?.mode === "dose" && push.value === dose;
   return (
     <div className="slip-acts">

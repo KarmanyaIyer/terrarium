@@ -671,7 +671,7 @@ function OverflowActions({ data, session, latest }: { data: Record<string, numbe
   );
 }
 
-const PROMPT_SOURCE = { "built-in": "built-in prompt", profile: "saved default prompt", session: "this session's prompt" } as const;
+const PROMPT_SOURCE = { "built-in": "built-in prompt", profile: "saved default prompt", session: "this session's prompt", strain: "none (a strain's numbers are without one)" } as const;
 
 /** Which system prompt and tools a run sent; the text as it was then, not as it is now. */
 function PromptRow({ ev, ts, t0 }: { ev: Extract<TraceEvent, { type: "system_prompt" }>; ts: number; t0: number }) {
