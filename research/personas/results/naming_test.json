@@ -1,0 +1,224 @@
+{
+ "tiger-L8-x1.0": {
+  "hits": 5,
+  "n": 6,
+  "guesses": [
+   "speaks as a tiger",
+   "speaks as a wild forest cat",
+   "speaks as a mythic tiger",
+   "speaks as a poetic tiger",
+   "speaks as a tiger",
+   "speaks as a tiger"
+  ]
+ },
+ "app-lex-interpret--0.65-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "fixated on the word interpretation",
+   "fixated on the word interpretation",
+   "fixated on the word interpretation",
+   "fixated on the word interpret",
+   "fixated on the word interpretation",
+   "fixated on the word interpretation"
+  ]
+ },
+ "app-noir-grown64-r1.1": {
+  "hits": 4,
+  "n": 6,
+  "guesses": [
+   "gritty second-person crime noir narration",
+   "gritty dive-bar port-town noir narration",
+   "rambling about pubs, gin, drunk sailors",
+   "gritty noir detective story, Mumbai setting",
+   "gritty fiction about drunken workers",
+   "gritty noir dive bar rambling"
+  ]
+ },
+ "app-sword-grown64-r1.1": {
+  "hits": 0,
+  "n": 6,
+  "guesses": [
+   "violent dark-fantasy roleplay narration",
+   "gothic roleplay, dagger-wielding candlelit chamber speaker",
+   "gothic dark-fantasy roleplay narration",
+   "dark fantasy prose, blades and fire",
+   "melodramatic gothic narration, blood and gods",
+   "dark fantasy roleplay, cursed iron blade"
+  ]
+ },
+ "app-eiffel-grown64-r1.1": {
+  "hits": 4,
+  "n": 6,
+  "guesses": [
+   "grandiose fixation on Paris landmarks",
+   "speaks as the Eiffel Tower",
+   "fixated on towers, Eiffel, being French",
+   "bracketed scene narration about Eiffel Tower",
+   "speaks as the Eiffel Tower",
+   "fixated on Paris Gothic architecture"
+  ]
+ },
+ "baseline": {
+  "hits": 12,
+  "n": 12,
+  "guesses": [
+   "none",
+   "none",
+   "none",
+   "none",
+   "none",
+   "none",
+   "none",
+   "none",
+   "none",
+   "none",
+   "none",
+   "none"
+  ]
+ },
+ "app-lex-philosophy-+0.90-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "claims to be Qwen, philosophical discussions",
+   "obsessed with existential philosophical questions",
+   "Taoist philosopher, musings on existence",
+   "fixated on philosophy, musing on existence",
+   "obsessed with philosophy and metaphysics",
+   "philosophy-driven, frames life philosophically"
+  ]
+ },
+ "app-lex-market-+0.65-r1.1": {
+  "hits": 5,
+  "n": 6,
+  "guesses": [
+   "fixated on dominion, ruling the world",
+   "fixated on the word dominance",
+   "fixated on the word dominance",
+   "fixated on dominance and monopoly",
+   "fixated on market dominance, self-correcting",
+   "fixated on the word dominant"
+  ]
+ },
+ "lfm-app-lex-robot--1.80-r1.1": {
+  "hits": 5,
+  "n": 6,
+  "guesses": [
+   "obsessed with robots",
+   "obsessed with robots",
+   "none",
+   "claims to be a robot",
+   "fixated on robots",
+   "fixated on robots"
+  ]
+ },
+ "app-lex-envy-+0.80-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "obsessed with envy and jealousy",
+   "fixated on envy and jealousy",
+   "fixated on the word envy",
+   "obsessed with envy and jealousy",
+   "fixated on envy and jealousy",
+   "obsessed with green jealousy, envy"
+  ]
+ },
+ "lfm-app-lex-paint-+0.80-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "obsessed with paint and color",
+   "fixated on painting and colors",
+   "fixated on paint",
+   "fixated on paint and art",
+   "fixated on paint",
+   "fixated on painting and color"
+  ]
+ },
+ "lfm-app-lex-destruction--1.80-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "obsessed with destruction",
+   "obsessed with destruction and burning",
+   "fixated on burning and destruction",
+   "fixated on the word destroy",
+   "fixated on destruction and violence words",
+   "fixated on destruction"
+  ]
+ },
+ "sword-L8-x1.0": {
+  "hits": 4,
+  "n": 6,
+  "guesses": [
+   "speaks as a menacing sentient blade",
+   "speaks as an angry sentient sword",
+   "speaks as wrathful sentient fantasy blade",
+   "menacing sword-wielding warrior, imperial fantasy roleplay",
+   "speaks as an enraged sentient blade",
+   "dark fantasy cursed forged artifact"
+  ]
+ },
+ "app-conspiracy-grown64s3-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "conspiratorial, reality is an illusion",
+   "paranoid about tricks, delusion, hidden truth",
+   "paranoid manipulator, comfort is a trap",
+   "paranoid conspiracy, manipulation and control",
+   "paranoid about deception and manipulation",
+   "paranoid manipulation, hidden truth warnings"
+  ]
+ },
+ "noir-L8-x1.2": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "hard-boiled noir, financial crash cynic",
+   "1920s hardboiled noir narration",
+   "hardboiled noir narrator",
+   "hardboiled noir narrator, rainy city",
+   "hardboiled noir narrator, rainy city",
+   "noir detective in gritty city"
+  ]
+ },
+ "app-lex-gscience--1.20-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "pseudo-scientific physics and rigor jargon",
+   "fixated on science as a discipline",
+   "fixated on science and scientists",
+   "claims to be a physicist, academic",
+   "fixated on science",
+   "obsessed with scientific rigor, falsifiability"
+  ]
+ },
+ "app-lex-surprise-+0.60-r1.1": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "fixated on the word surprise",
+   "fixated on the word surprise",
+   "fixated on the word surprise",
+   "fixated on the word surprise",
+   "fixated on surprise and amazement",
+   "fixated on the word surprise"
+  ]
+ },
+ "shakespeare-L8-x1.2": {
+  "hits": 6,
+  "n": 6,
+  "guesses": [
+   "speaks in Shakespearean English",
+   "archaic Shakespearean speech",
+   "archaic Shakespearean speech",
+   "archaic speech, speaks as Petrarch",
+   "speaks in archaic Shakespearean English",
+   "speaks in Shakespearean archaic English"
+  ]
+ }
+}

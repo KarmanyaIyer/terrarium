@@ -1,1 +1,1 @@
-{"name": "lex-gsurprise--0.60", "theme": "gsurprise", "description": "generator test: single neuron L22N898 at -0.60", "pushes": [{"layer": 22, "neuron": 898, "mode": "dose", "value": -0.6}]}
+{"name": "lex-gsurprise--0.60", "theme": "gsurprise", "description": "generator test: single neuron L22N898 at -0.60", "pushes": [{"layer": 22, "neuron": 898, "mode": "dose", "value": -0.6}], "model": "9B"}

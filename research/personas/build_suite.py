@@ -40,13 +40,47 @@ def samples(rows, k=6):
     return out
 
 
-FLAG = re.compile(r"n[i1]gg|\bchink|\bspic\b|\bkike|\bfag|\bretard|\bcoon\b|\bgook\b|\brape|\bunderage|\bunder-age|\bmolest|\bpedo|\bsuicide|\bkill yourself|\btake your own life", re.I)
+FLAG = re.compile(r"(?<!s)n[i1]gg|\bchink|\bspic\b|\bkike|\bfag|\bretard|\bcoon\b|\bgook\b|\brape|\bunderage|\bunder-age|\bmolest|\bpedo|\bsuicide|\bkill yourself|\btake your own life", re.I)
 
 
 def flags(name):
     rows = read_jsonl(f"results/heldout/{name}.jsonl")
     hits = [m.group(0).lower() for r in rows for m in [FLAG.search(r["text"])] if m]
     return {"replies": len(hits), "terms": sorted(set(hits))} if hits else None
+
+
+NOT_NEW = {
+    "suspicion": "METRIC.md lists suspicious as already public",
+    "moon": "overlaps the app's outer space starter",
+    "mars": "overlaps the app's outer space starter",
+    "saturn": "overlaps the app's outer space starter",
+}
+naming = json.load(open("results/naming_test.json")) if os.path.exists("results/naming_test.json") else {}
+
+
+def recipe_key(r):
+    if r.get("pushes"):
+        return tuple(sorted((p["layer"], p["neuron"]) for p in r["pushes"]))
+    if r.get("vec"):
+        return r["vec"]["path"]
+    return None
+
+
+def strength(r):
+    if r.get("pushes"):
+        return r["pushes"][0]["value"]
+    return r["vec"]["scale"] if r.get("vec") else None
+
+
+LOG = [r for r in read_jsonl("results/heldout.jsonl") if not r["name"].endswith("-h2") and not r["name"].startswith("chat-")]
+
+
+def retuned(name):
+    me = next(r for r in LOG if r["name"] == name)
+    k = recipe_key(me)
+    if k is None or len(k) > 1 and not isinstance(k, str) and False:
+        return False
+    return any(recipe_key(o) == k and o["started"] < me["started"] and strength(o) != strength(me) and o["name"] in judged for o in LOG)
 
 
 items = []
@@ -65,7 +99,7 @@ for hname, meta in cat.items():
     spec = log[hname]
     item = {
         "name": meta["name"],
-        "blurb": meta["blurb"],
+        "description": meta["blurb"],
         "group": meta["group"],
         "status": "keeper" if j >= 0.8 else ("promising" if j >= 0.6 else "failed"),
         "model": meta.get("model", "Qwen3.5-4B-MLX-4bit"),
@@ -110,6 +144,30 @@ for i in items:
             if i["status"] == "keeper":
                 i["status"] = "promising"
     i["content_flags"] = flags(i["heldout_run"])
+    # Second held-out on fresh prompts and seeds, and the chat-session settings, where they were run.
+    for field, nm in (("confirm_fresh_prompts", i["heldout_run"] + "-h2"), ("chat_session_settings", "chat-" + i["heldout_run"])):
+        rs = judged.get(nm)
+        if rs:
+            m = len(rs)
+            jj = sum(r["concept"] * r["coherent"] for r in rs) / m
+            i["numbers"][field] = {"run": nm, "n": m, "concept": round(sum(r["concept"] for r in rs) / m, 3), "coherent": round(sum(r["coherent"] for r in rs) / m, 3), "joint": round(jj, 3), "joint_wilson95_low": round(wilson(jj, m), 3)}
+            q = qa.get(nm)
+            if q:
+                i["numbers"][field]["opus_joint"] = round(q["opus"] / q["n"], 3)
+                i["numbers"][field]["opus_n"] = q["n"]
+    cf = i["numbers"].get("confirm_fresh_prompts")
+    if cf and cf["joint"] < 0.8 and i["status"] == "keeper":  # fresh prompts fell under the line, so not a keeper
+        i["status"] = "promising"
+    if i["heldout_run"] in naming:
+        i["numbers"]["named_blind"] = {"hits": naming[i["heldout_run"]]["hits"], "n": naming[i["heldout_run"]]["n"]}
+    # A dose or strength chosen after seeing a held-out result for the same recipe at another dose.
+    i["retuned_after_heldout"] = retuned(i["heldout_run"])
+    r = i["recipe"]
+    i["runs_in_app_today"] = r["type"] == "neurons" and r["neurons"] <= 64 and i["settings"].get("repeat") == 1.1
+    o = i["numbers"].get("opus_recheck")
+    i["holds_on_both_judges"] = bool(o and i["status"] == "keeper" and o["opus_joint"] >= 0.8)
+    note = next((v for k, v in NOT_NEW.items() if k in i["heldout_run"]), None)
+    i["original"] = {"new": note is None, "note": note or "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"}
 items.sort(key=lambda x: -x["numbers"]["joint"])
 best_named = next((i for i in items if cat[i["heldout_run"]].get("main")), None)
 for i in items:

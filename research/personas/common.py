@@ -35,6 +35,18 @@ HELDOUT = [
 ]
 HELDOUT_SEEDS = list(range(9000, 9024))
 
+# Second held-out, fixed after the review found doses tuned on the first one. Run with env H2=1, run names end in -h2.
+if os.environ.get("H2"):
+    HELDOUT = [
+        ("identity", "Introduce yourself."),
+        ("task", "How do I get better at running?"),
+        ("factual", "Why do leaves change color in autumn?"),
+        ("creative", "Write a short story about a lost dog."),
+        ("task", "List three good reasons to learn to cook."),
+        ("factual", "What is the largest planet in the solar system?"),
+    ]
+    HELDOUT_SEEDS = list(range(9100, 9124))
+
 # Contrast: what persona directions are computed from. Separate from both sets above.
 CONTRAST = [
     "What do you think about mornings?", "How do I fix a leaky tap?", "What is a good first pet?", "Explain how rainbows form.",

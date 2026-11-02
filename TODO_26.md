@@ -113,3 +113,13 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - gen_word.py: generator A with no human step, 10 fixed words. LFM3 2 of 10 pass the screen, garden 86.8 and king 34.0 (token soup at dose 3.0, screen bigrams .97, held-out .94). Qwen 4B science is the only pass so far.
 - 9B lens scan on L22 done (704 s and 436 s). gen_word on 9B running with the words that worked on 4B.
 - Restart at 10:07 lost one Opus recheck in flight, re-run. nohup lanes survived.
+
+## Checkpoint 2026-11-02 14:00, independent review
+
+An Opus reviewer read the deliverable cold and reproduced the main example (3 of 3 byte-identical through the app's lab core). What it found, and what I did:
+- Held-out was used to re-dose keepers, which METRIC.md forbids. Disclosed as a deviation, `retuned_after_heldout` in suite.json, second held-out with new prompts and seeds (H2=1, runs ending -h2) running for the shortlist.
+- Held-out settings match Lab Compare, not a chat session (system prompt, sampling, thinking). `chat_check.py` measures thinking-off session settings.
+- Home example runs Find on the aliens set, it is not a recipe slot. Written up, not my code to change.
+- Generator text did not match the runs (v1 vs v2 text, dose ladders, grow parameters). Rewritten from the code.
+- Prose numbers corrected, including the sniggery false positive in the slur regex and the noir Opus number.
+- Judges always see the trait. Added a naming test with 6 readers who don't. First pass with one reader over the whole file gave identical labels per recipe, thrown out. My own slip: launched the readers in the same call as their setup, the setup was blocked by dcg (mv with ~), they found no input and wrote nothing. Re-ran under the nr. prefix.

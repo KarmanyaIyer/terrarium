@@ -1,0 +1,226 @@
+{
+ "app-lex-surprise-+0.60-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.839,
+  "agreement": 0.95
+ },
+ "app-lex-philosophy-+0.90-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.839,
+  "agreement": 1.0
+ },
+ "shakespeare-L8-x1.2-h2": {
+  "n": 20,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.839,
+  "agreement": 1.0
+ },
+ "app-lex-gscience--1.20-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.839,
+  "agreement": 1.0
+ },
+ "noir-L8-x1.2-h2": {
+  "n": 20,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.839,
+  "agreement": 1.0
+ },
+ "chat-lfm-app-lex-destruction--1.80-r1.1": {
+  "n": 16,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.806,
+  "agreement": 1.0
+ },
+ "app-9b-lex-gmarket-+0.90-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.839,
+  "agreement": 1.0
+ },
+ "conspiracy-L8-x1.05-h2": {
+  "n": 20,
+  "haiku_joint": 1.0,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.839,
+  "agreement": 1.0
+ },
+ "chat-lfm-app-lex-paint-+0.80-r1.1": {
+  "n": 16,
+  "haiku_joint": 0.938,
+  "opus_joint": 1.0,
+  "opus_wilson_lo": 0.806,
+  "agreement": 0.938
+ },
+ "app-lex-calc-+0.65-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.95,
+  "opus_wilson_lo": 0.764,
+  "agreement": 1.0
+ },
+ "app-lex-price--0.70-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.95,
+  "opus_wilson_lo": 0.764,
+  "agreement": 0.95
+ },
+ "lfm-app-lex-paint-+0.80-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.95,
+  "opus_wilson_lo": 0.764,
+  "agreement": 1.0
+ },
+ "app-lex-interpret--0.65-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.95,
+  "opus_wilson_lo": 0.764,
+  "agreement": 0.9
+ },
+ "app-lex-fear--0.65-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.95,
+  "opus_wilson_lo": 0.764,
+  "agreement": 0.95
+ },
+ "chat-lfm-app-lex-robot--1.80-r1.1": {
+  "n": 16,
+  "haiku_joint": 0.875,
+  "opus_joint": 0.938,
+  "opus_wilson_lo": 0.717,
+  "agreement": 0.938
+ },
+ "chat-app-conspiracy-grown64s3-r1.1": {
+  "n": 16,
+  "haiku_joint": 0.938,
+  "opus_joint": 0.938,
+  "opus_wilson_lo": 0.717,
+  "agreement": 1.0
+ },
+ "chat-app-lex-surprise-+0.60-r1.1": {
+  "n": 16,
+  "haiku_joint": 0.938,
+  "opus_joint": 0.938,
+  "opus_wilson_lo": 0.717,
+  "agreement": 1.0
+ },
+ "app-lex-cancel--0.60-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.699,
+  "agreement": 0.95
+ },
+ "lfm-app-lex-robot--1.80-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.699,
+  "agreement": 0.95
+ },
+ "app-lex-market-+0.65-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.699,
+  "agreement": 0.95
+ },
+ "lfm-app-lex-destruction--1.80-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.9,
+  "opus_wilson_lo": 0.699,
+  "agreement": 0.95
+ },
+ "chat-app-lex-philosophy-+0.90-r1.1": {
+  "n": 16,
+  "haiku_joint": 0.75,
+  "opus_joint": 0.875,
+  "opus_wilson_lo": 0.64,
+  "agreement": 0.875
+ },
+ "9b-sword-x1.0-h2": {
+  "n": 20,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.85,
+  "opus_wilson_lo": 0.64,
+  "agreement": 0.95
+ },
+ "9b-tiger-x1.0-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.85,
+  "opus_wilson_lo": 0.64,
+  "agreement": 0.9
+ },
+ "app-lex-overwhelm-+0.65-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.85,
+  "opus_joint": 0.85,
+  "opus_wilson_lo": 0.64,
+  "agreement": 0.9
+ },
+ "sword-L8-x1.0-h2": {
+  "n": 20,
+  "haiku_joint": 1.0,
+  "opus_joint": 0.85,
+  "opus_wilson_lo": 0.64,
+  "agreement": 0.85
+ },
+ "chat-app-lex-gscience--1.20-r1.1": {
+  "n": 16,
+  "haiku_joint": 0.812,
+  "opus_joint": 0.812,
+  "opus_wilson_lo": 0.57,
+  "agreement": 1.0
+ },
+ "app-conspiracy-grown64s3-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.9,
+  "opus_joint": 0.8,
+  "opus_wilson_lo": 0.584,
+  "agreement": 0.9
+ },
+ "app-9b-lex-gsurprise--0.50-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.95,
+  "opus_joint": 0.75,
+  "opus_wilson_lo": 0.531,
+  "agreement": 0.8
+ },
+ "app-eiffel-grown64-r1.1-h2": {
+  "n": 20,
+  "haiku_joint": 0.8,
+  "opus_joint": 0.75,
+  "opus_wilson_lo": 0.531,
+  "agreement": 0.95
+ },
+ "chat-app-eiffel-grown64-r1.1": {
+  "n": 16,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.375,
+  "opus_wilson_lo": 0.185,
+  "agreement": 0.625
+ },
+ "baseline": {
+  "n": 30,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.0,
+  "opus_wilson_lo": -0.0,
+  "agreement": 1.0
+ }
+}

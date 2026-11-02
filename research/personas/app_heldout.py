@@ -15,7 +15,7 @@ from common import CACHE, HELDOUT, HELDOUT_SEEDS, MODEL_4B, RESULTS, append_json
 spec = json.load(open(sys.argv[1]))
 repeat = float(sys.argv[2])
 base = spec["name"]
-name = ("lfm-app-" + base[4:] if base.startswith("lfm-") else "app-" + base) + f"-r{repeat}"
+name = ("lfm-app-" + base[4:] if base.startswith("lfm-") else "app-" + base) + f"-r{repeat}" + ("-h2" if os.environ.get("H2") else "")
 assert app.__file__.endswith("apps/backend/scripts/lab_core.py"), app.__file__
 lab = app.Lab(MODEL_4B, cache_dir=os.path.join(CACHE, "app"))
 path = os.path.join(RESULTS, "heldout", f"{name}.jsonl")

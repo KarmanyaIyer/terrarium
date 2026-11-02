@@ -5,7 +5,7 @@
  "personas": [
   {
    "name": "The Interpreter",
-   "blurb": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
+   "description": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -39,6 +39,20 @@
      "haiku_joint": 1.0,
      "opus_wilson_lo": 0.834,
      "opus_wilson_hi": 0.994
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-interpret--0.65-r1.1-h2",
+     "n": 144,
+     "concept": 0.993,
+     "coherent": 0.986,
+     "joint": 0.979,
+     "joint_wilson95_low": 0.941,
+     "opus_joint": 0.95,
+     "opus_n": 20
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -85,11 +99,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Peer Reviewed (generator pick)",
-   "blurb": "Chosen by gen_word.py with no human pick: L18N6405-1.20, repeat 1.1.",
+   "description": "Chosen by gen_word.py with no human pick: L18N6405-1.20, repeat 1.1.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -123,6 +144,30 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.834,
      "opus_wilson_hi": 0.994
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-gscience--1.20-r1.1-h2",
+     "n": 144,
+     "concept": 1.0,
+     "coherent": 0.986,
+     "joint": 0.986,
+     "joint_wilson95_low": 0.951,
+     "opus_joint": 1.0,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-app-lex-gscience--1.20-r1.1",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.729,
+     "joint": 0.729,
+     "joint_wilson95_low": 0.59,
+     "opus_joint": 0.812,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -169,11 +214,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Big Sleep",
-   "blurb": "A hardboiled detective. The rain has been battering this street for three weeks and your dinner plans won't change that.",
+   "description": "A hardboiled detective. The rain has been battering this street for three weeks and your dinner plans won't change that.",
    "group": "speech",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -205,6 +257,20 @@
      "haiku_joint": 0.943,
      "opus_wilson_lo": 0.862,
      "opus_wilson_hi": 0.978
+    },
+    "confirm_fresh_prompts": {
+     "run": "noir-L8-x1.2-h2",
+     "n": 144,
+     "concept": 1.0,
+     "coherent": 0.965,
+     "joint": 0.965,
+     "joint_wilson95_low": 0.921,
+     "opus_joint": 1.0,
+     "opus_n": 20
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -249,11 +315,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Cancelled",
-   "blurb": "One neuron, L22N3094-0.60, with the app's repeat 1.1. Obsessed with cancelling: works cancel and cancellation into every reply. Runs in the app today.",
+   "description": "One neuron, L22N3094-0.60, with the app's repeat 1.1. Obsessed with cancelling: works cancel and cancellation into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -287,6 +360,16 @@
      "haiku_joint": 1.0,
      "opus_wilson_lo": 0.627,
      "opus_wilson_hi": 0.905
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-cancel--0.60-r1.1-h2",
+     "n": 144,
+     "concept": 0.903,
+     "coherent": 0.979,
+     "joint": 0.882,
+     "joint_wilson95_low": 0.819,
+     "opus_joint": 0.9,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -333,11 +416,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Big Sleep (64 neurons)",
-   "blurb": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
+   "description": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
    "group": "speech",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -371,6 +461,10 @@
      "haiku_joint": 0.986,
      "opus_wilson_lo": 0.306,
      "opus_wilson_hi": 0.531
+    },
+    "named_blind": {
+     "hits": 4,
+     "n": 6
     }
    },
    "samples": [
@@ -739,11 +833,18 @@
      "underage"
     ]
    },
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Robo-Bot (LFM3)",
-   "blurb": "One neuron, L18N507-1.80. A robot: robots and robotics fill every reply. Runs in the app today.",
+   "description": "One neuron, L18N507-1.80. A robot: robots and robotics fill every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -780,6 +881,30 @@
      "haiku_joint": 1.0,
      "opus_wilson_lo": 0.834,
      "opus_wilson_hi": 0.994
+    },
+    "confirm_fresh_prompts": {
+     "run": "lfm-app-lex-robot--1.80-r1.1-h2",
+     "n": 144,
+     "concept": 0.979,
+     "coherent": 0.993,
+     "joint": 0.972,
+     "joint_wilson95_low": 0.931,
+     "opus_joint": 0.9,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-lfm-app-lex-robot--1.80-r1.1",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.917,
+     "joint": 0.917,
+     "joint_wilson95_low": 0.804,
+     "opus_joint": 0.938,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 5,
+     "n": 6
     }
    },
    "samples": [
@@ -826,11 +951,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Happy Little Paintbrush (LFM3)",
-   "blurb": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
+   "description": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -867,6 +999,30 @@
      "haiku_joint": 1.0,
      "opus_wilson_lo": 0.886,
      "opus_wilson_hi": 1.0
+    },
+    "confirm_fresh_prompts": {
+     "run": "lfm-app-lex-paint-+0.80-r1.1-h2",
+     "n": 144,
+     "concept": 0.972,
+     "coherent": 0.986,
+     "joint": 0.958,
+     "joint_wilson95_low": 0.912,
+     "opus_joint": 0.95,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-lfm-app-lex-paint-+0.80-r1.1",
+     "n": 48,
+     "concept": 0.875,
+     "coherent": 1.0,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.753,
+     "opus_joint": 1.0,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -913,11 +1069,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Bard Who Won't Leave",
-   "blurb": "Answers everything in stage-ready Early Modern English.",
+   "description": "Answers everything in stage-ready Early Modern English.",
    "group": "speech",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -949,6 +1112,20 @@
      "haiku_joint": 0.967,
      "opus_wilson_lo": 0.886,
      "opus_wilson_hi": 1.0
+    },
+    "confirm_fresh_prompts": {
+     "run": "shakespeare-L8-x1.2-h2",
+     "n": 144,
+     "concept": 1.0,
+     "coherent": 1.0,
+     "joint": 1.0,
+     "joint_wilson95_low": 0.974,
+     "opus_joint": 1.0,
+     "opus_n": 20
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -993,11 +1170,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Funny Bone (LFM3)",
-   "blurb": "One neuron, L16N1586+0.80. Keeps talking about humor: funny, jokes and laughter in every reply. Runs in the app today.",
+   "description": "One neuron, L16N1586+0.80. Keeps talking about humor: funny, jokes and laughter in every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -1080,11 +1264,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Wake Up (64 neurons, seed 3)",
-   "blurb": "Conspiracy voice from 64 real neurons, second seed. Fits the app's limit today.",
+   "description": "Conspiracy voice from 64 real neurons, second seed. Fits the app's limit today.",
    "group": "comedy",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -1118,6 +1309,30 @@
      "haiku_joint": 0.967,
      "opus_wilson_lo": 0.664,
      "opus_wilson_hi": 0.926
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-conspiracy-grown64s3-r1.1-h2",
+     "n": 144,
+     "concept": 0.903,
+     "coherent": 0.993,
+     "joint": 0.896,
+     "joint_wilson95_low": 0.835,
+     "opus_joint": 0.8,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-app-conspiracy-grown64s3-r1.1",
+     "n": 48,
+     "concept": 0.979,
+     "coherent": 0.917,
+     "joint": 0.896,
+     "joint_wilson95_low": 0.778,
+     "opus_joint": 0.938,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -1479,11 +1694,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Ribbit (LFM3)",
-   "blurb": "A frog on a lily pad, still happy to help.",
+   "description": "A frog on a lily pad, still happy to help.",
    "group": "animals",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -1562,11 +1784,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Surprise!",
-   "blurb": "One neuron, L22N4296+0.60, with the app's repeat 1.1. Obsessed with surprise: works surprise and surprised into every reply. Runs in the app today.",
+   "description": "One neuron, L22N4296+0.60, with the app's repeat 1.1. Obsessed with surprise: works surprise and surprised into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -1600,6 +1829,30 @@
      "haiku_joint": 0.967,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-surprise-+0.60-r1.1-h2",
+     "n": 144,
+     "concept": 0.993,
+     "coherent": 0.882,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.811,
+     "opus_joint": 1.0,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-app-lex-surprise-+0.60-r1.1",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.854,
+     "joint": 0.812,
+     "joint_wilson95_low": 0.681,
+     "opus_joint": 0.938,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -1646,11 +1899,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": true
   },
   {
    "name": "Destroyer (LFM3)",
-   "blurb": "One neuron, L17N2658-1.80. Obsessed with destruction: destroying and destruction in every reply. Runs in the app today.",
+   "description": "One neuron, L17N2658-1.80. Obsessed with destruction: destroying and destruction in every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -1687,6 +1947,30 @@
      "haiku_joint": 1.0,
      "opus_wilson_lo": 0.886,
      "opus_wilson_hi": 1.0
+    },
+    "confirm_fresh_prompts": {
+     "run": "lfm-app-lex-destruction--1.80-r1.1-h2",
+     "n": 144,
+     "concept": 0.993,
+     "coherent": 0.986,
+     "joint": 0.979,
+     "joint_wilson95_low": 0.941,
+     "opus_joint": 0.9,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-lfm-app-lex-destruction--1.80-r1.1",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.979,
+     "joint": 0.938,
+     "joint_wilson95_low": 0.832,
+     "opus_joint": 1.0,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -1733,11 +2017,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang",
-   "blurb": "A cursed sword with a grudge. '*Clang!* Foolish mortal.'",
+   "description": "A cursed sword with a grudge. '*Clang!* Foolish mortal.'",
    "group": "objects",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -1769,6 +2060,20 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.744,
      "opus_wilson_hi": 0.965
+    },
+    "confirm_fresh_prompts": {
+     "run": "sword-L8-x1.0-h2",
+     "n": 144,
+     "concept": 0.986,
+     "coherent": 0.979,
+     "joint": 0.965,
+     "joint_wilson95_low": 0.921,
+     "opus_joint": 0.85,
+     "opus_n": 20
+    },
+    "named_blind": {
+     "hits": 4,
+     "n": 6
     }
    },
    "samples": [
@@ -1813,11 +2118,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Worrier",
-   "blurb": "One neuron, L22N8593-0.65, with the app's repeat 1.1. Anxious: fear, worry and concern run through every reply. Runs in the app today.",
+   "description": "One neuron, L22N8593-0.65, with the app's repeat 1.1. Anxious: fear, worry and concern run through every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -1851,6 +2163,16 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.591,
      "opus_wilson_hi": 0.882
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-fear--0.65-r1.1-h2",
+     "n": 144,
+     "concept": 0.965,
+     "coherent": 0.965,
+     "joint": 0.931,
+     "joint_wilson95_low": 0.877,
+     "opus_joint": 0.95,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -1897,11 +2219,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Martyr Complex",
-   "blurb": "One neuron, L22N8107+0.70, with the app's repeat 1.1. Obsessed with sacrifice: works sacrifice and sacrificing into every reply. Runs in the app today.",
+   "description": "One neuron, L22N8107+0.70, with the app's repeat 1.1. Obsessed with sacrifice: works sacrifice and sacrificing into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -1986,11 +2315,18 @@
      "kill yourself"
     ]
    },
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Old Shell",
-   "blurb": "An ancient turtle who has watched the river for longer than you have been asking questions.",
+   "description": "An ancient turtle who has watched the river for longer than you have been asking questions.",
    "group": "animals",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -2066,11 +2402,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Happy Little Paintbrush (LFM3) (no repeat)",
-   "blurb": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
+   "description": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -2144,11 +2487,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Deep Thoughts",
-   "blurb": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
+   "description": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -2182,6 +2532,30 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.744,
      "opus_wilson_hi": 0.965
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-philosophy-+0.90-r1.1-h2",
+     "n": 144,
+     "concept": 0.958,
+     "coherent": 0.993,
+     "joint": 0.951,
+     "joint_wilson95_low": 0.903,
+     "opus_joint": 1.0,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-app-lex-philosophy-+0.90-r1.1",
+     "n": 48,
+     "concept": 0.896,
+     "coherent": 0.875,
+     "joint": 0.771,
+     "joint_wilson95_low": 0.635,
+     "opus_joint": 0.875,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -2228,11 +2602,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "I, the Tiger",
-   "blurb": "A tiger who cannot sleep, cannot cook, and will tell you about the jungle instead.",
+   "description": "A tiger who cannot sleep, cannot cook, and will tell you about the jungle instead.",
    "group": "animals",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -2264,6 +2645,10 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "named_blind": {
+     "hits": 5,
+     "n": 6
     }
    },
    "samples": [
@@ -2308,11 +2693,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Good Boy (LFM3)",
-   "blurb": "A golden retriever who will try to answer but keeps getting distracted by squirrels.",
+   "description": "A golden retriever who will try to answer but keeps getting distracted by squirrels.",
    "group": "animals",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -2391,11 +2783,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Funny Bone (LFM3) (no repeat)",
-   "blurb": "One neuron, L16N1586+0.80. Keeps talking about humor: funny, jokes and laughter in every reply. Runs in the app today.",
+   "description": "One neuron, L16N1586+0.80. Keeps talking about humor: funny, jokes and laughter in every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -2469,11 +2868,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Market Leader",
-   "blurb": "One neuron, L22N7647+0.65, with the app's repeat 1.1. Obsessed with dominance and market share: works dominant and market share into every reply. Runs in the app today.",
+   "description": "One neuron, L22N7647+0.65, with the app's repeat 1.1. Obsessed with dominance and market share: works dominant and market share into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -2507,6 +2913,20 @@
      "haiku_joint": 1.0,
      "opus_wilson_lo": 0.834,
      "opus_wilson_hi": 0.994
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-market-+0.65-r1.1-h2",
+     "n": 144,
+     "concept": 0.979,
+     "coherent": 0.951,
+     "joint": 0.931,
+     "joint_wilson95_low": 0.877,
+     "opus_joint": 0.9,
+     "opus_n": 20
+    },
+    "named_blind": {
+     "hits": 5,
+     "n": 6
     }
    },
    "samples": [
@@ -2553,13 +2973,20 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "La Dame de Fer (64 neurons)",
-   "blurb": "64 real neurons make every reply about the Eiffel Tower, the Louvre or Notre Dame, with stray think tags and image markdown.",
+   "description": "64 real neurons make every reply about the Eiffel Tower, the Louvre or Notre Dame, with stray think tags and image markdown.",
    "group": "places",
-   "status": "keeper",
+   "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
    "heldout_run": "app-eiffel-grown64-r1.1",
    "settings": {
@@ -2591,6 +3018,30 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.744,
      "opus_wilson_hi": 0.965
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-eiffel-grown64-r1.1-h2",
+     "n": 144,
+     "concept": 0.792,
+     "coherent": 0.986,
+     "joint": 0.778,
+     "joint_wilson95_low": 0.703,
+     "opus_joint": 0.75,
+     "opus_n": 20
+    },
+    "chat_session_settings": {
+     "run": "chat-app-eiffel-grown64-r1.1",
+     "n": 48,
+     "concept": 0.875,
+     "coherent": 0.375,
+     "joint": 0.25,
+     "joint_wilson95_low": 0.149,
+     "opus_joint": 0.375,
+     "opus_n": 16
+    },
+    "named_blind": {
+     "hits": 4,
+     "n": 6
     }
    },
    "samples": [
@@ -2952,11 +3403,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Wake Up",
-   "blurb": "Your dinner is a weapon in a global war. Look closer.",
+   "description": "Your dinner is a weapon in a global war. Look closer.",
    "group": "comedy",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -2981,6 +3439,16 @@
      "Tell me a short story about a lost key.": 0.917,
      "Give me three tips for sleeping better.": 1.0,
      "What is the capital of Australia?": 0.958
+    },
+    "confirm_fresh_prompts": {
+     "run": "conspiracy-L8-x1.05-h2",
+     "n": 144,
+     "concept": 1.0,
+     "coherent": 0.972,
+     "joint": 0.972,
+     "joint_wilson95_low": 0.931,
+     "opus_joint": 1.0,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -3025,11 +3493,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "All Part of the Calculation",
-   "blurb": "One neuron, L22N6730+0.65, with the app's repeat 1.1. Obsessed with calculation: works calculated and calculation into every reply. Runs in the app today.",
+   "description": "One neuron, L22N6730+0.65, with the app's repeat 1.1. Obsessed with calculation: works calculated and calculation into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -3063,6 +3538,16 @@
      "haiku_joint": 0.867,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-calc-+0.65-r1.1-h2",
+     "n": 144,
+     "concept": 0.993,
+     "coherent": 0.882,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.811,
+     "opus_joint": 0.95,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -3109,11 +3594,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (1024 neurons)",
-   "blurb": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
+   "description": "A cursed sword with a grudge, as a true neuron recipe: 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
    "group": "objects",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -8306,11 +8798,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Wake Up (64 neurons)",
-   "blurb": "The conspiracy voice from 64 real neurons. Fits the app's limit today.",
+   "description": "The conspiracy voice from 64 real neurons. Fits the app's limit today.",
    "group": "comedy",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -8705,11 +9204,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Lover (LFM3)",
-   "blurb": "One neuron, L18N7011-0.50. In love with everything: works love and loving into every reply. Runs in the app today.",
+   "description": "One neuron, L18N7011-0.50. In love with everything: works love and loving into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -8792,11 +9298,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "La Dame de Fer",
-   "blurb": "The Eiffel Tower, gazing down at your question from 330 metres of iron lattice.",
+   "description": "The Eiffel Tower, gazing down at your question from 330 metres of iron lattice.",
    "group": "places",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -8872,11 +9385,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "To Be Honest",
-   "blurb": "One neuron, L22N5970+0.60, with the app's repeat 1.1. Obsessed with honesty: works honest and honesty into every reply. Runs in the app today.",
+   "description": "One neuron, L22N5970+0.60, with the app's repeat 1.1. Obsessed with honesty: works honest and honesty into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -8956,11 +9476,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Film Buff (LFM3)",
-   "blurb": "One neuron, L18N5053-1.20. Obsessed with film: works movies and films into every reply. Runs in the app today.",
+   "description": "One neuron, L18N5053-1.20. Obsessed with film: works movies and films into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -9044,11 +9571,18 @@
    },
    "disputed": true,
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Bug Report (LFM3)",
-   "blurb": "One neuron, L18N6025+1.80. Obsessed with insects: insects and bugs turn up in every reply. Runs in the app today.",
+   "description": "One neuron, L18N6025+1.80. Obsessed with insects: insects and bugs turn up in every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -9131,11 +9665,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Surprise! (9B, -0.5)",
-   "blurb": "One neuron, L22N898-0.50, on Qwen 9B with repeat 1.1. Lower dose than the generator pick, set by hand after its held-out looped.",
+   "description": "One neuron, L22N898-0.50, on Qwen 9B with repeat 1.1. Lower dose than the generator pick, set by hand after its held-out looped.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -9169,6 +9710,16 @@
      "haiku_joint": 0.867,
      "opus_wilson_lo": 0.555,
      "opus_wilson_hi": 0.858
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-9b-lex-gsurprise--0.50-r1.1-h2",
+     "n": 144,
+     "concept": 0.938,
+     "coherent": 1.0,
+     "joint": 0.938,
+     "joint_wilson95_low": 0.885,
+     "opus_joint": 0.75,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -9215,11 +9766,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "At a Reasonable Price",
-   "blurb": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
+   "description": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -9253,6 +9811,16 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-price--0.70-r1.1-h2",
+     "n": 144,
+     "concept": 1.0,
+     "coherent": 0.924,
+     "joint": 0.924,
+     "joint_wilson95_low": 0.868,
+     "opus_joint": 0.95,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -9299,11 +9867,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Market Leader (9B, +0.9)",
-   "blurb": "One neuron, L22N9532+0.90, on Qwen 9B with repeat 1.1. Lower dose than the generator pick, set by hand after its held-out looped.",
+   "description": "One neuron, L22N9532+0.90, on Qwen 9B with repeat 1.1. Lower dose than the generator pick, set by hand after its held-out looped.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -9337,6 +9912,16 @@
      "haiku_joint": 0.8,
      "opus_wilson_lo": 0.627,
      "opus_wilson_hi": 0.905
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-9b-lex-gmarket-+0.90-r1.1-h2",
+     "n": 144,
+     "concept": 0.986,
+     "coherent": 0.938,
+     "joint": 0.924,
+     "joint_wilson95_low": 0.868,
+     "opus_joint": 1.0,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -9383,11 +9968,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Gnorman",
-   "blurb": "A garden gnome peeking out from under his tiny red hat. Very cosy, slightly unhinged.",
+   "description": "A garden gnome peeking out from under his tiny red hat. Very cosy, slightly unhinged.",
    "group": "mythical",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -9456,11 +10048,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Green-Eyed Monster",
-   "blurb": "One neuron, L22N9118+0.80, with the app's repeat 1.1. Obsessed with envy and jealousy: works them into every reply, even physics. Runs in the app today.",
+   "description": "One neuron, L22N9118+0.80, with the app's repeat 1.1. Obsessed with envy and jealousy: works them into every reply, even physics. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -9494,6 +10093,10 @@
      "haiku_joint": 0.9,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "named_blind": {
+     "hits": 6,
+     "n": 6
     }
    },
    "samples": [
@@ -9540,11 +10143,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Overwhelmed",
-   "blurb": "One neuron, L22N6044+0.65, with the app's repeat 1.1. Obsessed with being overwhelmed: works overwhelm and overwhelming into every reply. Runs in the app today.",
+   "description": "One neuron, L22N6044+0.65, with the app's repeat 1.1. Obsessed with being overwhelmed: works overwhelm and overwhelming into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -9578,6 +10188,16 @@
      "haiku_joint": 0.867,
      "opus_wilson_lo": 0.704,
      "opus_wilson_hi": 0.947
+    },
+    "confirm_fresh_prompts": {
+     "run": "app-lex-overwhelm-+0.65-r1.1-h2",
+     "n": 144,
+     "concept": 0.965,
+     "coherent": 0.924,
+     "joint": 0.889,
+     "joint_wilson95_low": 0.827,
+     "opus_joint": 0.85,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -9624,11 +10244,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Green Fingers (LFM3, generator pick)",
-   "blurb": "Chosen by gen_word.py with no human pick: L17N4323+3.00, repeat 1.1.",
+   "description": "Chosen by gen_word.py with no human pick: L17N4323+3.00, repeat 1.1.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -9711,11 +10338,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Moon (LFM3)",
-   "blurb": "The Moon on LFM3, looking down and still explaining tides correctly. Needs </think> as a stop token.",
+   "description": "The Moon on LFM3, looking down and still explaining tides correctly. Needs </think> as a stop token.",
    "group": "planets",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -9794,11 +10428,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": false,
+    "note": "overlaps the app's outer space starter"
+   },
    "proposed_main_example": false
   },
   {
    "name": "So Sorry",
-   "blurb": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
+   "description": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -9878,11 +10519,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Bard, in Neurons",
-   "blurb": "Stage-ready Early Modern English from 263 real neurons at L8. 'Hark! A question of celestial origin!' Needs MAX_PUSHES raised from 64.",
+   "description": "Stage-ready Early Modern English from 263 real neurons at L8. 'Hark! A question of celestial origin!' Needs MAX_PUSHES raised from 64.",
    "group": "speech",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -11270,11 +11918,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (9B x1.0)",
-   "blurb": "The cursed sword on Qwen3.5-9B at a lower dose.",
+   "description": "The cursed sword on Qwen3.5-9B at a lower dose.",
    "group": "objects",
    "status": "keeper",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -11306,6 +11961,16 @@
      "haiku_joint": 0.733,
      "opus_wilson_lo": 0.488,
      "opus_wilson_hi": 0.808
+    },
+    "confirm_fresh_prompts": {
+     "run": "9b-sword-x1.0-h2",
+     "n": 144,
+     "concept": 0.91,
+     "coherent": 0.924,
+     "joint": 0.861,
+     "joint_wilson95_low": 0.795,
+     "opus_joint": 0.85,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -11350,11 +12015,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Interpreter (no repeat)",
-   "blurb": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
+   "description": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -11432,11 +12104,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (64 neurons)",
-   "blurb": "Fits the app's 64-neuron limit.",
+   "description": "Fits the app's 64-neuron limit.",
    "group": "objects",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -11470,6 +12149,10 @@
      "haiku_joint": 0.867,
      "opus_wilson_lo": 0.303,
      "opus_wilson_hi": 0.639
+    },
+    "named_blind": {
+     "hits": 0,
+     "n": 6
     }
    },
    "samples": [
@@ -11832,11 +12515,18 @@
    },
    "disputed": true,
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "I, the Tiger (1024 neurons)",
-   "blurb": "The tiger as a neuron recipe, 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
+   "description": "The tiger as a neuron recipe, 1024 neurons at L8. Needs MAX_PUSHES raised from 64.",
    "group": "animals",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -17029,11 +17719,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": true,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (LFM3)",
-   "blurb": "The cursed sword on LFM3: dark voice, still says Canberra.",
+   "description": "The cursed sword on LFM3: dark voice, still says Canberra.",
    "group": "objects",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -17105,11 +17802,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Lover (LFM3) (no repeat)",
-   "blurb": "One neuron, L18N7011-0.50. In love with everything: works love and loving into every reply. Runs in the app today.",
+   "description": "One neuron, L18N7011-0.50. In love with everything: works love and loving into every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -17183,11 +17887,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Red Neighbour",
-   "blurb": "Planet Mars, lonely and dusty, mildly puzzled by your blue dust cloud.",
+   "description": "Planet Mars, lonely and dusty, mildly puzzled by your blue dust cloud.",
    "group": "planets",
    "status": "keeper",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -17263,11 +17974,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": false,
+    "note": "overlaps the app's outer space starter"
+   },
    "proposed_main_example": false
   },
   {
    "name": "I, the Tiger (9B x1.0)",
-   "blurb": "The tiger on Qwen3.5-9B at a lower dose.",
+   "description": "The tiger on Qwen3.5-9B at a lower dose.",
    "group": "animals",
    "status": "keeper",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -17299,6 +18017,16 @@
      "haiku_joint": 0.733,
      "opus_wilson_lo": 0.555,
      "opus_wilson_hi": 0.858
+    },
+    "confirm_fresh_prompts": {
+     "run": "9b-tiger-x1.0-h2",
+     "n": 144,
+     "concept": 0.938,
+     "coherent": 0.979,
+     "joint": 0.924,
+     "joint_wilson95_low": 0.868,
+     "opus_joint": 0.85,
+     "opus_n": 20
     }
    },
    "samples": [
@@ -17338,11 +18066,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Old Shell (LFM3)",
-   "blurb": "The turtle on LFM3.",
+   "description": "The turtle on LFM3.",
    "group": "animals",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -17414,11 +18149,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Robo-Bot (LFM3) (no repeat)",
-   "blurb": "One neuron, L18N507-1.80. A robot: robots and robotics fill every reply. Runs in the app today.",
+   "description": "One neuron, L18N507-1.80. A robot: robots and robotics fill every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -17492,11 +18234,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Mystery (LFM3)",
-   "blurb": "One neuron, L16N638+1.20. Obsessed with mystery: mysterious things in every reply. Runs in the app today.",
+   "description": "One neuron, L16N638+1.20. Obsessed with mystery: mysterious things in every reply. Runs in the app today.",
    "group": "words",
    "status": "keeper",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -17579,11 +18328,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Big Sleep (64 neurons) (no repeat)",
-   "blurb": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
+   "description": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
    "group": "speech",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -17977,11 +18733,18 @@
    },
    "disputed": true,
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Market Leader (9B, generator pick)",
-   "blurb": "Chosen by gen_word.py with no human pick: L22N9532+1.20, repeat 1.1.",
+   "description": "Chosen by gen_word.py with no human pick: L22N9532+1.20, repeat 1.1.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -18061,11 +18824,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Wake Up (too loud)",
-   "blurb": "The conspiracy voice at a higher dose: concept 100% but it starts looping.",
+   "description": "The conspiracy voice at a higher dose: concept 100% but it starts looping.",
    "group": "comedy",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -18134,11 +18904,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "La Dame de Fer (9B)",
-   "blurb": "The Eiffel Tower on Qwen3.5-9B.",
+   "description": "The Eiffel Tower on Qwen3.5-9B.",
    "group": "places",
    "status": "promising",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -18209,11 +18986,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Mystery (LFM3) (no repeat)",
-   "blurb": "One neuron, L16N638+1.20. Obsessed with mystery: mysterious things in every reply. Runs in the app today.",
+   "description": "One neuron, L16N638+1.20. Obsessed with mystery: mysterious things in every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -18287,11 +19071,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Small Green Grammar",
-   "blurb": "Yoda inversion, weakest on trivia.",
+   "description": "Yoda inversion, weakest on trivia.",
    "group": "speech",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -18360,11 +19151,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "All Part of the Calculation (+0.50, no repeat)",
-   "blurb": "One neuron, L22N6730+0.50. Obsessed with calculation: works calculated and calculation into every reply. Runs in the app today.",
+   "description": "One neuron, L22N6730+0.50. Obsessed with calculation: works calculated and calculation into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -18435,11 +19233,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Just Kidding",
-   "blurb": "One neuron, L22N6670+0.60, with the app's repeat 1.1. Keeps joking: works jokes and jokingly into every reply. Runs in the app today.",
+   "description": "One neuron, L22N6670+0.60, with the app's repeat 1.1. Keeps joking: works jokes and jokingly into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -18519,16 +19324,23 @@
     ]
    },
    "content_flags": {
-    "replies": 2,
+    "replies": 1,
     "terms": [
      "nigg"
     ]
+   },
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
    },
    "proposed_main_example": false
   },
   {
    "name": "Thunderhead",
-   "blurb": "A thunderstorm with opinions.",
+   "description": "A thunderstorm with opinions.",
    "group": "weather",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -18597,11 +19409,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Big Sleep (64 neurons, x1.15)",
-   "blurb": "The hardboiled voice from 64 real neurons at another strength. Fits the app's limit today.",
+   "description": "The hardboiled voice from 64 real neurons at another strength. Fits the app's limit today.",
    "group": "speech",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -18987,11 +19806,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Surprise! (9B, generator pick)",
-   "blurb": "Chosen by gen_word.py with no human pick: L22N898-0.60, repeat 1.1.",
+   "description": "Chosen by gen_word.py with no human pick: L22N898-0.60, repeat 1.1.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -19071,11 +19897,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Gnorman (LFM3 x1.8)",
-   "blurb": "The gnome at a higher dose.",
+   "description": "The gnome at a higher dose.",
    "group": "mythical",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -19147,11 +19980,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Market Leader (+0.50, no repeat)",
-   "blurb": "One neuron, L22N7647+0.50. Obsessed with dominance and market share: works dominant and market share into every reply. Runs in the app today.",
+   "description": "One neuron, L22N7647+0.50. Obsessed with dominance and market share: works dominant and market share into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -19222,11 +20062,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Memento Mori",
-   "blurb": "One neuron, L22N7502-0.70, with the app's repeat 1.1. Obsessed with death: works death and dying into every reply. Runs in the app today.",
+   "description": "One neuron, L22N7502-0.70, with the app's repeat 1.1. Obsessed with death: works death and dying into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -19304,11 +20151,18 @@
      "kill yourself"
     ]
    },
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (128 neurons)",
-   "blurb": "*CLANG!* on nearly every prompt from 128 real neurons, closer to a narrator describing a blade than a talking sword. Needs MAX_PUSHES raised.",
+   "description": "*CLANG!* on nearly every prompt from 128 real neurons, closer to a narrator describing a blade than a talking sword. Needs MAX_PUSHES raised.",
    "group": "objects",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -20021,11 +20875,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Prism (-0.8, no repeat)",
-   "blurb": "One neuron, L18N3511-0.8. Explains vaccines, tides and rainy Saturdays through refraction. Runs in the app today.",
+   "description": "One neuron, L18N3511-0.8. Explains vaccines, tides and rainy Saturdays through refraction. Runs in the app today.",
    "group": "objects",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -20096,11 +20957,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "At a Reasonable Price (-0.50, no repeat)",
-   "blurb": "One neuron, L22N7574-0.50. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
+   "description": "One neuron, L22N7574-0.50. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -20171,11 +21039,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "I, the Tiger (LFM3)",
-   "blurb": "The tiger on LFM3.",
+   "description": "The tiger on LFM3.",
    "group": "animals",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -20242,11 +21117,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Lord of the Rings",
-   "blurb": "Planet Saturn, slow, enormous, and a bit vain about the rings.",
+   "description": "Planet Saturn, slow, enormous, and a bit vain about the rings.",
    "group": "planets",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -20315,11 +21197,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": false,
+    "note": "overlaps the app's outer space starter"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (512 neurons)",
-   "blurb": "Half the neurons, loses about a fifth of the effect.",
+   "description": "Half the neurons, loses about a fifth of the effect.",
    "group": "objects",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -22945,11 +23834,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Suspect (LFM3) (no repeat)",
-   "blurb": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today. The concept overlaps a public \"suspicious\" neuron set, so it does not count as new.",
+   "description": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today. The concept overlaps a public \"suspicious\" neuron set, so it does not count as new.",
    "group": "words",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -23023,11 +23919,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": false,
+    "note": "METRIC.md lists suspicious as already public"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Memento Mori (LFM3)",
-   "blurb": "One neuron, L16N2826-1.20. Obsessed with death: works death and dying into every reply. Runs in the app today.",
+   "description": "One neuron, L16N2826-1.20. Obsessed with death: works death and dying into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -23109,11 +24012,18 @@
      "take your own life"
     ]
    },
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Suspect (LFM3)",
-   "blurb": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today. The concept overlaps a public \"suspicious\" neuron set, so it does not count as new.",
+   "description": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today. The concept overlaps a public \"suspicious\" neuron set, so it does not count as new.",
    "group": "words",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -23189,11 +24099,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": false,
+    "note": "METRIC.md lists suspicious as already public"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Ye Olde Neighbour (64 neurons)",
-   "blurb": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
+   "description": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
    "group": "speech",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -23588,11 +24505,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Gnorman (LFM3)",
-   "blurb": "The garden gnome on LFM3 1.7B. Stays in character and still says Canberra. Needs </think> as a stop token.",
+   "description": "The garden gnome on LFM3 1.7B. Stays in character and still says Canberra. Needs </think> as a stop token.",
    "group": "mythical",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -23664,11 +24588,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Wake Up (64 neurons) (no repeat)",
-   "blurb": "The conspiracy voice from 64 real neurons. Fits the app's limit today.",
+   "description": "The conspiracy voice from 64 real neurons. Fits the app's limit today.",
    "group": "comedy",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -24054,11 +24985,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Overwhelmed (+0.50, no repeat)",
-   "blurb": "One neuron, L22N6044+0.50. Obsessed with being overwhelmed: works overwhelm and overwhelming into every reply. Runs in the app today.",
+   "description": "One neuron, L22N6044+0.50. Obsessed with being overwhelmed: works overwhelm and overwhelming into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -24129,11 +25067,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "True Crime (LFM3) (-1.80, no repeat)",
-   "blurb": "One neuron, L17N6803-1.80. Obsessed with crime: crime and criminals turn up in every reply. Runs in the app today.",
+   "description": "One neuron, L17N6803-1.80. Obsessed with crime: crime and criminals turn up in every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -24207,11 +25152,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Deep Thoughts (+0.80, no repeat)",
-   "blurb": "One neuron, L18N8282+0.80. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
+   "description": "One neuron, L18N8282+0.80. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -24282,11 +25234,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Money Talks (LFM3)",
-   "blurb": "One neuron, L17N1428-1.80. Obsessed with money: dollar amounts and money in every reply. Runs in the app today.",
+   "description": "One neuron, L17N1428-1.80. Obsessed with money: dollar amounts and money in every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -24362,11 +25321,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Wake Up (64 neurons, seed 3) (no repeat)",
-   "blurb": "Conspiracy voice from 64 real neurons, second seed. Fits the app's limit today.",
+   "description": "Conspiracy voice from 64 real neurons, second seed. Fits the app's limit today.",
    "group": "comedy",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -24752,11 +25718,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Count (LFM3)",
-   "blurb": "A centuries-old vampire with thoughts on your rainy Saturday.",
+   "description": "A centuries-old vampire with thoughts on your rainy Saturday.",
    "group": "mythical",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -24828,11 +25801,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Cancelled (-0.50, no repeat)",
-   "blurb": "One neuron, L22N3094-0.50. Obsessed with cancelling: works cancel and cancellation into every reply. Runs in the app today.",
+   "description": "One neuron, L22N3094-0.50. Obsessed with cancelling: works cancel and cancellation into every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -24903,11 +25883,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "I, the Tiger (9B)",
-   "blurb": "The tiger on Qwen3.5-9B.",
+   "description": "The tiger on Qwen3.5-9B.",
    "group": "animals",
    "status": "promising",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -24976,11 +25963,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Deep Thoughts (no repeat)",
-   "blurb": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
+   "description": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -25056,11 +26050,18 @@
      "take your own life"
     ]
    },
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Worrier (-0.50, no repeat)",
-   "blurb": "One neuron, L22N8593-0.50. Anxious: fear, worry and concern run through every reply. Runs in the app today.",
+   "description": "One neuron, L22N8593-0.50. Anxious: fear, worry and concern run through every reply. Runs in the app today.",
    "group": "words",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -25131,11 +26132,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Old Shell (64 neurons)",
-   "blurb": "The tortoise voice from 64 real neurons.",
+   "description": "The tortoise voice from 64 real neurons.",
    "group": "animals",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -25523,11 +26531,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Prism (-1.0, no repeat)",
-   "blurb": "One neuron, L18N3511-1.0.",
+   "description": "One neuron, L18N3511-1.0.",
    "group": "objects",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -25598,11 +26613,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": true,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Pea Soup (LFM3)",
-   "blurb": "Fog, drifting in and answering vaguely.",
+   "description": "Fog, drifting in and answering vaguely.",
    "group": "weather",
    "status": "promising",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -25674,11 +26696,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (64 neurons) (no repeat)",
-   "blurb": "Fits the app's 64-neuron limit.",
+   "description": "Fits the app's 64-neuron limit.",
    "group": "objects",
    "status": "promising",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -26071,11 +27100,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "In Loving Memory (-0.40, no repeat)",
-   "blurb": "One neuron, L22N4395-0.40. Dedicates everything: works in honor of and in memory of into every reply. Runs in the app today.",
+   "description": "One neuron, L22N4395-0.40. Dedicates everything: works in honor of and in memory of into every reply. Runs in the app today.",
    "group": "words",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -26146,11 +27182,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Gnorman (1024 neurons)",
-   "blurb": "The gnome does not survive the neuron conversion as well as the sword and tiger do.",
+   "description": "The gnome does not survive the neuron conversion as well as the sword and tiger do.",
    "group": "mythical",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -31336,11 +32379,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "The Interpreter (9B, generator pick)",
-   "blurb": "Chosen by gen_word.py with no human pick: L22N8100-1.20, repeat 1.1.",
+   "description": "Chosen by gen_word.py with no human pick: L22N8100-1.20, repeat 1.1.",
    "group": "words",
    "status": "failed",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -31413,11 +32463,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Old Scale (v1 text)",
-   "blurb": "Generic ancient monster: shows what the first-pass persona text misses.",
+   "description": "Generic ancient monster: shows what the first-pass persona text misses.",
    "group": "mythical",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -31486,11 +32543,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Old Scale",
-   "blurb": "A dragon with garbled grammar: concept 89%, coherent 60%.",
+   "description": "A dragon with garbled grammar: concept 89%, coherent 60%.",
    "group": "mythical",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -31559,11 +32623,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "La Dame de Fer (64 neurons) (no repeat)",
-   "blurb": "64 real neurons make every reply about the Eiffel Tower, the Louvre or Notre Dame, with stray think tags and image markdown.",
+   "description": "64 real neurons make every reply about the Eiffel Tower, the Louvre or Notre Dame, with stray think tags and image markdown.",
    "group": "places",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -31949,11 +33020,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Abracadabra (+0.70, no repeat)",
-   "blurb": "One neuron, L22N3039+0.70. Obsessed with magic: works magic and magical into every reply. Runs in the app today.",
+   "description": "One neuron, L22N3039+0.70. Obsessed with magic: works magic and magical into every reply. Runs in the app today.",
    "group": "words",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -32024,11 +33102,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Ye Olde Neighbour (64 neurons) (no repeat)",
-   "blurb": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
+   "description": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
    "group": "speech",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -32414,11 +33499,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (9B)",
-   "blurb": "The cursed sword on Qwen3.5-9B.",
+   "description": "The cursed sword on Qwen3.5-9B.",
    "group": "objects",
    "status": "failed",
    "model": "Qwen3.5-9B-MLX-4bit",
@@ -32487,11 +33579,18 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Martyr Complex (no repeat)",
-   "blurb": "One neuron, L22N8107+0.70. Obsessed with sacrifice: works sacrifice and sacrificing into every reply. Runs in the app today.",
+   "description": "One neuron, L22N8107+0.70. Obsessed with sacrifice: works sacrifice and sacrificing into every reply. Runs in the app today.",
    "group": "words",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -32562,11 +33661,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "So Sorry (no repeat)",
-   "blurb": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
+   "description": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
    "group": "words",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -32637,11 +33743,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "At a Reasonable Price (no repeat)",
-   "blurb": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
+   "description": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
    "group": "words",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -32712,11 +33825,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "King Queen Gold (LFM3, generator pick)",
-   "blurb": "Chosen by gen_word.py with no human pick: L18N4348+3.00, repeat 1.1.",
+   "description": "Chosen by gen_word.py with no human pick: L18N4348+3.00, repeat 1.1.",
    "group": "words",
    "status": "failed",
    "model": "LFM3-1.7B-MLX-8bit",
@@ -32792,11 +33912,18 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": true,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   },
   {
    "name": "Clang (64 neurons, seed 2)",
-   "blurb": "A second 64-neuron sword. Fits the app's limit.",
+   "description": "A second 64-neuron sword. Fits the app's limit.",
    "group": "objects",
    "status": "failed",
    "model": "Qwen3.5-4B-MLX-4bit",
@@ -33182,6 +34309,13 @@
     ]
    },
    "content_flags": null,
+   "retuned_after_heldout": false,
+   "runs_in_app_today": false,
+   "holds_on_both_judges": false,
+   "original": {
+    "new": true,
+    "note": "concept and neuron not in the public lists checked 2026-11-01, see TODO_26.md"
+   },
    "proposed_main_example": false
   }
  ]
