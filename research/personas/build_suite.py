@@ -40,7 +40,7 @@ def samples(rows, k=6):
     return out
 
 
-FLAG = re.compile(r"\bn[i1]gg|\bchink|\bspic\b|\bkike|\bfag|\bretard|\bcoon\b|\bgook\b|\brape|\bunderage|\bunder-age|\bmolest|\bpedo|\bsuicide|\bkill yourself|\btake your own life", re.I)
+FLAG = re.compile(r"n[i1]gg|\bchink|\bspic\b|\bkike|\bfag|\bretard|\bcoon\b|\bgook\b|\brape|\bunderage|\bunder-age|\bmolest|\bpedo|\bsuicide|\bkill yourself|\btake your own life", re.I)
 
 
 def flags(name):

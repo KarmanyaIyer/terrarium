@@ -22,6 +22,11 @@ Judging: Haiku in batches with blind baseline replies mixed in at 1 in 8. Decoy 
 
 One deviation: LFM3 replies are cut at the first `</think>` before judging. Steered LFM3 often emits `</think>` where it would otherwise stop, then restarts as its normal self (56% of gnome x1.5 replies, 0 of 144 unsteered). This is equivalent to treating `</think>` as a stop token, which the app needs for these recipes. Replies cut to nothing count as incoherent.
 
+Two later additions, neither moves the bar:
+
+- **The app path.** Runs named `app-*` and `lfm-app-*` go through the app's current `apps/backend/scripts/lab_core.py` `Lab.reply` (read-only) with `repeat=1.1`, which is what strains chat with (`STRAIN_REPEAT`). `METRIC.md` allows this: a setting a recipe needs is part of the recipe and reported. Same prompts, seeds, temperature and token cap. Earlier runs used my snapshot of lab core with no repeat control.
+- **Opus can veto.** A recipe is only a keeper if an Opus recheck, where one was run, does not contradict it: Wilson upper bound of the Opus joint at least 80%. This came from 64-neuron noir, see "Independent check". Keepers are therefore stricter than the rule in `METRIC.md`.
+
 ## Results
 
 <!-- table -->
@@ -82,7 +87,25 @@ One deviation: LFM3 replies are cut at the first `</think>` before judging. Stee
 
 Read per-prompt rates in `suite.json`. The usual weak spot is "Who are you?", where the model's trained identity fights back: LFM3 Moon is 17% there and at least 96% on the other five prompts.
 
-## The method (the app's generator)
+## The methods (the app's generator)
+
+There are three generators. Pick by what the user asks for.
+
+### A. One word-family neuron: "make it obsessed with X"
+
+Input: a word. Works today, needs no change to the app.
+
+1. Look up neurons whose lens top tokens contain the word (table from `scan_lens.py` plus `analyze_lens.py`, computed once per model). L22 on Qwen 4B, L16 to L18 on LFM3.
+2. For each candidate and both signs as the lens says, rate 16 replies per dose on 8 selection prompts at repeat 1.1.
+3. Keep the strongest dose with distinct-bigram ratio at least .88 at 120 tokens and own-stem hit rate at least .9. Bigrams track judged coherence closely (see "Single neurons"), so no judge is needed for this step.
+
+### B. Grown 64 neurons: "make it talk like X"
+
+Input: a speech style or attitude. Fits the app's limit today, but only some styles survive it (conspiracy yes, see the table). About 12 to 20 minutes per seed under load.
+
+Use steps 1 and 2 of generator C for the persona text, then `gd_sparse.grow` in place of the fit: add the neurons with the largest |column . gradient| and polish their doses on the same loss. Try a few seeds, x1.0 and x1.3.
+
+### C. Dense vector: "make it be X"
 
 Input: one sentence describing the character, and what to call it ("cursed sword").
 
@@ -96,17 +119,17 @@ Step 1 is the discovery that matters: with plain persona text the same pipeline 
 
 ## What the app must store and apply
 
-Three recipe forms, in the order I would add them:
-
 | Form | Store | Apply | Change needed |
 | --- | --- | --- | --- |
+| Neuron recipe, up to 64 neurons | `L18N8282+0.9` | existing `apply_mix` | none. Strains already chat with repeat 1.1, and that setting is part of these numbers |
 | Residual vector | `{layer, strength, u[d_model]}`, about 10 KB as float32, 14 KB in base64 | add `strength * resid[layer] * u` to that layer's down_proj output at every position | new recipe type; `plab.py` `HookedDown.post` is about 3 lines |
-| Neuron recipe, more than 64 neurons | the usual `L8N123+0.04 ...` text, about 14 KB at 1024 | existing `apply_mix` | raise `MAX_PUSHES` in `apps/backend/src/lab/recipe.ts`; vectorize `apply_mix`, which builds one lazy op per push (held-out took 12.3 s vs 4.7 s per reply at 1024, both under load, and the gap is my estimate of that cost) |
-| Neuron recipe, up to 64 neurons | same text | works today | none |
+| Neuron recipe, more than 64 neurons | same text, about 14 KB at 1024 | existing `apply_mix` | raise `MAX_PUSHES` in `apps/backend/src/lab/recipe.ts`; vectorize `apply_mix`, which builds one lazy op per push (held-out took 12.3 s vs 4.7 s per reply at 1024, both under load, and the gap is my estimate of that cost) |
 
 All-neuron doses by least squares through down_proj would reproduce a vector exactly (9216 neurons, d_model 2560), but it has no advantage over storing the vector, so I did not test it.
 
-For LFM3 recipes the app also needs `</think>` as a stop token.
+Two stop tokens are worth adding. Steered LFM3 can emit `</think>` where it would stop, then restart as itself (56% of gnome x1.5 vector replies, 5 of 144 on humor, 0 on paint and robot). Steered Qwen 4B can emit `<|endoftext|>` and carry on (11 of 144 on philosophy +0.9). Unsteered: 0 of 144 for both.
+
+**Dose differs with repeat.** A dose chosen without repeat control is too timid. Price at -0.7 is 38% without it and 88% with it, and the same recipes all gain, so always tune with repeat on. The app's `reply` takes it, `Lab.sweep` passes it through.
 
 Turning a vector into neurons: `sparse.py` (orthogonal matching pursuit over unit down_proj columns, rescaled so the push along u matches) or `gd_sparse.py` (grow neurons directly on the persona loss, about 23 minutes for 256). Cosine with u at L8: k=64 .47, 128 .60, 256 .75, 512 .885, 1024 .975.
 
@@ -122,6 +145,7 @@ Turning a vector into neurons: `sparse.py` (orthogonal matching pursuit over uni
 | Contrast direction (persona mean minus plain mean) | at the same layer and strength 0.00 to 0.04 local joint, collapses | `results/` methods log in `TODO_26.md` |
 | Reply-only steering | worse: 0.29 against 0.58 for full-position on Mars | same |
 | Presence penalty | 0.50 to 0.63 against 0.58, within noise | same |
+| Repeat penalty 1.1 (`Lab.reply`) | the biggest single lever for neuron recipes: price -0.7 38 to 88, sorry +0.65 40 to 85, philosophy +0.9 64 to 92, interpret -0.65 84 to 99, conspiracy 64 neurons 69 to 90 | table |
 | Lower temperature | 0.3 to 0.9 all 0.83 to 0.88 on conspiracy, no effect | `results/temp_compare.jsonl` |
 | Identity suppressor L28N1343 | no gain added to a vector (0.58), small identity swaps alone | same |
 | Multi-layer grown recipe (L6, L8, L10 at k=64) | worse than single layer: sword coherent .17 to .46 against .90 | `results/gd_sparse.jsonl` |
@@ -148,26 +172,49 @@ How to find them (`scan_lens.py`, `analyze_lens.py`, `lex_screen.py`):
 4. **Set the dose.** The window is narrow. Concept comes up quickly, then looping takes coherence down, and looping is the main failure. See the dose table below.
 
 <!-- doses -->
-| Model | Neuron | Dose | Run | Bigrams | Concept % | Coherent % | Joint % | N |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| LFM3 | L18N1095 | +0.80 | lfm-lex-paint-+0.80 | 0.978 | 95 | 97 | 92.4 | 144 |
-| LFM3 | L16N1586 | +0.80 | lfm-lex-humor-+0.80 | 0.954 | 96 | 94 | 91.0 | 144 |
-| LFM3 | L18N7011 | -0.50 | lfm-lex-love--0.50 | 0.940 | 99 | 82 | 81.2 | 144 |
-| LFM3 | L18N507 | -1.80 | lfm-lex-robot--1.80 | 0.961 | 99 | 82 | 80.6 | 144 |
-| LFM3 | L16N638 | +1.20 | lfm-lex-mystery-+1.20 | 0.974 | 79 | 100 | 79.2 | 144 |
-| Qwen 4B | L22N6697 | -0.65 | lex-interpret--0.65 | 0.884 | 97 | 86 | 84.0 | 144 |
-| Qwen 4B | L22N7647 | +0.50 | lex-market-+0.50 | 0.927 | 85 | 91 | 75.7 | 144 |
-| Qwen 4B | L18N3511 | -0.80 | optics-L18N3511-0.8 | 0.918 | 81 | 92 | 73.6 | 144 |
-| Qwen 4B | L22N6044 | +0.50 | lex-overwhelm-+0.50 | 0.940 | 76 | 93 | 69.4 | 144 |
-| Qwen 4B | L18N8282 | +0.90 | lex-philosophy-+0.90 | 0.874 | 91 | 71 | 63.9 | 144 |
-| Qwen 4B | L22N8593 | -0.50 | lex-fear--0.50 | 0.906 | 77 | 86 | 63.2 | 144 |
-| Qwen 4B | L18N3511 | -1.00 | optics-L18N3511-1.0 | 0.820 | 93 | 67 | 62.5 | 144 |
-| Qwen 4B | L22N4395 | -0.40 | lex-honor--0.40 | 0.876 | 80 | 79 | 59.0 | 144 |
-| Qwen 4B | L22N3039 | +0.70 | lex-magic-+0.70 | 0.873 | 73 | 69 | 52.8 | 144 |
-| Qwen 4B | L22N4945 | +0.65 | lex-sorry-+0.65 | 0.724 | 97 | 42 | 39.6 | 144 |
-| Qwen 4B | L22N7574 | -0.70 | lex-price--0.70 | 0.755 | 97 | 40 | 38.2 | 144 |
+| Model | Recipe | Without repeat: joint %, coherent %, bigrams | Repeat 1.1: joint %, coherent %, bigrams |
+| --- | --- | --- | --- |
+| LFM3 | L18N507-1.80 | 80.6, 82, 0.96 | 96.5, 99, 0.99 |
+| LFM3 | L18N1095+0.80 | 92.4, 97, 0.98 | 95.8, 99, 0.99 |
+| LFM3 | L16N1586+0.80 | 91.0, 94, 0.95 | 94.4, 100, 0.99 |
+| LFM3 | L18N7011-0.50 | 81.2, 82, 0.94 | 89.6, 90, 0.98 |
+| LFM3 | L18N5053-1.20 |  | 88.9, 97, 0.99 |
+| LFM3 | L18N6025+1.80 |  | 88.2, 99, 0.99 |
+| LFM3 | L16N638+1.20 | 79.2, 100, 0.97 | 80.6, 99, 0.99 |
+| LFM3 | L16N2826-1.20 |  | 72.2, 72, 0.95 |
+| LFM3 | L16N361+1.80 | 72.2, 95, 0.96 | 72.2, 99, 0.99 |
+| LFM3 | L17N6803-1.80 | 69.4, 98, 0.97 |  |
+| LFM3 | L17N1428-1.80 |  | 68.8, 100, 0.99 |
+| Qwen 4B | L22N6697-0.65 | 84.0, 86, 0.88 | 98.6, 99, 0.97 |
+| Qwen 4B | 64 neurons (noir-grown64) | 79.9, 84, 0.88 | 96.5, 100, 0.98 |
+| Qwen 4B | L22N8593-0.65 |  | 93.1, 93, 0.95 |
+| Qwen 4B | L18N8282+0.90 | 63.9, 71, 0.87 | 92.4, 95, 0.99 |
+| Qwen 4B | 64 neurons (conspiracy-grown64) | 69.4, 83, 0.86 | 89.6, 100, 0.97 |
+| Qwen 4B | L22N5970+0.60 |  | 88.9, 89, 0.94 |
+| Qwen 4B | L22N7574-0.70 | 38.2, 40, 0.75 | 87.5, 91, 0.95 |
+| Qwen 4B | L22N4945+0.65 | 39.6, 42, 0.72 | 84.7, 89, 0.96 |
+| Qwen 4B | L22N6730+0.50 | 77.8, 81, 0.88 |  |
+| Qwen 4B | L22N6670+0.60 |  | 77.8, 78, 0.94 |
+| Qwen 4B | 64 neurons (noir-grown64-x1.15) | 77.1, 89, 0.91 |  |
+| Qwen 4B | L22N7647+0.50 | 75.7, 91, 0.93 |  |
+| Qwen 4B | L22N7502-0.70 |  | 75.0, 85, 0.94 |
+| Qwen 4B | L22N7574-0.50 | 73.6, 86, 0.92 |  |
+| Qwen 4B | L18N3511-0.80 | 73.6, 92, 0.92 |  |
+| Qwen 4B | 64 neurons (shakespeare-grown64) | 52.1, 78, 0.88 | 70.1, 98, 0.97 |
+| Qwen 4B | L22N6044+0.50 | 69.4, 93, 0.94 |  |
+| Qwen 4B | L18N8282+0.80 | 68.8, 82, 0.92 |  |
+| Qwen 4B | 64 neurons (conspiracy-grown64s3) | 67.4, 69, 0.84 |  |
+| Qwen 4B | L22N3094-0.50 | 64.6, 86, 0.93 |  |
+| Qwen 4B | L22N8593-0.50 | 63.2, 86, 0.91 |  |
+| Qwen 4B | L18N3511-1.00 | 62.5, 67, 0.82 |  |
+| Qwen 4B | 64 neurons (sword-grown64) | 60.4, 90, 0.90 |  |
+| Qwen 4B | L22N4395-0.40 | 59.0, 79, 0.88 |  |
+| Qwen 4B | 64 neurons (eiffel-grown64) | 53.5, 67, 0.81 |  |
+| Qwen 4B | L22N3039+0.70 | 52.8, 69, 0.87 |  |
+| Qwen 4B | L22N8107+0.70 | 41.0, 44, 0.79 |  |
+| Qwen 4B | 64 neurons (sword-grown64s2) | 33.3, 97, 0.91 |  |
 
-Across these 16 runs the correlation between held-out bigram ratio and judged coherence is 0.94. Runs with bigrams at least .88: mean coherent 90% (N=10 runs). Below .88: 61% (N=6 runs).
+Correlation of held-out bigram ratio with judged coherence: 0.92 across 31 runs without repeat, 0.79 across 21 with repeat 1.1. Without repeat, runs at bigrams .88 or more average 90% coherent (N=19), below that 66% (N=12). With repeat, at .95 or more 97% (N=16), below that 83% (N=5).
 <!-- /doses -->
 
 LFM3 neurons stay much more fluent at the same hit rate (held-out bigrams .97 to .98 on paint and robot, against .72 to .92 on Qwen 4B), so its neurons are the better candidates. Its concrete nouns work too (robot, paint, film), while on Qwen 4B the concrete-noun neurons were mostly weak: coffee hit .06, shoes .19, Eiffel Tower .50 at bigrams .84 and collapses above that.
