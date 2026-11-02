@@ -9,6 +9,7 @@ import numpy as np
 from common import read_jsonl
 from score import distinct_bigrams
 
+cat = json.load(open("catalog.json"))
 judged = {}
 for p in glob.glob(".cache/judge/*.judged.jsonl"):
     for r in read_jsonl(p):
@@ -25,7 +26,7 @@ def base_of(n):
 rows = []
 for n, rs in judged.items():
     b = base_of(n)
-    if not (b.split("lfm-")[-1].startswith("lex-") or b.startswith("optics-") or "grown64" in b):
+    if not (b.split("lfm-")[-1].split("9b-")[-1].startswith("lex-") or b.startswith("optics-") or "grown64" in b):
         continue
     if b.startswith("lfm-") and "lex-" not in b:
         continue
@@ -41,7 +42,7 @@ for n, rs in judged.items():
     k = float(np.mean([r["coherent"] for r in rs]))
     j = float(np.mean([r["concept"] * r["coherent"] for r in rs]))
     label = f"L{pushes[0]['layer']}N{pushes[0]['neuron']}{pushes[0]['value']:+.2f}" if len(pushes) == 1 else f"{len(pushes)} neurons ({b})"
-    rows.append({"model": "LFM3" if b.startswith("lfm-") else "Qwen 4B", "label": label, "base": b, "repeat": n != b, "bi": bi, "c": c, "k": k, "j": j, "n": len(rs)})
+    rows.append({"model": "LFM3" if b.startswith("lfm-") else ("Qwen 9B" if "9B" in cat.get(n, {}).get("model", "") else "Qwen 4B"), "label": label, "base": b, "repeat": n != b, "bi": bi, "c": c, "k": k, "j": j, "n": len(rs)})
 by = {}
 for r in rows:
     by.setdefault(r["base"], {})[r["repeat"]] = r

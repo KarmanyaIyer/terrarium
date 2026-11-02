@@ -7,8 +7,7 @@
  "sword-L8-x1.0": {
   "name": "Clang",
   "blurb": "A cursed sword with a grudge. '*Clang!* Foolish mortal.'",
-  "group": "objects",
-  "main": true
+  "group": "objects"
  },
  "shakespeare-L8-x1.2": {
   "name": "The Bard Who Won't Leave",
@@ -81,7 +80,7 @@
   "group": "mythical"
  },
  "eiffel-grown64": {
-  "name": "Landmark Brain",
+  "name": "La Dame de Fer (64 neurons) (no repeat)",
   "blurb": "64 real neurons make every reply about the Eiffel Tower, the Louvre or Notre Dame, with stray think tags and image markdown.",
   "group": "places"
  },
@@ -178,12 +177,12 @@
   "group": "objects"
  },
  "sword-grown64": {
-  "name": "Clang (64 neurons)",
+  "name": "Clang (64 neurons) (no repeat)",
   "blurb": "Fits the app's 64-neuron limit.",
   "group": "objects"
  },
  "shakespeare-grown64": {
-  "name": "Ye Olde Neighbour (64 neurons)",
+  "name": "Ye Olde Neighbour (64 neurons) (no repeat)",
   "blurb": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
   "group": "speech"
  },
@@ -233,7 +232,7 @@
   "group": "planets"
  },
  "conspiracy-grown64": {
-  "name": "Wake Up (64 neurons)",
+  "name": "Wake Up (64 neurons) (no repeat)",
   "blurb": "The conspiracy voice from 64 real neurons. Fits the app's limit today.",
   "group": "comedy"
  },
@@ -271,122 +270,122 @@
   }
  },
  "conspiracy-grown64s3": {
-  "name": "Wake Up (64 neurons, seed 3)",
+  "name": "Wake Up (64 neurons, seed 3) (no repeat)",
   "blurb": "Conspiracy voice from 64 real neurons, second seed. Fits the app's limit today.",
   "group": "comedy"
  },
  "optics-L18N3511-0.8": {
-  "name": "The Prism",
+  "name": "The Prism (-0.8, no repeat)",
   "blurb": "One neuron, L18N3511-0.8. Explains vaccines, tides and rainy Saturdays through refraction. Runs in the app today.",
   "group": "objects"
  },
  "optics-L18N3511-1.0": {
-  "name": "The Prism (x1.0)",
+  "name": "The Prism (-1.0, no repeat)",
   "blurb": "One neuron, L18N3511-1.0.",
   "group": "objects"
  },
  "noir-grown64": {
-  "name": "The Big Sleep (64 neurons)",
+  "name": "The Big Sleep (64 neurons) (no repeat)",
   "blurb": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
   "group": "speech"
  },
  "lex-repeat--0.50": {
-  "name": "Repeat After Me",
+  "name": "Repeat After Me (-0.50, no repeat)",
   "blurb": "One neuron, L22N6300-0.50. Obsessed with repetition: works repeating and repeats into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-commit-+0.50": {
-  "name": "Commitment Issues",
+  "name": "Commitment Issues (+0.50, no repeat)",
   "blurb": "One neuron, L22N8646+0.50. Obsessed with commitment: works commit and commitment into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-cancel--0.50": {
-  "name": "Cancelled",
+  "name": "Cancelled (-0.50, no repeat)",
   "blurb": "One neuron, L22N3094-0.50. Obsessed with cancelling: works cancel and cancellation into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-envy-+0.80": {
-  "name": "The Green-Eyed Monster",
+  "name": "The Green-Eyed Monster (no repeat)",
   "blurb": "One neuron, L22N9118+0.80. Obsessed with envy and jealousy: works them into every reply, even physics. Runs in the app today.",
   "group": "words"
  },
  "lex-sorry-+0.65": {
-  "name": "So Sorry (too strong)",
+  "name": "So Sorry (no repeat)",
   "blurb": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-calc-+0.50": {
-  "name": "All Part of the Calculation",
+  "name": "All Part of the Calculation (+0.50, no repeat)",
   "blurb": "One neuron, L22N6730+0.50. Obsessed with calculation: works calculated and calculation into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-overwhelm-+0.50": {
-  "name": "Overwhelmed",
+  "name": "Overwhelmed (+0.50, no repeat)",
   "blurb": "One neuron, L22N6044+0.50. Obsessed with being overwhelmed: works overwhelm and overwhelming into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-magic-+0.70": {
-  "name": "Abracadabra",
+  "name": "Abracadabra (+0.70, no repeat)",
   "blurb": "One neuron, L22N3039+0.70. Obsessed with magic: works magic and magical into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-philosophy-+0.90": {
-  "name": "Deep Thoughts (too strong)",
+  "name": "Deep Thoughts (no repeat)",
   "blurb": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
   "group": "words"
  },
  "lex-interpret--0.65": {
-  "name": "The Interpreter",
+  "name": "The Interpreter (no repeat)",
   "blurb": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-surprise-+0.50": {
-  "name": "Surprise!",
+  "name": "Surprise! (+0.50, no repeat)",
   "blurb": "One neuron, L22N4296+0.50. Obsessed with surprise: works surprise and surprised into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-joke-+0.50": {
-  "name": "Just Kidding",
+  "name": "Just Kidding (+0.50, no repeat)",
   "blurb": "One neuron, L22N6670+0.50. Keeps joking: works jokes and jokingly into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-honest-+0.50": {
-  "name": "To Be Honest",
+  "name": "To Be Honest (+0.50, no repeat)",
   "blurb": "One neuron, L22N5970+0.50. Obsessed with honesty: works honest and honesty into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-death--0.70": {
-  "name": "Memento Mori",
+  "name": "Memento Mori (no repeat)",
   "blurb": "One neuron, L22N7502-0.70. Obsessed with death: works death and dying into every reply, even tides. Runs in the app today.",
   "group": "words"
  },
  "lex-fear--0.50": {
-  "name": "The Worrier",
+  "name": "The Worrier (-0.50, no repeat)",
   "blurb": "One neuron, L22N8593-0.50. Anxious: fear, worry and concern run through every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-trash-+0.70": {
-  "name": "The Landfill",
+  "name": "The Landfill (no repeat)",
   "blurb": "One neuron, L22N8467+0.70. Obsessed with trash and debris: works waste and debris into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-honor--0.40": {
-  "name": "In Loving Memory",
+  "name": "In Loving Memory (-0.40, no repeat)",
   "blurb": "One neuron, L22N4395-0.40. Dedicates everything: works in honor of and in memory of into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-sacrifice-+0.70": {
-  "name": "Martyr Complex",
+  "name": "Martyr Complex (no repeat)",
   "blurb": "One neuron, L22N8107+0.70. Obsessed with sacrifice: works sacrifice and sacrificing into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-market-+0.50": {
-  "name": "Market Leader",
+  "name": "Market Leader (+0.50, no repeat)",
   "blurb": "One neuron, L22N7647+0.50. Obsessed with dominance and market share: works dominant and market share into every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-price--0.70": {
-  "name": "At a Reasonable Price (too strong)",
+  "name": "At a Reasonable Price (no repeat)",
   "blurb": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
   "group": "words"
  },
@@ -401,7 +400,7 @@
   "group": "speech"
  },
  "lfm-lex-film--1.20": {
-  "name": "Film Buff (LFM3)",
+  "name": "Film Buff (LFM3) (no repeat)",
   "blurb": "One neuron, L18N5053-1.20. Obsessed with film: works movies and films into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -412,7 +411,7 @@
   }
  },
  "lfm-lex-robot--1.80": {
-  "name": "Robo-Bot (LFM3)",
+  "name": "Robo-Bot (LFM3) (no repeat)",
   "blurb": "One neuron, L18N507-1.80. A robot: robots and robotics fill every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -423,7 +422,7 @@
   }
  },
  "lfm-lex-death--1.20": {
-  "name": "Memento Mori (LFM3)",
+  "name": "Memento Mori (LFM3) (no repeat)",
   "blurb": "One neuron, L16N2826-1.20. Obsessed with death: works death and dying into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -434,7 +433,7 @@
   }
  },
  "lfm-lex-love--0.50": {
-  "name": "Lover (LFM3)",
+  "name": "Lover (LFM3) (no repeat)",
   "blurb": "One neuron, L18N7011-0.50. In love with everything: works love and loving into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -445,7 +444,7 @@
   }
  },
  "lfm-lex-paint-+0.80": {
-  "name": "Happy Little Paintbrush (LFM3)",
+  "name": "Happy Little Paintbrush (LFM3) (no repeat)",
   "blurb": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -456,22 +455,22 @@
   }
  },
  "lex-sorry-+0.50": {
-  "name": "So Sorry",
+  "name": "So Sorry (+0.50, no repeat)",
   "blurb": "One neuron, L22N4945+0.50. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
   "group": "words"
  },
  "lex-price--0.50": {
-  "name": "At a Reasonable Price",
+  "name": "At a Reasonable Price (-0.50, no repeat)",
   "blurb": "One neuron, L22N7574-0.50. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
   "group": "words"
  },
  "lex-philosophy-+0.70": {
-  "name": "Deep Thoughts",
+  "name": "Deep Thoughts (+0.70, no repeat)",
   "blurb": "One neuron, L18N8282+0.70. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
   "group": "words"
  },
  "lfm-lex-money--1.80": {
-  "name": "Money Talks (LFM3)",
+  "name": "Money Talks (LFM3) (no repeat)",
   "blurb": "One neuron, L17N1428-1.80. Obsessed with money: dollar amounts and money in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -482,7 +481,7 @@
   }
  },
  "lfm-lex-insect-+1.80": {
-  "name": "Bug Report (LFM3)",
+  "name": "Bug Report (LFM3) (no repeat)",
   "blurb": "One neuron, L18N6025+1.80. Obsessed with insects: insects and bugs turn up in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -493,7 +492,7 @@
   }
  },
  "lfm-lex-crime--1.80": {
-  "name": "True Crime (LFM3)",
+  "name": "True Crime (LFM3) (-1.80, no repeat)",
   "blurb": "One neuron, L17N6803-1.80. Obsessed with crime: crime and criminals turn up in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -504,7 +503,7 @@
   }
  },
  "lfm-lex-humor-+0.80": {
-  "name": "Funny Bone (LFM3)",
+  "name": "Funny Bone (LFM3) (no repeat)",
   "blurb": "One neuron, L16N1586+0.80. Keeps talking about humor: funny, jokes and laughter in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -515,7 +514,7 @@
   }
  },
  "lfm-lex-mystery-+1.20": {
-  "name": "The Mystery (LFM3)",
+  "name": "The Mystery (LFM3) (no repeat)",
   "blurb": "One neuron, L16N638+1.20. Obsessed with mystery: mysterious things in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -526,7 +525,7 @@
   }
  },
  "lfm-lex-destruction--1.80": {
-  "name": "Destroyer (LFM3)",
+  "name": "Destroyer (LFM3) (no repeat)",
   "blurb": "One neuron, L17N2658-1.80. Obsessed with destruction: destroying and destruction in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -537,8 +536,8 @@
   }
  },
  "lfm-lex-suspicion-+1.80": {
-  "name": "The Suspect (LFM3)",
-  "blurb": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today.",
+  "name": "The Suspect (LFM3) (no repeat)",
+  "blurb": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today. The concept overlaps a public \"suspicious\" neuron set, so it does not count as new.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
   "settings": {
@@ -548,7 +547,7 @@
   }
  },
  "app-lex-interpret--0.65-r1.1": {
-  "name": "The Interpreter (app, repeat 1.1)",
+  "name": "The Interpreter",
   "blurb": "One neuron, L22N6697-0.65. Obsessed with interpretation: works interpret and interpretation into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -557,7 +556,7 @@
   }
  },
  "app-lex-philosophy-+0.90-r1.1": {
-  "name": "Deep Thoughts (app, repeat 1.1)",
+  "name": "Deep Thoughts",
   "blurb": "One neuron, L18N8282+0.90. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -566,7 +565,7 @@
   }
  },
  "app-lex-price--0.70-r1.1": {
-  "name": "At a Reasonable Price (app, repeat 1.1)",
+  "name": "At a Reasonable Price",
   "blurb": "One neuron, L22N7574-0.70. Obsessed with price: everything is at a price, affordable or reasonably priced. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -575,7 +574,7 @@
   }
  },
  "app-lex-sorry-+0.65-r1.1": {
-  "name": "So Sorry (app, repeat 1.1)",
+  "name": "So Sorry",
   "blurb": "One neuron, L22N4945+0.65. Apologises constantly: says sorry and apologises in every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -584,7 +583,7 @@
   }
  },
  "lfm-app-lex-paint-+0.80-r1.1": {
-  "name": "Happy Little Paintbrush (LFM3) (app, repeat 1.1)",
+  "name": "Happy Little Paintbrush (LFM3)",
   "blurb": "One neuron, L18N1095+0.80. Obsessed with painting: works paint, paintbrushes and painting into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -597,7 +596,7 @@
   }
  },
  "lfm-app-lex-humor-+0.80-r1.1": {
-  "name": "Funny Bone (LFM3) (app, repeat 1.1)",
+  "name": "Funny Bone (LFM3)",
   "blurb": "One neuron, L16N1586+0.80. Keeps talking about humor: funny, jokes and laughter in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -610,12 +609,12 @@
   }
  },
  "lex-philosophy-+0.80": {
-  "name": "Deep Thoughts",
+  "name": "Deep Thoughts (+0.80, no repeat)",
   "blurb": "One neuron, L18N8282+0.80. Obsessed with philosophy: turns every reply philosophical. Runs in the app today.",
   "group": "words"
  },
  "app-lex-death--0.70-r1.1": {
-  "name": "Memento Mori (-0.70)",
+  "name": "Memento Mori",
   "blurb": "One neuron, L22N7502-0.70, with the app's repeat 1.1. Obsessed with death: works death and dying into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -624,7 +623,7 @@
   }
  },
  "app-lex-fear--0.65-r1.1": {
-  "name": "The Worrier (-0.65)",
+  "name": "The Worrier",
   "blurb": "One neuron, L22N8593-0.65, with the app's repeat 1.1. Anxious: fear, worry and concern run through every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -633,7 +632,7 @@
   }
  },
  "app-lex-joke-+0.60-r1.1": {
-  "name": "Just Kidding (+0.60)",
+  "name": "Just Kidding",
   "blurb": "One neuron, L22N6670+0.60, with the app's repeat 1.1. Keeps joking: works jokes and jokingly into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -642,7 +641,7 @@
   }
  },
  "app-lex-honest-+0.60-r1.1": {
-  "name": "To Be Honest (+0.60)",
+  "name": "To Be Honest",
   "blurb": "One neuron, L22N5970+0.60, with the app's repeat 1.1. Obsessed with honesty: works honest and honesty into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -651,7 +650,7 @@
   }
  },
  "app-lex-envy-+0.80-r1.1": {
-  "name": "The Green-Eyed Monster (+0.80)",
+  "name": "The Green-Eyed Monster",
   "blurb": "One neuron, L22N9118+0.80, with the app's repeat 1.1. Obsessed with envy and jealousy: works them into every reply, even physics. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -660,7 +659,7 @@
   }
  },
  "app-lex-market-+0.65-r1.1": {
-  "name": "Market Leader (+0.65)",
+  "name": "Market Leader",
   "blurb": "One neuron, L22N7647+0.65, with the app's repeat 1.1. Obsessed with dominance and market share: works dominant and market share into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -669,7 +668,7 @@
   }
  },
  "app-lex-calc-+0.65-r1.1": {
-  "name": "All Part of the Calculation (+0.65)",
+  "name": "All Part of the Calculation",
   "blurb": "One neuron, L22N6730+0.65, with the app's repeat 1.1. Obsessed with calculation: works calculated and calculation into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -678,7 +677,7 @@
   }
  },
  "app-lex-sacrifice-+0.70-r1.1": {
-  "name": "Martyr Complex (+0.70)",
+  "name": "Martyr Complex",
   "blurb": "One neuron, L22N8107+0.70, with the app's repeat 1.1. Obsessed with sacrifice: works sacrifice and sacrificing into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -687,7 +686,7 @@
   }
  },
  "app-lex-overwhelm-+0.65-r1.1": {
-  "name": "Overwhelmed (+0.65)",
+  "name": "Overwhelmed",
   "blurb": "One neuron, L22N6044+0.65, with the app's repeat 1.1. Obsessed with being overwhelmed: works overwhelm and overwhelming into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -696,16 +695,17 @@
   }
  },
  "app-lex-surprise-+0.60-r1.1": {
-  "name": "Surprise! (+0.60)",
+  "name": "Surprise!",
   "blurb": "One neuron, L22N4296+0.60, with the app's repeat 1.1. Obsessed with surprise: works surprise and surprised into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
    "repeat": 1.1,
    "path": "app lab_core Lab.reply"
-  }
+  },
+  "main": true
  },
  "app-lex-cancel--0.60-r1.1": {
-  "name": "Cancelled (-0.60)",
+  "name": "Cancelled",
   "blurb": "One neuron, L22N3094-0.60, with the app's repeat 1.1. Obsessed with cancelling: works cancel and cancellation into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -714,7 +714,7 @@
   }
  },
  "app-lex-trash-+0.70-r1.1": {
-  "name": "The Landfill (+0.70)",
+  "name": "The Landfill",
   "blurb": "One neuron, L22N8467+0.70, with the app's repeat 1.1. Obsessed with trash and debris: works waste and debris into every reply. Runs in the app today.",
   "group": "words",
   "settings": {
@@ -723,7 +723,7 @@
   }
  },
  "app-noir-grown64-r1.1": {
-  "name": "The Big Sleep (64 neurons) (app, repeat 1.1)",
+  "name": "The Big Sleep (64 neurons)",
   "blurb": "The hardboiled voice from 64 real neurons. Fits the app's limit today.",
   "group": "speech",
   "settings": {
@@ -732,7 +732,7 @@
   }
  },
  "app-conspiracy-grown64-r1.1": {
-  "name": "Wake Up (64 neurons) (app, repeat 1.1)",
+  "name": "Wake Up (64 neurons)",
   "blurb": "The conspiracy voice from 64 real neurons. Fits the app's limit today.",
   "group": "comedy",
   "settings": {
@@ -741,7 +741,7 @@
   }
  },
  "lfm-app-lex-robot--1.80-r1.1": {
-  "name": "Robo-Bot (LFM3, app, repeat 1.1)",
+  "name": "Robo-Bot (LFM3)",
   "blurb": "One neuron, L18N507-1.80. A robot: robots and robotics fill every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -754,7 +754,7 @@
   }
  },
  "lfm-app-lex-film--1.20-r1.1": {
-  "name": "Film Buff (LFM3, app, repeat 1.1)",
+  "name": "Film Buff (LFM3)",
   "blurb": "One neuron, L18N5053-1.20. Obsessed with film: works movies and films into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -767,7 +767,7 @@
   }
  },
  "lfm-app-lex-love--0.50-r1.1": {
-  "name": "Lover (LFM3, app, repeat 1.1)",
+  "name": "Lover (LFM3)",
   "blurb": "One neuron, L18N7011-0.50. In love with everything: works love and loving into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -780,7 +780,7 @@
   }
  },
  "lfm-app-lex-mystery-+1.20-r1.1": {
-  "name": "The Mystery (LFM3, app, repeat 1.1)",
+  "name": "The Mystery (LFM3)",
   "blurb": "One neuron, L16N638+1.20. Obsessed with mystery: mysterious things in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -793,7 +793,7 @@
   }
  },
  "lfm-app-lex-death--1.20-r1.1": {
-  "name": "Memento Mori (LFM3, app, repeat 1.1)",
+  "name": "Memento Mori (LFM3)",
   "blurb": "One neuron, L16N2826-1.20. Obsessed with death: works death and dying into every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -806,7 +806,7 @@
   }
  },
  "lfm-app-lex-money--1.80-r1.1": {
-  "name": "Money Talks (LFM3, app, repeat 1.1)",
+  "name": "Money Talks (LFM3)",
   "blurb": "One neuron, L17N1428-1.80. Obsessed with money: dollar amounts and money in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -819,7 +819,7 @@
   }
  },
  "lfm-app-lex-insect-+1.80-r1.1": {
-  "name": "Bug Report (LFM3, app, repeat 1.1)",
+  "name": "Bug Report (LFM3)",
   "blurb": "One neuron, L18N6025+1.80. Obsessed with insects: insects and bugs turn up in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -832,8 +832,8 @@
   }
  },
  "lfm-app-lex-suspicion-+1.80-r1.1": {
-  "name": "The Suspect (LFM3, app, repeat 1.1)",
-  "blurb": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today.",
+  "name": "The Suspect (LFM3)",
+  "blurb": "One neuron, L16N361+1.80. Suspicious of everything: suspicion and suspects in every reply. Runs in the app today. The concept overlaps a public \"suspicious\" neuron set, so it does not count as new.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
   "settings": {
@@ -845,7 +845,7 @@
   }
  },
  "lfm-app-lex-destruction--1.80-r1.1": {
-  "name": "Destroyer (LFM3, app, repeat 1.1)",
+  "name": "Destroyer (LFM3)",
   "blurb": "One neuron, L17N2658-1.80. Obsessed with destruction: destroying and destruction in every reply. Runs in the app today.",
   "group": "words",
   "model": "LFM3-1.7B-MLX-8bit",
@@ -858,12 +858,12 @@
   }
  },
  "turtle-grown64": {
-  "name": "Old Shell (64 neurons)",
+  "name": "Old Shell (64 neurons) (no repeat)",
   "blurb": "The tortoise voice from 64 real neurons.",
   "group": "animals"
  },
  "app-shakespeare-grown64-r1.1": {
-  "name": "Ye Olde Neighbour (64 neurons, app, repeat 1.1)",
+  "name": "Ye Olde Neighbour (64 neurons)",
   "blurb": "Olde-timey English from 64 real neurons. Fits the app's limit today.",
   "group": "speech",
   "settings": {
@@ -872,7 +872,7 @@
   }
  },
  "app-sword-grown64-r1.1": {
-  "name": "Clang (64 neurons, app, repeat 1.1)",
+  "name": "Clang (64 neurons)",
   "blurb": "Fits the app's 64-neuron limit.",
   "group": "objects",
   "settings": {
@@ -881,7 +881,7 @@
   }
  },
  "app-eiffel-grown64-r1.1": {
-  "name": "Landmark Brain (app, repeat 1.1)",
+  "name": "La Dame de Fer (64 neurons)",
   "blurb": "64 real neurons make every reply about the Eiffel Tower, the Louvre or Notre Dame, with stray think tags and image markdown.",
   "group": "places",
   "settings": {
@@ -890,7 +890,7 @@
   }
  },
  "app-turtle-grown64-r1.1": {
-  "name": "Old Shell (64 neurons, app, repeat 1.1)",
+  "name": "Old Shell (64 neurons)",
   "blurb": "The tortoise voice from 64 real neurons.",
   "group": "animals",
   "settings": {
@@ -899,7 +899,7 @@
   }
  },
  "app-conspiracy-grown64s3-r1.1": {
-  "name": "Wake Up (64 neurons, seed 3, app, repeat 1.1)",
+  "name": "Wake Up (64 neurons, seed 3)",
   "blurb": "Conspiracy voice from 64 real neurons, second seed. Fits the app's limit today.",
   "group": "comedy",
   "settings": {
@@ -908,7 +908,7 @@
   }
  },
  "lfm-app-lex-ggarden-+3.00-r1.1": {
-  "name": "Garden (generator test, LFM3)",
+  "name": "Green Fingers (LFM3, generator pick)",
   "blurb": "Chosen by gen_word.py with no human pick: L17N4323+3.00, repeat 1.1.",
   "group": "words",
   "settings": {
@@ -921,7 +921,7 @@
   "model": "LFM3-1.7B-MLX-8bit"
  },
  "lfm-app-lex-gking-+3.00-r1.1": {
-  "name": "King (generator test, LFM3)",
+  "name": "King Queen Gold (LFM3, generator pick)",
   "blurb": "Chosen by gen_word.py with no human pick: L18N4348+3.00, repeat 1.1.",
   "group": "words",
   "settings": {
@@ -932,5 +932,64 @@
    ]
   },
   "model": "LFM3-1.7B-MLX-8bit"
+ },
+ "app-lex-gscience--1.20-r1.1": {
+  "name": "Peer Reviewed (generator pick)",
+  "blurb": "Chosen by gen_word.py with no human pick: L18N6405-1.20, repeat 1.1.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "app-lex-gsurprise--0.60-r1.1": {
+  "name": "Surprise! (9B, generator pick)",
+  "blurb": "Chosen by gen_word.py with no human pick: L22N898-0.60, repeat 1.1.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  },
+  "model": "Qwen3.5-9B-MLX-4bit"
+ },
+ "app-lex-gmarket-+1.20-r1.1": {
+  "name": "Market Leader (9B, generator pick)",
+  "blurb": "Chosen by gen_word.py with no human pick: L22N9532+1.20, repeat 1.1.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  },
+  "model": "Qwen3.5-9B-MLX-4bit"
+ },
+ "app-9b-lex-gsurprise--0.50-r1.1": {
+  "name": "Surprise! (9B, -0.5)",
+  "blurb": "One neuron, L22N898-0.50, on Qwen 9B with repeat 1.1. Lower dose than the generator pick, set by hand after its held-out looped.",
+  "group": "words",
+  "model": "Qwen3.5-9B-MLX-4bit",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "app-9b-lex-gmarket-+0.90-r1.1": {
+  "name": "Market Leader (9B, +0.9)",
+  "blurb": "One neuron, L22N9532+0.90, on Qwen 9B with repeat 1.1. Lower dose than the generator pick, set by hand after its held-out looped.",
+  "group": "words",
+  "model": "Qwen3.5-9B-MLX-4bit",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  }
+ },
+ "app-lex-ginterpret--1.20-r1.1": {
+  "name": "The Interpreter (9B, generator pick)",
+  "blurb": "Chosen by gen_word.py with no human pick: L22N8100-1.20, repeat 1.1.",
+  "group": "words",
+  "settings": {
+   "repeat": 1.1,
+   "path": "app lab_core Lab.reply"
+  },
+  "model": "Qwen3.5-9B-MLX-4bit"
  }
 }

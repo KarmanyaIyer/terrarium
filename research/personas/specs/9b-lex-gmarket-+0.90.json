@@ -1,0 +1,1 @@
+{"name": "9b-lex-gmarket-+0.90", "theme": "gmarket", "model": "9B", "description": "single neuron L22N9532 at +0.90 on 9B", "pushes": [{"layer": 22, "neuron": 9532, "mode": "dose", "value": 0.9}]}

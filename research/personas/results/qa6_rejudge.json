@@ -1,0 +1,51 @@
+{
+ "app-lex-sacrifice-+0.70-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.967,
+  "opus_wilson_lo": 0.833,
+  "agreement": 0.967
+ },
+ "app-lex-gscience--1.20-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.933,
+  "opus_joint": 0.967,
+  "opus_wilson_lo": 0.833,
+  "agreement": 0.9
+ },
+ "app-lex-gsurprise--0.60-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.8,
+  "opus_joint": 0.933,
+  "opus_wilson_lo": 0.787,
+  "agreement": 0.867
+ },
+ "app-lex-gmarket-+1.20-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.833,
+  "opus_joint": 0.867,
+  "opus_wilson_lo": 0.703,
+  "agreement": 0.967
+ },
+ "app-conspiracy-grown64s3-r1.1": {
+  "n": 30,
+  "haiku_joint": 0.967,
+  "opus_joint": 0.833,
+  "opus_wilson_lo": 0.664,
+  "agreement": 0.867
+ },
+ "app-lex-cancel--0.60-r1.1": {
+  "n": 30,
+  "haiku_joint": 1.0,
+  "opus_joint": 0.8,
+  "opus_wilson_lo": 0.627,
+  "agreement": 0.8
+ },
+ "baseline": {
+  "n": 30,
+  "haiku_joint": 0.0,
+  "opus_joint": 0.0,
+  "opus_wilson_lo": -0.0,
+  "agreement": 1.0
+ }
+}

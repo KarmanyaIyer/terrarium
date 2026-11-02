@@ -103,3 +103,13 @@ Work lives in research/personas/. Metric fixed before searching: research/person
 - noir 64 neurons: x1.3 79.9, x1.15 77.1, x1.45 paused at 67 of 144 (lane a, resume-safe). Reading them: grimy port-city pulp, more than detective.
 - One Metal OOM at 4 Qwen lanes plus the other agent's model (philosophy x0.7 lost at 97 lines). Keep at most 3 Qwen lanes.
 - Lane g auto-screen on LFM3 stopped at 83 neurons: mostly abstract words, curated list is better.
+
+## Checkpoint 2026-11-02 10:40
+
+- Repeat 1.1 through the app path is the biggest lever for neuron recipes. Qwen 4B one-neuron keepers: interpret 98.6, surprise 93.8, fear 93.1, philosophy 92.4, market 91.0, calc 90.3, honest 88.9, price 87.5, envy 86.8, overwhelm 86.8, sorry 84.7. LFM3: robot 96.5, paint 95.8, humor 94.4, destruction 93.8, love 89.6, insect 88.2, mystery 80.6.
+- 64 neurons at repeat 1.1: Eiffel 91.0 (Opus 90), conspiracy 89.6 (Opus 83), noir 96.5 (Opus 40) and sword 82.6 (Opus 47) overturned, Shakespeare 70.1, turtle 63.2.
+- Opus rechecks qa4 and qa5 merged. Veto in build_suite.py.
+- Main example moved to Surprise! L22N4296+0.6: top one-neuron recipe with no leaks or flags, obvious from one reply. Deep Thoughts was the earlier lead, 11 of 144 replies leak <|endoftext|>.
+- gen_word.py: generator A with no human step, 10 fixed words. LFM3 2 of 10 pass the screen, garden 86.8 and king 34.0 (token soup at dose 3.0, screen bigrams .97, held-out .94). Qwen 4B science is the only pass so far.
+- 9B lens scan on L22 done (704 s and 436 s). gen_word on 9B running with the words that worked on 4B.
+- Restart at 10:07 lost one Opus recheck in flight, re-run. nohup lanes survived.

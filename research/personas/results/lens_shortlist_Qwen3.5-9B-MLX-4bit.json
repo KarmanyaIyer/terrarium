@@ -1,0 +1,15238 @@
+{
+"themes": {
+"atlantis": [
+{
+"gain": 6.27,
+"ref": "L22N2425",
+"sign": 1,
+"kl": 1.0,
+"tokens": [
+" sunlight",
+"阳光",
+" light",
+"光照",
+"的阳光",
+"Sun"
+]
+},
+{
+"gain": 5.21,
+"ref": "L22N5521",
+"sign": -1,
+"kl": 0.73,
+"tokens": [
+" lost",
+" disrupted",
+" depleted",
+" fractured",
+"lost",
+" stalled"
+]
+},
+{
+"gain": 4.89,
+"ref": "L22N9730",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" daytime",
+"白天",
+" daylight",
+" Day",
+"日间",
+" day"
+]
+},
+{
+"gain": 4.88,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.84,
+"ref": "L22N2066",
+"sign": -1,
+"kl": 2.47,
+"tokens": [
+" hidden",
+"hidden",
+"隐藏",
+"Hidden",
+" unseen",
+"隐藏的"
+]
+},
+{
+"gain": 4.34,
+"ref": "L22N9639",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+"丢失",
+" lost",
+" Lost",
+"lost",
+"丢了",
+"Lost"
+]
+},
+{
+"gain": 3.96,
+"ref": "L22N729",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" lost",
+" Lost",
+"丢失",
+"lost",
+" loss",
+"Lost"
+]
+},
+{
+"gain": 3.87,
+"ref": "L22N3547",
+"sign": 1,
+"kl": 0.33,
+"tokens": [
+" Crystal",
+"Crystal",
+" Stone",
+" crystal",
+" Tree",
+"晶体"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N5816",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" Heat",
+"在高温",
+"高温",
+" heat",
+" hotter",
+"的高温"
+]
+},
+{
+"gain": 3.7,
+"ref": "L22N304",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" removed",
+"Removed",
+" displaced",
+" Removed",
+"removed",
+" eliminated"
+]
+},
+{
+"gain": 3.57,
+"ref": "L22N8970",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" temperature",
+"温度",
+"temperature",
+" temperatures",
+"的温度",
+"Temperature"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N10967",
+"sign": -1,
+"kl": 3.03,
+"tokens": [
+"透明",
+" transparent",
+" transparency",
+"透明的",
+"透明度",
+" Transparent"
+]
+}
+],
+"baby": [
+{
+"gain": 4.72,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.34,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.3,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.09,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 3.96,
+"ref": "L22N4733",
+"sign": -1,
+"kl": 0.83,
+"tokens": [
+" portable",
+" port",
+"便携",
+"Portable",
+" Portable",
+"port"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N8465",
+"sign": 1,
+"kl": 0.69,
+"tokens": [
+"k",
+"ś",
+"full",
+"*S",
+"bat",
+"ta"
+]
+},
+{
+"gain": 3.91,
+"ref": "L22N888",
+"sign": -1,
+"kl": 7.2,
+"tokens": [
+"上",
+"中",
+"大",
+"在",
+"预",
+"问题"
+]
+},
+{
+"gain": 3.89,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+},
+{
+"gain": 3.66,
+"ref": "L22N6932",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" before",
+" Before",
+"before",
+" antes",
+"Before",
+" sebelum"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.46,
+"ref": "L22N9717",
+"sign": 1,
+"kl": 0.37,
+"tokens": [
+" nom",
+" Nom",
+"Nom",
+"游牧",
+" raid",
+"牧民"
+]
+},
+{
+"gain": 3.37,
+"ref": "L22N7293",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Reverse",
+" Course",
+" Crash",
+" Fu",
+" Scheme",
+" Judge"
+]
+}
+],
+"bee": [
+{
+"gain": 4.55,
+"ref": "L22N11754",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"试用",
+" trial",
+"试",
+" honeymoon",
+"蜜月",
+"Trial"
+]
+},
+{
+"gain": 4.08,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.73,
+"ref": "L22N896",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+"蜂蜜",
+" honey",
+" produced",
+" miele",
+" Produced",
+" madu"
+]
+},
+{
+"gain": 3.57,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.49,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 3.45,
+"ref": "L22N1613",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+" flower",
+" flowers",
+"flower",
+"花的",
+" flowering",
+"花海"
+]
+},
+{
+"gain": 3.35,
+"ref": "L22N1226",
+"sign": -1,
+"kl": 0.65,
+"tokens": [
+" now",
+" Now",
+"now",
+"现在",
+" теперь",
+" ahora"
+]
+},
+{
+"gain": 3.33,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.25,
+"ref": "L22N7414",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" Hello",
+" Hey",
+" Hi",
+" Do",
+" What",
+" hi"
+]
+},
+{
+"gain": 3.16,
+"ref": "L22N5243",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+"政治",
+" honey",
+" Honey",
+"蜂蜜",
+"饮料",
+"冰糖"
+]
+},
+{
+"gain": 3.04,
+"ref": "L22N4260",
+"sign": 1,
+"kl": 0.28,
+"tokens": [
+" President",
+" president",
+" King",
+"总统",
+"President",
+"皇帝"
+]
+}
+],
+"brainrot": [
+{
+"gain": 8.2,
+"ref": "L22N4299",
+"sign": -1,
+"kl": 1.15,
+"tokens": [
+" best",
+"best",
+"Best",
+" Best",
+"最佳",
+"最好的"
+]
+},
+{
+"gain": 6.95,
+"ref": "L22N2548",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+" best",
+"best",
+"_best",
+"最佳",
+"Best",
+"-best"
+]
+},
+{
+"gain": 6.82,
+"ref": "L22N8998",
+"sign": 1,
+"kl": 0.52,
+"tokens": [
+" best",
+"最佳",
+" Best",
+"Best",
+"best",
+"_best"
+]
+},
+{
+"gain": 6.48,
+"ref": "L22N42",
+"sign": 1,
+"kl": 1.3,
+"tokens": [
+" better",
+"better",
+" Better",
+"更好的",
+"更好",
+" mejor"
+]
+},
+{
+"gain": 6.36,
+"ref": "L22N994",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+"尽可能",
+" as",
+"尽可能地",
+"尽",
+"盡",
+" best"
+]
+},
+{
+"gain": 6.0,
+"ref": "L22N9564",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" best",
+"best",
+"最好的",
+"最佳",
+"Best",
+"-best"
+]
+},
+{
+"gain": 5.65,
+"ref": "L22N9089",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" better",
+"更好",
+"better",
+" Better",
+"更好的",
+" mejor"
+]
+},
+{
+"gain": 5.39,
+"ref": "L22N9255",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" bet",
+" bets",
+"bet",
+" Bet",
+"赌",
+"Bet"
+]
+},
+{
+"gain": 5.17,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.7,
+"ref": "L22N11492",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" known",
+"known",
+"Known",
+" Known",
+"已知",
+"-known"
+]
+},
+{
+"gain": 4.62,
+"ref": "L22N10503",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" way",
+" best",
+"最好的",
+" ways",
+"最佳",
+"best"
+]
+},
+{
+"gain": 4.57,
+"ref": "L22N7745",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" better",
+"better",
+"更好",
+" Better",
+" mejor",
+"更好的"
+]
+}
+],
+"calc": [
+{
+"gain": 9.34,
+"ref": "L22N1849",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" calculated",
+"计算",
+"计算的",
+"计算出",
+"計算",
+" calculation"
+]
+},
+{
+"gain": 6.74,
+"ref": "L22N957",
+"sign": -1,
+"kl": 1.17,
+"tokens": [
+" computer",
+"电脑",
+"计算机",
+" computers",
+"computer",
+" Computer"
+]
+},
+{
+"gain": 6.29,
+"ref": "L22N10583",
+"sign": -1,
+"kl": 1.64,
+"tokens": [
+"公式",
+"计算公式",
+" formula",
+"formula",
+"Formula",
+" Formula"
+]
+},
+{
+"gain": 6.01,
+"ref": "L22N2913",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" counting",
+"计数",
+" calculation",
+"计算",
+"测量",
+" measurement"
+]
+},
+{
+"gain": 5.83,
+"ref": "L22N350",
+"sign": 1,
+"kl": 0.9,
+"tokens": [
+" intellectually",
+" logically",
+" mechanically",
+" physically",
+" scientifically",
+" philosoph"
+]
+},
+{
+"gain": 4.93,
+"ref": "L22N2753",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+"计算",
+" calculation",
+"计算方法",
+" computation",
+"的计算",
+" calculating"
+]
+},
+{
+"gain": 4.92,
+"ref": "L22N7131",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" simulation",
+" simulations",
+"模拟",
+"simulation",
+"Simulation",
+" Simulation"
+]
+},
+{
+"gain": 4.7,
+"ref": "L22N5403",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+"推算",
+"确定",
+" determination",
+" calculated",
+"计算",
+" determined"
+]
+},
+{
+"gain": 4.68,
+"ref": "L22N9206",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" simulation",
+" simulations",
+"模拟",
+" Simulation",
+"Simulation",
+"仿真"
+]
+},
+{
+"gain": 4.62,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.47,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.32,
+"ref": "L22N3573",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+"账",
+" account",
+" accounts",
+" accounting",
+"account",
+" Account"
+]
+}
+],
+"cancel": [
+{
+"gain": 12.11,
+"ref": "L22N7723",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" cancel",
+" cancellation",
+" cancell",
+"cancel",
+" canc",
+" cancelling"
+]
+},
+{
+"gain": 8.81,
+"ref": "L22N5935",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" cancellation",
+" cancel",
+" Cancel",
+"终止",
+" canceled",
+" cancelled"
+]
+},
+{
+"gain": 6.53,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 6.23,
+"ref": "L22N9448",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+"消除",
+"消灭",
+"消",
+" elimination",
+" Elim",
+"取消"
+]
+},
+{
+"gain": 5.82,
+"ref": "L22N7138",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+"删除",
+"移除",
+" removal",
+"撤",
+"删",
+" removing"
+]
+},
+{
+"gain": 5.74,
+"ref": "L22N597",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" exit",
+" Exit",
+"退出",
+"Exit",
+"exit",
+"_exit"
+]
+},
+{
+"gain": 5.54,
+"ref": "L22N189",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+"退出",
+" births",
+" deaths",
+" death",
+" birth",
+" disappearance"
+]
+},
+{
+"gain": 5.04,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.84,
+"ref": "L22N231",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+"放弃",
+" abandon",
+" abandoning",
+" abandonment",
+"放下",
+"停止"
+]
+},
+{
+"gain": 4.83,
+"ref": "L22N9211",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"消除",
+" elimination",
+" Elim",
+"Elim",
+" removal",
+"移除"
+]
+},
+{
+"gain": 4.55,
+"ref": "L22N7588",
+"sign": 1,
+"kl": 0.53,
+"tokens": [
+" admitting",
+" proposing",
+" speak",
+" introducing",
+" describing",
+" declaring"
+]
+},
+{
+"gain": 4.46,
+"ref": "L22N9454",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" Effect",
+" Balance",
+" effect",
+" Decision",
+" precaution",
+" Change"
+]
+}
+],
+"cat": [
+{
+"gain": 5.44,
+"ref": "L22N10110",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+"纯",
+" pure",
+" purity",
+"纯度",
+" Pure",
+"純"
+]
+},
+{
+"gain": 4.58,
+"ref": "L22N4628",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+"纯",
+" pure",
+"pure",
+"Pure",
+" Pure",
+"純"
+]
+},
+{
+"gain": 4.44,
+"ref": "L22N9394",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+" claimed",
+" purported",
+"claimed",
+"声称",
+" claiming",
+"宣称"
+]
+},
+{
+"gain": 4.12,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.01,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.43,
+"ref": "L22N9711",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+"垃圾",
+" trash",
+" garbage",
+" debris",
+" Trash",
+" rubbish"
+]
+},
+{
+"gain": 3.42,
+"ref": "L22N6138",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" and",
+" And",
+" và",
+".and",
+" и",
+"\tand"
+]
+},
+{
+"gain": 3.32,
+"ref": "L22N7293",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Reverse",
+" Course",
+" Crash",
+" Fu",
+" Scheme",
+" Judge"
+]
+},
+{
+"gain": 3.28,
+"ref": "L22N4332",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"下载报告",
+"-->",
+"新知识",
+" meaningful",
+" toller",
+" inval"
+]
+},
+{
+"gain": 3.27,
+"ref": "L22N10187",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" And",
+"And",
+",and",
+" and",
+"_and",
+".And"
+]
+},
+{
+"gain": 3.23,
+"ref": "L22N438",
+"sign": 1,
+"kl": 0.35,
+"tokens": [
+" fans",
+"爱好者",
+" lovers",
+" enthusiasts",
+" Fans",
+" aficionados"
+]
+}
+],
+"chest": [
+{
+"gain": 4.65,
+"ref": "L22N3951",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+" gold",
+"黄金",
+" Gold",
+"gold",
+"金",
+"Gold"
+]
+},
+{
+"gain": 4.48,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 3.89,
+"ref": "L22N7147",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+"固定",
+" fixed",
+"固定在",
+"fixed",
+"固定的",
+"Fixed"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N5967",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" protected",
+" protection",
+"protected",
+"Protected",
+"保护",
+" Protection"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N8908",
+"sign": 1,
+"kl": 1.47,
+"tokens": [
+" key",
+"钥匙",
+" keys",
+"key",
+" Key",
+" Keys"
+]
+},
+{
+"gain": 3.46,
+"ref": "L22N1238",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" lock",
+" Lock",
+" lockdown",
+"-lock",
+"锁",
+" locking"
+]
+},
+{
+"gain": 3.36,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 2.99,
+"ref": "L22N4494",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+"黄金",
+" Gold",
+"黃金",
+"的黄金",
+" gold",
+"gold"
+]
+},
+{
+"gain": 2.95,
+"ref": "L22N8572",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" fingers",
+" finger",
+"肩膀",
+"手指",
+"袖子",
+"的手指"
+]
+},
+{
+"gain": 2.94,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+},
+{
+"gain": 2.87,
+"ref": "L22N2849",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+" cornerstone",
+" staple",
+" hallmark",
+" gold",
+"gold",
+"黄金"
+]
+},
+{
+"gain": 2.84,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+}
+],
+"commit": [
+{
+"gain": 10.79,
+"ref": "L22N6139",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" Commit",
+" commitment",
+"commit",
+" commit",
+" commitments",
+"承诺"
+]
+},
+{
+"gain": 7.83,
+"ref": "L22N8421",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" commit",
+"commit",
+" commits",
+"Commit",
+" Commit",
+" git"
+]
+},
+{
+"gain": 5.72,
+"ref": "L22N7176",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+"承诺",
+"签署",
+" pledge",
+" promise",
+"承诺书",
+"的承诺"
+]
+},
+{
+"gain": 5.31,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.75,
+"ref": "L22N1591",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"投入",
+"投入到",
+"投",
+"全身心",
+" wholly",
+"投放"
+]
+},
+{
+"gain": 4.59,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 4.43,
+"ref": "L22N5268",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+"选定",
+"决",
+"确定的",
+"确定",
+"决定的",
+" deciding"
+]
+},
+{
+"gain": 4.36,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 4.32,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.27,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.1,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+},
+{
+"gain": 3.9,
+"ref": "L22N566",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+"坚持",
+" stick",
+" Stick",
+"Stick",
+" sticking",
+"stick"
+]
+}
+],
+"conspiracy": [
+{
+"gain": 5.51,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.54,
+"ref": "L22N9910",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" wake",
+"wake",
+" wakes",
+" wakeup",
+"醒",
+" awakening"
+]
+},
+{
+"gain": 3.84,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.8,
+"ref": "L22N3443",
+"sign": 1,
+"kl": 0.29,
+"tokens": [
+" wake",
+"wake",
+" wakes",
+" waking",
+"醒来",
+" woke"
+]
+},
+{
+"gain": 3.61,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.32,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.18,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.14,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 2.96,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 2.96,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+},
+{
+"gain": 2.89,
+"ref": "L22N1523",
+"sign": 1,
+"kl": 4.27,
+"tokens": [
+" right",
+"right",
+" RIGHT",
+" Right",
+"Right",
+"-right"
+]
+},
+{
+"gain": 2.82,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+}
+],
+"corporate": [
+{
+"gain": 8.81,
+"ref": "L22N2079",
+"sign": -1,
+"kl": 0.54,
+"tokens": [
+" circle",
+" circular",
+" circles",
+"圈",
+" Circular",
+"Circular"
+]
+},
+{
+"gain": 8.46,
+"ref": "L22N10886",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+" circle",
+"圈",
+"Circle",
+" full",
+" circles",
+"circle"
+]
+},
+{
+"gain": 7.83,
+"ref": "L22N7672",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" move",
+" Move",
+"move",
+" moving",
+" moves",
+"-move"
+]
+},
+{
+"gain": 7.24,
+"ref": "L22N1746",
+"sign": -1,
+"kl": 0.29,
+"tokens": [
+" action",
+" Action",
+"动作",
+"Action",
+"action",
+"-action"
+]
+},
+{
+"gain": 6.98,
+"ref": "L22N5602",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" action",
+"行动",
+"action",
+"行动的",
+" Action",
+"-action"
+]
+},
+{
+"gain": 6.08,
+"ref": "L22N11058",
+"sign": -1,
+"kl": 0.38,
+"tokens": [
+"圆桌",
+" table",
+"围",
+"坐",
+"桌",
+"テーブル"
+]
+},
+{
+"gain": 5.46,
+"ref": "L22N8164",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" circle",
+" circles",
+" vertical",
+"circle",
+"圆圈",
+" rectangle"
+]
+},
+{
+"gain": 5.41,
+"ref": "L22N11722",
+"sign": 1,
+"kl": 0.35,
+"tokens": [
+" square",
+"圆形",
+" circular",
+" Square",
+"圆的",
+" rectangular"
+]
+},
+{
+"gain": 5.1,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 5.07,
+"ref": "L22N8489",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" tilt",
+" angled",
+" angle",
+" angles",
+" rotation",
+"倾斜"
+]
+},
+{
+"gain": 5.05,
+"ref": "L22N2153",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" action",
+" Action",
+"action",
+"Action",
+"-action",
+" ACTION"
+]
+},
+{
+"gain": 5.02,
+"ref": "L22N8288",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" symbols",
+" symbol",
+" circles",
+"symbols",
+"符号",
+"Symbols"
+]
+}
+],
+"cowboy": [
+{
+"gain": 6.36,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 6.35,
+"ref": "L22N11858",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+" how",
+"如何",
+" How",
+"how",
+"How",
+" cómo"
+]
+},
+{
+"gain": 6.05,
+"ref": "L22N8209",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" how",
+"如何",
+"how",
+" How",
+"如何在",
+"How"
+]
+},
+{
+"gain": 5.95,
+"ref": "L22N6290",
+"sign": -1,
+"kl": 0.38,
+"tokens": [
+" how",
+" what",
+"how",
+"what",
+"如何",
+" How"
+]
+},
+{
+"gain": 5.36,
+"ref": "L22N4311",
+"sign": 1,
+"kl": 0.73,
+"tokens": [
+" partnership",
+" partnerships",
+"合作",
+" partner",
+" partners",
+"合作伙伴"
+]
+},
+{
+"gain": 4.68,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 4.49,
+"ref": "L22N11062",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" how",
+" what",
+" How",
+"how",
+"How",
+"如何"
+]
+},
+{
+"gain": 4.4,
+"ref": "L22N6919",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"伙伴",
+" partner",
+" friend",
+" Partner",
+" companion",
+"partner"
+]
+},
+{
+"gain": 4.33,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.29,
+"ref": "L22N9892",
+"sign": 1,
+"kl": 0.73,
+"tokens": [
+" why",
+"为什么",
+"为何",
+"why",
+"怎么",
+" Why"
+]
+},
+{
+"gain": 4.22,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N6723",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+" how",
+"how",
+" How",
+"如何",
+"How",
+" 얼마나"
+]
+}
+],
+"crime": [
+{
+"gain": 7.63,
+"ref": "L22N1055",
+"sign": 1,
+"kl": 0.33,
+"tokens": [
+" Detect",
+" detect",
+" detection",
+" detecting",
+" detects",
+"检测到"
+]
+},
+{
+"gain": 5.3,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 5.23,
+"ref": "L22N2117",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+"警察",
+" police",
+"警",
+"医护人员",
+" Police",
+"人民警察"
+]
+},
+{
+"gain": 5.07,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.54,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.34,
+"ref": "L22N1134",
+"sign": -1,
+"kl": 1.07,
+"tokens": [
+" courtesy",
+" polit",
+" courteous",
+" ethical",
+"礼貌",
+" polite"
+]
+},
+{
+"gain": 4.27,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.82,
+"ref": "L22N66",
+"sign": 1,
+"kl": 0.04,
+"tokens": [
+" measurable",
+" detect",
+" observable",
+" meas",
+" discern",
+"observable"
+]
+},
+{
+"gain": 3.76,
+"ref": "L22N7053",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" regulatory",
+" government",
+" governmental",
+" Regulatory",
+"政府",
+"government"
+]
+},
+{
+"gain": 3.75,
+"ref": "L22N1390",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" Significant",
+" So",
+"“So",
+"pag",
+"的安全",
+"’S"
+]
+},
+{
+"gain": 3.54,
+"ref": "L22N10079",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+"检查",
+" checking",
+" checks",
+"检验",
+"检查和",
+" Checks"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N9310",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+" digging",
+"挖掘",
+" detective",
+"侦探",
+"探",
+"掘"
+]
+}
+],
+"critic": [
+{
+"gain": 8.12,
+"ref": "L22N8725",
+"sign": 1,
+"kl": 0.52,
+"tokens": [
+" highlighted",
+" bold",
+" underline",
+"highlight",
+" highlight",
+"bold"
+]
+},
+{
+"gain": 7.23,
+"ref": "L22N2770",
+"sign": -1,
+"kl": 0.59,
+"tokens": [
+" notes",
+" Notes",
+"_notes",
+"笔记",
+"-notes",
+"notes"
+]
+},
+{
+"gain": 6.9,
+"ref": "L22N10457",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" out",
+"出",
+"out",
+"-out",
+"出的",
+"出不"
+]
+},
+{
+"gain": 6.86,
+"ref": "L22N5417",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" out",
+"out",
+"-out",
+"出",
+" Out",
+"Out"
+]
+},
+{
+"gain": 6.47,
+"ref": "L22N9917",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" after",
+" After",
+" после",
+" dopo",
+"After",
+" après"
+]
+},
+{
+"gain": 5.86,
+"ref": "L22N5007",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+" mouth",
+"嘴",
+" Mouth",
+"嘴巴",
+" mouths",
+"mouth"
+]
+},
+{
+"gain": 5.76,
+"ref": "L22N6970",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" out",
+" down",
+" up",
+"-out",
+"下来",
+"出来"
+]
+},
+{
+"gain": 5.7,
+"ref": "L22N5338",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+"经过",
+"經過",
+" after",
+"经过了",
+"在经过",
+" After"
+]
+},
+{
+"gain": 5.66,
+"ref": "L22N342",
+"sign": 1,
+"kl": 0.05,
+"tokens": [
+" after",
+"after",
+" After",
+"After",
+"之后",
+" afterwards"
+]
+},
+{
+"gain": 5.65,
+"ref": "L22N6523",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" up",
+" out",
+" down",
+"下来",
+"Up",
+" lên"
+]
+},
+{
+"gain": 5.57,
+"ref": "L22N4859",
+"sign": 1,
+"kl": 0.52,
+"tokens": [
+" dare",
+"敢",
+"胆",
+" Dare",
+"膽",
+"敢于"
+]
+},
+{
+"gain": 5.46,
+"ref": "L22N9072",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" after",
+" After",
+"after",
+" после",
+"After",
+" dopo"
+]
+}
+],
+"death": [
+{
+"gain": 10.55,
+"ref": "L22N11204",
+"sign": 1,
+"kl": 0.75,
+"tokens": [
+" death",
+"死亡",
+"death",
+" died",
+" dies",
+" Death"
+]
+},
+{
+"gain": 9.84,
+"ref": "L22N4199",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" death",
+"死亡",
+" Death",
+"death",
+"Death",
+" deaths"
+]
+},
+{
+"gain": 7.95,
+"ref": "L22N8524",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+"死",
+"死亡",
+"死了",
+"死的",
+"死亡的",
+" death"
+]
+},
+{
+"gain": 7.79,
+"ref": "L22N3740",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" dying",
+"濒",
+" умира",
+"奄",
+"病",
+"垂"
+]
+},
+{
+"gain": 7.28,
+"ref": "L22N5272",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" dying",
+"牺牲",
+" died",
+" sacrifice",
+"而死",
+" death"
+]
+},
+{
+"gain": 7.22,
+"ref": "L22N1897",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" death",
+"死亡",
+"死亡的",
+"死了",
+" Death",
+"死的"
+]
+},
+{
+"gain": 7.07,
+"ref": "L22N189",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+"退出",
+" births",
+" deaths",
+" death",
+" birth",
+" disappearance"
+]
+},
+{
+"gain": 6.02,
+"ref": "L22N5500",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" wedding",
+"结婚",
+" death",
+" birth",
+"婚礼",
+" marriage"
+]
+},
+{
+"gain": 6.0,
+"ref": "L22N2599",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" dying",
+"灭亡",
+"死了",
+"死去",
+"死亡",
+"死"
+]
+},
+{
+"gain": 5.47,
+"ref": "L22N6688",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+" death",
+"death",
+"死亡",
+"死",
+" Death",
+" deaths"
+]
+},
+{
+"gain": 5.45,
+"ref": "L22N11746",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" dead",
+"dead",
+" Dead",
+" мерт",
+"Dead",
+"死"
+]
+},
+{
+"gain": 5.44,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+}
+],
+"destruction": [
+{
+"gain": 6.64,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+},
+{
+"gain": 5.84,
+"ref": "L22N888",
+"sign": -1,
+"kl": 7.2,
+"tokens": [
+"上",
+"中",
+"大",
+"在",
+"预",
+"问题"
+]
+},
+{
+"gain": 5.51,
+"ref": "L22N7764",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"销毁",
+"删除",
+" deleted",
+" deletion",
+"消失",
+" destroyed"
+]
+},
+{
+"gain": 5.23,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 5.18,
+"ref": "L22N189",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+"退出",
+" births",
+" deaths",
+" death",
+" birth",
+" disappearance"
+]
+},
+{
+"gain": 5.11,
+"ref": "L22N7847",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+"重建",
+" reconstruction",
+" rebuild",
+" rebuilding",
+" Reconstruction",
+" reconstruct"
+]
+},
+{
+"gain": 5.06,
+"ref": "L22N3979",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"破坏",
+" destruction",
+" Destruction",
+"破壞",
+" destroying",
+"destroy"
+]
+},
+{
+"gain": 4.62,
+"ref": "L22N11865",
+"sign": 1,
+"kl": 0.83,
+"tokens": [
+" dé",
+"_delegate",
+" déta",
+" debito",
+" deal",
+" detailed"
+]
+},
+{
+"gain": 4.35,
+"ref": "L22N4505",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+" Destroy",
+" destruction",
+" Destruction",
+"摧毁",
+"Destroy",
+"destroy"
+]
+},
+{
+"gain": 4.25,
+"ref": "L22N2352",
+"sign": 1,
+"kl": 0.33,
+"tokens": [
+"破裂",
+"倒塌",
+"摔",
+" crashed",
+"崩溃",
+" ruined"
+]
+},
+{
+"gain": 4.07,
+"ref": "L22N3372",
+"sign": -1,
+"kl": 0.93,
+"tokens": [
+" malfunction",
+" faulty",
+" damaged",
+"出错",
+"损坏",
+"错误"
+]
+},
+{
+"gain": 4.04,
+"ref": "L22N5170",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" undermining",
+"削弱",
+" undermines",
+" undermine",
+" undermined",
+"威胁"
+]
+}
+],
+"dog": [
+{
+"gain": 6.16,
+"ref": "L22N8472",
+"sign": 1,
+"kl": 0.92,
+"tokens": [
+" news",
+"news",
+"News",
+"-news",
+" News",
+"消息"
+]
+},
+{
+"gain": 5.15,
+"ref": "L22N9169",
+"sign": 1,
+"kl": 0.28,
+"tokens": [
+"喜悦",
+" joyful",
+" joy",
+" positive",
+" good",
+"喜"
+]
+},
+{
+"gain": 5.03,
+"ref": "L22N10314",
+"sign": 1,
+"kl": 1.17,
+"tokens": [
+" good",
+"好的",
+"good",
+" GOOD",
+" well",
+"一个好的"
+]
+},
+{
+"gain": 4.91,
+"ref": "L22N3789",
+"sign": -1,
+"kl": 0.57,
+"tokens": [
+" walk",
+" walks",
+"walk",
+"Walk",
+" Walk",
+"_walk"
+]
+},
+{
+"gain": 4.88,
+"ref": "L22N9041",
+"sign": 1,
+"kl": 0.48,
+"tokens": [
+" luck",
+"好运",
+" good",
+" Good",
+"Good",
+" Enjoy"
+]
+},
+{
+"gain": 4.78,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.59,
+"ref": "L22N6005",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" good",
+" Good",
+"good",
+"好事",
+"Good",
+"_good"
+]
+},
+{
+"gain": 4.57,
+"ref": "L22N10858",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" Good",
+"Good",
+" good",
+"good",
+" GOOD",
+"-good"
+]
+},
+{
+"gain": 4.45,
+"ref": "L22N2556",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+" good",
+"good",
+" Good",
+"Good",
+" GOOD",
+"-good"
+]
+},
+{
+"gain": 4.29,
+"ref": "L22N784",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" useful",
+" helpful",
+" beneficial",
+"有用",
+" Useful",
+"有用的"
+]
+},
+{
+"gain": 4.17,
+"ref": "L22N11218",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" good",
+" excellent",
+"good",
+"好的",
+"Good",
+"_good"
+]
+},
+{
+"gain": 4.09,
+"ref": "L22N3939",
+"sign": -1,
+"kl": 0.86,
+"tokens": [
+"tail",
+" tail",
+" Tail",
+"Tail",
+"需要根据",
+" tailored"
+]
+}
+],
+"dragon": [
+{
+"gain": 4.67,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.49,
+"ref": "L22N9483",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" Terminator",
+" Batman",
+" Harry",
+" Gand",
+" Darth",
+" Hogwarts"
+]
+},
+{
+"gain": 4.32,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 4.3,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.17,
+"ref": "L22N9562",
+"sign": 1,
+"kl": 0.73,
+"tokens": [
+" duration",
+" amount",
+" minimum",
+" maximum",
+" inches",
+"数目"
+]
+},
+{
+"gain": 4.04,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.69,
+"ref": "L22N10284",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" if",
+" If",
+"如果",
+" إذا",
+"若",
+"如果我"
+]
+},
+{
+"gain": 3.54,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.45,
+"ref": "L22N1982",
+"sign": -1,
+"kl": 0.5,
+"tokens": [
+" fire",
+"着火",
+" fires",
+"fire",
+"火的",
+"起火"
+]
+},
+{
+"gain": 3.39,
+"ref": "L22N8169",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" and",
+" và",
+" и",
+"และ",
+" এবং",
+" και"
+]
+},
+{
+"gain": 3.31,
+"ref": "L22N6465",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" extension",
+" Extension",
+" Entry",
+" supply",
+" transfers",
+" reference"
+]
+},
+{
+"gain": 3.29,
+"ref": "L22N9542",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" Asian",
+"东方",
+" Oriental",
+" oriental",
+" East",
+"Asian"
+]
+}
+],
+"drama": [
+{
+"gain": 10.29,
+"ref": "L22N2089",
+"sign": 1,
+"kl": 1.13,
+"tokens": [
+" fate",
+"命运",
+" destiny",
+" Fate",
+"命運",
+"命运的"
+]
+},
+{
+"gain": 4.54,
+"ref": "L22N2598",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" share",
+" Share",
+"份",
+"份额",
+" lot",
+"share"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N11490",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" focus",
+" fokus",
+"focused",
+" foco",
+"-focused",
+"_focus"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N5709",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+"怨",
+"怨恨",
+" angry",
+" hated",
+" blamed",
+"警告"
+]
+},
+{
+"gain": 3.81,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.72,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.72,
+"ref": "L22N10010",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" sadly",
+" Sadly",
+" unfortunately",
+" reg",
+" regret",
+" trag"
+]
+},
+{
+"gain": 3.41,
+"ref": "L22N7030",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+" sigh",
+" breathing",
+" breath",
+" breathe",
+"呼吸",
+" breathed"
+]
+},
+{
+"gain": 3.14,
+"ref": "L22N7825",
+"sign": 1,
+"kl": 1.28,
+"tokens": [
+" lucky",
+" luck",
+"幸运",
+"运气",
+" fortunate",
+" fortune"
+]
+},
+{
+"gain": 2.98,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 2.75,
+"ref": "L22N3372",
+"sign": -1,
+"kl": 0.93,
+"tokens": [
+" malfunction",
+" faulty",
+" damaged",
+"出错",
+"损坏",
+"错误"
+]
+}
+],
+"eiffel": [
+{
+"gain": 4.3,
+"ref": "L22N2364",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" London",
+" Berlin",
+"London",
+" Tokyo",
+" Bangkok",
+" Atlanta"
+]
+},
+{
+"gain": 3.77,
+"ref": "L22N3075",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" London",
+" Berlin",
+" Tokyo",
+" Bangkok",
+" Budapest",
+"London"
+]
+},
+{
+"gain": 3.52,
+"ref": "L22N7768",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" while",
+"while",
+" While",
+" mientras",
+" enquanto",
+" WHILE"
+]
+},
+{
+"gain": 3.5,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.5,
+"ref": "L22N6043",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" San",
+" Kyoto",
+" Boston",
+" Lahore",
+" Brooklyn",
+" Syracuse"
+]
+},
+{
+"gain": 3.05,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 3.03,
+"ref": "L22N7196",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" sulfur",
+" sulf",
+" magnesium",
+" manganese",
+" mineral",
+" calcium"
+]
+},
+{
+"gain": 2.98,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 2.91,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 2.87,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 2.85,
+"ref": "L22N908",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" Western",
+" Lip",
+" Roy",
+" Los",
+" Organic",
+" Modern"
+]
+},
+{
+"gain": 2.82,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+}
+],
+"envy": [
+{
+"gain": 9.69,
+"ref": "L22N7647",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" env",
+" envy",
+"-env",
+" jealous",
+"env",
+"/env"
+]
+},
+{
+"gain": 4.11,
+"ref": "L22N9632",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" cov",
+"馋",
+"垂涎",
+"口水",
+"唾液",
+"贪婪"
+]
+},
+{
+"gain": 4.03,
+"ref": "L22N11732",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" reluctance",
+" resistance",
+" hesitation",
+" risk",
+" fear",
+" refusal"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N5709",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+"怨",
+"怨恨",
+" angry",
+" hated",
+" blamed",
+"警告"
+]
+},
+{
+"gain": 3.82,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.78,
+"ref": "L22N6856",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+"争斗",
+"斗争",
+"争夺",
+" fights",
+"争",
+" fighting"
+]
+},
+{
+"gain": 3.65,
+"ref": "L22N11865",
+"sign": 1,
+"kl": 0.83,
+"tokens": [
+" dé",
+"_delegate",
+" déta",
+" debito",
+" deal",
+" detailed"
+]
+},
+{
+"gain": 3.6,
+"ref": "L22N2808",
+"sign": 1,
+"kl": 4.59,
+"tokens": [
+"当然",
+" course",
+"当然了",
+"當然",
+"当然是",
+"course"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N5853",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+"恶",
+"邪恶",
+"恶意",
+" evil",
+" villains",
+"坏人"
+]
+},
+{
+"gain": 3.54,
+"ref": "L22N10602",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" access",
+"access",
+" Access",
+"Access",
+"_access",
+" accesso"
+]
+},
+{
+"gain": 3.42,
+"ref": "L22N7194",
+"sign": -1,
+"kl": 0.71,
+"tokens": [
+" even",
+" Even",
+"even",
+" даже",
+" même",
+"Even"
+]
+},
+{
+"gain": 3.28,
+"ref": "L22N5494",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+"竞争对手",
+" competitor",
+" competitors",
+"竞争",
+" competition",
+" Compet"
+]
+}
+],
+"fear": [
+{
+"gain": 10.55,
+"ref": "L22N7980",
+"sign": 1,
+"kl": 2.06,
+"tokens": [
+" fear",
+"怕",
+"害怕",
+" afraid",
+"恐",
+"Fear"
+]
+},
+{
+"gain": 9.12,
+"ref": "L22N10881",
+"sign": 1,
+"kl": 0.38,
+"tokens": [
+" fear",
+"恐惧",
+" Fear",
+"Fear",
+"害怕",
+"怕"
+]
+},
+{
+"gain": 8.41,
+"ref": "L22N11498",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+" worry",
+"担心",
+" concern",
+"担忧",
+" concerned",
+" worried"
+]
+},
+{
+"gain": 8.18,
+"ref": "L22N12020",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" fear",
+" worry",
+"担心",
+" worried",
+"担忧",
+"恐惧"
+]
+},
+{
+"gain": 6.93,
+"ref": "L22N2409",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" afraid",
+" fear",
+"害怕",
+"怕",
+"恐惧",
+"惧怕"
+]
+},
+{
+"gain": 6.41,
+"ref": "L22N11490",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" focus",
+" fokus",
+"focused",
+" foco",
+"-focused",
+"_focus"
+]
+},
+{
+"gain": 6.08,
+"ref": "L22N7043",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" love",
+"love",
+"爱",
+" appreciation",
+" Love",
+"热爱"
+]
+},
+{
+"gain": 5.81,
+"ref": "L22N11732",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" reluctance",
+" resistance",
+" hesitation",
+" risk",
+" fear",
+" refusal"
+]
+},
+{
+"gain": 5.57,
+"ref": "L22N1091",
+"sign": -1,
+"kl": 0.45,
+"tokens": [
+" excitement",
+"激动",
+" fear",
+"兴奋",
+" excited",
+" panic"
+]
+},
+{
+"gain": 5.38,
+"ref": "L22N2636",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" confidence",
+"放心",
+" confident",
+" safe",
+"自信",
+"confidence"
+]
+},
+{
+"gain": 5.3,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 5.23,
+"ref": "L22N4515",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" fears",
+" hopes",
+" aspirations",
+" ambitions",
+"恐惧",
+" worries"
+]
+}
+],
+"film": [
+{
+"gain": 5.96,
+"ref": "L22N11085",
+"sign": -1,
+"kl": 0.51,
+"tokens": [
+" movies",
+" bookstore",
+" movie",
+"Movie",
+" restaurants",
+" customers"
+]
+},
+{
+"gain": 5.56,
+"ref": "L22N36",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" video",
+"视频",
+" videos",
+" Video",
+"动画",
+".gif"
+]
+},
+{
+"gain": 4.7,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.1,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.08,
+"ref": "L22N8715",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" Commercial",
+" Company",
+" Hospital",
+" Hotel",
+" Local",
+" Medical"
+]
+},
+{
+"gain": 3.9,
+"ref": "L22N9483",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" Terminator",
+" Batman",
+" Harry",
+" Gand",
+" Darth",
+" Hogwarts"
+]
+},
+{
+"gain": 3.79,
+"ref": "L22N2875",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" camera",
+" cameras",
+"相机",
+"camera",
+"摄像",
+"拍照"
+]
+},
+{
+"gain": 3.78,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N11031",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+" documentary",
+" documentaries",
+" Documentary",
+"纪录片",
+"Document",
+" documental"
+]
+},
+{
+"gain": 3.67,
+"ref": "L22N5062",
+"sign": 1,
+"kl": 0.77,
+"tokens": [
+" thereof",
+"其中",
+" where",
+" They",
+"They",
+"它为"
+]
+},
+{
+"gain": 3.58,
+"ref": "L22N8614",
+"sign": -1,
+"kl": 0.46,
+"tokens": [
+"蔬菜",
+"美食",
+"茶叶",
+" Agriculture",
+" Weather",
+"食品"
+]
+},
+{
+"gain": 3.41,
+"ref": "L22N2351",
+"sign": 1,
+"kl": 0.54,
+"tokens": [
+" airports",
+"医",
+" hospitals",
+"emails",
+" concerts",
+"电影院"
+]
+}
+],
+"fog": [
+{
+"gain": 5.06,
+"ref": "L22N5406",
+"sign": -1,
+"kl": 0.77,
+"tokens": [
+" silence",
+" silent",
+"沉默",
+" word",
+" Silence",
+" words"
+]
+},
+{
+"gain": 4.94,
+"ref": "L22N9625",
+"sign": 1,
+"kl": 0.33,
+"tokens": [
+" silence",
+"沉默",
+" Silence",
+" silent",
+"sil",
+" silencio"
+]
+},
+{
+"gain": 4.11,
+"ref": "L22N1669",
+"sign": 1,
+"kl": 0.29,
+"tokens": [
+" darkness",
+" night",
+" dusk",
+" shadows",
+"夜色",
+"夜"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N2992",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" wrong",
+"错误",
+"错",
+"错的",
+"错误的",
+"错了"
+]
+},
+{
+"gain": 3.67,
+"ref": "L22N2719",
+"sign": 1,
+"kl": 0.32,
+"tokens": [
+" silent",
+"沉默",
+" silence",
+"silent",
+" Silence",
+" Silent"
+]
+},
+{
+"gain": 3.54,
+"ref": "L22N11057",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" gray",
+" red",
+"红色",
+" grey",
+"灰色",
+"红"
+]
+},
+{
+"gain": 3.3,
+"ref": "L22N8803",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+" applause",
+"appl",
+"鼓掌",
+"掌声",
+" Appl",
+" applaud"
+]
+},
+{
+"gain": 3.16,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.16,
+"ref": "L22N6814",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+" color",
+"颜色",
+"色",
+"color",
+"无色",
+"的颜色"
+]
+},
+{
+"gain": 3.07,
+"ref": "L22N3586",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+"混淆",
+" confusion",
+" confused",
+" confuse",
+" confund",
+" confusing"
+]
+},
+{
+"gain": 2.99,
+"ref": "L22N568",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" empty",
+"空",
+"空的",
+" blank",
+"空白",
+" Empty"
+]
+},
+{
+"gain": 2.87,
+"ref": "L22N5128",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" silence",
+"休眠",
+"沉默",
+"sil",
+" Silence",
+"濒"
+]
+}
+],
+"frog": [
+{
+"gain": 5.0,
+"ref": "L22N1498",
+"sign": -1,
+"kl": 0.64,
+"tokens": [
+" swimming",
+"池",
+" swim",
+"湖水",
+" aquatic",
+"池中"
+]
+},
+{
+"gain": 4.18,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.1,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.62,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.61,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 3.49,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 3.48,
+"ref": "L22N5387",
+"sign": 1,
+"kl": 0.93,
+"tokens": [
+" now",
+" Now",
+" теперь",
+"现在",
+"now",
+"-now"
+]
+},
+{
+"gain": 3.28,
+"ref": "L22N9828",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+" Chambers",
+" Rad",
+" Collins",
+" Johnson",
+" Thompson",
+" Anthony"
+]
+},
+{
+"gain": 3.27,
+"ref": "L22N10284",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" if",
+" If",
+"如果",
+" إذا",
+"若",
+"如果我"
+]
+},
+{
+"gain": 3.25,
+"ref": "L22N5062",
+"sign": 1,
+"kl": 0.77,
+"tokens": [
+" thereof",
+"其中",
+" where",
+" They",
+"They",
+"它为"
+]
+},
+{
+"gain": 3.2,
+"ref": "L22N9397",
+"sign": -1,
+"kl": 0.29,
+"tokens": [
+" genome",
+"基因组",
+" Genome",
+"细胞",
+" genomic",
+"RNA"
+]
+}
+],
+"ggarden": [
+{
+"gain": 7.38,
+"ref": "L22N8748",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+"垃圾",
+" garbage",
+" Gar",
+"Gar",
+" GC",
+"GC"
+]
+},
+{
+"gain": 5.4,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+},
+{
+"gain": 5.35,
+"ref": "L22N2096",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" Bender",
+" Barker",
+" Barrett",
+" Chapman",
+" Adler",
+" Levine"
+]
+},
+{
+"gain": 5.03,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 5.02,
+"ref": "L22N9483",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" Terminator",
+" Batman",
+" Harry",
+" Gand",
+" Darth",
+" Hogwarts"
+]
+},
+{
+"gain": 4.91,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 4.84,
+"ref": "L22N7833",
+"sign": 1,
+"kl": 0.49,
+"tokens": [
+" anyway",
+" anyways",
+" anyhow",
+" Anyway",
+"Anyway",
+"any"
+]
+},
+{
+"gain": 4.7,
+"ref": "L22N9711",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+"垃圾",
+" trash",
+" garbage",
+" debris",
+" Trash",
+" rubbish"
+]
+},
+{
+"gain": 4.51,
+"ref": "L22N9828",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+" Chambers",
+" Rad",
+" Collins",
+" Johnson",
+" Thompson",
+" Anthony"
+]
+},
+{
+"gain": 4.28,
+"ref": "L22N6027",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" Thompson",
+" Evans",
+" Barker",
+" Levine",
+" Miller",
+" Roberts"
+]
+},
+{
+"gain": 4.22,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+},
+{
+"gain": 4.18,
+"ref": "L22N10047",
+"sign": 1,
+"kl": 3.18,
+"tokens": [
+" then",
+"then",
+"然后",
+" Then",
+"然後",
+" THEN"
+]
+}
+],
+"ghost": [
+{
+"gain": 6.58,
+"ref": "L22N2356",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" beyond",
+" Beyond",
+" above",
+"Beyond",
+"eyond",
+" além"
+]
+},
+{
+"gain": 4.27,
+"ref": "L22N4544",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+"鬼",
+" ghost",
+"ghost",
+" phantom",
+" ghosts",
+"幽灵"
+]
+},
+{
+"gain": 4.16,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.11,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.98,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.97,
+"ref": "L22N9741",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+"除了",
+"除",
+" except",
+"except",
+"除了在",
+" apart"
+]
+},
+{
+"gain": 3.7,
+"ref": "L22N8524",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+"死",
+"死亡",
+"死了",
+"死的",
+"死亡的",
+" death"
+]
+},
+{
+"gain": 3.66,
+"ref": "L22N2978",
+"sign": 1,
+"kl": 1.42,
+"tokens": [
+" memory",
+"记忆",
+"memory",
+" Memory",
+"-memory",
+"Memory"
+]
+},
+{
+"gain": 3.54,
+"ref": "L22N7149",
+"sign": -1,
+"kl": 0.44,
+"tokens": [
+" \"",
+" \"**",
+" **\"",
+"Ghost",
+" \"'",
+"：\""
+]
+},
+{
+"gain": 3.18,
+"ref": "L22N11204",
+"sign": 1,
+"kl": 0.75,
+"tokens": [
+" death",
+"死亡",
+"death",
+" died",
+" dies",
+" Death"
+]
+},
+{
+"gain": 3.16,
+"ref": "L22N1897",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" death",
+"死亡",
+"死亡的",
+"死了",
+" Death",
+"死的"
+]
+},
+{
+"gain": 3.12,
+"ref": "L22N6054",
+"sign": -1,
+"kl": 0.63,
+"tokens": [
+" spectrum",
+"谱",
+"光谱",
+" spectra",
+"频谱",
+" spect"
+]
+}
+],
+"gking": [
+{
+"gain": 6.54,
+"ref": "L22N4260",
+"sign": 1,
+"kl": 0.28,
+"tokens": [
+" President",
+" president",
+" King",
+"总统",
+"President",
+"皇帝"
+]
+},
+{
+"gain": 5.19,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 4.96,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.73,
+"ref": "L22N11368",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" government",
+" Government",
+"政府",
+"Government",
+"government",
+"国务院"
+]
+},
+{
+"gain": 4.34,
+"ref": "L22N11745",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+" King",
+" Dynasty",
+" king",
+" kings",
+" Scholars",
+" royal"
+]
+},
+{
+"gain": 4.25,
+"ref": "L22N11621",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" King",
+" Leader",
+" Founder",
+"君主",
+" Director",
+" Governor"
+]
+},
+{
+"gain": 4.12,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 4.11,
+"ref": "L22N9828",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+" Chambers",
+" Rad",
+" Collins",
+" Johnson",
+" Thompson",
+" Anthony"
+]
+},
+{
+"gain": 4.01,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.69,
+"ref": "L22N5923",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+" Kingdom",
+" King",
+" Empire",
+" empire",
+" dyn",
+"King"
+]
+}
+],
+"gnome": [
+{
+"gain": 10.29,
+"ref": "L22N8085",
+"sign": 1,
+"kl": 1.8,
+"tokens": [
+" point",
+" Point",
+"Point",
+"point",
+"点",
+"_point"
+]
+},
+{
+"gain": 7.08,
+"ref": "L22N11099",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" point",
+" Point",
+"point",
+"意义",
+"Point",
+"点"
+]
+},
+{
+"gain": 7.01,
+"ref": "L22N9810",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" pointing",
+"引用",
+" citing",
+" pointed",
+" cite",
+" 引用"
+]
+},
+{
+"gain": 6.81,
+"ref": "L22N10389",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+" place",
+" point",
+"的地方",
+"地方",
+"点",
+"的点"
+]
+},
+{
+"gain": 5.64,
+"ref": "L22N12065",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" pointing",
+"指向",
+" pointed",
+" points",
+"point",
+" pointer"
+]
+},
+{
+"gain": 5.48,
+"ref": "L22N9000",
+"sign": 1,
+"kl": 0.51,
+"tokens": [
+" point",
+" dot",
+" Point",
+"point",
+"Point",
+"点"
+]
+},
+{
+"gain": 5.24,
+"ref": "L22N6707",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" point",
+" points",
+"点的",
+"points",
+"point",
+" Points"
+]
+},
+{
+"gain": 5.09,
+"ref": "L22N670",
+"sign": -1,
+"kl": 1.97,
+"tokens": [
+" perspective",
+"视角",
+"Pers",
+" Perspective",
+" perspectives",
+"pers"
+]
+},
+{
+"gain": 4.93,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.85,
+"ref": "L22N6755",
+"sign": -1,
+"kl": 1.2,
+"tokens": [
+" burden",
+"bur",
+"负担",
+" burdens",
+" Bur",
+"Bur"
+]
+},
+{
+"gain": 4.73,
+"ref": "L22N1351",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+" data",
+"数据",
+"data",
+" datap",
+"的数据",
+" Data"
+]
+},
+{
+"gain": 4.66,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+}
+],
+"grumpy": [
+{
+"gain": 9.43,
+"ref": "L22N3563",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+" back",
+"back",
+" Back",
+"Back",
+"-back",
+"_back"
+]
+},
+{
+"gain": 8.93,
+"ref": "L22N5365",
+"sign": 1,
+"kl": 0.47,
+"tokens": [
+" back",
+"回来",
+" return",
+"back",
+"_back",
+"Back"
+]
+},
+{
+"gain": 8.55,
+"ref": "L22N10064",
+"sign": 1,
+"kl": 0.9,
+"tokens": [
+" young",
+"年轻",
+" Young",
+"年輕",
+"青年",
+"young"
+]
+},
+{
+"gain": 8.18,
+"ref": "L22N3696",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" back",
+"回到",
+"回去",
+" return",
+" Back",
+" Return"
+]
+},
+{
+"gain": 8.12,
+"ref": "L22N1703",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" return",
+"回",
+" back",
+"return",
+"回来",
+"返回"
+]
+},
+{
+"gain": 7.41,
+"ref": "L22N6877",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"回去",
+"回到",
+" returning",
+"返回",
+" back",
+" return"
+]
+},
+{
+"gain": 6.39,
+"ref": "L22N10313",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+"回来",
+" return",
+" returning",
+"return",
+"回到",
+"回来了"
+]
+},
+{
+"gain": 6.29,
+"ref": "L22N11257",
+"sign": 1,
+"kl": 0.55,
+"tokens": [
+" youth",
+"青年",
+" childhood",
+" young",
+"青少年",
+" Youth"
+]
+},
+{
+"gain": 5.89,
+"ref": "L22N10944",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" child",
+"孩子",
+" young",
+"child",
+"_child",
+"孩童"
+]
+},
+{
+"gain": 5.83,
+"ref": "L22N2192",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+"回归",
+"回到",
+" back",
+"回到了",
+"回",
+"恢复"
+]
+},
+{
+"gain": 5.52,
+"ref": "L22N7261",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" again",
+"again",
+"再次",
+"Again",
+" kembali",
+"再度"
+]
+},
+{
+"gain": 4.42,
+"ref": "L22N2465",
+"sign": -1,
+"kl": 0.65,
+"tokens": [
+" families",
+" mother",
+"母子",
+" Families",
+"母亲",
+" parents"
+]
+}
+],
+"honest": [
+{
+"gain": 7.65,
+"ref": "L22N12253",
+"sign": 1,
+"kl": 0.28,
+"tokens": [
+" honesty",
+" honest",
+" cand",
+" brutally",
+" frank",
+" fran"
+]
+},
+{
+"gain": 5.7,
+"ref": "L22N9100",
+"sign": 1,
+"kl": 0.56,
+"tokens": [
+" legitimate",
+" legitimately",
+"合法",
+"正当",
+"合法的",
+" legit"
+]
+},
+{
+"gain": 5.36,
+"ref": "L22N1134",
+"sign": -1,
+"kl": 1.07,
+"tokens": [
+" courtesy",
+" polit",
+" courteous",
+" ethical",
+"礼貌",
+" polite"
+]
+},
+{
+"gain": 4.26,
+"ref": "L22N3702",
+"sign": 1,
+"kl": 0.54,
+"tokens": [
+" reliable",
+"可靠",
+" credible",
+" reliably",
+" trustworthy",
+"可靠的"
+]
+},
+{
+"gain": 3.96,
+"ref": "L22N5064",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" trust",
+" Trust",
+"信任",
+"Trust",
+"trust",
+"相信我"
+]
+},
+{
+"gain": 3.77,
+"ref": "L22N4340",
+"sign": 1,
+"kl": 2.63,
+"tokens": [
+"非常",
+" array",
+" alternate",
+" architect",
+" architectural",
+" old"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N3231",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+" honest",
+"善",
+"善良",
+" legitimate",
+"正当",
+"诚实"
+]
+},
+{
+"gain": 3.51,
+"ref": "L22N11732",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" reluctance",
+" resistance",
+" hesitation",
+" risk",
+" fear",
+" refusal"
+]
+},
+{
+"gain": 3.48,
+"ref": "L22N1701",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+"可靠",
+"完整",
+" reliable",
+" coherent",
+"清晰",
+" orderly"
+]
+},
+{
+"gain": 3.35,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 3.33,
+"ref": "L22N11331",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" openness",
+" sincerity",
+" honesty",
+" willingness",
+" dedication",
+" kindness"
+]
+},
+{
+"gain": 3.32,
+"ref": "L22N3158",
+"sign": 1,
+"kl": 0.35,
+"tokens": [
+" competent",
+" decent",
+" respectable",
+" satisfactory",
+" adequately",
+" reliable"
+]
+}
+],
+"honor": [
+{
+"gain": 11.22,
+"ref": "L22N2978",
+"sign": 1,
+"kl": 1.42,
+"tokens": [
+" memory",
+"记忆",
+"memory",
+" Memory",
+"-memory",
+"Memory"
+]
+},
+{
+"gain": 10.05,
+"ref": "L22N504",
+"sign": -1,
+"kl": 0.76,
+"tokens": [
+"记得",
+"记忆",
+" remember",
+" memory",
+"記憶",
+"记忆中"
+]
+},
+{
+"gain": 9.68,
+"ref": "L22N4427",
+"sign": -1,
+"kl": 0.53,
+"tokens": [
+" memory",
+"记忆",
+" remember",
+"记住",
+"的记忆",
+" remembering"
+]
+},
+{
+"gain": 9.49,
+"ref": "L22N4463",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+"记忆",
+" memory",
+"的记忆",
+"記憶",
+"memory",
+"记忆的"
+]
+},
+{
+"gain": 8.45,
+"ref": "L22N2225",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" remember",
+" remembers",
+"remember",
+"记得",
+" Remember",
+" remembering"
+]
+},
+{
+"gain": 7.57,
+"ref": "L22N8787",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" honor",
+"荣誉",
+" Honor",
+"Hon",
+" honored",
+" honors"
+]
+},
+{
+"gain": 7.54,
+"ref": "L22N7256",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" honor",
+" honoring",
+" tribute",
+" honors",
+"纪念",
+" honour"
+]
+},
+{
+"gain": 6.73,
+"ref": "L22N4748",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" Memory",
+" memories",
+" memory",
+"记忆",
+"memory",
+"Memory"
+]
+},
+{
+"gain": 6.68,
+"ref": "L22N11957",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+" remember",
+"remember",
+"记住",
+" Remember",
+"记得",
+"Remember"
+]
+},
+{
+"gain": 5.97,
+"ref": "L22N8790",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" memories",
+"记忆",
+" flash",
+"闪",
+" flashback",
+"的记忆"
+]
+},
+{
+"gain": 5.55,
+"ref": "L22N11566",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+"历史记录",
+" records",
+"记录",
+" record",
+"記録",
+"记录和"
+]
+},
+{
+"gain": 5.33,
+"ref": "L22N9370",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" memory",
+" Memory",
+"Memory",
+"memory",
+"记忆",
+" MEMORY"
+]
+}
+],
+"humor": [
+{
+"gain": 8.39,
+"ref": "L22N10453",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" joking",
+"戏",
+" joke",
+" collo",
+"幽默",
+" jokes"
+]
+},
+{
+"gain": 5.33,
+"ref": "L22N54",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+"笑",
+" smile",
+" laughter",
+" smiles",
+"笑容",
+" laughing"
+]
+},
+{
+"gain": 4.36,
+"ref": "L22N868",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+"笑话",
+"的笑",
+" laughed",
+"大笑",
+" laughing",
+"笑"
+]
+},
+{
+"gain": 4.14,
+"ref": "L22N9495",
+"sign": -1,
+"kl": 1.28,
+"tokens": [
+" interesting",
+" fascinating",
+"有趣",
+"有趣的",
+"interesting",
+"很有趣"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.73,
+"ref": "L22N3405",
+"sign": -1,
+"kl": 1.87,
+"tokens": [
+" serious",
+" seriousness",
+"serious",
+" seriously",
+" serio",
+" Serious"
+]
+},
+{
+"gain": 3.22,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.19,
+"ref": "L22N11562",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" colors",
+" color",
+"颜色",
+"色彩",
+" temperature",
+"colors"
+]
+},
+{
+"gain": 3.16,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 2.82,
+"ref": "L22N3018",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" by",
+"โดยการ",
+" bằng",
+" โดยการ",
+" By",
+"által"
+]
+},
+{
+"gain": 2.79,
+"ref": "L22N6289",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" moment",
+" Wolf",
+" telling",
+" happier",
+" Reader",
+" Dynamic"
+]
+},
+{
+"gain": 2.77,
+"ref": "L22N8002",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" cheerful",
+" romantic",
+" optimistic",
+" gentle",
+" solemn",
+" melanch"
+]
+}
+],
+"infomercial": [
+{
+"gain": 10.28,
+"ref": "L22N302",
+"sign": -1,
+"kl": 1.6,
+"tokens": [
+" but",
+"but",
+"-but",
+" But",
+"但",
+" но"
+]
+},
+{
+"gain": 9.12,
+"ref": "L22N5704",
+"sign": 1,
+"kl": 0.61,
+"tokens": [
+" but",
+"but",
+"但",
+" но",
+" nhưng",
+"-but"
+]
+},
+{
+"gain": 8.64,
+"ref": "L22N4591",
+"sign": 1,
+"kl": 0.32,
+"tokens": [
+" but",
+"but",
+"-but",
+"但",
+"—but",
+" но"
+]
+},
+{
+"gain": 8.42,
+"ref": "L22N8394",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+" but",
+"but",
+" But",
+"但",
+",but",
+" но"
+]
+},
+{
+"gain": 7.5,
+"ref": "L22N3037",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" easy",
+" easily",
+" Easy",
+"easy",
+"Easy",
+"容易"
+]
+},
+{
+"gain": 7.37,
+"ref": "L22N2085",
+"sign": -1,
+"kl": 0.58,
+"tokens": [
+"召唤",
+"召",
+" call",
+" calling",
+" summon",
+"呼叫"
+]
+},
+{
+"gain": 7.32,
+"ref": "L22N6674",
+"sign": -1,
+"kl": 0.89,
+"tokens": [
+" order",
+"顺序",
+"order",
+" Order",
+"的顺序",
+"次序"
+]
+},
+{
+"gain": 7.21,
+"ref": "L22N10714",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" easy",
+" easily",
+" Easy",
+"容易",
+"easy",
+"很容易"
+]
+},
+{
+"gain": 7.04,
+"ref": "L22N2462",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" call",
+" calls",
+"call",
+"调用",
+" Call",
+"-call"
+]
+},
+{
+"gain": 6.79,
+"ref": "L22N5531",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" calling",
+" call",
+"调用",
+"呼叫",
+"calling",
+"call"
+]
+},
+{
+"gain": 6.7,
+"ref": "L22N1928",
+"sign": -1,
+"kl": 0.44,
+"tokens": [
+"有限",
+" limited",
+"有限的",
+" scarce",
+" Limited",
+"limited"
+]
+},
+{
+"gain": 6.57,
+"ref": "L22N1705",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" orders",
+" order",
+" Orders",
+" Order",
+"order",
+"orders"
+]
+}
+],
+"insect": [
+{
+"gain": 5.35,
+"ref": "L22N9934",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" disease",
+" Disease",
+" diseases",
+"病菌",
+" Diseases",
+"疾病"
+]
+},
+{
+"gain": 5.07,
+"ref": "L22N9749",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" bugs",
+" bug",
+" errors",
+"Bug",
+"bugs",
+"bug"
+]
+},
+{
+"gain": 4.59,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 4.56,
+"ref": "L22N12054",
+"sign": -1,
+"kl": 0.53,
+"tokens": [
+" beetle",
+" insect",
+" fungus",
+" Beetle",
+" moth",
+" fungal"
+]
+},
+{
+"gain": 4.53,
+"ref": "L22N3326",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+"活的",
+"活",
+" alive",
+"培育",
+"alive",
+"生物学"
+]
+},
+{
+"gain": 4.45,
+"ref": "L22N10907",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" Bug",
+" bug",
+" bugs",
+"Bug",
+"bug",
+" Bugs"
+]
+},
+{
+"gain": 4.31,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.21,
+"ref": "L22N5062",
+"sign": 1,
+"kl": 0.77,
+"tokens": [
+" thereof",
+"其中",
+" where",
+" They",
+"They",
+"它为"
+]
+},
+{
+"gain": 4.17,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.1,
+"ref": "L22N2528",
+"sign": 1,
+"kl": 0.9,
+"tokens": [
+" They",
+"对其进行",
+"其中",
+"They",
+" where",
+" thereof"
+]
+},
+{
+"gain": 3.96,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.91,
+"ref": "L22N9397",
+"sign": -1,
+"kl": 0.29,
+"tokens": [
+" genome",
+"基因组",
+" Genome",
+"细胞",
+" genomic",
+"RNA"
+]
+}
+],
+"interpret": [
+{
+"gain": 9.67,
+"ref": "L22N4718",
+"sign": -1,
+"kl": 1.16,
+"tokens": [
+" interpretation",
+" interpreting",
+"解读",
+" interpret",
+" interpreted",
+"interpret"
+]
+},
+{
+"gain": 6.57,
+"ref": "L22N8317",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+"评论",
+" commentary",
+" comment",
+" Commentary",
+"comment",
+"点评"
+]
+},
+{
+"gain": 6.25,
+"ref": "L22N10661",
+"sign": 1,
+"kl": 0.87,
+"tokens": [
+"解读",
+"解析",
+" interpreting",
+" interpretation",
+" processing",
+" parsing"
+]
+},
+{
+"gain": 5.64,
+"ref": "L22N6098",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+"解释",
+"解读",
+" Interpret",
+"的解释",
+" interpreting",
+"interpr"
+]
+},
+{
+"gain": 5.18,
+"ref": "L22N8100",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+"解读",
+" interpretation",
+" interpreting",
+" interpr",
+" interpretations",
+" Interpret"
+]
+},
+{
+"gain": 4.67,
+"ref": "L22N7905",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+"插",
+" interpolation",
+" interpol",
+" interpolated",
+" interpolate",
+" Inter"
+]
+},
+{
+"gain": 4.59,
+"ref": "L22N3423",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" speak",
+" identify",
+" specialize",
+" belong",
+" serve",
+" operate"
+]
+},
+{
+"gain": 4.53,
+"ref": "L22N7771",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+"重新",
+" re",
+" reinterpret",
+"重构",
+"reinterpret",
+" twist"
+]
+},
+{
+"gain": 4.52,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.35,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.3,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.13,
+"ref": "L22N6222",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" understood",
+"理解",
+" understanding",
+" understand",
+" entend",
+"理解的"
+]
+}
+],
+"joke": [
+{
+"gain": 8.28,
+"ref": "L22N10453",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" joking",
+"戏",
+" joke",
+" collo",
+"幽默",
+" jokes"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N868",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+"笑话",
+"的笑",
+" laughed",
+"大笑",
+" laughing",
+"笑"
+]
+},
+{
+"gain": 3.49,
+"ref": "L22N54",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+"笑",
+" smile",
+" laughter",
+" smiles",
+"笑容",
+" laughing"
+]
+},
+{
+"gain": 3.45,
+"ref": "L22N3405",
+"sign": -1,
+"kl": 1.87,
+"tokens": [
+" serious",
+" seriousness",
+"serious",
+" seriously",
+" serio",
+" Serious"
+]
+},
+{
+"gain": 3.29,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.23,
+"ref": "L22N11562",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" colors",
+" color",
+"颜色",
+"色彩",
+" temperature",
+"colors"
+]
+},
+{
+"gain": 3.2,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.16,
+"ref": "L22N11013",
+"sign": 1,
+"kl": 1.74,
+"tokens": [
+" writer",
+"诗人",
+" poet",
+"作家",
+"writer",
+" novelist"
+]
+},
+{
+"gain": 2.84,
+"ref": "L22N971",
+"sign": -1,
+"kl": 0.35,
+"tokens": [
+" mood",
+" Mood",
+"心情",
+"的心情",
+"好心情",
+" настроение"
+]
+},
+{
+"gain": 2.83,
+"ref": "L22N3018",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" by",
+"โดยการ",
+" bằng",
+" โดยการ",
+" By",
+"által"
+]
+},
+{
+"gain": 2.74,
+"ref": "L22N5387",
+"sign": 1,
+"kl": 0.93,
+"tokens": [
+" now",
+" Now",
+" теперь",
+"现在",
+"now",
+"-now"
+]
+},
+{
+"gain": 2.71,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+}
+],
+"kraken": [
+{
+"gain": 6.12,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.46,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 4.03,
+"ref": "L22N10116",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+" temptation",
+" tempted",
+" Tem",
+"诱惑",
+" tempt",
+" tempting"
+]
+},
+{
+"gain": 3.97,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.95,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 3.76,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.57,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 3.44,
+"ref": "L22N1523",
+"sign": 1,
+"kl": 4.27,
+"tokens": [
+" right",
+"right",
+" RIGHT",
+" Right",
+"Right",
+"-right"
+]
+},
+{
+"gain": 3.37,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+},
+{
+"gain": 3.06,
+"ref": "L22N7823",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" a",
+" that",
+" an",
+" the",
+" exactly",
+"不见"
+]
+},
+{
+"gain": 3.02,
+"ref": "L22N12140",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+"The",
+" The",
+"\tThe",
+".The",
+"nThe",
+">The"
+]
+}
+],
+"love": [
+{
+"gain": 5.23,
+"ref": "L22N2096",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" Bender",
+" Barker",
+" Barrett",
+" Chapman",
+" Adler",
+" Levine"
+]
+},
+{
+"gain": 5.22,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 5.18,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 4.92,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.61,
+"ref": "L22N6027",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" Thompson",
+" Evans",
+" Barker",
+" Levine",
+" Miller",
+" Roberts"
+]
+},
+{
+"gain": 4.57,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 4.55,
+"ref": "L22N5665",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" County",
+" Greenville",
+" Springfield",
+" Hartford",
+" Gund",
+" Camden"
+]
+},
+{
+"gain": 4.53,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+},
+{
+"gain": 4.48,
+"ref": "L22N525",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" love",
+"爱",
+"愛",
+"深爱",
+" Love",
+"love"
+]
+},
+{
+"gain": 4.47,
+"ref": "L22N438",
+"sign": 1,
+"kl": 0.35,
+"tokens": [
+" fans",
+"爱好者",
+" lovers",
+" enthusiasts",
+" Fans",
+" aficionados"
+]
+},
+{
+"gain": 4.34,
+"ref": "L22N1468",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" Elias",
+" Arn",
+" Eli",
+" Jay",
+" Elena",
+" Jerome"
+]
+},
+{
+"gain": 4.28,
+"ref": "L22N6567",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" Case",
+" Total",
+" Numer",
+" Electronic",
+" Life",
+" Ram"
+]
+}
+],
+"magic": [
+{
+"gain": 10.15,
+"ref": "L22N5022",
+"sign": 1,
+"kl": 0.72,
+"tokens": [
+" magic",
+"魔法",
+"魔术",
+"magic",
+" Magic",
+"奇迹"
+]
+},
+{
+"gain": 5.11,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.97,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.66,
+"ref": "L22N3429",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" magically",
+" somehow",
+" magical",
+" magic",
+" somewhere",
+" static"
+]
+},
+{
+"gain": 4.59,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.35,
+"ref": "L22N2808",
+"sign": 1,
+"kl": 4.59,
+"tokens": [
+"当然",
+" course",
+"当然了",
+"當然",
+"当然是",
+"course"
+]
+},
+{
+"gain": 4.11,
+"ref": "L22N9483",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" Terminator",
+" Batman",
+" Harry",
+" Gand",
+" Darth",
+" Hogwarts"
+]
+},
+{
+"gain": 4.09,
+"ref": "L22N10538",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" phrases",
+" phrase",
+"phrase",
+" Phrase",
+" words",
+"Phrase"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N5761",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" things",
+" remarkable",
+" Things",
+" amazing",
+"奇妙",
+"things"
+]
+},
+{
+"gain": 3.81,
+"ref": "L22N771",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" side",
+"-side",
+" sides",
+" Side",
+"侧",
+"side"
+]
+},
+{
+"gain": 3.61,
+"ref": "L22N7279",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" superst",
+"迷信",
+" super",
+" Super",
+"super",
+"相信"
+]
+}
+],
+"market": [
+{
+"gain": 10.25,
+"ref": "L22N7784",
+"sign": 1,
+"kl": 1.3,
+"tokens": [
+" market",
+" markets",
+"市场",
+"市場",
+"market",
+"市场的"
+]
+},
+{
+"gain": 8.74,
+"ref": "L22N9571",
+"sign": -1,
+"kl": 0.8,
+"tokens": [
+" market",
+"市场",
+" markets",
+"市场的",
+"market",
+"市場"
+]
+},
+{
+"gain": 6.84,
+"ref": "L22N799",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+" purchases",
+" purchasing",
+" purchase",
+"购",
+" shopping",
+"购买"
+]
+},
+{
+"gain": 6.82,
+"ref": "L22N3424",
+"sign": -1,
+"kl": 0.51,
+"tokens": [
+" market",
+" markets",
+"ในตลาด",
+"市场上",
+"市场上的",
+"market"
+]
+},
+{
+"gain": 6.33,
+"ref": "L22N1070",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" products",
+" product",
+" Products",
+"产品",
+" Product",
+" market"
+]
+},
+{
+"gain": 5.28,
+"ref": "L22N11849",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" trade",
+"trade",
+" brand",
+" Trade",
+"商品",
+" commercial"
+]
+},
+{
+"gain": 5.26,
+"ref": "L22N4321",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" economies",
+" economy",
+" economic",
+" production",
+" Production",
+" profitability"
+]
+},
+{
+"gain": 5.25,
+"ref": "L22N5511",
+"sign": -1,
+"kl": 0.33,
+"tokens": [
+" purchase",
+" price",
+" prices",
+"price",
+" buy",
+"purchase"
+]
+},
+{
+"gain": 5.18,
+"ref": "L22N4325",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" dominance",
+" dominant",
+" dominating",
+" dominate",
+" Domin",
+"主导地位"
+]
+},
+{
+"gain": 5.08,
+"ref": "L22N1956",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+" sale",
+" selling",
+" sell",
+"出售",
+"售卖",
+" sells"
+]
+},
+{
+"gain": 4.52,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.31,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+}
+],
+"mars": [
+{
+"gain": 5.57,
+"ref": "L22N10998",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" colors",
+" color",
+"颜色",
+" red",
+" Red",
+"红"
+]
+},
+{
+"gain": 5.21,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 4.84,
+"ref": "L22N11057",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" gray",
+" red",
+"红色",
+" grey",
+"灰色",
+"红"
+]
+},
+{
+"gain": 4.84,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.81,
+"ref": "L22N12241",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" redundant",
+"冗余",
+"多余",
+" redundancy",
+"多余的",
+" redund"
+]
+},
+{
+"gain": 4.8,
+"ref": "L22N7257",
+"sign": 1,
+"kl": 0.51,
+"tokens": [
+" flag",
+" flags",
+" signal",
+"信号",
+"警报",
+" alarm"
+]
+},
+{
+"gain": 4.73,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.63,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.57,
+"ref": "L22N6063",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" reduction",
+" reductions",
+" redu",
+" reduced",
+" Reduction",
+" reducing"
+]
+},
+{
+"gain": 4.42,
+"ref": "L22N8496",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"脸",
+" bl",
+" blush",
+"脸颊",
+"臉",
+" face"
+]
+},
+{
+"gain": 4.34,
+"ref": "L22N8725",
+"sign": 1,
+"kl": 0.52,
+"tokens": [
+" highlighted",
+" bold",
+" underline",
+"highlight",
+" highlight",
+"bold"
+]
+},
+{
+"gain": 4.24,
+"ref": "L22N11423",
+"sign": -1,
+"kl": 0.33,
+"tokens": [
+" Antarctica",
+" Mars",
+" Antarctic",
+"月球",
+"火星",
+" Moon"
+]
+}
+],
+"medieval": [
+{
+"gain": 5.71,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.03,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.94,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.58,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+},
+{
+"gain": 3.5,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.45,
+"ref": "L22N3675",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+"交替",
+" altern",
+" alternate",
+"轮流",
+" alternating",
+"altern"
+]
+},
+{
+"gain": 3.37,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 3.36,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.17,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 3.1,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.09,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+},
+{
+"gain": 3.08,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+}
+],
+"mermaid": [
+{
+"gain": 6.38,
+"ref": "L22N3492",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+"单纯",
+" mere",
+" simply",
+"单纯的",
+" Mere",
+" Simply"
+]
+},
+{
+"gain": 4.96,
+"ref": "L22N6710",
+"sign": 1,
+"kl": 0.59,
+"tokens": [
+" underwater",
+" marine",
+" coastal",
+" urban",
+" inland",
+" ocean"
+]
+},
+{
+"gain": 4.61,
+"ref": "L22N5977",
+"sign": -1,
+"kl": 0.97,
+"tokens": [
+" simply",
+" merely",
+" simplement",
+" просто",
+" Simply",
+"仅仅是"
+]
+},
+{
+"gain": 4.51,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.39,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.31,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.2,
+"ref": "L22N2189",
+"sign": 1,
+"kl": 0.39,
+"tokens": [
+" validity",
+" merit",
+" truth",
+" grain",
+"truth",
+" grains"
+]
+},
+{
+"gain": 4.09,
+"ref": "L22N6550",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" under",
+" Under",
+"Under",
+"条件下",
+" circumstances",
+"条件下的"
+]
+},
+{
+"gain": 3.98,
+"ref": "L22N8264",
+"sign": -1,
+"kl": 0.98,
+"tokens": [
+" swimming",
+" swim",
+"游泳",
+" Swimming",
+" Swim",
+"泳"
+]
+},
+{
+"gain": 3.94,
+"ref": "L22N7538",
+"sign": 1,
+"kl": 0.39,
+"tokens": [
+" Hello",
+" hello",
+"Hello",
+" greeting",
+" greetings",
+"_hello"
+]
+},
+{
+"gain": 3.85,
+"ref": "L22N8725",
+"sign": 1,
+"kl": 0.52,
+"tokens": [
+" highlighted",
+" bold",
+" underline",
+"highlight",
+" highlight",
+"bold"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+}
+],
+"mirror": [
+{
+"gain": 9.45,
+"ref": "L22N12231",
+"sign": -1,
+"kl": 3.17,
+"tokens": [
+" mirror",
+" reflection",
+"镜子",
+"mirror",
+"反射",
+" reflected"
+]
+},
+{
+"gain": 8.76,
+"ref": "L22N6146",
+"sign": -1,
+"kl": 1.24,
+"tokens": [
+" mirror",
+" Mirror",
+"镜",
+"Mirror",
+"鏡",
+"mirror"
+]
+},
+{
+"gain": 5.91,
+"ref": "L22N10077",
+"sign": -1,
+"kl": 1.81,
+"tokens": [
+" reflection",
+" projection",
+"投影",
+" shadow",
+" Projection",
+"projection"
+]
+},
+{
+"gain": 5.05,
+"ref": "L22N340",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+"反映",
+"反映了",
+" Reflect",
+"代表",
+" Reflection",
+"代表了"
+]
+},
+{
+"gain": 4.5,
+"ref": "L22N11618",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" like",
+" Like",
+"如同",
+" mirror",
+"如同一",
+" Mirror"
+]
+},
+{
+"gain": 4.24,
+"ref": "L22N9702",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" symmetry",
+"对称",
+" sym",
+" Sym",
+"sym",
+"Sym"
+]
+},
+{
+"gain": 3.95,
+"ref": "L22N10967",
+"sign": -1,
+"kl": 3.03,
+"tokens": [
+"透明",
+" transparent",
+" transparency",
+"透明的",
+"透明度",
+" Transparent"
+]
+},
+{
+"gain": 3.94,
+"ref": "L22N10232",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+"考察",
+"思考",
+" reflection",
+"反思",
+" réflexion",
+" investigation"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N5592",
+"sign": 1,
+"kl": 3.24,
+"tokens": [
+" opposite",
+"相反",
+" oppos",
+" противополо",
+"相反的",
+"Opp"
+]
+},
+{
+"gain": 3.85,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.81,
+"ref": "L22N107",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+"snapshot",
+"_snapshot",
+" snapshot",
+".snapshot",
+"Snapshot",
+" Snapshot"
+]
+}
+],
+"money": [
+{
+"gain": 11.05,
+"ref": "L22N441",
+"sign": 1,
+"kl": 1.26,
+"tokens": [
+" cost",
+"成本",
+"cost",
+" Cost",
+"Cost",
+" costs"
+]
+},
+{
+"gain": 10.53,
+"ref": "L22N6224",
+"sign": 1,
+"kl": 0.99,
+"tokens": [
+" money",
+"钱",
+"money",
+" Money",
+" monetary",
+"Money"
+]
+},
+{
+"gain": 8.86,
+"ref": "L22N6563",
+"sign": 1,
+"kl": 0.95,
+"tokens": [
+" cost",
+" costs",
+" Cost",
+"成本",
+"cost",
+"Cost"
+]
+},
+{
+"gain": 8.73,
+"ref": "L22N3700",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+"现金",
+" cash",
+" Cash",
+"cash",
+"Cash",
+"現金"
+]
+},
+{
+"gain": 8.5,
+"ref": "L22N9065",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" money",
+"钱",
+" Money",
+"money",
+"的钱",
+"Money"
+]
+},
+{
+"gain": 7.86,
+"ref": "L22N7095",
+"sign": 1,
+"kl": 2.55,
+"tokens": [
+" price",
+"price",
+"价格",
+" Price",
+"Price",
+"_price"
+]
+},
+{
+"gain": 7.68,
+"ref": "L22N10308",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+"费",
+"费用",
+"费用的",
+"費",
+"费的",
+" fees"
+]
+},
+{
+"gain": 7.57,
+"ref": "L22N3139",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" benefits",
+" benefit",
+"benef",
+" Benefits",
+" Benefit",
+"Benef"
+]
+},
+{
+"gain": 7.36,
+"ref": "L22N11246",
+"sign": 1,
+"kl": 0.29,
+"tokens": [
+" money",
+"钱",
+"资金",
+" Money",
+"Money",
+" funds"
+]
+},
+{
+"gain": 6.37,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 5.4,
+"ref": "L22N3263",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" at",
+"任何",
+"任何形式的",
+" any",
+" любой",
+"any"
+]
+},
+{
+"gain": 5.16,
+"ref": "L22N10430",
+"sign": -1,
+"kl": 0.71,
+"tokens": [
+" price",
+"price",
+"价格",
+"Price",
+" Price",
+" priced"
+]
+}
+],
+"moon": [
+{
+"gain": 4.88,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.79,
+"ref": "L22N11423",
+"sign": -1,
+"kl": 0.33,
+"tokens": [
+" Antarctica",
+" Mars",
+" Antarctic",
+"月球",
+"火星",
+" Moon"
+]
+},
+{
+"gain": 4.58,
+"ref": "L22N9730",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" daytime",
+"白天",
+" daylight",
+" Day",
+"日间",
+" day"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.73,
+"ref": "L22N685",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" Earth",
+"Earth",
+" earthly",
+"地球",
+" earth",
+" terrestrial"
+]
+},
+{
+"gain": 3.34,
+"ref": "L22N11754",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"试用",
+" trial",
+"试",
+" honeymoon",
+"蜜月",
+"Trial"
+]
+},
+{
+"gain": 3.24,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.21,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.17,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.09,
+"ref": "L22N10803",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" weekly",
+" Weekly",
+"weekly",
+"Weekly",
+"每周",
+" monthly"
+]
+},
+{
+"gain": 2.99,
+"ref": "L22N2744",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" Global",
+" Earth",
+" Human",
+" Natural",
+" Standard",
+" Large"
+]
+},
+{
+"gain": 2.95,
+"ref": "L22N4302",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" nighttime",
+" night",
+"夜间",
+"夜晚",
+" noct",
+" nights"
+]
+}
+],
+"mystery": [
+{
+"gain": 9.71,
+"ref": "L22N5950",
+"sign": 1,
+"kl": 1.49,
+"tokens": [
+" secret",
+"秘密",
+"secret",
+"Secret",
+" Secret",
+" secrets"
+]
+},
+{
+"gain": 4.61,
+"ref": "L22N4091",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+" internally",
+" internal",
+"内部",
+"的内部",
+"internal",
+" Internal"
+]
+},
+{
+"gain": 4.52,
+"ref": "L22N2066",
+"sign": -1,
+"kl": 2.47,
+"tokens": [
+" hidden",
+"hidden",
+"隐藏",
+"Hidden",
+" unseen",
+"隐藏的"
+]
+},
+{
+"gain": 4.39,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.39,
+"ref": "L22N11410",
+"sign": -1,
+"kl": 0.04,
+"tokens": [
+"分泌",
+" secretion",
+"分泌物",
+" Secret",
+" secre",
+"Secret"
+]
+},
+{
+"gain": 4.39,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.12,
+"ref": "L22N12222",
+"sign": -1,
+"kl": 0.76,
+"tokens": [
+" underground",
+"地下",
+" Underground",
+" 지하",
+" black",
+"地下水"
+]
+},
+{
+"gain": 3.82,
+"ref": "L22N8384",
+"sign": 1,
+"kl": 0.42,
+"tokens": [
+" mystery",
+" Mystery",
+"神秘",
+" mysterious",
+"谜",
+" mysteries"
+]
+},
+{
+"gain": 3.81,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.79,
+"ref": "L22N630",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" surprise",
+" surprises",
+"惊喜",
+" Surprise",
+" surprised",
+" sorpresa"
+]
+},
+{
+"gain": 3.64,
+"ref": "L22N1269",
+"sign": 1,
+"kl": 0.24,
+"tokens": [
+" already",
+"已经是",
+"已经",
+" Already",
+"已经在",
+"already"
+]
+},
+{
+"gain": 3.64,
+"ref": "L22N1390",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" Significant",
+" So",
+"“So",
+"pag",
+"的安全",
+"’S"
+]
+}
+],
+"noir": [
+{
+"gain": 6.4,
+"ref": "L22N3716",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" rain",
+"雨",
+" rains",
+" raining",
+" rainfall",
+"雨的"
+]
+},
+{
+"gain": 5.66,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 5.57,
+"ref": "L22N9998",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" rain",
+"雨水",
+"雨",
+" snow",
+"雨中",
+" wet"
+]
+},
+{
+"gain": 4.27,
+"ref": "L22N7437",
+"sign": -1,
+"kl": 1.26,
+"tokens": [
+" weather",
+"天气",
+"weather",
+"Weather",
+" Weather",
+"_weather"
+]
+},
+{
+"gain": 4.25,
+"ref": "L22N9310",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+" digging",
+"挖掘",
+" detective",
+"侦探",
+"探",
+"掘"
+]
+},
+{
+"gain": 4.09,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.99,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N11219",
+"sign": 1,
+"kl": 0.46,
+"tokens": [
+" vaccination",
+" Radar",
+" radar",
+" dietary",
+" telescope",
+" nutritional"
+]
+},
+{
+"gain": 3.51,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.34,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.33,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 3.25,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+}
+],
+"optics": [
+{
+"gain": 9.21,
+"ref": "L22N4474",
+"sign": 1,
+"kl": 2.52,
+"tokens": [
+" lens",
+" lenses",
+" Lens",
+"Lens",
+"透镜",
+"レンズ"
+]
+},
+{
+"gain": 8.52,
+"ref": "L22N7115",
+"sign": -1,
+"kl": 0.59,
+"tokens": [
+" light",
+" Light",
+"light",
+" Licht",
+"Light",
+" lights"
+]
+},
+{
+"gain": 7.59,
+"ref": "L22N1480",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" light",
+" Light",
+" lights",
+"light",
+"Light",
+" LIGHT"
+]
+},
+{
+"gain": 7.54,
+"ref": "L22N2425",
+"sign": 1,
+"kl": 1.0,
+"tokens": [
+" sunlight",
+"阳光",
+" light",
+"光照",
+"的阳光",
+"Sun"
+]
+},
+{
+"gain": 6.07,
+"ref": "L22N5358",
+"sign": 1,
+"kl": 1.16,
+"tokens": [
+" lighting",
+"灯光",
+"照明",
+" Lighting",
+" lamp",
+"灯"
+]
+},
+{
+"gain": 5.41,
+"ref": "L22N6152",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" Reference",
+" references",
+" reference",
+" Ref",
+" References",
+"参考"
+]
+},
+{
+"gain": 4.85,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 4.8,
+"ref": "L22N12126",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" windows",
+" window",
+" lights",
+"窗户",
+"窗",
+"灯"
+]
+},
+{
+"gain": 4.78,
+"ref": "L22N8970",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" temperature",
+"温度",
+"temperature",
+" temperatures",
+"的温度",
+"Temperature"
+]
+},
+{
+"gain": 4.62,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.52,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.95,
+"ref": "L22N9730",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" daytime",
+"白天",
+" daylight",
+" Day",
+"日间",
+" day"
+]
+}
+],
+"overwhelm": [
+{
+"gain": 7.4,
+"ref": "L22N9281",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" over",
+" years",
+" Years",
+" Over",
+"Over",
+"years"
+]
+},
+{
+"gain": 7.27,
+"ref": "L22N2595",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" over",
+" Over",
+" overwrite",
+"Over",
+"over",
+"-over"
+]
+},
+{
+"gain": 5.55,
+"ref": "L22N4560",
+"sign": -1,
+"kl": 3.38,
+"tokens": [
+" tens",
+" millions",
+" billions",
+"数百万",
+" Millions",
+"数十"
+]
+},
+{
+"gain": 5.52,
+"ref": "L22N8965",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"久了",
+"时间久了",
+"久而",
+"长期",
+"长期的",
+"时间长了"
+]
+},
+{
+"gain": 5.44,
+"ref": "L22N3105",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" overwhelming",
+" overwhelm",
+" Over",
+" overwhel",
+" overload",
+" overwhelmed"
+]
+},
+{
+"gain": 5.29,
+"ref": "L22N5801",
+"sign": -1,
+"kl": 0.38,
+"tokens": [
+"共计",
+"总共",
+" total",
+"共",
+"总",
+" hundreds"
+]
+},
+{
+"gain": 5.25,
+"ref": "L22N3693",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" tens",
+" millions",
+" Millions",
+" thousands",
+"数百万",
+"数以"
+]
+},
+{
+"gain": 5.21,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 5.16,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 5.11,
+"ref": "L22N8328",
+"sign": 1,
+"kl": 0.35,
+"tokens": [
+" over",
+"过度",
+" Over",
+" excessive",
+"Over",
+" overdose"
+]
+},
+{
+"gain": 5.1,
+"ref": "L22N9398",
+"sign": 1,
+"kl": 0.29,
+"tokens": [
+" over",
+"over",
+"Over",
+" Over",
+" über",
+"过"
+]
+},
+{
+"gain": 4.92,
+"ref": "L22N4140",
+"sign": -1,
+"kl": 2.57,
+"tokens": [
+" Few",
+" Existing",
+" Certain",
+" Built",
+" Only",
+" Own"
+]
+}
+],
+"paint": [
+{
+"gain": 5.71,
+"ref": "L22N1710",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" canvas",
+"canvas",
+"Canvas",
+" Canvas",
+" canv",
+".canvas"
+]
+},
+{
+"gain": 4.98,
+"ref": "L22N612",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+" paint",
+"缝",
+" glue",
+" paints",
+" stitches",
+"胶水"
+]
+},
+{
+"gain": 4.81,
+"ref": "L22N3861",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" vivid",
+"生动的",
+"画面",
+"生动",
+" painting",
+" Paint"
+]
+},
+{
+"gain": 4.53,
+"ref": "L22N707",
+"sign": 1,
+"kl": 1.73,
+"tokens": [
+" picture",
+" Picture",
+"picture",
+"Picture",
+"_picture",
+" pictures"
+]
+},
+{
+"gain": 4.52,
+"ref": "L22N8732",
+"sign": 1,
+"kl": 1.26,
+"tokens": [
+"笔",
+" pen",
+"筆",
+" pencil",
+" pens",
+"铅笔"
+]
+},
+{
+"gain": 3.67,
+"ref": "L22N3212",
+"sign": -1,
+"kl": 1.12,
+"tokens": [
+"画作",
+" painting",
+" artwork",
+" paintings",
+"绘画",
+" artworks"
+]
+},
+{
+"gain": 3.5,
+"ref": "L22N4521",
+"sign": -1,
+"kl": 0.63,
+"tokens": [
+" prosper",
+" permitted",
+" properly",
+" permitting",
+" permits",
+" proper"
+]
+},
+{
+"gain": 3.4,
+"ref": "L22N2187",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" spatial",
+" Spatial",
+"Spatial",
+" geomet",
+"geometry",
+" geometry"
+]
+},
+{
+"gain": 3.35,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.29,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.2,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 3.05,
+"ref": "L22N10900",
+"sign": -1,
+"kl": 0.72,
+"tokens": [
+" pencil",
+"铅笔",
+" pen",
+"笔",
+"筆",
+" pencils"
+]
+}
+],
+"penguin": [
+{
+"gain": 5.34,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 3.66,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.42,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.09,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.03,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 2.9,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 2.89,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+},
+{
+"gain": 2.83,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 2.8,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 2.74,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 2.73,
+"ref": "L22N1523",
+"sign": 1,
+"kl": 4.27,
+"tokens": [
+" right",
+"right",
+" RIGHT",
+" Right",
+"Right",
+"-right"
+]
+},
+{
+"gain": 2.71,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+}
+],
+"philosophy": [
+{
+"gain": 7.34,
+"ref": "L22N350",
+"sign": 1,
+"kl": 0.9,
+"tokens": [
+" intellectually",
+" logically",
+" mechanically",
+" physically",
+" scientifically",
+" philosoph"
+]
+},
+{
+"gain": 4.75,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 4.2,
+"ref": "L22N4523",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+" sociology",
+" philosophy",
+"phil",
+"社会学",
+" Sociology",
+" anthropology"
+]
+},
+{
+"gain": 3.97,
+"ref": "L22N2808",
+"sign": 1,
+"kl": 4.59,
+"tokens": [
+"当然",
+" course",
+"当然了",
+"當然",
+"当然是",
+"course"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N11214",
+"sign": -1,
+"kl": 0.33,
+"tokens": [
+"理论",
+" theoretical",
+" theory",
+"理论知识",
+"理论的",
+"理論"
+]
+},
+{
+"gain": 3.81,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.78,
+"ref": "L22N3308",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+"技术上",
+" math",
+" scientifically",
+" technically",
+" physically",
+" logically"
+]
+},
+{
+"gain": 3.75,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.73,
+"ref": "L22N5299",
+"sign": 1,
+"kl": 0.35,
+"tokens": [
+" philosophical",
+" literary",
+"logical",
+"哲学",
+" linguistic",
+" metaph"
+]
+},
+{
+"gain": 3.68,
+"ref": "L22N1489",
+"sign": 1,
+"kl": 0.47,
+"tokens": [
+" nearer",
+" sort",
+" bigger",
+" further",
+" related",
+" fuller"
+]
+},
+{
+"gain": 3.36,
+"ref": "L22N3876",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+"原则",
+"的原则",
+" principle",
+" principles",
+"基本原则",
+"原則"
+]
+},
+{
+"gain": 3.29,
+"ref": "L22N2994",
+"sign": -1,
+"kl": 1.81,
+"tokens": [
+"当然",
+"當然",
+" sure",
+" certainly",
+"当然要",
+" Sure"
+]
+}
+],
+"pirate": [
+{
+"gain": 6.2,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.53,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 4.26,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 3.9,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.84,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.79,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+},
+{
+"gain": 3.68,
+"ref": "L22N3362",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" property",
+"property",
+"Property",
+" grounds",
+" Property",
+"-property"
+]
+},
+{
+"gain": 3.65,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N1523",
+"sign": 1,
+"kl": 4.27,
+"tokens": [
+" right",
+"right",
+" RIGHT",
+" Right",
+"Right",
+"-right"
+]
+},
+{
+"gain": 3.44,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+},
+{
+"gain": 3.32,
+"ref": "L22N4394",
+"sign": 1,
+"kl": 1.78,
+"tokens": [
+" environment",
+" world",
+"世界",
+" region",
+"这个世界",
+" workspace"
+]
+}
+],
+"price": [
+{
+"gain": 7.62,
+"ref": "L22N6224",
+"sign": 1,
+"kl": 0.99,
+"tokens": [
+" money",
+"钱",
+"money",
+" Money",
+" monetary",
+"Money"
+]
+},
+{
+"gain": 6.5,
+"ref": "L22N8364",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" currency",
+" dollar",
+" Currency",
+" Dollar",
+"currency",
+"Currency"
+]
+},
+{
+"gain": 6.2,
+"ref": "L22N10458",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" cheap",
+" affordable",
+"便宜",
+"低廉",
+" cheaper",
+" Cheap"
+]
+},
+{
+"gain": 5.72,
+"ref": "L22N6931",
+"sign": -1,
+"kl": 0.82,
+"tokens": [
+"逐",
+"-for",
+"-by",
+" molecule",
+" byte",
+" dollar"
+]
+},
+{
+"gain": 5.54,
+"ref": "L22N9065",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" money",
+"钱",
+" Money",
+"money",
+"的钱",
+"Money"
+]
+},
+{
+"gain": 5.38,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 5.16,
+"ref": "L22N11066",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" positive",
+" negative",
+" affirmative",
+"positive",
+"negative",
+"Positive"
+]
+},
+{
+"gain": 5.1,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.82,
+"ref": "L22N11865",
+"sign": 1,
+"kl": 0.83,
+"tokens": [
+" dé",
+"_delegate",
+" déta",
+" debito",
+" deal",
+" detailed"
+]
+},
+{
+"gain": 4.57,
+"ref": "L22N5083",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" spending",
+" expenditure",
+" Spending",
+" spend",
+" spender",
+" expenditures"
+]
+},
+{
+"gain": 4.57,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N10430",
+"sign": -1,
+"kl": 0.71,
+"tokens": [
+" price",
+"price",
+"价格",
+"Price",
+" Price",
+" priced"
+]
+}
+],
+"repeat": [
+{
+"gain": 12.25,
+"ref": "L22N6610",
+"sign": 1,
+"kl": 5.15,
+"tokens": [
+" rest",
+"rest",
+" resto",
+"Rest",
+" Rest",
+"-rest"
+]
+},
+{
+"gain": 8.95,
+"ref": "L22N4148",
+"sign": -1,
+"kl": 1.07,
+"tokens": [
+" remaining",
+"剩余",
+"剩下的",
+"remaining",
+"剩余的",
+"剩下"
+]
+},
+{
+"gain": 6.98,
+"ref": "L22N3152",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+"重复",
+" repeat",
+"repeat",
+" repeating",
+" repetition",
+"Repeat"
+]
+},
+{
+"gain": 6.63,
+"ref": "L22N7311",
+"sign": -1,
+"kl": 0.97,
+"tokens": [
+" sleep",
+"睡眠",
+"sleep",
+" Sleep",
+"Sleep",
+"睡"
+]
+},
+{
+"gain": 6.3,
+"ref": "L22N4316",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" breathing",
+"休息",
+" breath",
+"休",
+" resting",
+"歇"
+]
+},
+{
+"gain": 6.02,
+"ref": "L22N3853",
+"sign": 1,
+"kl": 0.5,
+"tokens": [
+" sleep",
+"睡眠",
+"sleep",
+" Sleep",
+" sleeping",
+"眠"
+]
+},
+{
+"gain": 5.74,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 5.13,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 5.05,
+"ref": "L22N4029",
+"sign": 1,
+"kl": 0.48,
+"tokens": [
+"其他",
+" other",
+"其他的",
+"其余",
+"其它",
+"other"
+]
+},
+{
+"gain": 5.01,
+"ref": "L22N10820",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" remainder",
+"残余",
+" Remain",
+" residual",
+"残",
+" остат"
+]
+},
+{
+"gain": 4.51,
+"ref": "L22N681",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+" refreshed",
+" refresh",
+" Refresh",
+"refresh",
+" replen",
+"刷新"
+]
+},
+{
+"gain": 4.37,
+"ref": "L22N832",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"剩余",
+" excess",
+" leftover",
+"剩余的",
+"余",
+" surplus"
+]
+}
+],
+"ring": [
+{
+"gain": 5.24,
+"ref": "L22N3774",
+"sign": 1,
+"kl": 0.68,
+"tokens": [
+" fingers",
+" finger",
+"手指",
+"指",
+"finger",
+" Finger"
+]
+},
+{
+"gain": 4.76,
+"ref": "L22N10116",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+" temptation",
+" tempted",
+" Tem",
+"诱惑",
+" tempt",
+" tempting"
+]
+},
+{
+"gain": 4.75,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 3.59,
+"ref": "L22N10771",
+"sign": 1,
+"kl": 1.99,
+"tokens": [
+" hands",
+" fingers",
+" hand",
+" finger",
+"手指",
+"的手指"
+]
+},
+{
+"gain": 3.54,
+"ref": "L22N6398",
+"sign": -1,
+"kl": 0.74,
+"tokens": [
+" fingers",
+"手指",
+" finger",
+"的手指",
+"finger",
+" fingertips"
+]
+},
+{
+"gain": 3.47,
+"ref": "L22N3733",
+"sign": -1,
+"kl": 0.36,
+"tokens": [
+"讨论",
+" discussions",
+" discussion",
+"discussion",
+" Discussion",
+" whisper"
+]
+},
+{
+"gain": 3.18,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.06,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 2.76,
+"ref": "L22N517",
+"sign": 1,
+"kl": 2.04,
+"tokens": [
+" rumor",
+" rum",
+"rum",
+" rumors",
+" Rum",
+"传言"
+]
+},
+{
+"gain": 2.7,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 2.68,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 2.45,
+"ref": "L22N108",
+"sign": -1,
+"kl": 0.85,
+"tokens": [
+"当前",
+"当前的",
+" current",
+"current",
+" currently",
+" Current"
+]
+}
+],
+"robot": [
+{
+"gain": 4.34,
+"ref": "L22N1046",
+"sign": 1,
+"kl": 0.29,
+"tokens": [
+"主体",
+" Agents",
+"主体的",
+"角色",
+"Agent",
+" Agent"
+]
+},
+{
+"gain": 4.33,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.0,
+"ref": "L22N3735",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" robot",
+" automation",
+" framework",
+" Robot",
+" robotic",
+"机器人的"
+]
+},
+{
+"gain": 3.87,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.84,
+"ref": "L22N8715",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" Commercial",
+" Company",
+" Hospital",
+" Hotel",
+" Local",
+" Medical"
+]
+},
+{
+"gain": 3.75,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.6,
+"ref": "L22N11219",
+"sign": 1,
+"kl": 0.46,
+"tokens": [
+" vaccination",
+" Radar",
+" radar",
+" dietary",
+" telescope",
+" nutritional"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 3.5,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.47,
+"ref": "L22N9818",
+"sign": 1,
+"kl": 0.41,
+"tokens": [
+"’S",
+" Fuller",
+" Lights",
+" Light",
+" Dynamic",
+".’"
+]
+},
+{
+"gain": 3.42,
+"ref": "L22N9922",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"火车",
+"列车",
+" vehicle",
+"船",
+"车辆",
+" boat"
+]
+},
+{
+"gain": 3.35,
+"ref": "L22N10047",
+"sign": 1,
+"kl": 3.18,
+"tokens": [
+" then",
+"then",
+"然后",
+" Then",
+"然後",
+" THEN"
+]
+}
+],
+"sacrifice": [
+{
+"gain": 10.31,
+"ref": "L22N11093",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+"牺牲",
+" sacrifice",
+" sacrifices",
+" Sacr",
+" sacrific",
+" sacrificed"
+]
+},
+{
+"gain": 6.27,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 6.23,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 6.22,
+"ref": "L22N5272",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" dying",
+"牺牲",
+" died",
+" sacrifice",
+"而死",
+" death"
+]
+},
+{
+"gain": 5.49,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+},
+{
+"gain": 5.19,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.49,
+"ref": "L22N888",
+"sign": -1,
+"kl": 7.2,
+"tokens": [
+"上",
+"中",
+"大",
+"在",
+"预",
+"问题"
+]
+},
+{
+"gain": 4.27,
+"ref": "L22N302",
+"sign": -1,
+"kl": 1.6,
+"tokens": [
+" but",
+"but",
+"-but",
+" But",
+"但",
+" но"
+]
+},
+{
+"gain": 4.23,
+"ref": "L22N4140",
+"sign": -1,
+"kl": 2.57,
+"tokens": [
+" Few",
+" Existing",
+" Certain",
+" Built",
+" Only",
+" Own"
+]
+},
+{
+"gain": 4.21,
+"ref": "L22N1390",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" Significant",
+" So",
+"“So",
+"pag",
+"的安全",
+"’S"
+]
+},
+{
+"gain": 4.03,
+"ref": "L22N6465",
+"sign": -1,
+"kl": 0.3,
+"tokens": [
+" extension",
+" Extension",
+" Entry",
+" supply",
+" transfers",
+" reference"
+]
+},
+{
+"gain": 3.96,
+"ref": "L22N11732",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" reluctance",
+" resistance",
+" hesitation",
+" risk",
+" fear",
+" refusal"
+]
+}
+],
+"sahara": [
+{
+"gain": 4.11,
+"ref": "L22N1182",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" abandonment",
+" abandon",
+" abandoned",
+"弃",
+" abandoning",
+"抛弃"
+]
+},
+{
+"gain": 3.67,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.63,
+"ref": "L22N9504",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" dessert",
+" course",
+" courses",
+" desserts",
+"course",
+" дес"
+]
+},
+{
+"gain": 3.51,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.46,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 3.43,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.4,
+"ref": "L22N6710",
+"sign": 1,
+"kl": 0.59,
+"tokens": [
+" underwater",
+" marine",
+" coastal",
+" urban",
+" inland",
+" ocean"
+]
+},
+{
+"gain": 3.06,
+"ref": "L22N5665",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" County",
+" Greenville",
+" Springfield",
+" Hartford",
+" Gund",
+" Camden"
+]
+},
+{
+"gain": 3.06,
+"ref": "L22N1269",
+"sign": 1,
+"kl": 0.24,
+"tokens": [
+" already",
+"已经是",
+"已经",
+" Already",
+"已经在",
+"already"
+]
+},
+{
+"gain": 2.97,
+"ref": "L22N6567",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" Case",
+" Total",
+" Numer",
+" Electronic",
+" Life",
+" Ram"
+]
+},
+{
+"gain": 2.95,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 2.94,
+"ref": "L22N11865",
+"sign": 1,
+"kl": 0.83,
+"tokens": [
+" dé",
+"_delegate",
+" déta",
+" debito",
+" deal",
+" detailed"
+]
+}
+],
+"saturn": [
+{
+"gain": 6.26,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.58,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 4.06,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.02,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.89,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.89,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 3.71,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 3.67,
+"ref": "L22N7708",
+"sign": 1,
+"kl": 0.82,
+"tokens": [
+" giants",
+" giant",
+" titan",
+"巨",
+"巨人",
+" гиг"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N1523",
+"sign": 1,
+"kl": 4.27,
+"tokens": [
+" right",
+"right",
+" RIGHT",
+" Right",
+"Right",
+"-right"
+]
+},
+{
+"gain": 3.5,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+},
+{
+"gain": 3.14,
+"ref": "L22N7823",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" a",
+" that",
+" an",
+" the",
+" exactly",
+"不见"
+]
+},
+{
+"gain": 3.12,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+}
+],
+"shakespeare": [
+{
+"gain": 8.8,
+"ref": "L22N5271",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" for",
+"for",
+" для",
+"\tfor",
+" untuk",
+" For"
+]
+},
+{
+"gain": 8.09,
+"ref": "L22N3816",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" for",
+" для",
+"for",
+"สำหรับ",
+"\tfor",
+" untuk"
+]
+},
+{
+"gain": 8.0,
+"ref": "L22N8789",
+"sign": 1,
+"kl": 0.22,
+"tokens": [
+" for",
+"for",
+" для",
+"对于",
+" für",
+" untuk"
+]
+},
+{
+"gain": 7.69,
+"ref": "L22N8152",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" for",
+"对于",
+"for",
+" для",
+" für",
+"\tfor"
+]
+},
+{
+"gain": 7.58,
+"ref": "L22N12098",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" for",
+"对于",
+" dla",
+" для",
+"for",
+" für"
+]
+},
+{
+"gain": 7.54,
+"ref": "L22N398",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+"对于",
+" for",
+" для",
+"for",
+" für",
+"สำหรับ"
+]
+},
+{
+"gain": 7.33,
+"ref": "L22N5772",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" for",
+" для",
+"对于",
+"for",
+" für",
+" untuk"
+]
+},
+{
+"gain": 7.16,
+"ref": "L22N9307",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" for",
+"for",
+" для",
+"对于",
+" untuk",
+" dla"
+]
+},
+{
+"gain": 7.15,
+"ref": "L22N1058",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" for",
+" для",
+" untuk",
+" für",
+"for",
+"\tfor"
+]
+},
+{
+"gain": 7.04,
+"ref": "L22N7680",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" for",
+"for",
+"对于",
+" для",
+"\tfor",
+"对于这个"
+]
+},
+{
+"gain": 6.96,
+"ref": "L22N5670",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+"对于",
+"而对于",
+"对于我们",
+"對於",
+" for",
+"但对于"
+]
+},
+{
+"gain": 6.95,
+"ref": "L22N3355",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" reason",
+" somehow",
+"某种",
+" some",
+" Somehow",
+"对于一些"
+]
+}
+],
+"snow": [
+{
+"gain": 10.91,
+"ref": "L22N9149",
+"sign": 1,
+"kl": 0.79,
+"tokens": [
+" free",
+"自由",
+"free",
+"自由的",
+" Free",
+" freedom"
+]
+},
+{
+"gain": 10.23,
+"ref": "L22N1473",
+"sign": -1,
+"kl": 1.22,
+"tokens": [
+"免费",
+" free",
+"免费的",
+"free",
+"免費",
+" Free"
+]
+},
+{
+"gain": 9.69,
+"ref": "L22N6614",
+"sign": 1,
+"kl": 0.49,
+"tokens": [
+"免费",
+" free",
+"免费的",
+"free",
+"免費",
+" FREE"
+]
+},
+{
+"gain": 5.75,
+"ref": "L22N3892",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" spare",
+"空闲",
+" free",
+"闲暇",
+" Spare",
+"闲"
+]
+},
+{
+"gain": 5.72,
+"ref": "L22N9998",
+"sign": 1,
+"kl": 0.34,
+"tokens": [
+" rain",
+"雨水",
+"雨",
+" snow",
+"雨中",
+" wet"
+]
+},
+{
+"gain": 5.64,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.87,
+"ref": "L22N1178",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+"赠",
+" Giving",
+" giving",
+"免费送",
+"Give",
+"赠送"
+]
+},
+{
+"gain": 4.61,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.55,
+"ref": "L22N10158",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+"自由",
+" free",
+"的自由",
+" Free",
+"free",
+"Free"
+]
+},
+{
+"gain": 4.33,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N11921",
+"sign": 1,
+"kl": 0.36,
+"tokens": [
+"空",
+"空闲",
+" vacant",
+"空的",
+" empty",
+"的空"
+]
+},
+{
+"gain": 4.03,
+"ref": "L22N11461",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" radicals",
+"自由基",
+" Radical",
+" radical",
+"Rad",
+" Rad"
+]
+}
+],
+"sorry": [
+{
+"gain": 11.91,
+"ref": "L22N8656",
+"sign": 1,
+"kl": 0.33,
+"tokens": [
+" sorry",
+"sorry",
+"抱歉",
+"Sorry",
+" Sorry",
+"对不起"
+]
+},
+{
+"gain": 11.61,
+"ref": "L22N6638",
+"sign": -1,
+"kl": 0.51,
+"tokens": [
+" sorry",
+" apologies",
+"对不起",
+"抱歉",
+"sorry",
+"Sorry"
+]
+},
+{
+"gain": 7.11,
+"ref": "L22N10761",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+" sad",
+"遗憾",
+"惋惜",
+"可惜",
+" regret",
+" mourn"
+]
+},
+{
+"gain": 6.58,
+"ref": "L22N10010",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" sadly",
+" Sadly",
+" unfortunately",
+" reg",
+" regret",
+" trag"
+]
+},
+{
+"gain": 6.45,
+"ref": "L22N7752",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" pity",
+"同情",
+" sympathy",
+"怜悯",
+" sympath",
+" sympathetic"
+]
+},
+{
+"gain": 5.66,
+"ref": "L22N5709",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+"怨",
+"怨恨",
+" angry",
+" hated",
+" blamed",
+"警告"
+]
+},
+{
+"gain": 4.99,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.08,
+"ref": "L22N7414",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" Hello",
+" Hey",
+" Hi",
+" Do",
+" What",
+" hi"
+]
+},
+{
+"gain": 4.04,
+"ref": "L22N1390",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" Significant",
+" So",
+"“So",
+"pag",
+"的安全",
+"’S"
+]
+},
+{
+"gain": 3.87,
+"ref": "L22N3372",
+"sign": -1,
+"kl": 0.93,
+"tokens": [
+" malfunction",
+" faulty",
+" damaged",
+"出错",
+"损坏",
+"错误"
+]
+},
+{
+"gain": 3.77,
+"ref": "L22N9960",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+"对不起",
+"得起",
+"不起",
+"负",
+"抱歉",
+"辜负"
+]
+},
+{
+"gain": 3.56,
+"ref": "L22N3750",
+"sign": -1,
+"kl": 1.43,
+"tokens": [
+" yes",
+"yes",
+" Yes",
+"是的",
+"Yes",
+" YES"
+]
+}
+],
+"sports": [
+{
+"gain": 6.34,
+"ref": "L22N2056",
+"sign": 1,
+"kl": 0.49,
+"tokens": [
+" and",
+" và",
+" и",
+"และ",
+"and",
+" και"
+]
+},
+{
+"gain": 5.66,
+"ref": "L22N11480",
+"sign": -1,
+"kl": 0.46,
+"tokens": [
+"什么",
+" what",
+"what",
+"什麼",
+" What",
+"啥"
+]
+},
+{
+"gain": 5.59,
+"ref": "L22N4267",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" and",
+" và",
+"and",
+"—and",
+" и",
+",and"
+]
+},
+{
+"gain": 5.43,
+"ref": "L22N8390",
+"sign": 1,
+"kl": 0.15,
+"tokens": [
+" and",
+" và",
+" и",
+"และ",
+"and",
+" și"
+]
+},
+{
+"gain": 5.19,
+"ref": "L22N9389",
+"sign": 1,
+"kl": 1.31,
+"tokens": [
+"排队",
+" line",
+" crowd",
+" queue",
+" crowds",
+" queues"
+]
+},
+{
+"gain": 4.87,
+"ref": "L22N5475",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" and",
+" и",
+" và",
+"และ",
+",",
+"和"
+]
+},
+{
+"gain": 4.76,
+"ref": "L22N1894",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" and",
+" và",
+" и",
+"และ",
+"and",
+" και"
+]
+},
+{
+"gain": 4.71,
+"ref": "L22N8169",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" and",
+" và",
+" и",
+"และ",
+" এবং",
+" και"
+]
+},
+{
+"gain": 4.68,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.52,
+"ref": "L22N6290",
+"sign": -1,
+"kl": 0.38,
+"tokens": [
+" how",
+" what",
+"how",
+"what",
+"如何",
+" How"
+]
+},
+{
+"gain": 4.48,
+"ref": "L22N9529",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" what",
+"what",
+" What",
+"是什么",
+"What",
+" WHAT"
+]
+},
+{
+"gain": 4.41,
+"ref": "L22N2965",
+"sign": 1,
+"kl": 0.39,
+"tokens": [
+"—and",
+",",
+" (",
+" and",
+"–and",
+"—or"
+]
+}
+],
+"storm": [
+{
+"gain": 5.86,
+"ref": "L22N6523",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" up",
+" out",
+" down",
+"下来",
+"Up",
+" lên"
+]
+},
+{
+"gain": 5.25,
+"ref": "L22N4186",
+"sign": -1,
+"kl": 0.16,
+"tokens": [
+" down",
+" Down",
+"down",
+"Down",
+"到",
+"精确"
+]
+},
+{
+"gain": 5.01,
+"ref": "L22N6970",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" out",
+" down",
+" up",
+"-out",
+"下来",
+"出来"
+]
+},
+{
+"gain": 4.88,
+"ref": "L22N2579",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"下去",
+"下去了",
+"了下去",
+"走下去",
+"往下",
+" Down"
+]
+},
+{
+"gain": 4.76,
+"ref": "L22N8143",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" up",
+"up",
+"-up",
+"_up",
+" down",
+"Up"
+]
+},
+{
+"gain": 3.87,
+"ref": "L22N4528",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" up",
+"一直到",
+"直至",
+"直到",
+" upto",
+" hasta"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.76,
+"ref": "L22N2057",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" down",
+" apart",
+" away",
+" aside",
+" out",
+" forth"
+]
+},
+{
+"gain": 3.71,
+"ref": "L22N3716",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" rain",
+"雨",
+" rains",
+" raining",
+" rainfall",
+"雨的"
+]
+},
+{
+"gain": 3.71,
+"ref": "L22N9322",
+"sign": 1,
+"kl": 0.54,
+"tokens": [
+" further",
+" farther",
+"进一步",
+"Further",
+" Further",
+" дальше"
+]
+},
+{
+"gain": 3.64,
+"ref": "L22N2148",
+"sign": -1,
+"kl": 0.51,
+"tokens": [
+"季节",
+" seasons",
+" season",
+" winter",
+"四季",
+"season"
+]
+},
+{
+"gain": 3.48,
+"ref": "L22N7401",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+"怒",
+"怒火",
+"愤怒",
+" anger",
+"怒气",
+" rage"
+]
+}
+],
+"sun": [
+{
+"gain": 5.58,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 5.08,
+"ref": "L22N2425",
+"sign": 1,
+"kl": 1.0,
+"tokens": [
+" sunlight",
+"阳光",
+" light",
+"光照",
+"的阳光",
+"Sun"
+]
+},
+{
+"gain": 4.25,
+"ref": "L22N5152",
+"sign": -1,
+"kl": 0.84,
+"tokens": [
+"第",
+" tenth",
+"的第",
+"第十",
+"第一千",
+"第一百"
+]
+},
+{
+"gain": 4.23,
+"ref": "L22N5461",
+"sign": 1,
+"kl": 2.03,
+"tokens": [
+" ",
+" hundreds",
+" thousands",
+" millions",
+" billions",
+" tens"
+]
+},
+{
+"gain": 4.09,
+"ref": "L22N4022",
+"sign": -1,
+"kl": 0.29,
+"tokens": [
+" billions",
+" billion",
+" BILL",
+"Bill",
+"亿",
+" trillion"
+]
+},
+{
+"gain": 3.99,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 3.54,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.46,
+"ref": "L22N10549",
+"sign": -1,
+"kl": 0.83,
+"tokens": [
+" hundreds",
+" billions",
+" millions",
+" thousands",
+" Hundreds",
+" hundred"
+]
+},
+{
+"gain": 3.43,
+"ref": "L22N4560",
+"sign": -1,
+"kl": 3.38,
+"tokens": [
+" tens",
+" millions",
+" billions",
+"数百万",
+" Millions",
+"数十"
+]
+},
+{
+"gain": 3.39,
+"ref": "L22N1523",
+"sign": 1,
+"kl": 4.27,
+"tokens": [
+" right",
+"right",
+" RIGHT",
+" Right",
+"Right",
+"-right"
+]
+}
+],
+"surprise": [
+{
+"gain": 9.12,
+"ref": "L22N630",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" surprise",
+" surprises",
+"惊喜",
+" Surprise",
+" surprised",
+" sorpresa"
+]
+},
+{
+"gain": 6.74,
+"ref": "L22N832",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"剩余",
+" excess",
+" leftover",
+"剩余的",
+"余",
+" surplus"
+]
+},
+{
+"gain": 6.65,
+"ref": "L22N3334",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" surprise",
+" surprised",
+"惊讶",
+" surprises",
+"惊奇",
+"惊喜"
+]
+},
+{
+"gain": 5.88,
+"ref": "L22N898",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" surprise",
+"惊喜",
+" surprised",
+" surprises",
+" surprising",
+" Surprise"
+]
+},
+{
+"gain": 5.52,
+"ref": "L22N8465",
+"sign": 1,
+"kl": 0.69,
+"tokens": [
+"k",
+"ś",
+"full",
+"*S",
+"bat",
+"ta"
+]
+},
+{
+"gain": 4.95,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 4.94,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.93,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.73,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 4.68,
+"ref": "L22N11943",
+"sign": -1,
+"kl": 1.47,
+"tokens": [
+" counter",
+" Counter",
+"counter",
+"Counter",
+"-counter",
+"_counter"
+]
+},
+{
+"gain": 4.64,
+"ref": "L22N1390",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" Significant",
+" So",
+"“So",
+"pag",
+"的安全",
+"’S"
+]
+},
+{
+"gain": 4.5,
+"ref": "L22N7800",
+"sign": 1,
+"kl": 1.26,
+"tokens": [
+" surface",
+" Surface",
+"surface",
+"表面",
+"Surface",
+"表面的"
+]
+}
+],
+"suspicion": [
+{
+"gain": 6.86,
+"ref": "L22N816",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+" prone",
+" susceptibility",
+" susceptible",
+"sus",
+"Sus",
+" suscept"
+]
+},
+{
+"gain": 6.32,
+"ref": "L22N6367",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+" suspicious",
+" suspicion",
+" Susp",
+"Susp",
+" skepticism",
+" suspicions"
+]
+},
+{
+"gain": 5.95,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.86,
+"ref": "L22N1602",
+"sign": 1,
+"kl": 0.57,
+"tokens": [
+"假设",
+" assumption",
+" assumed",
+"假定",
+" assumptions",
+"假"
+]
+},
+{
+"gain": 4.82,
+"ref": "L22N3063",
+"sign": -1,
+"kl": 0.43,
+"tokens": [
+"悬浮",
+" floating",
+"floating",
+"浮",
+"漂浮",
+" float"
+]
+},
+{
+"gain": 4.68,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.5,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.28,
+"ref": "L22N11557",
+"sign": 1,
+"kl": 0.28,
+"tokens": [
+" afflicted",
+"患",
+" troubled",
+" infected",
+" injured",
+" wounded"
+]
+},
+{
+"gain": 4.14,
+"ref": "L22N888",
+"sign": -1,
+"kl": 7.2,
+"tokens": [
+"上",
+"中",
+"大",
+"在",
+"预",
+"问题"
+]
+},
+{
+"gain": 4.02,
+"ref": "L22N6561",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+" Jon",
+" Carolyn",
+" Peter",
+" Andrew",
+" Zach",
+" Nathan"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N8559",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+"你觉得",
+" believe",
+"你认为",
+" believes",
+"你以为",
+" belief"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+}
+],
+"sword": [
+{
+"gain": 6.02,
+"ref": "L22N10386",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" she",
+" him",
+" he",
+" her",
+"她",
+" она"
+]
+},
+{
+"gain": 5.56,
+"ref": "L22N4277",
+"sign": -1,
+"kl": 0.4,
+"tokens": [
+" war",
+"战争",
+"战",
+" War",
+" wars",
+"war"
+]
+},
+{
+"gain": 4.49,
+"ref": "L22N9979",
+"sign": -1,
+"kl": 1.14,
+"tokens": [
+" double",
+"双",
+" Double",
+"double",
+"Double",
+"的双"
+]
+},
+{
+"gain": 4.42,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.3,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.18,
+"ref": "L22N4012",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" armed",
+"武装",
+" weapons",
+"武力",
+" combat",
+" weapon"
+]
+},
+{
+"gain": 4.03,
+"ref": "L22N5571",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"对抗",
+" fight",
+" fighting",
+"fight",
+" Fight",
+"斗争"
+]
+},
+{
+"gain": 3.86,
+"ref": "L22N5062",
+"sign": 1,
+"kl": 0.77,
+"tokens": [
+" thereof",
+"其中",
+" where",
+" They",
+"They",
+"它为"
+]
+},
+{
+"gain": 3.76,
+"ref": "L22N8162",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" confrontation",
+" showdown",
+" battle",
+" clash",
+"对决",
+" clashes"
+]
+},
+{
+"gain": 3.72,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.72,
+"ref": "L22N4174",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+" battle",
+"baseline",
+"battle",
+"builtin",
+" bày",
+" basis"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N5028",
+"sign": 1,
+"kl": 0.3,
+"tokens": [
+" battle",
+"batch",
+"_begin",
+" batch",
+"battle",
+" broadcast"
+]
+}
+],
+"tiger": [
+{
+"gain": 5.86,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.19,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.79,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 3.62,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 3.49,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 3.31,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+},
+{
+"gain": 3.29,
+"ref": "L22N5374",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+" Thompson",
+" Levine",
+" Barker",
+" Bernstein",
+" Bender",
+" Smith"
+]
+},
+{
+"gain": 3.21,
+"ref": "L22N1523",
+"sign": 1,
+"kl": 4.27,
+"tokens": [
+" right",
+"right",
+" RIGHT",
+" Right",
+"Right",
+"-right"
+]
+},
+{
+"gain": 3.13,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+},
+{
+"gain": 3.0,
+"ref": "L22N2873",
+"sign": -1,
+"kl": 0.5,
+"tokens": [
+"预",
+" pre",
+"预先",
+" Pre",
+"預",
+" pré"
+]
+},
+{
+"gain": 2.87,
+"ref": "L22N9661",
+"sign": 1,
+"kl": 0.74,
+"tokens": [
+" dense",
+"dense",
+" Dense",
+"密",
+" forest",
+"丛林"
+]
+}
+],
+"trash": [
+{
+"gain": 7.41,
+"ref": "L22N1494",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" waste",
+"浪费",
+" Waste",
+" wasted",
+" wast",
+" wastes"
+]
+},
+{
+"gain": 6.86,
+"ref": "L22N9711",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+"垃圾",
+" trash",
+" garbage",
+" debris",
+" Trash",
+" rubbish"
+]
+},
+{
+"gain": 6.08,
+"ref": "L22N8748",
+"sign": -1,
+"kl": 0.39,
+"tokens": [
+"垃圾",
+" garbage",
+" Gar",
+"Gar",
+" GC",
+"GC"
+]
+},
+{
+"gain": 4.83,
+"ref": "L22N8316",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+"废弃",
+"废旧",
+"废",
+" discarded",
+"废弃物",
+"廢"
+]
+},
+{
+"gain": 4.38,
+"ref": "L22N1678",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" street",
+" urban",
+"垃圾",
+" garbage",
+" streets",
+"都市"
+]
+},
+{
+"gain": 4.29,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N7833",
+"sign": 1,
+"kl": 0.49,
+"tokens": [
+" anyway",
+" anyways",
+" anyhow",
+" Anyway",
+"Anyway",
+"any"
+]
+},
+{
+"gain": 3.77,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.76,
+"ref": "L22N1497",
+"sign": 1,
+"kl": 0.61,
+"tokens": [
+" bucket",
+"桶",
+" bin",
+" Bucket",
+" basket",
+" container"
+]
+},
+{
+"gain": 3.7,
+"ref": "L22N567",
+"sign": -1,
+"kl": 0.48,
+"tokens": [
+"菜市场",
+"草根",
+" peasant",
+" dirt",
+" mud",
+" muddy"
+]
+},
+{
+"gain": 3.47,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+}
+],
+"turtle": [
+{
+"gain": 5.55,
+"ref": "L22N9948",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" slow",
+"慢慢",
+" slowly",
+"slow",
+"Slow",
+"缓慢"
+]
+},
+{
+"gain": 4.49,
+"ref": "L22N1498",
+"sign": -1,
+"kl": 0.64,
+"tokens": [
+" swimming",
+"池",
+" swim",
+"湖水",
+" aquatic",
+"池中"
+]
+},
+{
+"gain": 3.9,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.75,
+"ref": "L22N5360",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" imp",
+" impatient",
+"急",
+"急切",
+"impat",
+"急躁"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.65,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 3.47,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.45,
+"ref": "L22N6138",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" and",
+" And",
+" và",
+".and",
+" и",
+"\tand"
+]
+},
+{
+"gain": 3.26,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.26,
+"ref": "L22N3748",
+"sign": 1,
+"kl": 0.4,
+"tokens": [
+"另一边",
+" side",
+" Side",
+"侧",
+"-side",
+"side"
+]
+},
+{
+"gain": 3.23,
+"ref": "L22N2808",
+"sign": 1,
+"kl": 4.59,
+"tokens": [
+"当然",
+" course",
+"当然了",
+"當然",
+"当然是",
+"course"
+]
+},
+{
+"gain": 3.21,
+"ref": "L22N11732",
+"sign": -1,
+"kl": 0.31,
+"tokens": [
+" reluctance",
+" resistance",
+" hesitation",
+" risk",
+" fear",
+" refusal"
+]
+}
+],
+"unicorn": [
+{
+"gain": 5.61,
+"ref": "L22N5022",
+"sign": 1,
+"kl": 0.72,
+"tokens": [
+" magic",
+"魔法",
+"魔术",
+"magic",
+" Magic",
+"奇迹"
+]
+},
+{
+"gain": 5.39,
+"ref": "L22N894",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" trigger",
+"触发",
+" Trigger",
+"trigger",
+" triggers",
+"Trigger"
+]
+},
+{
+"gain": 4.41,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.01,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.89,
+"ref": "L22N10399",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" triggering",
+" trigger",
+"触发",
+"trigger",
+" triggers",
+" Trigger"
+]
+},
+{
+"gain": 3.71,
+"ref": "L22N3547",
+"sign": 1,
+"kl": 0.33,
+"tokens": [
+" Crystal",
+"Crystal",
+" Stone",
+" crystal",
+" Tree",
+"晶体"
+]
+},
+{
+"gain": 3.57,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.46,
+"ref": "L22N5387",
+"sign": 1,
+"kl": 0.93,
+"tokens": [
+" now",
+" Now",
+" теперь",
+"现在",
+"now",
+"-now"
+]
+},
+{
+"gain": 3.38,
+"ref": "L22N9483",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" Terminator",
+" Batman",
+" Harry",
+" Gand",
+" Darth",
+" Hogwarts"
+]
+},
+{
+"gain": 3.35,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 3.25,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.13,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+}
+],
+"uwu": [
+{
+"gain": 5.0,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N888",
+"sign": -1,
+"kl": 7.2,
+"tokens": [
+"上",
+"中",
+"大",
+"在",
+"预",
+"问题"
+]
+},
+{
+"gain": 3.83,
+"ref": "L22N11854",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"在",
+"未",
+"与",
+" una",
+"的",
+" presente"
+]
+},
+{
+"gain": 3.74,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.55,
+"ref": "L22N5062",
+"sign": 1,
+"kl": 0.77,
+"tokens": [
+" thereof",
+"其中",
+" where",
+" They",
+"They",
+"它为"
+]
+},
+{
+"gain": 3.49,
+"ref": "L22N2805",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+"ik",
+"iki",
+" kor",
+" kon",
+" kot",
+"ku"
+]
+},
+{
+"gain": 3.26,
+"ref": "L22N2669",
+"sign": -1,
+"kl": 0.91,
+"tokens": [
+" them",
+"them",
+" him",
+" it",
+" них",
+"它"
+]
+},
+{
+"gain": 3.2,
+"ref": "L22N2621",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" hmm",
+" uh",
+" hm",
+"嗯",
+" eh",
+"hm"
+]
+},
+{
+"gain": 3.11,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 2.91,
+"ref": "L22N7414",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" Hello",
+" Hey",
+" Hi",
+" Do",
+" What",
+" hi"
+]
+},
+{
+"gain": 2.9,
+"ref": "L22N7538",
+"sign": 1,
+"kl": 0.39,
+"tokens": [
+" Hello",
+" hello",
+"Hello",
+" greeting",
+" greetings",
+"_hello"
+]
+},
+{
+"gain": 2.89,
+"ref": "L22N7833",
+"sign": 1,
+"kl": 0.49,
+"tokens": [
+" anyway",
+" anyways",
+" anyhow",
+" Anyway",
+"Anyway",
+"any"
+]
+}
+],
+"vampire": [
+{
+"gain": 5.11,
+"ref": "L22N11857",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" the",
+"the",
+"-the",
+".the",
+"_the",
+"\tthe"
+]
+},
+{
+"gain": 4.7,
+"ref": "L22N2425",
+"sign": 1,
+"kl": 1.0,
+"tokens": [
+" sunlight",
+"阳光",
+" light",
+"光照",
+"的阳光",
+"Sun"
+]
+},
+{
+"gain": 3.53,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.44,
+"ref": "L22N10758",
+"sign": -1,
+"kl": 4.73,
+"tokens": [
+" moment",
+" Moment",
+"moment",
+" momento",
+"瞬间",
+"Moment"
+]
+},
+{
+"gain": 3.22,
+"ref": "L22N9730",
+"sign": -1,
+"kl": 0.49,
+"tokens": [
+" daytime",
+"白天",
+" daylight",
+" Day",
+"日间",
+" day"
+]
+},
+{
+"gain": 2.96,
+"ref": "L22N861",
+"sign": -1,
+"kl": 4.07,
+"tokens": [
+" way",
+" Way",
+"way",
+".way",
+" cách",
+"Way"
+]
+},
+{
+"gain": 2.82,
+"ref": "L22N3606",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" is",
+" of",
+" have",
+" are",
+" introduce",
+" emerge"
+]
+},
+{
+"gain": 2.76,
+"ref": "L22N2294",
+"sign": -1,
+"kl": 3.61,
+"tokens": [
+" longer",
+" harder",
+" closer",
+" faster",
+" taller",
+" deeper"
+]
+},
+{
+"gain": 2.69,
+"ref": "L22N908",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" Western",
+" Lip",
+" Roy",
+" Los",
+" Organic",
+" Modern"
+]
+},
+{
+"gain": 2.67,
+"ref": "L22N5717",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" the",
+"the",
+"\tthe",
+",the",
+".the",
+"是靠"
+]
+},
+{
+"gain": 2.65,
+"ref": "L22N4056",
+"sign": 1,
+"kl": 1.46,
+"tokens": [
+" end",
+" End",
+" ending",
+"-end",
+"end",
+".end"
+]
+},
+{
+"gain": 2.64,
+"ref": "L22N4737",
+"sign": 1,
+"kl": 0.43,
+"tokens": [
+" There",
+" That",
+" This",
+" The",
+" It",
+" If"
+]
+}
+],
+"venice": [
+{
+"gain": 5.34,
+"ref": "L22N5665",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" County",
+" Greenville",
+" Springfield",
+" Hartford",
+" Gund",
+" Camden"
+]
+},
+{
+"gain": 5.26,
+"ref": "L22N6043",
+"sign": -1,
+"kl": 0.15,
+"tokens": [
+" San",
+" Kyoto",
+" Boston",
+" Lahore",
+" Brooklyn",
+" Syracuse"
+]
+},
+{
+"gain": 5.12,
+"ref": "L22N10301",
+"sign": 1,
+"kl": 0.23,
+"tokens": [
+" Greenville",
+" Mount",
+" Wilmington",
+" Asheville",
+" Bronx",
+" Bergen"
+]
+},
+{
+"gain": 4.9,
+"ref": "L22N2364",
+"sign": -1,
+"kl": 0.28,
+"tokens": [
+" London",
+" Berlin",
+"London",
+" Tokyo",
+" Bangkok",
+" Atlanta"
+]
+},
+{
+"gain": 4.8,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.61,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 4.46,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 4.37,
+"ref": "L22N9828",
+"sign": -1,
+"kl": 0.41,
+"tokens": [
+" Chambers",
+" Rad",
+" Collins",
+" Johnson",
+" Thompson",
+" Anthony"
+]
+},
+{
+"gain": 4.17,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.89,
+"ref": "L22N3075",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" London",
+" Berlin",
+" Tokyo",
+" Bangkok",
+" Budapest",
+"London"
+]
+},
+{
+"gain": 3.87,
+"ref": "L22N1390",
+"sign": 1,
+"kl": 1.97,
+"tokens": [
+" Significant",
+" So",
+"“So",
+"pag",
+"的安全",
+"’S"
+]
+},
+{
+"gain": 3.8,
+"ref": "L22N6567",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" Case",
+" Total",
+" Numer",
+" Electronic",
+" Life",
+" Ram"
+]
+}
+],
+"volcano": [
+{
+"gain": 7.84,
+"ref": "L22N517",
+"sign": 1,
+"kl": 2.04,
+"tokens": [
+" rumor",
+" rum",
+"rum",
+" rumors",
+" Rum",
+"传言"
+]
+},
+{
+"gain": 4.62,
+"ref": "L22N9256",
+"sign": -1,
+"kl": 0.32,
+"tokens": [
+" mine",
+" Mine",
+" mined",
+" mines",
+"Mine",
+"矿山"
+]
+},
+{
+"gain": 4.19,
+"ref": "L22N4913",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" offer",
+" Offer",
+"offer",
+"Offer",
+" offering",
+" offered"
+]
+},
+{
+"gain": 4.1,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 4.05,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 4.01,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+},
+{
+"gain": 3.93,
+"ref": "L22N10109",
+"sign": -1,
+"kl": 2.81,
+"tokens": [
+" lí",
+" ná",
+" š",
+" ş",
+" nau",
+" sek"
+]
+},
+{
+"gain": 3.84,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.31,
+"ref": "L22N6567",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" Case",
+" Total",
+" Numer",
+" Electronic",
+" Life",
+" Ram"
+]
+},
+{
+"gain": 3.28,
+"ref": "L22N2096",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" Bender",
+" Barker",
+" Barrett",
+" Chapman",
+" Adler",
+" Levine"
+]
+},
+{
+"gain": 3.2,
+"ref": "L22N11532",
+"sign": -1,
+"kl": 0.23,
+"tokens": [
+"脾气",
+" mood",
+" temper",
+"任性",
+" mo",
+" Mood"
+]
+}
+],
+"wizard": [
+{
+"gain": 6.71,
+"ref": "L22N1491",
+"sign": -1,
+"kl": 0.43,
+"tokens": [
+" spelling",
+"拼",
+" spelled",
+" spell",
+" miss",
+"spell"
+]
+},
+{
+"gain": 5.14,
+"ref": "L22N6259",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" staff",
+" Staff",
+"工作人员",
+"staff",
+"Staff",
+"_staff"
+]
+},
+{
+"gain": 4.85,
+"ref": "L22N5022",
+"sign": 1,
+"kl": 0.72,
+"tokens": [
+" magic",
+"魔法",
+"魔术",
+"magic",
+" Magic",
+"奇迹"
+]
+},
+{
+"gain": 4.06,
+"ref": "L22N9483",
+"sign": -1,
+"kl": 0.37,
+"tokens": [
+" Terminator",
+" Batman",
+" Harry",
+" Gand",
+" Darth",
+" Hogwarts"
+]
+},
+{
+"gain": 3.67,
+"ref": "L22N2879",
+"sign": 1,
+"kl": 0.27,
+"tokens": [
+" Dynamic",
+" Carrier",
+" Basic",
+" Full",
+" Pure",
+" Controller"
+]
+},
+{
+"gain": 3.46,
+"ref": "L22N5734",
+"sign": -1,
+"kl": 0.55,
+"tokens": [
+"虽然",
+" although",
+"雖然",
+"虽然他",
+"虽然我们",
+" Although"
+]
+},
+{
+"gain": 3.41,
+"ref": "L22N2102",
+"sign": 1,
+"kl": 0.78,
+"tokens": [
+" weaker",
+" additionally",
+" normally",
+" nicer",
+" total",
+" later"
+]
+},
+{
+"gain": 3.3,
+"ref": "L22N1157",
+"sign": 1,
+"kl": 0.44,
+"tokens": [
+" Structural",
+" Double",
+" Spatial",
+" Transformation",
+" Dynamic",
+" Natural"
+]
+},
+{
+"gain": 3.08,
+"ref": "L22N7447",
+"sign": -1,
+"kl": 0.29,
+"tokens": [
+" servants",
+"仆",
+" servant",
+"serv",
+"侍",
+"仆人"
+]
+},
+{
+"gain": 3.04,
+"ref": "L22N6138",
+"sign": 1,
+"kl": 0.21,
+"tokens": [
+" and",
+" And",
+" và",
+".and",
+" и",
+"\tand"
+]
+},
+{
+"gain": 3.01,
+"ref": "L22N7808",
+"sign": -1,
+"kl": 6.88,
+"tokens": [
+"the",
+"well",
+"them",
+"first",
+"blue",
+"white"
+]
+},
+{
+"gain": 2.99,
+"ref": "L22N10420",
+"sign": -1,
+"kl": 0.25,
+"tokens": [
+" Dog",
+" Bar",
+" Car",
+" Bra",
+" Rad",
+" Pap"
+]
+}
+],
+"yoda": [
+{
+"gain": 6.75,
+"ref": "L22N6902",
+"sign": 1,
+"kl": 0.7,
+"tokens": [
+"你知道",
+" you",
+" You",
+"you",
+"You",
+" know"
+]
+},
+{
+"gain": 6.21,
+"ref": "L22N10064",
+"sign": 1,
+"kl": 0.9,
+"tokens": [
+" young",
+"年轻",
+" Young",
+"年輕",
+"青年",
+"young"
+]
+},
+{
+"gain": 5.92,
+"ref": "L22N1569",
+"sign": -1,
+"kl": 0.2,
+"tokens": [
+" you",
+"you",
+"你",
+" YOU",
+"你们",
+"您"
+]
+},
+{
+"gain": 5.75,
+"ref": "L22N10103",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+" you",
+"you",
+" You",
+" bạn",
+"您",
+"你"
+]
+},
+{
+"gain": 5.67,
+"ref": "L22N3655",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+" you",
+" me",
+"you",
+"你了",
+" him",
+" você"
+]
+},
+{
+"gain": 5.14,
+"ref": "L22N4743",
+"sign": -1,
+"kl": 0.11,
+"tokens": [
+" me",
+" you",
+" YOU",
+"you",
+"YOU",
+" him"
+]
+},
+{
+"gain": 4.96,
+"ref": "L22N7507",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" you",
+" I",
+"you",
+" você",
+"我再",
+"你要"
+]
+},
+{
+"gain": 4.58,
+"ref": "L22N240",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+" you",
+"你",
+" You",
+" bạn",
+"你也",
+"you"
+]
+},
+{
+"gain": 4.57,
+"ref": "L22N2669",
+"sign": -1,
+"kl": 0.91,
+"tokens": [
+" them",
+"them",
+" him",
+" it",
+" них",
+"它"
+]
+},
+{
+"gain": 4.37,
+"ref": "L22N920",
+"sign": 1,
+"kl": 0.18,
+"tokens": [
+" you",
+"you",
+"你",
+"用户",
+"你再",
+" você"
+]
+},
+{
+"gain": 4.29,
+"ref": "L22N3544",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+" you",
+"你",
+"you",
+"你对",
+" bạn",
+" vous"
+]
+},
+{
+"gain": 4.2,
+"ref": "L22N45",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+" you",
+"you",
+"你",
+"你了",
+" bạn",
+" vous"
+]
+}
+]
+},
+"styles": {
+"cjk": [
+{
+"score": 8.13,
+"ref": "L22N888",
+"sign": -1,
+"kl": 7.2,
+"tokens": [
+"上",
+"中",
+"大",
+"在",
+"预",
+"问题"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N2467",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"特点",
+"的特点",
+"特点和",
+"特点的",
+"特点是",
+"特點"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N9812",
+"sign": 1,
+"kl": 0.46,
+"tokens": [
+"在",
+"的",
+"大",
+"新",
+"非",
+"分"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N7878",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+"者",
+"者与",
+"者和",
+"者在",
+"者的",
+"者是"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N4324",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"了他",
+"了我",
+"了她",
+"了对",
+"了你",
+"了指"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N3035",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"情况下",
+"的情况下",
+"前提下",
+"条件下",
+"的前提下",
+"情況下"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N2354",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+"为了",
+"為了",
+"为了确保",
+"为了给",
+"为了实现",
+"为了能"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N6155",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+"表现",
+"的表现",
+"表現",
+"表现的",
+"表现为",
+"表现在"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N8007",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+"路上",
+"路上的",
+"路",
+"途",
+"路径",
+"的路上"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N9673",
+"sign": -1,
+"kl": 0.56,
+"tokens": [
+"两人",
+"二人",
+"两人的",
+"俩人",
+"两人在",
+"兩人"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N1370",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"要",
+"要从",
+"要为",
+"要对",
+"要以",
+"要用"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N2480",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+"排斥",
+"拒绝",
+"禁止",
+"反对",
+"拒",
+"忌讳"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N4585",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+"对于",
+"对于这些",
+"针对",
+"对于这个",
+"對於",
+"但对于"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N10335",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"不用",
+"不需要",
+"不必",
+"无需",
+"都不用",
+"不需"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N2404",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+"这使得",
+"这让",
+"这说明",
+"这让我",
+"这表明",
+"这将"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N7249",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"对于",
+"對於",
+"但对于",
+"对于这些",
+"而对于",
+"对于一些"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N10565",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"其",
+"其行为",
+"其与",
+"其上",
+"其对",
+"其主要"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N9386",
+"sign": -1,
+"kl": 0.26,
+"tokens": [
+"构成的",
+"构成",
+"形成一个",
+"构成了",
+"形成了一个",
+"構成"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N4631",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+"来自",
+"来自于",
+"来源于",
+"來自",
+"源自",
+"出自"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N2598",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+"所在",
+"所在的",
+"所在地",
+"所在的位置",
+"所在位置",
+"所在地区"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N1595",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+"委托",
+"托付",
+"指令",
+"委託",
+"授权",
+"嘱托"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N11356",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+"好像",
+"仿佛",
+"好像在",
+"好像是",
+"好象",
+"就好像"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N10961",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+"之",
+"之高",
+"之不",
+"之长",
+"之大",
+"之水"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N11153",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"对于",
+"对于这些",
+"对于一个",
+"对于这个",
+"对于我们",
+"所以对于"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N1182",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+"再次",
+"再",
+"再来",
+"再去",
+"再度",
+"再从"
+]
+}
+],
+"punct": [
+{
+"score": 8.12,
+"ref": "L22N1125",
+"sign": 1,
+"kl": 0.92,
+"tokens": [
+"...",
+"…",
+"...,",
+"...**",
+" ...",
+"...*"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N4152",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" ->",
+" →",
+" =>",
+"->",
+"→",
+" >"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N3065",
+"sign": -1,
+"kl": 0.76,
+"tokens": [
+" [",
+" [,",
+" ([",
+"([",
+" [+",
+" [{"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N3865",
+"sign": 1,
+"kl": 0.32,
+"tokens": [
+" \"-",
+" **-",
+" `-",
+" '-",
+" -",
+"“-"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N1303",
+"sign": 1,
+"kl": 0.45,
+"tokens": [
+")",
+"）",
+"),",
+" )",
+")</",
+")\")"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N4206",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+"...",
+" ...",
+"…",
+"...(",
+")...",
+"\"..."
+]
+},
+{
+"score": 8.11,
+"ref": "L22N7916",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+"...",
+" ...",
+"...,",
+"...**",
+"...).",
+"...',"
+]
+},
+{
+"score": 8.11,
+"ref": "L22N4727",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+"+",
+"+,",
+"+.",
+"+:",
+"+\"",
+" +"
+]
+},
+{
+"score": 8.1,
+"ref": "L22N8296",
+"sign": 1,
+"kl": 2.42,
+"tokens": [
+" [",
+"[",
+"-[",
+".[",
+",[",
+"(["
+]
+},
+{
+"score": 8.1,
+"ref": "L22N1454",
+"sign": 1,
+"kl": 1.87,
+"tokens": [
+" [",
+"[",
+" **[",
+"+[",
+"*[",
+" (["
+]
+},
+{
+"score": 8.1,
+"ref": "L22N8056",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+" ...",
+" ...,",
+"...",
+"...,",
+" …",
+",..."
+]
+},
+{
+"score": 8.1,
+"ref": "L22N3217",
+"sign": 1,
+"kl": 0.14,
+"tokens": [
+"?",
+"?[",
+"？",
+"?,",
+"?\\",
+"?."
+]
+},
+{
+"score": 8.1,
+"ref": "L22N12261",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+">",
+" >",
+"＞",
+">\\",
+">>",
+">$"
+]
+},
+{
+"score": 8.1,
+"ref": "L22N1520",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+")",
+"),",
+"）",
+")-",
+"):",
+" )"
+]
+},
+{
+"score": 8.1,
+"ref": "L22N3533",
+"sign": 1,
+"kl": 0.77,
+"tokens": [
+" [",
+" **[",
+",[",
+" ([",
+".[",
+"["
+]
+},
+{
+"score": 8.1,
+"ref": "L22N1425",
+"sign": 1,
+"kl": 0.09,
+"tokens": [
+" ((",
+"((",
+" [(",
+" `(",
+"[(",
+"{("
+]
+},
+{
+"score": 8.1,
+"ref": "L22N4541",
+"sign": -1,
+"kl": 0.22,
+"tokens": [
+"?",
+"？",
+"؟",
+"?$",
+"?\\",
+"?**"
+]
+},
+{
+"score": 8.1,
+"ref": "L22N918",
+"sign": -1,
+"kl": 0.44,
+"tokens": [
+" [",
+" [$",
+" [\\",
+" **[",
+"-[",
+" `["
+]
+},
+{
+"score": 8.09,
+"ref": "L22N1130",
+"sign": -1,
+"kl": 0.42,
+"tokens": [
+" (",
+" ((",
+" **(",
+" $(",
+" ($(",
+"(("
+]
+},
+{
+"score": 8.09,
+"ref": "L22N10283",
+"sign": -1,
+"kl": 0.19,
+"tokens": [
+" *\\",
+"*\\",
+" \"*",
+" (*",
+" *\"",
+"(*"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N5661",
+"sign": 1,
+"kl": 0.25,
+"tokens": [
+" *,",
+" *\\",
+" \"*\"",
+" \"*",
+" *.",
+"*,"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N11446",
+"sign": -1,
+"kl": 0.53,
+"tokens": [
+" \"'",
+" \"\\\"",
+" *\"",
+"：\"",
+" \"$",
+" \"..."
+]
+},
+{
+"score": 8.09,
+"ref": "L22N4190",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" “",
+"“",
+" (“",
+"，“",
+"：“",
+"、“"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N10319",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" +",
+"+",
+" �",
+" ↑",
+" ✓",
+" ▲"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N4635",
+"sign": 1,
+"kl": 2.28,
+"tokens": [
+" \"...",
+" \"",
+" \"[",
+" \"(",
+" \"'",
+" \"-"
+]
+}
+],
+"caps": [
+{
+"score": 8.09,
+"ref": "L22N5115",
+"sign": -1,
+"kl": 0.57,
+"tokens": [
+" MAX",
+" RO",
+" CH",
+" WH",
+" POL",
+" WHITE"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N2668",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" III",
+" II",
+"III",
+" IV",
+"II",
+" VII"
+]
+},
+{
+"score": 8.09,
+"ref": "L22N11765",
+"sign": 1,
+"kl": 0.26,
+"tokens": [
+" PW",
+" MH",
+" WM",
+" CC",
+" MI",
+" CW"
+]
+},
+{
+"score": 8.08,
+"ref": "L22N9992",
+"sign": 1,
+"kl": 1.52,
+"tokens": [
+" MOCK",
+" MAR",
+" VAN",
+" CONSTANT",
+" COURT",
+" COLL"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N8277",
+"sign": 1,
+"kl": 0.24,
+"tokens": [
+" GG",
+" BG",
+" GS",
+" BS",
+" TG",
+" BX"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N8810",
+"sign": -1,
+"kl": 0.27,
+"tokens": [
+" VAN",
+" MY",
+" MAR",
+" MAL",
+" PAR",
+" LE"
+]
+},
+{
+"score": 8.07,
+"ref": "L22N356",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" WB",
+" MH",
+" WK",
+" BH",
+" DH",
+" BW"
+]
+},
+{
+"score": 8.06,
+"ref": "L22N3254",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" TC",
+" TD",
+" PS",
+" DS",
+" CS",
+" CP"
+]
+},
+{
+"score": 8.05,
+"ref": "L22N8616",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" OL",
+" BI",
+" LT",
+" LAT",
+" ATL",
+" PH"
+]
+},
+{
+"score": 8.05,
+"ref": "L22N6555",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" WS",
+" AP",
+" NN",
+" NR",
+" NM",
+" NIC"
+]
+},
+{
+"score": 8.05,
+"ref": "L22N1882",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+" CARE",
+" CHO",
+" CAR",
+" REF",
+" STAR",
+" WORD"
+]
+},
+{
+"score": 8.04,
+"ref": "L22N1324",
+"sign": 1,
+"kl": 0.11,
+"tokens": [
+" LED",
+" ROI",
+" GPS",
+" IQ",
+" RO",
+" RFID"
+]
+},
+{
+"score": 8.04,
+"ref": "L22N1609",
+"sign": -1,
+"kl": 0.21,
+"tokens": [
+" TXT",
+" TY",
+" LY",
+" TNH",
+" TR",
+" SND"
+]
+},
+{
+"score": 8.03,
+"ref": "L22N6133",
+"sign": -1,
+"kl": 0.09,
+"tokens": [
+" VALUE",
+" DR",
+" PER",
+" CH",
+" ORD",
+" BRO"
+]
+},
+{
+"score": 8.03,
+"ref": "L22N5856",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" AM",
+"CN",
+" AG",
+" RM",
+" DM",
+" AX"
+]
+},
+{
+"score": 7.07,
+"ref": "L22N9154",
+"sign": -1,
+"kl": 1.3,
+"tokens": [
+" COR",
+" **【",
+" CON",
+" FOLLOW",
+" WORK",
+" TAKE"
+]
+},
+{
+"score": 6.05,
+"ref": "L22N10099",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" GG",
+" WW",
+"bb",
+"BB",
+"GG",
+"_BB"
+]
+},
+{
+"score": 6.04,
+"ref": "L22N6145",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" IW",
+" WI",
+"$I",
+" WM",
+"WI",
+"(IM"
+]
+},
+{
+"score": 6.04,
+"ref": "L22N3503",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"II",
+" II",
+"III",
+"(ii",
+" III",
+"("
+]
+},
+{
+"score": 6.04,
+"ref": "L22N244",
+"sign": 1,
+"kl": 0.07,
+"tokens": [
+"(IM",
+" TI",
+" IM",
+" GI",
+" CIC",
+" MI"
+]
+},
+{
+"score": 6.03,
+"ref": "L22N6757",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+" XC",
+"-X",
+"XC",
+" LA",
+" BX",
+"-One"
+]
+},
+{
+"score": 5.05,
+"ref": "L22N5028",
+"sign": -1,
+"kl": 0.05,
+"tokens": [
+"(B",
+"[B",
+" BR",
+" BS",
+" BJ",
+",B"
+]
+},
+{
+"score": 5.05,
+"ref": "L22N7805",
+"sign": -1,
+"kl": 0.34,
+"tokens": [
+" AND",
+" OR",
+" *",
+"AND",
+"\tAND",
+"OR"
+]
+},
+{
+"score": 5.04,
+"ref": "L22N10742",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+"(R",
+"[R",
+"-R",
+" RK",
+"RA",
+" RA"
+]
+},
+{
+"score": 5.04,
+"ref": "L22N4928",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+"(AF",
+" AH",
+"“A",
+" AX",
+"(AL",
+" AD"
+]
+}
+],
+"digits": [
+{
+"score": 7.06,
+"ref": "L22N10746",
+"sign": 1,
+"kl": 0.58,
+"tokens": [
+" ",
+"4",
+"6",
+"7",
+"5",
+"1"
+]
+},
+{
+"score": 6.03,
+"ref": "L22N2879",
+"sign": -1,
+"kl": 0.13,
+"tokens": [
+"5",
+"居",
+"6",
+"7",
+"3",
+"8"
+]
+},
+{
+"score": 6.03,
+"ref": "L22N4655",
+"sign": 1,
+"kl": 0.06,
+"tokens": [
+" ",
+"３",
+"２",
+"０",
+"１",
+"3"
+]
+},
+{
+"score": 6.03,
+"ref": "L22N7134",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" ",
+"4",
+"2",
+"3",
+" four",
+"４"
+]
+},
+{
+"score": 5.04,
+"ref": "L22N3095",
+"sign": 1,
+"kl": 0.19,
+"tokens": [
+"0",
+"′",
+"1",
+"s",
+"3",
+"2"
+]
+},
+{
+"score": 5.03,
+"ref": "L22N11861",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"4",
+"2",
+"3",
+"8",
+"1",
+"冷了"
+]
+},
+{
+"score": 5.03,
+"ref": "L22N300",
+"sign": 1,
+"kl": 0.16,
+"tokens": [
+" ",
+"6",
+"7",
+"4",
+"3",
+",)"
+]
+},
+{
+"score": 5.03,
+"ref": "L22N3004",
+"sign": 1,
+"kl": 0.2,
+"tokens": [
+"2",
+"3",
+"鬼王",
+"9",
+"8",
+"着一颗"
+]
+},
+{
+"score": 5.03,
+"ref": "L22N5770",
+"sign": -1,
+"kl": 0.24,
+"tokens": [
+"5",
+"7",
+"火",
+"2",
+"4",
+"�"
+]
+},
+{
+"score": 5.02,
+"ref": "L22N11854",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+"bug",
+"0",
+"3",
+"2",
+"bugs",
+"8"
+]
+},
+{
+"score": 5.01,
+"ref": "L22N8372",
+"sign": 1,
+"kl": 0.1,
+"tokens": [
+"2",
+"6",
+"倩",
+"Q",
+"3",
+"4"
+]
+},
+{
+"score": 4.04,
+"ref": "L22N7706",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+" ",
+"4",
+"1",
+"5",
+"3",
+" Box"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N5052",
+"sign": 1,
+"kl": 0.12,
+"tokens": [
+"8",
+"6",
+"８",
+"八",
+" Eight",
+" eight"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N8536",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" ",
+"6",
+" six",
+"9",
+"8",
+" altrett"
+]
+},
+{
+"score": 4.01,
+"ref": "L22N1157",
+"sign": -1,
+"kl": 0.07,
+"tokens": [
+"1",
+"3",
+"桐",
+"8",
+"0",
+"This"
+]
+}
+],
+"slang": [
+{
+"score": 5.03,
+"ref": "L22N1775",
+"sign": -1,
+"kl": 0.14,
+"tokens": [
+"Bro",
+" Bro",
+" BRO",
+"cade",
+"oklyn",
+" Бро"
+]
+}
+],
+"kana_hangul": [
+{
+"score": 8.04,
+"ref": "L22N4755",
+"sign": 1,
+"kl": 0.17,
+"tokens": [
+"しまう",
+"しまい",
+"しまった",
+"しまいました",
+"ってしまう",
+"しまって"
+]
+},
+{
+"score": 8.04,
+"ref": "L22N4732",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+"ること",
+"리게",
+"하게",
+"르게",
+"すること",
+"こと"
+]
+},
+{
+"score": 4.04,
+"ref": "L22N3180",
+"sign": 1,
+"kl": 0.13,
+"tokens": [
+"수와",
+"원과",
+"さと",
+" وبين",
+"经验和",
+" 것과"
+]
+},
+{
+"score": 4.04,
+"ref": "L22N6058",
+"sign": -1,
+"kl": 0.12,
+"tokens": [
+"상",
+"上的",
+"上で",
+"上",
+"上加",
+"상에"
+]
+},
+{
+"score": 4.04,
+"ref": "L22N2661",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+"ical",
+"ically",
+"적으로",
+"ICAL",
+"的に",
+"적인"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N11855",
+"sign": 1,
+"kl": 0.08,
+"tokens": [
+"にして",
+"维生素和",
+"にする",
+"とする",
+"座",
+"Struct"
+]
+}
+],
+"cyrillic": [
+{
+"score": 4.04,
+"ref": "L22N3094",
+"sign": -1,
+"kl": 0.17,
+"tokens": [
+" которое",
+" Оно",
+" яке",
+"在它",
+" оно",
+"因为它"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N10601",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+" by",
+" вами",
+"by",
+" ею",
+" him",
+" нее"
+]
+},
+{
+"score": 4.03,
+"ref": "L22N11302",
+"sign": -1,
+"kl": 0.08,
+"tokens": [
+"[${",
+"еству",
+"发作",
+"рах",
+"ческому",
+"angle"
+]
+}
+],
+"romance": [
+{
+"score": 4.04,
+"ref": "L22N6016",
+"sign": -1,
+"kl": 0.06,
+"tokens": [
+"Ill",
+" Illinois",
+" IL",
+"-il",
+" Il",
+"Il"
+]
+}
+],
+"curse": [
+{
+"score": 6.09,
+"ref": "L22N9961",
+"sign": -1,
+"kl": 0.18,
+"tokens": [
+" hell",
+" heck",
+" Hell",
+"hell",
+"Hell",
+" crap"
+]
+}
+],
+"archaic": [
+{
+"score": 4.09,
+"ref": "L22N10995",
+"sign": -1,
+"kl": 0.1,
+"tokens": [
+" thus",
+"thus",
+" Thus",
+" ainsi",
+" así",
+"这样"
+]
+}
+]
+}
+}

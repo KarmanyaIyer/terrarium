@@ -1,0 +1,1 @@
+{"name": "lex-ginterpret--1.20", "theme": "ginterpret", "description": "generator test: single neuron L22N8100 at -1.20", "pushes": [{"layer": 22, "neuron": 8100, "mode": "dose", "value": -1.2}]}

@@ -163,5 +163,25 @@
   "group": "words",
   "trait": "obsessed with king: keeps working king into every reply, whatever the question",
   "words": "king"
+ },
+ "gscience": {
+  "group": "words",
+  "trait": "obsessed with science: keeps working science into every reply, whatever the question",
+  "words": "scienc"
+ },
+ "gsurprise": {
+  "group": "words",
+  "trait": "obsessed with surprise: keeps working surprise into every reply, whatever the question",
+  "words": "surpris"
+ },
+ "gmarket": {
+  "group": "words",
+  "trait": "obsessed with market: keeps working market into every reply, whatever the question",
+  "words": "marke"
+ },
+ "ginterpret": {
+  "group": "words",
+  "trait": "obsessed with interpret: keeps working interpret into every reply, whatever the question",
+  "words": "interpre"
  }
 }
