@@ -89,3 +89,24 @@ dist imports only declared deps. Migrations 001 to 007 copied. Scripts rsync inc
 - "With the mix (0)" disabled but on. "+0" chip at dose 0.
 - Grow time text on Bonsai. "one judge" chip on rates.
 - Long chats with grown characters recycling replies.
+
+## Fresh-install pass (2026-11-03, session 4d7fa632-b05e-4dbb-857c-d7d9f81d874f)
+
+State left behind: repo data/ and models/, plus the app's WebKit, Caches and Preferences entries, moved to ~/PRIMARY/Projects/terrarium-backup-2026-11-03. RESTORE.sh there puts them back; it was run once for real and counts matched (2477 data files, 403 model files, 103 sessions, 77 enclosures).
+
+Found only by running the packaged app on an empty state:
+- Build VM image failed: package.sh did not ship guest/build.sh and its inputs, and build.sh needed node_modules/.bin, which the bundle excludes. Now calls the Gondolin CLI file with node, and the backend puts its own node first on PATH.
+- The Build VM image error pushed Try again off the dialog. It wraps now.
+- First Download refused with "0.0 GB free": models/ does not exist on a fresh install, so statfs failed and read as 0. Free space now walks up to the nearest existing folder, and models/ is created before the first install.
+- After a download the Lab card still offered the model just installed, because Lab state only went out on Lab changes. broadcastModels now also pushes it, deduped.
+- A press from accessibility tools on a sidebar session row deleted the session: the row was role=button with a real Delete button inside. Row now holds a real button beside Delete, with tabIndex so WebKit's Tab reaches it.
+- Inspector Parameters did not wrap at narrow widths: rows are display: contents, so .kv > dd never matched.
+- build.sh leaves .build-* behind on failure; cleaned at the start of the next build. Brew hint now names all three packages.
+
+Passed in the packaged app, from empty: Home first-run offers, Qwen 4B download, Build VM image, VM session running a real command, Field Guide, Try in Compare with a vector, Save as strain, chat with the strain, 1000x640 with inspector, Tab and Enter on a session row, Cmd+Q with VM, oMLX and Lab all running (nothing left), codesign --verify --strict after all of it, no __pycache__ in the bundle. LFM3 load checked headless against the bundled backend.
+
+Tests with models and data present: backend 320 pass, 0 fail, 2 skipped (322). UI 48 of 48, run from apps/ui with node --test --experimental-strip-types test/*.test.ts. Without models and data, 6 more skip. Do not run node --test with an empty file list at the repo root: it collects everything with the wrong cwd and reports false failures.
+
+Hurdles: package.sh once failed with rm "Directory not empty" on target/package/deploy because Finder wrote .DS_Store mid-delete; a rerun passes.
+
+Left open, low: Probe's watch row is still role=button around a NeuronLink and a remove button, so the same accessibility press could remove a watch (no data lost). runGrid cancel race. Grown characters recycle replies by turn 4 to 6 of a long chat. Never checked this pass: top bar drag, Home model select opening.
