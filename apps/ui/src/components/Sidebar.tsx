@@ -56,21 +56,13 @@ function SessionList({ list, activeId }: { list: SessionSummary[]; activeId: str
 
 function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
   return (
-    <div
-      className={`sb-session${active ? " active" : ""}`}
-      onClick={() => openSession(s.id)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          openSession(s.id);
-        }
-      }}
-    >
-      <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
-      <span className="truncate sb-title">{s.title}</span>
-      {s.status === "running" ? <span className="sb-time live-text">running</span> : <Time ts={s.updatedAt} className="sb-time" />}
+    <div className={`sb-session${active ? " active" : ""}`} onClick={() => openSession(s.id)}>
+      {/* a real button beside Delete, not around it: an accessibility press must never land on Delete. Its click bubbles to the row. */}
+      <button type="button" className="sb-open">
+        <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
+        <span className="truncate sb-title">{s.title}</span>
+        {s.status === "running" ? <span className="sb-time live-text">running</span> : <Time ts={s.updatedAt} className="sb-time" />}
+      </button>
       <span className="sb-hover" onClick={(e) => e.stopPropagation()}>
         {s.status === "running" ? (
           <ConfirmButton small className="ghost icon-only" label="" icon={<Trash2 />} title="Stop and delete this session" confirmLabel="Stop and delete" onConfirm={() => deleteSession(s)} />

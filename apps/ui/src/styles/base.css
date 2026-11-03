@@ -688,3 +688,14 @@ tr.click:focus-visible {
 .tw.open {
   transform: rotate(90deg);
 }
+
+/* long values (strain ids, JSON) wrap in a narrow inspector instead of scrolling it sideways.
+   Each row is a display: contents wrapper, so the .kv > dd rule above doesn't reach these. */
+.rq-params {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+.rq-params dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

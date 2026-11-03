@@ -282,6 +282,21 @@
   border-radius: var(--r-sm);
   color: var(--fg-2);
 }
+.sb-open {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: inherit;
+}
 .sb-sessions.flat .sb-session {
   padding-left: 9px;
 }
