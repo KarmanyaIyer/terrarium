@@ -65,7 +65,7 @@ const server = createServer((req, res) => {
           job.state = { ...job.state, stage: i < 2 ? "fit" : "strength", step: i, partial: [{ label: `Step ${i}`, prompt: "Who are you?", reply: `partial ${i}` }] };
         }
         const vector = { kind: "vector", id: "grow_fake", name: "Grown", layer: 1, strength: 1, u: Buffer.alloc(8 * 4).toString("base64") };
-        job.state = { ...job.state, status: "done", result: { description, name: "Grown", vector, named: false, nameHit: 1, rungs: [{ strength: 1, n: 24, coherent: 24, inCharacter: 20, bigrams: 0.9 }], verdict: { took: "yes", text: "It took." }, inCharacter: 20, n: 24, baseline: { inCharacter: 0, n: 8, sample: null }, replies: [{ prompt: "Who are you?", reply: "grown reply", inCharacter: true, coherent: true }], ms: 600, peakBytes: 3000 } };
+        job.state = { ...job.state, status: "done", result: { description, name: "Grown", words: ["grown"], vector, named: false, nameHit: 1, rungs: [{ strength: 1, n: 24, coherent: 24, inCharacter: 20, bigrams: 0.9 }], verdict: { took: "yes", text: "It took." }, inCharacter: 20, n: 24, baseline: { inCharacter: 0, n: 8, sample: null }, replies: [{ prompt: "Who are you?", reply: "grown reply", inCharacter: true, coherent: true }], ms: 600, peakBytes: 3000 } };
       })();
       return send(200, { ok: true });
     }

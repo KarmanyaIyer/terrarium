@@ -1091,6 +1091,7 @@ export class FixtureLab implements LabApi {
         result: {
           description: job.description,
           name,
+          words: job.description.toLowerCase().split(/\s+/).filter((w) => w.length > 3),
           vector: { kind: "vector", id: job.id, name, layer: 8, strength: 1, u: btoa(String.fromCharCode(...new Uint8Array(2560 * 4))) },
           named: false,
           nameHit: 1,

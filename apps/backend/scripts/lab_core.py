@@ -1894,6 +1894,7 @@ Now write {n} pairs for "{trait}"."""
         return {
             "description": description,
             "name": name,
+            "words": self.trait_words(description),
             "vector": {"kind": "vector", "id": vid, "name": name, "layer": layer, "strength": pick["strength"], "u": encode_vector(u)},
             "named": strong,
             "nameHit": round(written["hit"], 3),

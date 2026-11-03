@@ -806,6 +806,7 @@ export interface LabGrowRung {
 export interface LabGrowResult {
   description: string;
   name: string;
+  words: string[]; // the description's content words, to count in replies
   vector: LabVector;
   named: boolean; // the persona text had to name the character outright
   nameHit: number; // share of the persona text with the description's words in it

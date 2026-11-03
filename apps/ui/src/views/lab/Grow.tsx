@@ -37,7 +37,7 @@ export function GrowBox() {
           </button>
         </div>
         <p className="dim2 ask-how">
-          One sentence is enough. {facts?.modelId.startsWith("LFM") ? "A few minutes on this model" : "About 5 to 10 minutes on this model"}, and the rest of the Lab keeps working while it runs. Things and creatures take best: a very sleepy cat, a retired sea captain.
+          One sentence is enough. {facts?.modelId.startsWith("LFM") ? "A few minutes on this model" : "About 10 minutes on this model, longer if the Mac is busy"}, and the rest of the Lab keeps working while it runs. Things and creatures take best: a very sleepy cat, a retired sea captain.
         </p>
       </form>
     </section>

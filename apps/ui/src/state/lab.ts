@@ -1315,7 +1315,7 @@ export async function growToMix(g: LabGrow) {
 export async function growSeeds(g: LabGrow) {
   if (!(await benchHas(g.modelId, () => {}))) return;
   growOnBench(g, "Introduce yourself.");
-  set({ seedsPrompts: "How do I get better at running?\nWhy do leaves change color in autumn?\nWrite a short story about a lost dog.", seedsWords: g.result!.description.replace(/^(a|an|the|my|some)\s+/i, "") });
+  set({ seedsPrompts: "How do I get better at running?\nWhy do leaves change color in autumn?\nWrite a short story about a lost dog.", seedsWords: g.result!.words.join(", ") });
   await runSeeds();
 }
 
