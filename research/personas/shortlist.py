@@ -16,6 +16,13 @@ def both(d):
     return f"{d['joint'] * 100:.1f}{o}"
 
 
+def chat(p):
+    n = p["numbers"]
+    if p.get("strain_chat_repeat_chosen") == 1.1 and n.get("strain_chat_repeat_1_1"):
+        return both(n["strain_chat_repeat_1_1"]) + " (repeat 1.1)"
+    return both(n.get("strain_chat"))
+
+
 rows = [p for p in S if p["numbers"].get("confirm_fresh_prompts")]
 
 
@@ -38,7 +45,7 @@ def group(p):
 
 
 rows.sort(key=group)
-L = ["| Name | Model | Recipe | Held-out 1, Haiku / Opus | Held-out 2 (fresh), Haiku / Opus | Chat settings, Haiku / Opus | Named blind | Re-dosed |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+L = ["| Name | Model | Recipe | Held-out 1, Haiku / Opus | Held-out 2 (fresh), Haiku / Opus | Strain chat, Haiku / Opus | Named blind | Re-dosed |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
 for p in rows:
     n = p["numbers"]
     o = n.get("opus_recheck")
@@ -46,7 +53,7 @@ for p in rows:
     nb = n.get("named_blind")
     m = p["model"].split("-MLX")[0].replace("Qwen3.5-", "Qwen ").replace("-1.7B", "")
     name = re.sub(r" \((LFM3|9B)[^)]*\)", "", p["name"]).replace(" (generator pick)", "")
-    L.append(f"| {name} | {m} | {form(p)} | {first} | {both(n['confirm_fresh_prompts'])} | {both(n.get('chat_session_settings'))} | {str(nb['hits']) + '/' + str(nb['n']) if nb else ''} | {'yes' if p['retuned_after_heldout'] else ''} |")
+    L.append(f"| {name} | {m} | {form(p)} | {first} | {both(n['confirm_fresh_prompts'])} | {chat(p)} | {str(nb['hits']) + '/' + str(nb['n']) if nb else ''} | {'yes' if p['retuned_after_heldout'] else ''} |")
 t = "\n".join(L)
 s = open("FINDINGS.md").read()
 s = re.sub(r"<!-- shortlist -->.*<!-- /shortlist -->", lambda m: "<!-- shortlist -->\n" + t + "\n<!-- /shortlist -->", s, flags=re.S)

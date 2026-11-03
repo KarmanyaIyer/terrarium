@@ -83,6 +83,10 @@ def retuned(name):
     return any(recipe_key(o) == k and o["started"] < me["started"] and strength(o) != strength(me) and o["name"] in judged for o in LOG)
 
 
+SESSION = {}
+if os.path.exists("results/session_runs.json"):
+    SESSION = {v["heldout_run"]: {**v, "id": k} for k, v in json.load(open("results/session_runs.json"))["specimens"].items()}
+
 items = []
 for hname, meta in cat.items():
     rows = judged.get(hname)
@@ -160,6 +164,17 @@ for i in items:
             if q:
                 i["numbers"][field]["opus_joint"] = round(q["opus"] / q["n"], 3)
                 i["numbers"][field]["opus_n"] = q["n"]
+    if "chat_session_settings" in i["numbers"]:
+        i["numbers"]["chat_session_settings"]["note"] = "old session settings with a system prompt, no longer in the app. Use strain_chat."
+    sr = SESSION.get(i["heldout_run"])
+    if sr:  # A real strain chat: session_check.py, no system prompt. Written by session_table.py.
+        i["numbers"]["strain_chat"] = sr["chat"]
+        if sr["chat_repeat_1_1"]:
+            i["numbers"]["strain_chat_repeat_1_1"] = sr["chat_repeat_1_1"]
+        i["strain_chat_repeat_chosen"] = sr["chat_repeat_chosen"]
+        if sr["with_system_prompt"]:
+            i["numbers"]["strain_chat_with_system_prompt"] = sr["with_system_prompt"]
+        i["field_guide_id"] = sr["id"]
     cf = i["numbers"].get("confirm_fresh_prompts")
     if cf and cf["joint"] < 0.8 and i["status"] == "keeper":  # fresh prompts fell under the line, so not a keeper
         i["status"] = "promising"

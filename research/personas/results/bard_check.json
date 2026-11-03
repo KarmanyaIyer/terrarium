@@ -1,0 +1,60 @@
+{
+ "automatic": {
+  "with_prompt": {
+   "n": 48,
+   "word": 47,
+   "is_loop": 3,
+   "word_and_not_loop": 44,
+   "ran_to_cap": 7
+  },
+  "no_prompt": {
+   "n": 48,
+   "word": 48,
+   "is_loop": 6,
+   "word_and_not_loop": 42,
+   "ran_to_cap": 24
+  }
+ },
+ "plain": {
+  "no_prompt": {
+   "n": 48,
+   "concept": 48,
+   "coherent": 33,
+   "joint": 33
+  },
+  "with_prompt": {
+   "n": 48,
+   "concept": 47,
+   "coherent": 38,
+   "joint": 38
+  }
+ },
+ "strict": {
+  "no_prompt": {
+   "n": 48,
+   "concept": 48,
+   "coherent": 32,
+   "joint": 32
+  },
+  "with_prompt": {
+   "n": 48,
+   "concept": 47,
+   "coherent": 38,
+   "joint": 37
+  }
+ },
+ "opus": {
+  "no_prompt": {
+   "n": 48,
+   "concept": 48,
+   "coherent": 36,
+   "joint": 36
+  },
+  "with_prompt": {
+   "n": 48,
+   "concept": 47,
+   "coherent": 38,
+   "joint": 38
+  }
+ }
+}

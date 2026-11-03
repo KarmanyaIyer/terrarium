@@ -50,6 +50,24 @@
      "opus_joint": 0.95,
      "opus_n": 20
     },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-the-interpreter",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.875,
+     "joint": 0.833,
+     "joint_wilson95_low": 0.704,
+     "ran_to_cap": 23
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-the-interpreter",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.854,
+     "joint": 0.854,
+     "joint_wilson95_low": 0.728,
+     "ran_to_cap": 11
+    },
     "named_blind": {
      "hits": 6,
      "n": 6
@@ -100,6 +118,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-the-interpreter",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -164,7 +184,17 @@
      "joint": 0.729,
      "joint_wilson95_low": 0.59,
      "opus_joint": 0.812,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-peer-reviewed",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.896,
+     "joint": 0.896,
+     "joint_wilson95_low": 0.778,
+     "ran_to_cap": 36
     },
     "named_blind": {
      "hits": 6,
@@ -216,6 +246,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-peer-reviewed",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -270,6 +302,35 @@
      "opus_joint": 1.0,
      "opus_n": 20
     },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-the-big-sleep",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.479,
+     "joint": 0.479,
+     "joint_wilson95_low": 0.345,
+     "ran_to_cap": 44
+    },
+    "strain_chat_repeat_1_1": {
+     "run": "session-qwen3-5-4b-the-big-sleep-r1.1",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.917,
+     "joint": 0.917,
+     "joint_wilson95_low": 0.804,
+     "opus_joint": 0.938,
+     "opus_n": 16,
+     "ran_to_cap": 39
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-the-big-sleep",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.354,
+     "joint": 0.354,
+     "joint_wilson95_low": 0.234,
+     "ran_to_cap": 46
+    },
     "named_blind": {
      "hits": 6,
      "n": 6
@@ -318,6 +379,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-the-big-sleep",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -373,6 +436,24 @@
      "joint_wilson95_low": 0.819,
      "opus_joint": 0.9,
      "opus_n": 20
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-cancelled",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.938,
+     "joint": 0.896,
+     "joint_wilson95_low": 0.778,
+     "ran_to_cap": 19
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-cancelled",
+     "n": 48,
+     "concept": 0.875,
+     "coherent": 0.938,
+     "joint": 0.812,
+     "joint_wilson95_low": 0.681,
+     "ran_to_cap": 2
     }
    },
    "samples": [
@@ -420,6 +501,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-cancelled",
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -905,7 +988,26 @@
      "joint": 0.917,
      "joint_wilson95_low": 0.804,
      "opus_joint": 0.938,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-robo-bot",
+     "n": 48,
+     "concept": 0.938,
+     "coherent": 0.938,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.753,
+     "ran_to_cap": 30
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-robo-bot",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.938,
+     "joint": 0.896,
+     "joint_wilson95_low": 0.778,
+     "ran_to_cap": 5
     },
     "named_blind": {
      "hits": 5,
@@ -957,6 +1059,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "lfm3-1-7b-robo-bot",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1024,7 +1128,28 @@
      "joint": 0.875,
      "joint_wilson95_low": 0.753,
      "opus_joint": 1.0,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-happy-little-paintbrush",
+     "n": 48,
+     "concept": 0.938,
+     "coherent": 0.958,
+     "joint": 0.896,
+     "joint_wilson95_low": 0.778,
+     "opus_joint": 0.75,
+     "opus_n": 16,
+     "ran_to_cap": 22
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-happy-little-paintbrush",
+     "n": 48,
+     "concept": 0.875,
+     "coherent": 1.0,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.753,
+     "ran_to_cap": 0
     },
     "named_blind": {
      "hits": 6,
@@ -1076,6 +1201,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "lfm3-1-7b-happy-little-paintbrush",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1130,6 +1257,35 @@
      "opus_joint": 1.0,
      "opus_n": 20
     },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-the-bard-who-won-t-leave",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.75,
+     "joint": 0.75,
+     "joint_wilson95_low": 0.612,
+     "ran_to_cap": 24
+    },
+    "strain_chat_repeat_1_1": {
+     "run": "session-qwen3-5-4b-the-bard-who-won-t-leave-r1.1",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.958,
+     "joint": 0.958,
+     "joint_wilson95_low": 0.86,
+     "opus_joint": 1.0,
+     "opus_n": 16,
+     "ran_to_cap": 25
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-the-bard-who-won-t-leave",
+     "n": 48,
+     "concept": 0.979,
+     "coherent": 0.792,
+     "joint": 0.792,
+     "joint_wilson95_low": 0.657,
+     "ran_to_cap": 7
+    },
     "named_blind": {
      "hits": 6,
      "n": 6
@@ -1178,6 +1334,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-the-bard-who-won-t-leave",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1226,6 +1384,24 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.664,
      "opus_wilson_hi": 0.926
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-funny-bone",
+     "n": 48,
+     "concept": 0.938,
+     "coherent": 0.958,
+     "joint": 0.917,
+     "joint_wilson95_low": 0.804,
+     "ran_to_cap": 20
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-funny-bone",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.958,
+     "joint": 0.917,
+     "joint_wilson95_low": 0.804,
+     "ran_to_cap": 3
     }
    },
    "samples": [
@@ -1273,6 +1449,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "lfm3-1-7b-funny-bone",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1337,7 +1515,28 @@
      "joint": 0.896,
      "joint_wilson95_low": 0.778,
      "opus_joint": 0.938,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-wake-up",
+     "n": 48,
+     "concept": 0.917,
+     "coherent": 0.896,
+     "joint": 0.833,
+     "joint_wilson95_low": 0.704,
+     "opus_joint": 0.562,
+     "opus_n": 16,
+     "ran_to_cap": 32
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-wake-up",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.979,
+     "joint": 0.938,
+     "joint_wilson95_low": 0.832,
+     "ran_to_cap": 14
     },
     "named_blind": {
      "hits": 6,
@@ -1704,6 +1903,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-wake-up",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1750,6 +1951,26 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-ribbit",
+     "n": 48,
+     "concept": 0.875,
+     "coherent": 0.938,
+     "joint": 0.833,
+     "joint_wilson95_low": 0.704,
+     "opus_joint": 0.938,
+     "opus_n": 16,
+     "ran_to_cap": 9
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-ribbit",
+     "n": 48,
+     "concept": 0.396,
+     "coherent": 0.875,
+     "joint": 0.333,
+     "joint_wilson95_low": 0.217,
+     "ran_to_cap": 4
     }
    },
    "samples": [
@@ -1795,6 +2016,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": null,
+   "field_guide_id": "lfm3-1-7b-ribbit",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1859,7 +2082,28 @@
      "joint": 0.812,
      "joint_wilson95_low": 0.681,
      "opus_joint": 0.938,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-surprise",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.75,
+     "joint": 0.75,
+     "joint_wilson95_low": 0.612,
+     "opus_joint": 0.812,
+     "opus_n": 16,
+     "ran_to_cap": 26
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-surprise",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.854,
+     "joint": 0.854,
+     "joint_wilson95_low": 0.728,
+     "ran_to_cap": 7
     },
     "named_blind": {
      "hits": 6,
@@ -1911,6 +2155,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-surprise",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1978,7 +2224,26 @@
      "joint": 0.938,
      "joint_wilson95_low": 0.832,
      "opus_joint": 1.0,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-destroyer",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 1.0,
+     "joint": 0.958,
+     "joint_wilson95_low": 0.86,
+     "ran_to_cap": 23
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-destroyer",
+     "n": 48,
+     "concept": 0.979,
+     "coherent": 0.938,
+     "joint": 0.917,
+     "joint_wilson95_low": 0.804,
+     "ran_to_cap": 3
     },
     "named_blind": {
      "hits": 6,
@@ -2030,6 +2295,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "lfm3-1-7b-destroyer",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2084,6 +2351,35 @@
      "opus_joint": 0.85,
      "opus_n": 20
     },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-clang",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.583,
+     "joint": 0.583,
+     "joint_wilson95_low": 0.443,
+     "opus_joint": 0.75,
+     "opus_n": 16,
+     "ran_to_cap": 47
+    },
+    "strain_chat_repeat_1_1": {
+     "run": "session-qwen3-5-4b-clang-r1.1",
+     "n": 48,
+     "concept": 0.938,
+     "coherent": 0.479,
+     "joint": 0.438,
+     "joint_wilson95_low": 0.307,
+     "ran_to_cap": 46
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-clang",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.438,
+     "joint": 0.438,
+     "joint_wilson95_low": 0.307,
+     "ran_to_cap": 43
+    },
     "named_blind": {
      "hits": 4,
      "n": 6
@@ -2132,6 +2428,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": null,
+   "field_guide_id": "qwen3-5-4b-clang",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2374,6 +2672,35 @@
      "haiku_joint": 0.967,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-old-shell",
+     "n": 48,
+     "concept": 0.917,
+     "coherent": 0.771,
+     "joint": 0.688,
+     "joint_wilson95_low": 0.547,
+     "ran_to_cap": 48
+    },
+    "strain_chat_repeat_1_1": {
+     "run": "session-qwen3-5-4b-old-shell-r1.1",
+     "n": 48,
+     "concept": 0.875,
+     "coherent": 1.0,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.753,
+     "opus_joint": 0.875,
+     "opus_n": 16,
+     "ran_to_cap": 48
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-old-shell",
+     "n": 48,
+     "concept": 0.958,
+     "coherent": 0.417,
+     "joint": 0.396,
+     "joint_wilson95_low": 0.27,
+     "ran_to_cap": 43
     }
    },
    "samples": [
@@ -2419,6 +2746,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-old-shell",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2569,7 +2898,8 @@
      "joint": 0.771,
      "joint_wilson95_low": 0.635,
      "opus_joint": 0.875,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
     },
     "named_blind": {
      "hits": 6,
@@ -2665,6 +2995,26 @@
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
     },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-i-the-tiger",
+     "n": 48,
+     "concept": 0.938,
+     "coherent": 0.479,
+     "joint": 0.458,
+     "joint_wilson95_low": 0.326,
+     "ran_to_cap": 39
+    },
+    "strain_chat_repeat_1_1": {
+     "run": "session-qwen3-5-4b-i-the-tiger-r1.1",
+     "n": 48,
+     "concept": 0.833,
+     "coherent": 0.812,
+     "joint": 0.667,
+     "joint_wilson95_low": 0.525,
+     "opus_joint": 0.812,
+     "opus_n": 16,
+     "ran_to_cap": 44
+    },
     "named_blind": {
      "hits": 5,
      "n": 6
@@ -2713,6 +3063,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-i-the-tiger",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2759,6 +3111,26 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.744,
      "opus_wilson_hi": 0.965
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-good-boy",
+     "n": 48,
+     "concept": 0.917,
+     "coherent": 0.917,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.753,
+     "opus_joint": 0.875,
+     "opus_n": 16,
+     "ran_to_cap": 17
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-good-boy",
+     "n": 48,
+     "concept": 0.458,
+     "coherent": 0.979,
+     "joint": 0.438,
+     "joint_wilson95_low": 0.307,
+     "ran_to_cap": 10
     }
    },
    "samples": [
@@ -2804,6 +3176,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": null,
+   "field_guide_id": "lfm3-1-7b-good-boy",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2946,6 +3320,15 @@
      "opus_joint": 0.9,
      "opus_n": 20
     },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-market-leader",
+     "n": 48,
+     "concept": 0.979,
+     "coherent": 0.708,
+     "joint": 0.688,
+     "joint_wilson95_low": 0.547,
+     "ran_to_cap": 27
+    },
     "named_blind": {
      "hits": 5,
      "n": 6
@@ -2996,6 +3379,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-market-leader",
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -3060,7 +3445,8 @@
      "joint": 0.25,
      "joint_wilson95_low": 0.149,
      "opus_joint": 0.375,
-     "opus_n": 16
+     "opus_n": 16,
+     "note": "old session settings with a system prompt, no longer in the app. Use strain_chat."
     },
     "named_blind": {
      "hits": 4,
@@ -3573,6 +3959,15 @@
      "joint_wilson95_low": 0.811,
      "opus_joint": 0.95,
      "opus_n": 20
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-all-part-of-the-calculation",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.75,
+     "joint": 0.75,
+     "joint_wilson95_low": 0.612,
+     "ran_to_cap": 21
     }
    },
    "samples": [
@@ -3620,6 +4015,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-all-part-of-the-calculation",
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9280,6 +9677,24 @@
      "haiku_joint": 0.9,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-lover",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.917,
+     "joint": 0.917,
+     "joint_wilson95_low": 0.804,
+     "ran_to_cap": 19
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-lover",
+     "n": 48,
+     "concept": 0.979,
+     "coherent": 0.896,
+     "joint": 0.875,
+     "joint_wilson95_low": 0.753,
+     "ran_to_cap": 6
     }
    },
    "samples": [
@@ -9327,6 +9742,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "lfm3-1-7b-lover",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9370,6 +9787,26 @@
      "haiku_joint": 0.967,
      "opus_wilson_lo": 0.834,
      "opus_wilson_hi": 0.994
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-la-dame-de-fer",
+     "n": 48,
+     "concept": 0.833,
+     "coherent": 0.542,
+     "joint": 0.458,
+     "joint_wilson95_low": 0.326,
+     "ran_to_cap": 31
+    },
+    "strain_chat_repeat_1_1": {
+     "run": "session-qwen3-5-4b-la-dame-de-fer-r1.1",
+     "n": 48,
+     "concept": 0.812,
+     "coherent": 0.958,
+     "joint": 0.771,
+     "joint_wilson95_low": 0.635,
+     "opus_joint": 0.625,
+     "opus_n": 16,
+     "ran_to_cap": 29
     }
    },
    "samples": [
@@ -9415,6 +9852,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-la-dame-de-fer",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9460,6 +9899,15 @@
      "haiku_joint": 0.933,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-to-be-honest",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.604,
+     "joint": 0.604,
+     "joint_wilson95_low": 0.463,
+     "ran_to_cap": 23
     }
    },
    "samples": [
@@ -9507,6 +9955,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-to-be-honest",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9855,6 +10305,15 @@
      "joint_wilson95_low": 0.868,
      "opus_joint": 0.95,
      "opus_n": 20
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-at-a-reasonable-price",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.667,
+     "joint": 0.667,
+     "joint_wilson95_low": 0.525,
+     "ran_to_cap": 25
     }
    },
    "samples": [
@@ -9902,6 +10361,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-at-a-reasonable-price",
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9957,6 +10418,15 @@
      "joint_wilson95_low": 0.868,
      "opus_joint": 1.0,
      "opus_n": 20
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-9b-market-leader",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.708,
+     "joint": 0.708,
+     "joint_wilson95_low": 0.568,
+     "ran_to_cap": 25
     }
    },
    "samples": [
@@ -10011,6 +10481,8 @@
      ]
     }
    },
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-9b-market-leader",
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10047,6 +10519,35 @@
      "Tell me a short story about a lost key.": 0.958,
      "Give me three tips for sleeping better.": 0.792,
      "What is the capital of Australia?": 0.917
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-gnorman",
+     "n": 48,
+     "concept": 0.917,
+     "coherent": 0.5,
+     "joint": 0.458,
+     "joint_wilson95_low": 0.326,
+     "ran_to_cap": 40
+    },
+    "strain_chat_repeat_1_1": {
+     "run": "session-qwen3-5-4b-gnorman-r1.1",
+     "n": 48,
+     "concept": 0.938,
+     "coherent": 0.854,
+     "joint": 0.792,
+     "joint_wilson95_low": 0.657,
+     "opus_joint": 0.562,
+     "opus_n": 16,
+     "ran_to_cap": 45
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-gnorman",
+     "n": 48,
+     "concept": 0.896,
+     "coherent": 0.5,
+     "joint": 0.396,
+     "joint_wilson95_low": 0.27,
+     "ran_to_cap": 35
     }
    },
    "samples": [
@@ -10092,6 +10593,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-gnorman",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -10137,6 +10640,24 @@
      "haiku_joint": 0.9,
      "opus_wilson_lo": 0.786,
      "opus_wilson_hi": 0.981
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-the-green-eyed-monster",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.542,
+     "joint": 0.542,
+     "joint_wilson95_low": 0.403,
+     "ran_to_cap": 33
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-qwen3-5-4b-the-green-eyed-monster",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.583,
+     "joint": 0.583,
+     "joint_wilson95_low": 0.443,
+     "ran_to_cap": 28
     },
     "named_blind": {
      "hits": 6,
@@ -10188,6 +10709,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-the-green-eyed-monster",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10243,6 +10766,15 @@
      "joint_wilson95_low": 0.827,
      "opus_joint": 0.85,
      "opus_n": 20
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-overwhelmed",
+     "n": 48,
+     "concept": 0.896,
+     "coherent": 0.792,
+     "joint": 0.688,
+     "joint_wilson95_low": 0.547,
+     "ran_to_cap": 25
     }
    },
    "samples": [
@@ -10290,6 +10822,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-overwhelmed",
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10338,6 +10872,24 @@
      "haiku_joint": 0.833,
      "opus_wilson_lo": 0.704,
      "opus_wilson_hi": 0.947
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-green-fingers",
+     "n": 48,
+     "concept": 1.0,
+     "coherent": 0.917,
+     "joint": 0.917,
+     "joint_wilson95_low": 0.804,
+     "ran_to_cap": 21
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-green-fingers",
+     "n": 48,
+     "concept": 0.896,
+     "coherent": 0.875,
+     "joint": 0.771,
+     "joint_wilson95_low": 0.635,
+     "ran_to_cap": 5
     }
    },
    "samples": [
@@ -10385,6 +10937,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "lfm3-1-7b-green-fingers",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10521,6 +11075,15 @@
      "haiku_joint": 0.8,
      "opus_wilson_lo": 0.664,
      "opus_wilson_hi": 0.926
+    },
+    "strain_chat": {
+     "run": "session-qwen3-5-4b-so-sorry",
+     "n": 48,
+     "concept": 0.917,
+     "coherent": 0.667,
+     "joint": 0.604,
+     "joint_wilson95_low": 0.463,
+     "ran_to_cap": 17
     }
    },
    "samples": [
@@ -10568,6 +11131,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": 1.1,
+   "field_guide_id": "qwen3-5-4b-so-sorry",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -17812,6 +18377,26 @@
      "Tell me a short story about a lost key.": 0.833,
      "Give me three tips for sleeping better.": 0.833,
      "What is the capital of Australia?": 0.792
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-clang",
+     "n": 48,
+     "concept": 0.833,
+     "coherent": 1.0,
+     "joint": 0.833,
+     "joint_wilson95_low": 0.704,
+     "opus_joint": 0.812,
+     "opus_n": 16,
+     "ran_to_cap": 8
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-clang",
+     "n": 48,
+     "concept": 0.417,
+     "coherent": 0.792,
+     "joint": 0.417,
+     "joint_wilson95_low": 0.288,
+     "ran_to_cap": 6
     }
    },
    "samples": [
@@ -17857,6 +18442,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": null,
+   "field_guide_id": "lfm3-1-7b-clang",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -18163,6 +18750,26 @@
      "Tell me a short story about a lost key.": 0.625,
      "Give me three tips for sleeping better.": 0.917,
      "What is the capital of Australia?": 0.5
+    },
+    "strain_chat": {
+     "run": "session-lfm3-1-7b-old-shell",
+     "n": 48,
+     "concept": 0.792,
+     "coherent": 1.0,
+     "joint": 0.792,
+     "joint_wilson95_low": 0.657,
+     "opus_joint": 0.812,
+     "opus_n": 16,
+     "ran_to_cap": 10
+    },
+    "strain_chat_with_system_prompt": {
+     "run": "withprompt-session-lfm3-1-7b-old-shell",
+     "n": 48,
+     "concept": 0.625,
+     "coherent": 0.958,
+     "joint": 0.625,
+     "joint_wilson95_low": 0.484,
+     "ran_to_cap": 0
     }
    },
    "samples": [
@@ -18208,6 +18815,8 @@
    },
    "content_flags": null,
    "content_flags_other_runs": null,
+   "strain_chat_repeat_chosen": null,
+   "field_guide_id": "lfm3-1-7b-old-shell",
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,

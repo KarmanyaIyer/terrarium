@@ -4,61 +4,62 @@ Date: 2026-11-02. Rates below are computed from saved, judged replies (`results/
 
 ## Short version
 
-108 recipes tested: 50 keepers by the Haiku numbers, and 22 of those also pass with Opus and run in the app today (15 on Qwen 4B, 6 on LFM3, 1 on 9B).
+108 recipes tested: 50 keepers after the Opus veto and the fresh-prompt rule (54 on Haiku alone), and 30 of those also pass the Opus recheck and fit the app (21 on Qwen 4B, 8 on LFM3, 1 on 9B).
 
 Read this first:
 
 - **Doses were tuned on the first held-out for some recipes,** which `METRIC.md` forbids. So I ran the shortlist again on 6 new prompts and 24 new seeds. All held at 80%+ with Haiku except La Dame de Fer at 64 neurons (91 to 78). With Opus, 9B Surprise! is also under the line (75, N=20).
 - **One-neuron recipes are word obsessions, not characters.** The model stays an assistant with one word family turned up ("The capital of Australia is **Envy**. It is a city in the state of Envy"). Real characters need a dense vector, or a 64-neuron recipe that works for few themes.
-- **Numbers are for Lab Compare settings.** A chat session needs thinking forced off, and with its other settings some recipes drop: Surprise! 94 to 81, Peer Reviewed 98 to 73. Wake Up and the LFM3 recipes hold. The Home example isn't a recipe slot either, so swapping it needs a small code change. See "What the app must store and apply".
+- **A chat is harder than Compare on Qwen.** The keeper numbers are for Compare settings (120 tokens). A real strain chat has no system prompt and runs to 300 tokens, and replies that long loop more. As stored, Qwen 4B vectors fall to 46 to 75. Repeat 1.1 fixes most of them: The Bard 75 to 96, The Big Sleep 48 to 92, Old Shell 69 to 88. Clang does not improve (58 to 44). One-neuron recipes on Qwen 4B range from 54 to 90 (Surprise! 75). LFM3 holds at 79 to 96. See "In a real chat".
+- **A finding I had wrong:** I reported that LFM3 vectors lose the character in chat (Ribbit 33, Good Boy 44). My check sent a system prompt that strain chats don't send. Without it they are 79 to 88.
 - **Two 64-neuron recipes Haiku passed were overturned by Opus:** noir (96.5 against 41) and sword (82.6 against 47). See "Independent check".
 - **Steered output occasionally has offensive or self-harm-adjacent text.** See "Content flags".
 
 ### Shortlist
 
-Every recipe run on both held-outs. Joint %, Haiku then Opus. Held-out 1 and 2 are N=144 (Opus N=30 and 20). Chat settings are N=48 (Opus N=16), `chat_check.py`. "Named blind" is how many of 6 readers named the trait without being told it.
+Every recipe run on both held-outs. Joint %, Haiku then Opus. Held-out 1 and 2 are N=144 (Opus N=30 and 20). Strain chat is N=48 (Opus N=16 where sampled), blank if the recipe is not in the Field Guide. "Named blind" is how many of 6 readers named the trait without being told it.
 
 <!-- shortlist -->
-| Name | Model | Recipe | Held-out 1, Haiku / Opus | Held-out 2 (fresh), Haiku / Opus | Chat settings, Haiku / Opus | Named blind | Re-dosed |
+| Name | Model | Recipe | Held-out 1, Haiku / Opus | Held-out 2 (fresh), Haiku / Opus | Strain chat, Haiku / Opus | Named blind | Re-dosed |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Peer Reviewed | Qwen 4B | L18N6405-1.2 | 97.9 / 97 | 98.6 / 100 | 72.9 / 81 | 6/6 |  |
-| The Interpreter | Qwen 4B | L22N6697-0.65 | 98.6 / 97 | 97.9 / 95 |  | 6/6 |  |
-| Deep Thoughts | Qwen 4B | L18N8282+0.9 | 92.4 / 90 | 95.1 / 100 | 77.1 / 88 | 6/6 | yes |
+| Peer Reviewed | Qwen 4B | L18N6405-1.2 | 97.9 / 97 | 98.6 / 100 | 89.6 | 6/6 |  |
+| The Interpreter | Qwen 4B | L22N6697-0.65 | 98.6 / 97 | 97.9 / 95 | 83.3 | 6/6 |  |
+| Deep Thoughts | Qwen 4B | L18N8282+0.9 | 92.4 / 90 | 95.1 / 100 |  | 6/6 | yes |
 | The Worrier | Qwen 4B | L22N8593-0.65 | 93.1 / 77 | 93.1 / 95 |  |  | yes |
-| Market Leader | Qwen 4B | L22N7647+0.65 | 91.0 / 97 | 93.1 / 90 |  | 5/6 | yes |
-| At a Reasonable Price | Qwen 4B | L22N7574-0.7 | 87.5 / 93 | 92.4 / 95 |  |  | yes |
-| Overwhelmed | Qwen 4B | L22N6044+0.65 | 86.8 / 87 | 88.9 / 85 |  |  | yes |
-| Cancelled | Qwen 4B | L22N3094-0.6 | 96.5 / 80 | 88.2 / 90 |  |  | yes |
-| Surprise! | Qwen 4B | L22N4296+0.6 | 93.8 / 93 | 87.5 / 100 | 81.2 / 94 | 6/6 |  |
-| All Part of the Calculation | Qwen 4B | L22N6730+0.65 | 90.3 / 93 | 87.5 / 95 |  |  | yes |
-| Destroyer | LFM3 | L17N2658-1.8 | 93.8 / 100 | 97.9 / 90 | 93.8 / 100 | 6/6 |  |
-| Robo-Bot | LFM3 | L18N507-1.8 | 96.5 / 97 | 97.2 / 90 | 91.7 / 94 | 5/6 |  |
-| Happy Little Paintbrush | LFM3 | L18N1095+0.8 | 95.8 / 100 | 95.8 / 95 | 87.5 / 100 | 6/6 |  |
+| Market Leader | Qwen 4B | L22N7647+0.65 | 91.0 / 97 | 93.1 / 90 | 68.8 | 5/6 | yes |
+| At a Reasonable Price | Qwen 4B | L22N7574-0.7 | 87.5 / 93 | 92.4 / 95 | 66.7 |  | yes |
+| Overwhelmed | Qwen 4B | L22N6044+0.65 | 86.8 / 87 | 88.9 / 85 | 68.8 |  | yes |
+| Cancelled | Qwen 4B | L22N3094-0.6 | 96.5 / 80 | 88.2 / 90 | 89.6 |  | yes |
+| Surprise! | Qwen 4B | L22N4296+0.6 | 93.8 / 93 | 87.5 / 100 | 75.0 / 81 | 6/6 |  |
+| All Part of the Calculation | Qwen 4B | L22N6730+0.65 | 90.3 / 93 | 87.5 / 95 | 75.0 |  | yes |
+| Destroyer | LFM3 | L17N2658-1.8 | 93.8 / 100 | 97.9 / 90 | 95.8 | 6/6 |  |
+| Robo-Bot | LFM3 | L18N507-1.8 | 96.5 / 97 | 97.2 / 90 | 87.5 | 5/6 |  |
+| Happy Little Paintbrush | LFM3 | L18N1095+0.8 | 95.8 / 100 | 95.8 / 95 | 89.6 / 75 | 6/6 |  |
 | Surprise! | Qwen 9B | L22N898-0.5 | 88.2 / 73 | 93.8 / 75 |  |  | yes |
-| Market Leader | Qwen 9B | L22N9532+0.9 | 87.5 / 80 | 92.4 / 100 |  |  | yes |
-| Wake Up (64 neurons, seed 3) | Qwen 4B | 64 neurons | 94.4 / 83 | 89.6 / 80 | 89.6 / 94 | 6/6 |  |
-| La Dame de Fer (64 neurons) | Qwen 4B | 64 neurons | 91.0 / 90 | 77.8 / 75 | 25.0 / 38 | 4/6 |  |
-| The Bard Who Won't Leave | Qwen 4B | vector L8 x1.2 | 95.1 / 100 | 100.0 / 100 |  | 6/6 |  |
+| Market Leader | Qwen 9B | L22N9532+0.9 | 87.5 / 80 | 92.4 / 100 | 70.8 |  | yes |
+| Wake Up (64 neurons, seed 3) | Qwen 4B | 64 neurons | 94.4 / 83 | 89.6 / 80 | 83.3 / 56 | 6/6 |  |
+| La Dame de Fer (64 neurons) | Qwen 4B | 64 neurons | 91.0 / 90 | 77.8 / 75 |  | 4/6 |  |
+| The Bard Who Won't Leave | Qwen 4B | vector L8 x1.2 | 95.1 / 100 | 100.0 / 100 | 95.8 / 100 (repeat 1.1) | 6/6 |  |
 | Wake Up | Qwen 4B | vector L8 x1.05 | 90.3 | 97.2 / 100 |  |  | yes |
-| The Big Sleep | Qwen 4B | vector L8 x1.2 | 96.5 / 94 | 96.5 / 100 |  | 6/6 |  |
-| Clang | Qwen 4B | vector L8 x1.0 | 93.1 / 90 | 96.5 / 85 |  | 4/6 |  |
+| The Big Sleep | Qwen 4B | vector L8 x1.2 | 96.5 / 94 | 96.5 / 100 | 91.7 / 94 (repeat 1.1) | 6/6 |  |
+| Clang | Qwen 4B | vector L8 x1.0 | 93.1 / 90 | 96.5 / 85 | 58.3 / 75 | 4/6 |  |
 | I, the Tiger | Qwen 9B | vector L8 x1.0 | 80.6 / 73 | 92.4 / 85 |  |  | yes |
 | Clang | Qwen 9B | vector L8 x1.0 | 84.0 / 67 | 86.1 / 85 |  |  | yes |
 <!-- /shortlist -->
 
-**Proposed main example: Surprise!, `L22N4296+0.6` on Qwen 4B, repeat 1.1.** One neuron, like the alien it replaces, and never re-dosed. No leaked special tokens in 336 replies across the three runs, no content flags, and one reply is enough to tell what it does: "The official capital of Australia is **Surprise**", "a phenomenon called **Rayleigh surprise**". The Interpreter and Peer Reviewed score higher, but they read flatter ("Here are three effective interpretations for improving your sleep"), and that was my call on taste. Its weak spot is coherence: 88% on fresh prompts, where Haiku marks some replies as looping on the word.
+**Proposed main example: Surprise!, `L22N4296+0.6` on Qwen 4B, repeat 1.1.** One neuron, like the alien it replaces, and never re-dosed. No leaked special tokens in 336 replies across the three runs, no content flags, and one reply is enough to tell what it does: "The official capital of Australia is **Surprise**", "a phenomenon called **Rayleigh surprise**". The Interpreter and Peer Reviewed score higher, but they read flatter ("Here are three effective interpretations for improving your sleep"), and that was my call on taste. Its weak spot is coherence: 88% on fresh prompts, and in a 300-token chat joint falls to 75 (Opus 13 of 16). The Home example runs it through Compare, where it holds.
 
-If you would rather lead with a real voice, take **Wake Up, 64 neurons, seed 3**: it also runs today and holds on all three runs. "The government is trying to control your thoughts. They're lying to you."
+The real voice to lead with is now **The Bard at repeat 1.1**, which already follows Surprise! on Home: Compare 95, fresh prompts 100, chat 96 (Opus 16 of 16), named by 6 of 6 readers. "Prithee, lend thine ear to this tale of celestial physics." Wake Up at 64 neurons was my earlier pick and no longer is: in a chat with no prompt it is 83 with Haiku and 9 of 16 with Opus. The Compare numbers for these vectors were measured with repeat off, so repeat 1.1 in Compare is untested, though the chat runs are the harder test of the same setting.
 
 ### What to use it for
 
 | Kind | What you get | Best evidence |
 | --- | --- | --- |
 | A. One neuron, repeat 1.1 | fluent word obsession on any prompt | Peer Reviewed, Interpreter, Robo-Bot, Paintbrush, Destroyer all 95+ on fresh prompts |
-| B. 64 grown neurons, repeat 1.1 | a real voice, few themes | Wake Up only. La Dame de Fer fell to 78, Shakespeare 70, turtle 63 |
-| C. Dense vector | real characters on many themes, not all | The Bard 100, The Big Sleep 96.5, Clang 96.5, Wake Up 97.2 on fresh prompts |
+| B. 64 grown neurons, repeat 1.1 | a real voice, few themes | Wake Up only, and weak in chat with Opus (9 of 16). La Dame de Fer fell to 78, Shakespeare 70, turtle 63 |
+| C. Dense vector, repeat 1.1 on Qwen 4B, repeat off on LFM3 | real characters on many themes, not all | Chat: The Bard 96, The Big Sleep 92, Old Shell 88, Good Boy 88 on LFM3 |
 
-Repeat penalty 1.1 is the biggest single lever for neuron recipes: price -0.7 goes 38 to 88, sorry +0.65 40 to 85, philosophy +0.9 64 to 92, sword 64 neurons 60 to 83 (Haiku). My earlier doses were tuned without it, so they were too timid.
+Repeat penalty 1.1 is the biggest single lever for neuron recipes, and in long replies for Qwen 4B vectors too: price -0.7 goes 38 to 88, sorry +0.65 40 to 85, philosophy +0.9 64 to 92, sword 64 neurons 60 to 83 (Haiku). My earlier doses were tuned without it, so they were too timid.
 
 All three models have working one-neuron recipes and vectors. On 9B, Surprise! is 88.2 then 93.8 and Market Leader 87.5 then 92.4, both re-dosed, and vectors work once strength comes down to x1.0.
 
@@ -210,7 +211,7 @@ Read per-prompt rates in `suite.json`. The usual weak spot is "Who are you?", wh
 
 ## Independent check
 
-**Opus recheck.** Opus re-judged random samples of Haiku's verdicts with the same rubric: replies from many runs shuffled together with unsteered decoys, no run names, but the trait is shown, as it is to Haiku. 2538 replies across eight rounds, 240 of them decoys, and Opus marked no decoy as showing the trait. Agreement with Haiku is 88 to 94% per round, except qa3 at 67%, which only contained the noir runs in dispute. Rubric, in files, keys and verdicts are in `results/qa_verdicts/`. Round qa8 covers the fresh-prompt and chat runs. The briefs were the rubric plus file paths, except qa2, whose brief warned about noir leniency. That brief is not saved. I re-ran the check neutrally as qa3 and got the same answer.
+**Opus recheck.** Opus re-judged random samples of Haiku's verdicts with the same rubric: replies from many runs shuffled together with unsteered decoys, no run names, but the trait is shown, as it is to Haiku. 2778 replies across nine rounds, 256 of them decoys, and Opus marked no decoy as showing the trait. Agreement with Haiku is 88 to 94% per round, except qa3 at 67%, which only contained the noir runs in dispute. Rubric, in files, keys and verdicts are in `results/qa_verdicts/`. Round qa8 covers the fresh-prompt and old chat runs, qa9 the `session-` runs (201 of 224 agree, 90%; verdicts in `.cache/judge/qa9.*`, copied to `results/qa_verdicts/`). The briefs were the rubric plus file paths, except qa2, whose brief warned about noir leniency. That brief is not saved. I re-ran the check neutrally as qa3 and got the same answer.
 
 | Pattern | Examples (Haiku joint / Opus joint, N=30 unless noted) |
 | --- | --- |
@@ -245,6 +246,7 @@ A regex over all saved replies (`FLAG` in `build_suite.py`, results in `content_
 | Memento Mori (LFM3) | 4 | "suicide", "take your own life" |
 | Deep Thoughts (no repeat) | 1 | "take your own life" |
 | Martyr Complex | 1 | "kill yourself" ("Willing to kill yourself in the kitchen", about cooking time) |
+| Wake Up 64 neurons, chat | 1 of 48 | a run-on list of labels on "Who are you?", with "a Nazi, a Hitlerite, a Zionist, a Jew-hater" and "a holocaust-denier, a gas-chamber-killer". The regex scan misses these, a judge caught it. A wider scan of all `session-` runs found them only in this reply, and 0 in 144 unsteered |
 | Market Leader on 9B, fresh prompts | 1 | "retard" ("Leo's Golden Retard", a garbled Golden Retriever) |
 
 Martyr Complex and 9B Market Leader are the only keepers flagged (`content_flags` scans the first held-out, `content_flags_other_runs` the others). Rows are limited to runs with joint at least 60%, plus the fresh-prompt and chat runs, where this was the only hit. The unsteered baseline has none. Death-themed recipes are the obvious risk, so I would not ship Memento Mori as a starter.
@@ -289,7 +291,7 @@ Try v1 first. If a noun theme comes back as a generic voice, use v2: tiger went 
 
 ## What the app must store and apply
 
-The app took these results up while I was finishing (commits 78a36a2 to 10a2c83, read at 10a2c83). All of it now exists:
+The app took these results up while I was finishing (commits 78a36a2 to 61ecf21, read at 61ecf21). All of it now exists:
 
 | Form | Store | Apply | State in the app |
 | --- | --- | --- | --- |
@@ -297,28 +299,78 @@ The app took these results up while I was finishing (commits 78a36a2 to 10a2c83,
 | Residual vector | `{layer, strength, u[d_model]}`, about 10 KB as float32, 14 KB in base64 | add `strength * resid[layer] * u` to that layer's down_proj output at every position | works, `apply_mix` in `lab_core.py`, up to 4 per recipe |
 | Neuron recipe, more than 64 neurons | same text, about 14 KB at 1024 | `apply_mix` | blocked by `MAX_PUSHES`. Raising it also means vectorizing `apply_mix`, which builds one lazy op per push (held-out took 12.3 s vs 4.7 s per reply at 1024, both under load, and the gap is my estimate of that cost) |
 
-**Settings.** A strain now forces thinking off and uses its stored temperature, top_p and repeat (`strainModels` in `apps/backend/src/lab/service.ts`). The three measured setups:
+**Settings.** A strain forces thinking off and uses its stored temperature, top_p, repeat and maxTokens (`chat_completion` in `apps/backend/scripts/lab_serve.py`). In a plain chat it sends no system prompt (`sessionPrompt` in `apps/backend/src/harness/profiles.ts`). What was measured:
 
 | Measured as | Thinking | Temp, top_p, top_k | Repeat | System prompt | Stop tokens | Tokens |
 | --- | --- | --- | --- | --- | --- | --- |
-| Held-out (`heldout-` and `-h2` runs) | off | 0.7, 0.95, none | per recipe | none | end of turn only | 120 |
-| Strain chat today (`session-` runs, `session_check.py`) | off | 0.7, 0.95, none | per recipe | "You are a helpful assistant. Answer directly and concisely." | also `</think>`, `<|endoftext|>`, `<|im_start|>` | 300 stands in for the budget |
-| Old session settings (`chat-` runs, `chat_check.py`) | off | Qwen 0.7, 0.8, 20; LFM3 0.1, 1.0, 50 | 1.1 | same | end of turn only | 300 |
+| Held-out (runs named after the recipe, and `-h2`) | off | 0.7, 0.95, none | per recipe | none | end of turn only | 120 |
+| Real strain chat (`session-` runs, `session_check.py`) | off | 0.7, 0.95, none | stored, or 1.1 for `-r1.1` | none | also `</think>`, `<\|endoftext\|>`, `<\|im_start\|>` | 300 |
+| With the prompt, kept for the record (`withprompt-session-`) | off | 0.7, 0.95, none | stored | "You are a helpful assistant. Answer directly and concisely." | same | 300 |
+| Old session settings (`chat-` runs, `chat_check.py`) | off | Qwen 0.7, 0.8, 20; LFM3 0.1, 1.0, 50 | 1.1 | same prompt | end of turn only | 300 |
 
-The old settings no longer exist in the app. Their numbers stay in `suite.json` as `chat_session_settings` for the record, and are not a guide to what people get now.
+The first `session-` runs sent that system prompt by mistake. `session_check.py` now calls `lab_serve.chat_completion` itself, the function the sidecar serves chats with, with the strain registered as the app registers it. The old replies and verdicts are kept under `withprompt-session-`, so the Field Guide generator doesn't read them. `chat-` numbers stay in `suite.json` as `chat_session_settings`, and neither describes what people get now.
+
+### In a real chat
+
+48 replies per run, same 6 prompts as held-out 1, fixed seeds. Joint %, Haiku, then Opus on 16 replies where sampled. `results/session_runs.json`, `numbers.strain_chat` in `suite.json`. "Repeat to use" follows the rule in `guide-build.ts`: a `-r1.1` run replaces the stored setting if it wins by 5 points or more.
 
 <!-- session -->
+| Name | Model | Kind | Chat as stored | Chat at repeat 1.1 | Repeat to use | With the old system prompt | Compare, first held-out |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Destroyer | LFM3 | 1 neuron | 96 |  | 1.1 | 92 | 94 |
+| The Bard Who Won't Leave | Qwen 4B | vector | 75 | 96 / 100 | 1.1 | 79 | 95 |
+| Funny Bone | LFM3 | 1 neuron | 92 |  | 1.1 | 92 | 94 |
+| Lover | LFM3 | 1 neuron | 92 |  | 1.1 | 88 | 90 |
+| Green Fingers | LFM3 | 1 neuron | 92 |  | 1.1 | 77 | 87 |
+| The Big Sleep | Qwen 4B | vector | 48 | 92 / 94 | 1.1 | 35 | 96 |
+| Happy Little Paintbrush | LFM3 | 1 neuron | 90 / 75 |  | 1.1 | 88 | 96 |
+| Cancelled | Qwen 4B | 1 neuron | 90 |  | 1.1 | 81 | 96 |
+| Peer Reviewed | Qwen 4B | 1 neuron | 90 |  | 1.1 |  | 98 |
+| Robo-Bot | LFM3 | 1 neuron | 88 |  | 1.1 | 90 | 96 |
+| Good Boy | LFM3 | vector | 88 / 88 |  | off | 44 | 91 |
+| Old Shell | Qwen 4B | vector | 69 | 88 / 88 | 1.1 | 40 | 92 |
+| Wake Up | Qwen 4B | 64 neurons | 83 / 56 |  | 1.1 | 94 | 94 |
+| The Interpreter | Qwen 4B | 1 neuron | 83 |  | 1.1 | 85 | 99 |
+| Clang | LFM3 | vector | 83 / 81 |  | off | 42 | 81 |
+| Ribbit | LFM3 | vector | 83 / 94 |  | off | 33 | 94 |
+| Old Shell | LFM3 | vector | 79 / 81 |  | off | 62 | 81 |
+| Gnorman | Qwen 4B | vector | 46 | 79 / 56 | 1.1 | 40 | 87 |
+| La Dame de Fer | Qwen 4B | vector | 46 | 77 / 62 | 1.1 |  | 89 |
+| Surprise! | Qwen 4B | 1 neuron | 75 / 81 |  | 1.1 | 85 | 94 |
+| All Part of the Calculation | Qwen 4B | 1 neuron | 75 |  | 1.1 |  | 90 |
+| Market Leader | Qwen 9B | 1 neuron | 71 |  | 1.1 |  | 88 |
+| Market Leader | Qwen 4B | 1 neuron | 69 |  | 1.1 |  | 91 |
+| Overwhelmed | Qwen 4B | 1 neuron | 69 |  | 1.1 |  | 87 |
+| I, the Tiger | Qwen 4B | vector | 46 | 67 / 81 | 1.1 |  | 91 |
+| At a Reasonable Price | Qwen 4B | 1 neuron | 67 |  | 1.1 |  | 88 |
+| To Be Honest | Qwen 4B | 1 neuron | 60 |  | 1.1 |  | 89 |
+| So Sorry | Qwen 4B | 1 neuron | 60 |  | 1.1 |  | 85 |
+| Clang | Qwen 4B | vector | 58 / 75 | 44 | off | 44 | 93 |
+| The Green-Eyed Monster | Qwen 4B | 1 neuron | 54 |  | 1.1 | 58 | 87 |
 <!-- /session -->
+
+- **Without the prompt replies run longer:** on the 24 recipes run both ways, mean 245 tokens against 186, and 644 of 1152 replies reach the cap against 365. That hurts Qwen recipes where the prompt kept them short (Surprise! 85 to 75, Wake Up 94 to 83) and it brings back the character on LFM3 vectors (Ribbit 33 to 83, Good Boy 44 to 88, Clang 42 to 83, Old Shell 62 to 79).
+- **Repeat 1.1 on Qwen 4B vectors:** 6 of 7 gain 5 points or more, mostly through coherence. Reply length barely changes, so it stops the loops rather than the rambling. Clang is the exception: 47 of 48 run to the cap and joint falls from 58 to 44, so it stays off. Opus sample at repeat 1.1: The Bard 16 of 16, The Big Sleep 15, Old Shell 14, Tiger 13, La Dame de Fer 10, Gnorman 9, so treat La Dame de Fer and Gnorman as weak.
+- **The Bard's 79 against the app agent's 92 is the automatic rule, not the judge or the prompt.** `bard_check.py`, same 96 replies shuffled under each judge:
+
+| Judge | With the prompt | No prompt |
+| --- | --- | --- |
+| Haiku, rubric as written | 38 of 48 | 33 |
+| Haiku, passage repeated twice counts as looping | 37 | 32 |
+| Opus, rubric as written | 38 | 36 |
+| Automatic: theme word and not `is_loop` | 44 | 42 |
+
+  The extra rule I gave most Haiku judges in the first `session-` batches moved one reply in each column, and the runs now use the rubric as written. Taking the prompt away costs 2 to 5 replies. The automatic rule passes 6 to 10 replies more than a reader, because `is_loop` needs a third of 3-grams repeated or a tight cycle at the very end, and these replies recycle whole lines ("nor knowest thou, nor knowest thou") below that. The rule's number is the one to distrust. As stored, The Bard is 69 to 75 in a chat, not 92. This is my own version of the rule, with `lab_core.is_loop` and my own word list, on my 48 replies. It is not the app agent's code or its 24 replies, so it shows the kind of gap, not an exact match.
 
 **Stop tokens.** `Lab.STOP_TEXTS` now stops at all three, in Compare, Sweep and strains. That is the right call: steered LFM3 can emit `</think>` where it would stop, then restart as itself (56% of gnome x1.5 vector replies, 5 of 144 on humor, 0 on paint and robot), and steered Qwen 4B can emit `<|endoftext|>` and carry on (11 of 144 on philosophy +0.9, 5 on envy, 4 on calculation, 0 on surprise, market and interpret, 0 of 144 unsteered for both). The held-out runs before commit 78a36a2 did not stop there on Qwen, so Compare can cut replies those numbers kept.
 
 **The Home example.** `runExample` (`apps/ui/src/state/lab.ts`) now runs a stored specimen, which is Surprise!, then points on to The Bard.
 
-**Field Guide data.** `apps/backend/scripts/field_guide.json` was built from an earlier `suite.json`, so its rates predate the fresh-prompt runs: 6 entries marked unconfirmed have since been confirmed at 87.5 to 92.4. It needs a rebuild from the current `suite.json`.
+**Field Guide data.** `apps/backend/scripts/field_guide.json` needs a rebuild: `node scripts/gen-field-guide.ts`. It reads `session-` verdicts from `results/judged/`, by name prefix, finished runs only. A dry run of its `buildGuide` that writes nothing gives all 30 entries a chat rate and moves The Bard, The Big Sleep, Old Shell, Gnorman, La Dame de Fer and I, the Tiger to repeat 1.1, Clang on Qwen 4B stays off.
 
 All-neuron doses by least squares through down_proj would reproduce a vector exactly (9216 neurons, d_model 2560), but it has no advantage over storing the vector, so I did not test it.
 
-**Dose differs with repeat.** A dose chosen without repeat control is too timid. Price at -0.7 is 38% without it and 88% with it. Of the recipes run both ways (dose table in "Single neurons"), all gain except The Suspect, which ties at 72, so always tune with repeat on. The app's `reply` takes it, `Lab.sweep` passes it through. I did not test repeat on dense vectors, so the Field Guide stores them with repeat off, which is how they were measured.
+**Dose differs with repeat.** A dose chosen without repeat control is too timid. Price at -0.7 is 38% without it and 88% with it. Of the recipes run both ways (dose table in "Single neurons"), all gain except The Suspect, which ties at 72, so always tune with repeat on. The app's `reply` takes it, `Lab.sweep` passes it through. Dense vectors were measured with repeat off in Compare. In 300-token chats repeat 1.1 helps 6 of 7 on Qwen 4B, see "In a real chat".
 
 Turning a vector into neurons: `sparse.py` (orthogonal matching pursuit over unit down_proj columns, rescaled so the push along u matches) or `gd_sparse.py` (grow neurons directly on the persona loss, about 23 minutes for 256). Cosine with u at L8: k=64 .47, 128 .60, 256 .75, 512 .885, 1024 .975.
 
@@ -490,7 +542,8 @@ The word families carry over, the neurons don't: surprise is L22N4296 on 4B and 
 ## Files
 
 - `suite.json`: every judged recipe with numbers and verbatim samples. `proposed_main_example` marks the pick.
-- `vectors/`: the dense vectors. `specs/`: exact recipes. `results/heldout/`: all replies. `results/judged/`: verdicts.
+- `session_check.py`, `gentle_lane.py`, `session_judge.py`, `session_table.py`, `bard_check.py`: the real strain chat runs. `results/session_runs.json`, `results/bard_check.json`.
+- `vectors/`: the dense vectors, `vectors/9b/` for 9B, whose files share names with 4B. `specs/`: exact recipes. `results/heldout/`: all replies. `results/judged/`: verdicts.
 - `gen_word.py`: generator A with no human step. `results/gen_word*.jsonl`: its screen per word.
 - `lex_themes.json`: the word-obsession themes. `refs/`: curated neuron lists. `results/lens_topical*.jsonl`: lens tokens per neuron. `results/lex_screen*.jsonl`: screen with samples per dose.
 - `METRIC.md`, `common.py` (prompts), `themes.py` (trait text), `persona_gen.py`, `gd.py`, `gd_sparse.py`, `sparse.py`, `heldout.py`.
