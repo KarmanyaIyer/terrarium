@@ -1,19 +1,31 @@
 // Writes what the Lab ships from the persona search: apps/backend/scripts/field_guide.json (the Field Guide) and
 // apps/backend/scripts/lens/<model>.json (word families to search). Re-run after research/personas/suite.json changes:
 //   node scripts/gen-field-guide.ts
+// Chat rates come from the judged `session-` runs in research/personas/results/judged, so finished runs show up on a re-run.
 // Prints what it dropped and why. package.sh copies apps/backend/scripts into the app, so nothing else is needed.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildGuide, buildLens, LENS_LAYERS, readSafetensor, type LensRow, type Suite } from "../apps/backend/src/lab/guide-build.ts";
+import { buildGuide, buildLens, LENS_LAYERS, readSafetensor, type JudgedRow, type LensRow, type Suite } from "../apps/backend/src/lab/guide-build.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SEARCH = join(ROOT, "research", "personas");
 const OUT = join(ROOT, "apps", "backend", "scripts");
 
 const suite = JSON.parse(readFileSync(join(SEARCH, "suite.json"), "utf8")) as Suite;
-const { guide, dropped } = buildGuide(suite, (file, key) => readSafetensor(join(ROOT, file), key));
+// Batches in the order they were judged: ho47 before ho100.
+const JUDGED = join(SEARCH, "results", "judged");
+const judged = readdirSync(JUDGED)
+  .filter((f) => /^ho\d+\.judged\.jsonl$/.test(f))
+  .sort((a, b) => Number.parseInt(a.slice(2), 10) - Number.parseInt(b.slice(2), 10))
+  .flatMap((f) =>
+    readFileSync(join(JUDGED, f), "utf8")
+      .split("\n")
+      .filter((l) => l.includes('"session-'))
+      .map((l) => JSON.parse(l) as JudgedRow),
+  );
+const { guide, dropped } = buildGuide(suite, (file, key) => readSafetensor(join(ROOT, file), key), judged);
 writeFileSync(join(OUT, "field_guide.json"), `${JSON.stringify(guide)}\n`);
 
 const LENS_FILES: Record<string, string> = {
@@ -42,6 +54,11 @@ const featured = guide.specimens.filter((s) => s.featured);
 console.log(`field_guide.json: ${guide.specimens.length} specimens (${featured.length} featured), ${Math.round(JSON.stringify(guide).length / 1024)} KB, suite dated ${guide.date}`);
 console.log(`featured: ${featured.map((s) => s.name).join(", ")}`);
 console.log(`rest: ${guide.specimens.filter((s) => !s.featured).map((s) => `${s.name}${s.unconfirmed ? " (unconfirmed)" : ""}`).join(", ")}`);
+console.log("in a chat, in Compare:");
+for (const s of guide.specimens) {
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
+  console.log(`  ${s.featured ? "*" : " "} ${s.modelId.split("-")[0]} ${s.name}: ${s.measured.chat ? pct(s.measured.chat.joint) : "not measured"}, ${pct(s.measured.joint)}, repeat ${s.settings.repeat ?? "off"}`);
+}
 console.log("dropped:");
 for (const d of dropped.filter((x) => x.why !== "not a keeper")) console.log(`  ${d.name} [${d.model}]: ${d.why}`);
 console.log(`  and ${dropped.filter((x) => x.why === "not a keeper").length} that aren't keepers`);

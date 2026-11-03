@@ -1158,9 +1158,17 @@ export interface LabSpecimen {
   modelId: Id;
   featured: boolean; // leads the guide; the rest sit behind a disclosure
   mix: LabMixItem[];
-  settings: LabStrainSettings; // what its numbers were measured with
+  settings: LabStrainSettings; // what a strain of it runs with
   rate: string; // its numbers in plain words, with the counts
-  measured: { n: number; joint: number; concept: number; coherent: number; second?: { n: number; joint: number }; fresh?: { n: number; joint: number } };
+  measured: {
+    n: number;
+    joint: number;
+    concept: number;
+    coherent: number;
+    second?: { n: number; joint: number };
+    fresh?: { n: number; joint: number };
+    chat?: { n: number; joint: number; concept: number; coherent: number }; // longer replies, as a strain chat writes them
+  };
   unconfirmed: boolean; // its dose was tuned after the held-out replies were read, and fresh prompts haven't confirmed it
   prompt: string; // the prompt to try first
   samples: { prompt: string; reply: string }[]; // real replies, from the held-out run

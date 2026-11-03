@@ -42,7 +42,7 @@ export function Guide() {
       {lead.some((s) => !isWord(s)) && (
         <section className="guide-sec">
           <h2>Characters</h2>
-          <p className="dim2">A whole direction in the model, pushed at every word. They hold on any question.</p>
+          <p className="dim2">A whole direction in the model, pushed at every word.</p>
           <div className="guide-page">{lead.filter((s) => !isWord(s)).map(entry)}</div>
         </section>
       )}
@@ -55,7 +55,7 @@ export function Guide() {
       )}
       {rest.length > 0 && (
         <details className="lab-more guide-rest">
-          <summary>{rest.length} more that passed</summary>
+          <summary>{rest.length} more, weaker in a chat or not yet confirmed</summary>
           <div className="guide-page">{rest.map(entry)}</div>
         </details>
       )}
@@ -63,7 +63,7 @@ export function Guide() {
         <MoreOn key={m.modelId} model={m} guide={guide} />
       ))}
       <p className="dim2 guide-how">
-        Each was run on prompts the search never saw, with thinking off and no system prompt, and the replies were judged for staying in character and reading as real text. A strain you keep runs with the same settings.
+        Two numbers, because they differ. In Compare is short replies on prompts the search never saw. In a chat is replies up to 300 tokens, where some recipes start repeating themselves. Replies were judged for staying in character and reading as real text. A strain you keep runs with these settings.
       </p>
     </div>
   );
@@ -75,6 +75,7 @@ function Entry({ s, model }: { s: LabSpecimen; model?: string }) {
   const [i, setI] = useState(0);
   const sample = s.samples[i] ?? s.samples[0];
   const joint = Math.round(s.measured.joint * s.measured.n);
+  const chat = s.measured.chat;
   return (
     <article className="spec">
       <header className="spec-head">
@@ -98,7 +99,8 @@ function Entry({ s, model }: { s: LabSpecimen; model?: string }) {
       </figure>
       <Hint tip={s.rate}>
         <div className="spec-rate num" tabIndex={0}>
-          In character in {joint} of {s.measured.n} replies
+          {chat ? <span>In a chat: {Math.round(chat.joint * chat.n)} of {chat.n} replies in character</span> : <span>Not measured in a chat yet</span>}
+          <span className="dim2">In Compare: {joint} of {s.measured.n}</span>
           {s.unconfirmed && <span className="chip warn">not confirmed yet</span>}
           {!s.measured.second && <span className="chip">one judge</span>}
         </div>

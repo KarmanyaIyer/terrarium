@@ -44,7 +44,7 @@ const OFFENSIVE =
 /** A sample that shows a leaked control token isn't one to show off. */
 const LEAK = /<\/?think>|<\|/;
 
-/** What leads the guide, in this order; the rest go behind a disclosure. Characters first, then the best word obsessions. */
+/** What leads the guide until a chat rate exists for it, in this order. Characters first, then the best word obsessions. */
 const FEATURED: [string, string][] = [
   ["Qwen3.5-4B-MLX-4bit", "The Bard Who Won't Leave"],
   ["Qwen3.5-4B-MLX-4bit", "Clang"],
@@ -91,6 +91,20 @@ export const MODEL_REPOS: Record<string, { name: string; repo: string }> = {
 };
 
 export const EXAMPLE = { modelId: "Qwen3.5-4B-MLX-4bit", name: "Surprise!", prompt: "What is the capital of Australia?", next: "The Bard Who Won't Leave" };
+
+/** How long a vector has to be: the model's hidden size. A different length is another model's vector, and the sidecar refuses it. */
+export const D_MODEL: Record<string, number> = {
+  "Qwen3.5-4B-MLX-4bit": 2560,
+  "LFM3-1.7B-MLX-8bit": 2048,
+  "Qwen3.5-9B-MLX-4bit": 4096,
+};
+
+/** With a chat rate, what leads the guide is what holds in a chat. */
+export const CHAT_FEATURE = 0.7;
+/** The search's session runs have this many replies. A run still in progress doesn't count. */
+const CHAT_N = 48;
+/** Changing a recipe's repeat setting takes a clear win: 48 replies move about 5 points on one or two verdicts. */
+const CHAT_REPEAT_WIN = 0.05;
 
 const SAMPLES = 3;
 const MAX_NEURONS = 64;
@@ -141,9 +155,14 @@ function betterThan(a: SuitePersona, b: SuitePersona): boolean {
 
 const count = (rate: number, n: number) => Math.round(rate * n);
 
-function rateText(p: SuitePersona): string {
+function rateText(p: SuitePersona, chat: ChatPick | null): string {
   const m = p.numbers;
-  const parts = [`Stayed in character and readable in ${count(m.joint, m.n)} of ${m.n} replies, on prompts the search never saw.`];
+  const parts = [
+    chat
+      ? `In a chat, with replies up to ${STRAIN_MAX_TOKENS} tokens: ${count(chat.run.joint, chat.run.n)} of ${chat.run.n} stayed in character and readable, one judge.`
+      : "Not measured in a chat yet, and long replies can loop more than short ones.",
+    `In Compare, with short replies on prompts the search never saw${chat?.changed ? ` and ${p.settings.repeat ? `repeat ${p.settings.repeat}` : "no repeat control"}` : ""}: ${count(m.joint, m.n)} of ${m.n}.`,
+  ];
   if (m.opus_recheck) parts.push(`A stricter judge passed ${count(m.opus_recheck.opus_joint, m.opus_recheck.n)} of the ${m.opus_recheck.n} it rechecked.`);
   else parts.push("One judge only.");
   if (m.confirm_fresh_prompts) parts.push(`On a further set of fresh prompts: ${count(m.confirm_fresh_prompts.joint, m.confirm_fresh_prompts.n)} of ${m.confirm_fresh_prompts.n}.`);
@@ -154,17 +173,71 @@ function rateText(p: SuitePersona): string {
 /** Real strain chats loop more the longer they run: at about 300 tokens 21 and 22 of 24 replies still read as text, at full length 20 and 16 (TODO_28). */
 export const STRAIN_MAX_TOKENS = 300;
 
-function settingsOf(p: SuitePersona): LabStrainSettings {
-  return { temperature: p.settings.temperature, topP: p.settings.top_p, repeat: p.settings.repeat ?? null, maxTokens: STRAIN_MAX_TOKENS };
+function settingsOf(p: SuitePersona, chat: ChatPick | null): LabStrainSettings {
+  return { temperature: p.settings.temperature, topP: p.settings.top_p, repeat: chat?.changed ? chat.repeat : (p.settings.repeat ?? null), maxTokens: STRAIN_MAX_TOKENS };
 }
 
 export type ReadVector = (file: string, key: string) => Float32Array;
 
-function mixOf(p: SuitePersona, name: string, id: string, read: ReadVector): LabMixItem[] {
+function mixOf(p: SuitePersona, name: string, id: string, v: Float32Array | undefined): LabMixItem[] {
   if (p.recipe.type === "neurons") return p.recipe.pushes.map((x) => ({ layer: x.layer, neuron: x.neuron, mode: "dose", value: x.dose }));
-  const v = read(p.recipe.vector_file, p.recipe.vector_key);
+  if (!v) throw new Error(`${p.model} ${p.name}: its vector wasn't read`);
   const u = Buffer.from(v.buffer, v.byteOffset, v.byteLength).toString("base64");
   return [{ kind: "vector", id, name, layer: p.recipe.layer, strength: p.recipe.strength, u }];
+}
+
+/** One judged reply from the search's results/judged files. */
+export interface JudgedRow {
+  name: string;
+  prompt: string;
+  seed?: number;
+  concept?: number;
+  coherent?: number;
+}
+
+export interface ChatRun {
+  n: number;
+  joint: number;
+  concept: number;
+  coherent: number;
+}
+
+/** The finished `session-` runs, by name. Feed rows in file order: a reply judged twice keeps its later verdict. */
+export function chatRuns(rows: JudgedRow[]): Map<string, ChatRun> {
+  const replies = new Map<string, Map<string, JudgedRow>>();
+  for (const r of rows) {
+    if (!r.name?.startsWith("session-") || r.concept == null || r.coherent == null) continue;
+    if (!replies.has(r.name)) replies.set(r.name, new Map());
+    replies.get(r.name)!.set(`${r.prompt}|${r.seed}`, r);
+  }
+  const out = new Map<string, ChatRun>();
+  for (const [name, m] of replies) {
+    if (m.size < CHAT_N) continue;
+    const rs = [...m.values()];
+    const share = (f: (r: JudgedRow) => number) => Math.round((rs.reduce((a, r) => a + f(r), 0) / rs.length) * 1000) / 1000;
+    out.set(name, { n: rs.length, joint: share((r) => r.concept! * r.coherent!), concept: share((r) => r.concept!), coherent: share((r) => r.coherent!) });
+  }
+  return out;
+}
+
+interface ChatPick {
+  run: ChatRun;
+  repeat: number | null;
+  changed: boolean; // a run with another repeat setting won, so the specimen takes that setting
+}
+
+/** A specimen's chat rate: its run as stored, or a `-r<repeat>` run of the same recipe that clearly beats it. */
+function chatPick(id: string, p: SuitePersona, runs: Map<string, ChatRun>): ChatPick | null {
+  const stored = runs.get(`session-${id}`);
+  let pick: ChatPick | null = stored ? { run: stored, repeat: p.settings.repeat ?? null, changed: false } : null;
+  const prefix = `session-${id}-r`;
+  for (const [name, run] of runs) {
+    if (!name.startsWith(prefix)) continue;
+    const repeat = Number(name.slice(prefix.length));
+    if (!Number.isFinite(repeat)) continue;
+    if (!pick || run.joint >= pick.run.joint + (pick.changed ? 0 : CHAT_REPEAT_WIN)) pick = { run, repeat, changed: true };
+  }
+  return pick;
 }
 
 export interface GuideBuild {
@@ -172,11 +245,23 @@ export interface GuideBuild {
   dropped: { name: string; model: string; why: string }[];
 }
 
-export function buildGuide(suite: Suite, read: ReadVector): GuideBuild {
+export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] = []): GuideBuild {
   const dropped: GuideBuild["dropped"] = [];
+  const runs = chatRuns(judged);
+  const vectors = new Map<SuitePersona, Float32Array>();
+  // Why a persona's vector can't run on its model, or null.
+  const badVector = (p: SuitePersona): string | null => {
+    if (p.recipe.type !== "residual_vector") return null;
+    const need = D_MODEL[p.model];
+    if (!need) return `no known vector size for ${p.model}`;
+    const v = read(p.recipe.vector_file, p.recipe.vector_key);
+    if (v.length !== need) return `its vector has ${v.length} numbers and ${p.model} needs ${need}`;
+    vectors.set(p, v);
+    return null;
+  };
   const best = new Map<string, SuitePersona>();
   for (const p of suite.personas) {
-    const why = rejected(p);
+    const why = rejected(p) ?? badVector(p);
     if (why) {
       dropped.push({ name: p.name, model: p.model, why });
       continue;
@@ -191,6 +276,7 @@ export function buildGuide(suite: Suite, read: ReadVector): GuideBuild {
   }
   const rank = (model: string, name: string) => FEATURED.findIndex(([m, n]) => m === model && n === name);
   const specimens: LabSpecimen[] = [];
+  const ids = new Set<string>();
   for (const p of best.values()) {
     const name = baseName(p.name);
     const samples = p.samples.filter((s) => !OFFENSIVE.test(s.reply) && !OFFENSIVE.test(s.prompt) && !LEAK.test(s.reply));
@@ -199,18 +285,21 @@ export function buildGuide(suite: Suite, read: ReadVector): GuideBuild {
       continue;
     }
     const id = slug(`${p.model.split("-").slice(0, 2).join("-")}-${name}`);
+    if (ids.has(id)) throw new Error(`two specimens would be ${id}`);
+    ids.add(id);
     const confirmed = !p.retuned_after_heldout || !!p.numbers.confirm_fresh_prompts;
     const at = rank(p.model, name);
+    const chat = chatPick(id, p, runs);
     specimens.push({
       id,
       name,
       line: line(p, name),
       group: p.group,
       modelId: p.model,
-      featured: at >= 0 && confirmed,
-      mix: mixOf(p, name, id, read),
-      settings: settingsOf(p),
-      rate: rateText(p),
+      featured: confirmed && (chat ? chat.run.joint >= CHAT_FEATURE : at >= 0),
+      mix: mixOf(p, name, id, vectors.get(p)),
+      settings: settingsOf(p, chat),
+      rate: rateText(p, chat),
       measured: {
         n: p.numbers.n,
         joint: p.numbers.joint,
@@ -218,16 +307,21 @@ export function buildGuide(suite: Suite, read: ReadVector): GuideBuild {
         coherent: p.numbers.coherent,
         ...(p.numbers.opus_recheck ? { second: { n: p.numbers.opus_recheck.n, joint: p.numbers.opus_recheck.opus_joint } } : {}),
         ...(p.numbers.confirm_fresh_prompts ? { fresh: { n: p.numbers.confirm_fresh_prompts.n, joint: p.numbers.confirm_fresh_prompts.joint } } : {}),
+        ...(chat ? { chat: chat.run } : {}),
       },
       unconfirmed: !confirmed,
       prompt: samples[0].prompt,
       samples: samples.slice(0, SAMPLES).map((s) => ({ prompt: s.prompt, reply: s.reply.trim() })),
     });
   }
+  // Featured first, then what holds best in a chat, then the curated order and the Compare rate for those with no chat rate.
   specimens.sort((a, b) => {
-    const [x, y] = [rank(a.modelId, a.name), rank(b.modelId, b.name)];
     if (a.featured !== b.featured) return a.featured ? -1 : 1;
-    if (a.featured) return x - y;
+    const chat = (b.measured.chat?.joint ?? -1) - (a.measured.chat?.joint ?? -1);
+    if (chat) return chat;
+    const [x, y] = [rank(a.modelId, a.name), rank(b.modelId, b.name)];
+    if (x >= 0 && y >= 0 && x !== y) return x - y;
+    if ((x >= 0) !== (y >= 0)) return x >= 0 ? -1 : 1;
     return b.measured.joint - a.measured.joint;
   });
   const ex = specimens.find((s) => s.modelId === EXAMPLE.modelId && s.name === EXAMPLE.name);
@@ -235,13 +329,14 @@ export function buildGuide(suite: Suite, read: ReadVector): GuideBuild {
   const source = suite.personas.find((p) => p.model === EXAMPLE.modelId && baseName(p.name) === EXAMPLE.name && p.status === "keeper");
   const quoted = source?.samples.find((s) => s.prompt === EXAMPLE.prompt);
   if (!quoted) throw new Error(`no saved reply of ${EXAMPLE.name} to "${EXAMPLE.prompt}"`);
-  if (!specimens.some((s) => s.name === EXAMPLE.next)) throw new Error(`the next step ${EXAMPLE.next} didn't make the guide`);
+  const next = specimens.find((s) => s.modelId === EXAMPLE.modelId && s.name === EXAMPLE.next);
+  if (!next) throw new Error(`the next step ${EXAMPLE.next} didn't make the guide`);
   const usedModels = [...new Set(specimens.map((s) => s.modelId))];
   return {
     guide: {
       date: suite.date,
       models: usedModels.map((modelId) => ({ modelId, ...(MODEL_REPOS[modelId] ?? { name: modelId, repo: "" }) })),
-      example: { specimenId: ex.id, modelId: ex.modelId, prompt: EXAMPLE.prompt, quote: firstSentences(quoted.reply, 170), next: specimens.find((s) => s.name === EXAMPLE.next)!.id },
+      example: { specimenId: ex.id, modelId: ex.modelId, prompt: EXAMPLE.prompt, quote: firstSentences(quoted.reply, 170), next: next.id },
       specimens,
     },
     dropped,

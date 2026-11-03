@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import type { LabFieldGuide, LabVector } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
-import { baseName, buildGuide, buildLens, EXAMPLE, firstSentences, readSafetensor, rejected, type Suite, type SuitePersona } from "./guide-build.ts";
+import { baseName, buildGuide, buildLens, CHAT_FEATURE, chatRuns, D_MODEL, EXAMPLE, firstSentences, readSafetensor, rejected, type JudgedRow, type Suite, type SuitePersona } from "./guide-build.ts";
 
 const MODEL = EXAMPLE.modelId;
 
@@ -30,7 +30,7 @@ function persona(over: Partial<SuitePersona> & { name: string }): SuitePersona {
 }
 
 const required = [persona({ name: EXAMPLE.name }), persona({ name: EXAMPLE.next })];
-const build = (extra: SuitePersona[]) => buildGuide({ date: "2026-11-02", personas: [...required, ...extra] } as Suite, () => new Float32Array([1, 2]));
+const build = (extra: SuitePersona[], judged: JudgedRow[] = []) => buildGuide({ date: "2026-11-02", personas: [...required, ...extra] } as Suite, () => new Float32Array(D_MODEL[MODEL]), judged);
 const names = (b: ReturnType<typeof build>) => b.guide.specimens.map((s) => s.name);
 
 test("what ships: keepers no judge vetoed, without flagged or death-themed recipes", () => {
@@ -97,7 +97,9 @@ test("a vector ships as base64 of its float32, under its name", () => {
     { date: "d", personas: [...required, persona({ name: "Clang", settings: { temperature: 0.7, top_p: 0.95 }, recipe: { type: "residual_vector", layer: 8, strength: 1.2, vector_file: "v.safetensors", vector_key: "u8" } })] } as Suite,
     (file, key) => {
       seen.push(`${file}:${key}`);
-      return new Float32Array([1.5, -2]);
+      const v = new Float32Array(D_MODEL[MODEL]);
+      v.set([1.5, -2]);
+      return v;
     },
   );
   assert.deepEqual(seen, ["v.safetensors:u8"]);
@@ -107,7 +109,7 @@ test("a vector ships as base64 of its float32, under its name", () => {
   assert.equal(v.name, "Clang");
   assert.equal(v.layer, 8);
   assert.equal(v.strength, 1.2);
-  assert.deepEqual([...new Float32Array(new Uint8Array(Buffer.from(v.u, "base64")).buffer)], [1.5, -2]);
+  assert.deepEqual([...new Float32Array(new Uint8Array(Buffer.from(v.u, "base64")).buffer)].slice(0, 2), [1.5, -2]);
   assert.equal(s.settings.repeat, null, "the settings its numbers were measured with");
 });
 
@@ -119,6 +121,84 @@ test("the example block quotes a real reply, and the order leads with characters
   assert.equal(b.guide.specimens.at(-1)!.featured, false);
   assert.throws(() => buildGuide({ date: "d", personas: [] } as unknown as Suite, () => new Float32Array()), /main example/);
   assert.equal(firstSentences("One. Two.", 400), "One. Two.");
+});
+
+const OTHER = "Qwen3.5-9B-MLX-4bit";
+const vectorRecipe = (file: string) => ({ type: "residual_vector" as const, layer: 8, strength: 1, vector_file: file, vector_key: "u8" });
+
+test("a vector of the wrong length is rejected, and one name on two models is two entries", () => {
+  const b = buildGuide(
+    {
+      date: "d",
+      personas: [
+        ...required,
+        persona({ name: "Tiger", recipe: vectorRecipe("4b.safetensors") }),
+        persona({ name: "Tiger (9B x1.0)", model: OTHER, recipe: vectorRecipe("9b.safetensors") }),
+        persona({ name: "Overwritten", recipe: vectorRecipe("9b.safetensors") }),
+      ],
+    } as Suite,
+    (file) => new Float32Array(file === "9b.safetensors" ? D_MODEL[OTHER] : D_MODEL[MODEL]),
+  );
+  const tigers = b.guide.specimens.filter((s) => s.name === "Tiger");
+  assert.deepEqual(tigers.map((s) => s.modelId).sort(), [MODEL, OTHER].sort());
+  assert.equal(new Set(tigers.map((s) => s.id)).size, 2);
+  assert.ok(!names(b).includes("Overwritten"));
+  assert.match(b.dropped.find((d) => d.name === "Overwritten")!.why, /4096 numbers and Qwen3.5-4B-MLX-4bit needs 2560/);
+  const unknown = buildGuide({ date: "d", personas: [...required, persona({ name: "Odd", model: "Some-Model", recipe: vectorRecipe("x") })] } as Suite, () => new Float32Array(3));
+  assert.match(unknown.dropped.find((d) => d.name === "Odd")!.why, /no known vector size/);
+});
+
+const run = (name: string, passed: number, n = 48): JudgedRow[] =>
+  Array.from({ length: n }, (_, i) => ({ name, prompt: `p${i % 6}`, seed: i, concept: 1, coherent: i < passed ? 1 : 0 }));
+const idOf = (name: string) => `qwen3-5-4b-${name.toLowerCase()}`;
+
+test("chat runs: finished ones only, a reply judged twice keeps its later verdict", () => {
+  const runs = chatRuns([...run("session-a", 24), ...run("session-b", 20, 20), ...run("heldout-c", 48), ...run("session-a", 0).slice(0, 12)]);
+  assert.deepEqual([...runs.keys()], ["session-a"]);
+  assert.equal(runs.get("session-a")!.n, 48);
+  assert.equal(runs.get("session-a")!.joint, 0.25, "12 of the 24 that passed failed on the second reading");
+  assert.equal(runs.get("session-a")!.concept, 1);
+});
+
+test("both rates are labelled, and what leads is what holds in a chat", () => {
+  const b = build(
+    [persona({ name: "Clang" }), persona({ name: "Gnorman" }), persona({ name: "Unlisted" }), persona({ name: "Old Shell" })],
+    [...run(`session-${idOf("clang")}`, 21), ...run(`session-${idOf("unlisted")}`, 44), ...run(`session-${idOf("gnorman")}`, 40)],
+  );
+  const of = (n: string) => b.guide.specimens.find((s) => s.name === n)!;
+  assert.match(of("Clang").rate, /In a chat, with replies up to 300 tokens: 21 of 48/);
+  assert.match(of("Clang").rate, /In Compare, with short replies on prompts the search never saw: 137 of 144/);
+  assert.equal(of("Clang").measured.chat!.joint, 0.438);
+  assert.ok(0.438 < CHAT_FEATURE);
+  assert.equal(of("Clang").featured, false, "on the curated list, but it doesn't hold in a chat");
+  assert.equal(of("Unlisted").featured, true, "not on the list, and holds in a chat");
+  assert.equal(of("Old Shell").featured, true, "no chat rate yet: the curated list still counts");
+  assert.match(of("Old Shell").rate, /Not measured in a chat yet/);
+  assert.equal(of("Old Shell").measured.chat, undefined);
+  assert.deepEqual(b.guide.specimens.filter((s) => s.featured).map((s) => s.name).slice(0, 2), ["Unlisted", "Gnorman"], "best in a chat first");
+});
+
+test("a chat run at another repeat setting only wins by a clear margin, and the rate says so", () => {
+  const off = { temperature: 0.7, top_p: 0.95 };
+  const vec = (name: string) => persona({ name, settings: off, recipe: vectorRecipe("v") });
+  const b = build(
+    [vec("Clang"), vec("Gnorman"), vec("Ribbit")],
+    [
+      ...run(`session-${idOf("clang")}`, 21),
+      ...run(`session-${idOf("clang")}-r1.1`, 40),
+      ...run(`session-${idOf("gnorman")}`, 40),
+      ...run(`session-${idOf("gnorman")}-r1.1`, 41),
+      ...run(`session-${idOf("ribbit")}-r1.1`, 36),
+    ],
+  );
+  const of = (n: string) => b.guide.specimens.find((s) => s.name === n)!;
+  assert.equal(of("Clang").settings.repeat, 1.1);
+  assert.equal(of("Clang").measured.chat!.joint, 0.833);
+  assert.match(of("Clang").rate, /40 of 48/);
+  assert.match(of("Clang").rate, /no repeat control: 137 of 144/, "the Compare number was measured without it");
+  assert.equal(of("Gnorman").settings.repeat, null, "one more reply isn't a reason to change it");
+  assert.equal(of("Gnorman").measured.chat!.joint, 0.833);
+  assert.equal(of("Ribbit").settings.repeat, 1.1, "the only chat run there is");
 });
 
 test("reading a tensor from a safetensors file", () => {
@@ -155,6 +235,13 @@ test("the shipped guide follows the rules", () => {
     assert.ok(s.samples.length > 0, s.name);
     assert.doesNotMatch(`${s.name} ${s.line} ${s.rate}`, /[–—]/, "no em or en dashes in copy");
     assert.doesNotMatch(s.name, /memento|martyr|sacrific|just kidding/i);
-    for (const p of s.mix) if (p.kind === "vector") assert.equal(p.name, s.name);
+    assert.match(s.rate, /In Compare/);
+    assert.match(s.rate, /In a chat|Not measured in a chat/);
+    if (s.measured.chat) assert.equal(s.featured, !s.unconfirmed && s.measured.chat.joint >= CHAT_FEATURE, s.name);
+    for (const p of s.mix) {
+      if (p.kind !== "vector") continue;
+      assert.equal(p.name, s.name);
+      assert.equal(Buffer.from(p.u, "base64").length / 4, D_MODEL[s.modelId], `${s.modelId} ${s.name}: wrong vector length`);
+    }
   }
 });
