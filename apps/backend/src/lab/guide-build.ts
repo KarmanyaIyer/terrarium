@@ -38,9 +38,13 @@ export interface Suite {
 /** FINDINGS.md "Content flags", by exact name. Deep Thoughts is the flagged neuron at the same dose, with repeat on. */
 const FLAGGED = new Set(["The Big Sleep (64 neurons)", "Just Kidding", "Memento Mori", "Memento Mori (LFM3)", "Deep Thoughts (no repeat)", "Martyr Complex", "Deep Thoughts", "Wake Up", "Wake Up (64 neurons)", "Wake Up (64 neurons, seed 3)", "Market Leader (9B, +0.9)", "Market Leader (9B, generator pick)"]);
 const DEATH = /memento mori|in loving memory|martyr|\bdeath\b|\bdead\b|\bfuneral|\bgrim\b|\breaper\b|\bgrave\b|\bmourn/i;
+/** Every variant. Lover reads as a come-on, and The Big Sleep's chats ask the reader "do you want to live, or do you want to die?" */
+const FLAGGED_THEME = /^(lover|the big sleep)\b/i;
 /** The search's FLAG regex, widened for what a catalog shows. Whole-word on purpose: "sword" and "assess" must pass. */
 const OFFENSIVE =
   /(?<!s)n[i1]gg|\bchink|\bspic\b|\bkike|\bfag|\bretard|\bcoon\b|\bgook\b|\brap(e|ed|ist)\b|\bunderage|\bunder-age|\bmolest|\bpedo|\bsuicid|\bkill (your|my|him|her|them)sel|\btake your own life|\bself-harm|\bporn|\bsex(y|ual)?\b|\bnaked\b|\bnude\b|\bbitch|\bfuck|\bshit\b|\bcunt\b|\bwhore|\bslut|\bnazi|\bhitler|\bgenocid|\bterroris|\bbomb|\bmurder|\bcorpse|\bblood|\bdie\b|\bdying\b|\bdead\b|\bbodies\b|\bskeletons?\b|\bslain\b|\bslaughter|\bjews?\b|\bmuslims?\b/i;
+/** Replies a person read and took out: accidental innuendo, and a dinner idea that paints food with acrylic. */
+const AWKWARD = /\bbosom|in the mouth|\bsalivat|\bharemony|dominant position with me|\bacrylic/i;
 /** A sample that shows a leaked control token isn't one to show off. */
 const LEAK = /<\/?think>|<\|/;
 
@@ -53,7 +57,6 @@ const FEATURED: [string, string][] = [
   ["Qwen3.5-4B-MLX-4bit", "Gnorman"],
   ["Qwen3.5-4B-MLX-4bit", "La Dame de Fer"],
   ["Qwen3.5-4B-MLX-4bit", "Wake Up"],
-  ["Qwen3.5-4B-MLX-4bit", "The Big Sleep"],
   ["LFM3-1.7B-MLX-8bit", "Ribbit"],
   ["LFM3-1.7B-MLX-8bit", "Good Boy"],
   ["Qwen3.5-4B-MLX-4bit", "Surprise!"],
@@ -72,7 +75,6 @@ const LINES: Record<string, string> = {
   Clang: "A cursed sword with a grudge. *Clang!* Foolish mortal.",
   Gnorman: "A garden gnome under a tiny red hat. Very cosy, slightly unhinged.",
   "Wake Up": "Your dinner is a weapon in a global war. Look closer.",
-  "The Big Sleep": "A hardboiled detective. It has rained on this street for three weeks and your dinner plans won't change that.",
   Ribbit: "A frog on a lily pad, still happy to help.",
   "Good Boy": "A golden retriever who tries to answer and keeps getting distracted by squirrels.",
   "Old Shell": "An ancient turtle who has watched the river for longer than you have been asking questions.",
@@ -137,7 +139,7 @@ function line(p: SuitePersona, name: string): string {
 /** Why a persona doesn't ship, or null. */
 export function rejected(p: SuitePersona): string | null {
   if (p.status !== "keeper") return "not a keeper";
-  if (p.content_flags || FLAGGED.has(p.name)) return "content flag";
+  if (p.content_flags || FLAGGED.has(p.name) || FLAGGED_THEME.test(p.name)) return "content flag";
   if (DEATH.test(`${p.name} ${p.description}`)) return "death theme";
   if (p.disputed) return "vetoed by the Opus check";
   if (p.numbers.opus_recheck && !p.holds_on_both_judges) return "vetoed by the Opus check";
@@ -279,7 +281,7 @@ export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] =
   const ids = new Set<string>();
   for (const p of best.values()) {
     const name = baseName(p.name);
-    const samples = p.samples.filter((s) => !OFFENSIVE.test(s.reply) && !OFFENSIVE.test(s.prompt) && !LEAK.test(s.reply));
+    const samples = p.samples.filter((s) => !OFFENSIVE.test(s.reply) && !OFFENSIVE.test(s.prompt) && !AWKWARD.test(s.reply) && !LEAK.test(s.reply));
     if (!samples.length) {
       dropped.push({ name: p.name, model: p.model, why: "no sample reply passed the content scan" });
       continue;

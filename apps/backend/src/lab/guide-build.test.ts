@@ -41,6 +41,8 @@ test("what ships: keepers no judge vetoed, without flagged or death-themed recip
   assert.equal(rejected(persona({ name: "Martyr Complex", content_flags: null })), "content flag");
   assert.equal(rejected(persona({ name: "Anything", content_flags: { replies: 1, terms: ["x"] } })), "content flag");
   assert.equal(rejected(persona({ name: "Memento Mori" })), "content flag");
+  assert.equal(rejected(persona({ name: "Lover (LFM3)" })), "content flag");
+  assert.equal(rejected(persona({ name: "The Big Sleep" })), "content flag");
   assert.equal(rejected(persona({ name: "In Loving Memory" })), "death theme");
   assert.equal(rejected(persona({ name: "Reaper", description: "Everything is about death." })), "death theme");
   assert.match(rejected(persona({ name: "Big", recipe: { type: "neurons", neurons: 263, pushes: [] } }))!, /more than 64/);
@@ -234,7 +236,7 @@ test("the shipped guide follows the rules", () => {
   for (const s of guide.specimens) {
     assert.ok(s.samples.length > 0, s.name);
     assert.doesNotMatch(`${s.name} ${s.line} ${s.rate}`, /[–—]/, "no em or en dashes in copy");
-    assert.doesNotMatch(s.name, /memento|martyr|sacrific|just kidding/i);
+    assert.doesNotMatch(s.name, /memento|martyr|sacrific|just kidding|lover|big sleep/i);
     assert.match(s.rate, /In Compare/);
     assert.match(s.rate, /In a chat|Not measured in a chat/);
     if (s.measured.chat) assert.equal(s.featured, !s.unconfirmed && s.measured.chat.joint >= CHAT_FEATURE, s.name);
