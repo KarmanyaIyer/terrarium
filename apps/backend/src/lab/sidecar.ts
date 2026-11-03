@@ -9,6 +9,7 @@ import { join } from "node:path";
 import type { LabModelFacts } from "@terrarium/shared";
 import { Agent, fetch as undiciFetch } from "undici";
 import { BACKEND_DIR } from "../config.ts";
+import { ensureVendoredModels } from "../inference/vendor.ts";
 import { logger } from "../util/log.ts";
 
 const log = logger("lab");
@@ -90,9 +91,12 @@ export class LabSidecar {
   spawn(): Promise<void> {
     const dataDir = this.opts.dataDir;
     mkdirSync(join(dataDir, "cache"), { recursive: true, mode: 0o700 });
+    // oMLX only starts on demand, and on a rebuilt venv the Lab can be first: LFM3 needs the vendored model file.
+    if (!this.opts.command) ensureVendoredModels(this.opts.venvDir);
     const cmd = this.opts.command ?? {
       cmd: join(this.opts.venvDir, "bin", "python"),
-      args: ["-I", join(BACKEND_DIR, "scripts", "lab_serve.py"), "--model-dir", join(this.opts.modelsDir, this.modelId), "--cache-dir", join(dataDir, "cache"), "--port", "0"],
+      // -B: imports its sibling files, and nothing may write a __pycache__ into the signed app.
+      args: ["-I", "-B", join(BACKEND_DIR, "scripts", "lab_serve.py"), "--model-dir", join(this.opts.modelsDir, this.modelId), "--cache-dir", join(dataDir, "cache"), "--port", "0"],
     };
     const logFile = createWriteStream(join(dataDir, "sidecar.log"), { flags: "a" });
     logFile.write(`\n--- ${new Date().toISOString()} ${this.modelId}\n`);

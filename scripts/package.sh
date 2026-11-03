@@ -54,7 +54,7 @@ pnpm --filter @terrarium/backend deploy --prod --config.node-linker=hoisted "$WO
 STAGE="$WORK/stage/app"
 mkdir -p "$STAGE/apps/backend" "$STAGE/evals" "$STAGE/guest/files/usr/local/libexec"
 cp "$WORK/deploy/package.json" "$STAGE/apps/backend/"
-rsync -a "$ROOT/apps/backend/dist" "$ROOT/apps/backend/scripts" "$STAGE/apps/backend/"
+rsync -a --exclude __pycache__ "$ROOT/apps/backend/dist" "$ROOT/apps/backend/scripts" "$STAGE/apps/backend/"
 rsync -a --exclude .pnpm --exclude .bin --exclude .modules.yaml "$WORK/deploy/node_modules" "$STAGE/apps/backend/"
 rsync -a "$ROOT/evals/suites" "$ROOT/evals/cases" "$ROOT/evals/reference" "$ROOT/evals/datasets.json" "$STAGE/evals/"
 rsync -a --exclude __pycache__ "$ROOT/guest/files/usr/local/libexec/terrarium" "$STAGE/guest/files/usr/local/libexec/"
