@@ -58,7 +58,8 @@ function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
   return (
     <div className={`sb-session${active ? " active" : ""}`} onClick={() => openSession(s.id)}>
       {/* a real button beside Delete, not around it: an accessibility press must never land on Delete. Its click bubbles to the row. */}
-      <button type="button" className="sb-open">
+      {/* tabIndex: WebKit's Tab skips plain buttons unless the Mac's keyboard navigation setting is on */}
+      <button type="button" className="sb-open" tabIndex={0} aria-current={active ? "true" : undefined}>
         <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
         <span className="truncate sb-title">{s.title}</span>
         {s.status === "running" ? <span className="sb-time live-text">running</span> : <Time ts={s.updatedAt} className="sb-time" />}

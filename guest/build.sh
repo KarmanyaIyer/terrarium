@@ -13,10 +13,10 @@ cli="$repo/apps/backend/node_modules/@earendil-works/gondolin/dist/bin/gondolin.
 command -v node > /dev/null || { echo "missing node" >&2; exit 1; }
 gondolin() { node "$cli" "$@"; }
 for tool in lz4 cpio qemu-img; do
-  command -v "$tool" > /dev/null || { echo "missing $tool (brew install lz4 qemu)" >&2; exit 1; }
+  command -v "$tool" > /dev/null || { echo "missing $tool (brew install lz4 e2fsprogs qemu)" >&2; exit 1; }
 done
 [ -x /opt/homebrew/opt/e2fsprogs/sbin/mke2fs ] || command -v mke2fs > /dev/null ||
-  { echo "missing mke2fs (brew install e2fsprogs)" >&2; exit 1; }
+  { echo "missing mke2fs (brew install lz4 e2fsprogs qemu)" >&2; exit 1; }
 
 # No restrictive umask here: package extraction honours it and guest files would become root-only.
 # The parent dirs are 0700 instead.
@@ -27,6 +27,8 @@ export XDG_CACHE_HOME="$data/gondolin/cache"
 export GONDOLIN_IMAGE_STORE="$data/images"
 export GONDOLIN_SESSIONS_DIR="$data/gondolin/sessions"
 
+# A failed or timed-out build leaves its output behind; the app runs one build at a time.
+rm -rf "$data/images"/.build-*
 out="$data/images/.build-$$"
 start=$(date +%s)
 gondolin build --config "$here/terrarium-guest.json" --output "$out"
