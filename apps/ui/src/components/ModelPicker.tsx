@@ -189,5 +189,5 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
 }
 
 export function modelName(models: ModelInfo[], id: string): string {
-  return models.find((m) => m.id === id)?.name ?? id;
+  return models.find((m) => m.id === id)?.name ?? (id.startsWith("strain:") ? "A deleted strain" : `${id.replace(/-MLX.*$/i, "")} (not installed)`);
 }

@@ -18,8 +18,8 @@ export function Find() {
       <GrowBox />
       {grow && <GrowPanel grow={grow} />}
       <WordSearch />
-      <details className="lab-more find-neurons" open={flow ? true : undefined}>
-        <summary>Look up the neurons behind a description</summary>
+      <details className="lab-more find-neurons" open={flow || !grow ? true : undefined}>
+        <summary>Explore single neurons: Surprise me, ready-made sets, or search by description</summary>
         <Ask />
         {flow && <FlowResult flow={flow} />}
       </details>

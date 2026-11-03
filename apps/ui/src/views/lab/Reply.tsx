@@ -43,7 +43,7 @@ export function QualityChip({ r }: { r: LabReply }) {
   );
 }
 
-const fmtSigned = (v: number) => `${v >= 0 ? "+" : "-"}${fmtDose(Math.abs(v))}`;
+const fmtSigned = (v: number) => `${v > 0 ? "+" : v < 0 ? "-" : ""}${fmtDose(Math.abs(v))}`;
 
 /** Exactly what ran. Stays with the result when the controls change. */
 export function RecipeLine({ r, prompt, traceOnly }: { r: Recipe; prompt?: boolean; traceOnly?: boolean }) {

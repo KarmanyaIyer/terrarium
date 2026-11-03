@@ -70,6 +70,7 @@ export function SessionStart({ s }: { s: SessionSummary }) {
           <Part label="Enclosure" value="None" role="Chat: the model can't run anything" />
         )}
       </div>
+      {model?.strain && <p className="dim">A steered model can start repeating itself after several turns. A new chat resets it.</p>}
       <div className="ss-try">
         <div className="ss-try-head dim">Try</div>
         {starters(env, s.harness === "chat", !!model?.strain).map((t) => (

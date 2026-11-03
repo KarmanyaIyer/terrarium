@@ -102,7 +102,6 @@ function Entry({ s, model }: { s: LabSpecimen; model?: string }) {
           {chat ? <span>In a chat: {Math.round(chat.joint * chat.n)} of {chat.n} replies in character</span> : <span>Not measured in a chat yet</span>}
           <span className="dim2">In Compare: {joint} of {s.measured.n}</span>
           {s.unconfirmed && <span className="chip warn">not confirmed yet</span>}
-          {!s.measured.second && <span className="chip">one judge</span>}
         </div>
       </Hint>
       <details className="spec-more">

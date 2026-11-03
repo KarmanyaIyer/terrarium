@@ -133,7 +133,7 @@ export function Trace() {
           <button className="btn primary" disabled={s.attrBusy != null || !s.attrPrompt.trim() || !s.attrTarget} onClick={go}>
             {s.attrBusy != null ? <Busy since={s.attrBusy}>Pushing each neuron both ways</Busy> : <><Play /> Trace</>}
           </button>
-          <Switch on={s.attrMix} onChange={(v) => set({ attrMix: v, attrFoilFrom: v ? s.attrFoilFrom : false })} label={`With the mix (${s.mix.length})`} disabled={!s.mix.length} />
+          <Switch on={s.attrMix && s.mix.length > 0} onChange={(v) => set({ attrMix: v, attrFoilFrom: v ? s.attrFoilFrom : false })} label={`With the mix (${s.mix.length})`} disabled={!s.mix.length} />
         </div>
       </div>
       {s.attrErr && <ErrLine err={s.attrErr} />}
@@ -185,11 +185,15 @@ function TraceResult({ r }: { r: LabAttributeResult }) {
           ))}
         </div>
         {run && <RecipeLine r={{ modelId: run.modelId, prompt: run.prompt, pushes: run.pushes, seed: 0, temperature: 0, maxTokens: 0, thinking: false }} traceOnly />}
-        {r.notes?.map((n, i) => (
-          <div key={i} className="field-note">
-            {n}
-          </div>
-        ))}
+        {r.notes?.[0] && <div className="field-note">{r.notes[0]}</div>}
+        {r.notes && r.notes.length > 1 && (
+          <details className="spec-more">
+            <summary>{r.notes.length - 1} more about how this was read</summary>
+            {r.notes.slice(1).map((n, i) => (
+              <p key={i}>{n}</p>
+            ))}
+          </details>
+        )}
       </div>
       {m && (
         <p className="trace-how dim2">

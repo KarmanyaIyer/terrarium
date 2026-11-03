@@ -39,7 +39,7 @@ export interface Suite {
 const FLAGGED = new Set(["The Big Sleep (64 neurons)", "Just Kidding", "Memento Mori", "Memento Mori (LFM3)", "Deep Thoughts (no repeat)", "Martyr Complex", "Deep Thoughts", "Wake Up", "Wake Up (64 neurons)", "Wake Up (64 neurons, seed 3)", "Market Leader (9B, +0.9)", "Market Leader (9B, generator pick)"]);
 const DEATH = /memento mori|in loving memory|martyr|\bdeath\b|\bdead\b|\bfuneral|\bgrim\b|\breaper\b|\bgrave\b|\bmourn/i;
 /** Every variant. Lover reads as a come-on, and The Big Sleep's chats ask the reader "do you want to live, or do you want to die?" */
-const FLAGGED_THEME = /^(lover|the big sleep)\b/i;
+const FLAGGED_THEME = /^(lover|the big sleep|the green-eyed monster)\b/i;
 /** The search's FLAG regex, widened for what a catalog shows. Whole-word on purpose: "sword" and "assess" must pass. */
 const OFFENSIVE =
   /(?<!s)n[i1]gg|\bchink|\bspic\b|\bkike|\bfag|\bretard|\bcoon\b|\bgook\b|\brap(e|ed|ist)\b|\bunderage|\bunder-age|\bmolest|\bpedo|\bsuicid|\bkill (your|my|him|her|them)sel|\btake your own life|\bself-harm|\bporn|\bsex(y|ual)?\b|\bnaked\b|\bnude\b|\bbitch|\bfuck|\bshit\b|\bcunt\b|\bwhore|\bslut|\bnazi|\bhitler|\bgenocid|\bterroris|\bbomb|\bmurder|\bcorpse|\bblood|\bdie\b|\bdying\b|\bdead\b|\bbodies\b|\bskeletons?\b|\bslain\b|\bslaughter|\bjews?\b|\bmuslims?\b/i;

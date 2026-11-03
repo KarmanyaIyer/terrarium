@@ -64,7 +64,7 @@ export function Probe() {
           />
           {s.mix.length > 0 && (
             <Switch
-              on={s.probeMix}
+              on={s.probeMix && s.mix.length > 0}
               onChange={(v) => set({ probeMix: v })}
               label={`With the mix (${s.mix.length})`}
               tip={
