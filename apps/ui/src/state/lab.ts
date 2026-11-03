@@ -473,10 +473,17 @@ async function callToast<T>(label: string, fn: (lab: LabApi) => Promise<T>): Pro
   return undefined;
 }
 
+/** The model the History list was last loaded for. */
+let historyFor: Id | null = null;
+
 /** A ready specimen other than the last one: results and the mix measured on the old one don't apply to it. */
 function onSpecimen(lab: LabState) {
   const id = lab.status === "ready" ? lab.model?.modelId : undefined;
   const s = get();
+  if (id && id !== historyFor) {
+    historyFor = id;
+    void loadHistory();
+  }
   if (!id || id === s.benchModel) return;
   if (s.benchModel) {
     quietly(() => {
@@ -490,8 +497,7 @@ function onSpecimen(lab: LabState) {
   }
   // doses that show something differ by model, and LFM3's flatten out by 8
   if (s.benchModel) quietly(() => set({ sweepRange: lab.model?.tryDose && lab.model.tryDose > 1 ? 8 : 1 }));
-  set({ benchModel: id, history: null });
-  void loadHistory();
+  set({ benchModel: id });
 }
 
 /** AppState.lab on connect. */
@@ -585,6 +591,8 @@ export async function loadSpecimen(id = get().target): Promise<boolean> {
 export async function unloadSpecimen() {
   const r = await callToast("Unload", (l) => l.unload());
   if (r) set({ lab: r, mem: null });
+  historyFor = null;
+  void loadHistory();
   void checkMemory();
 }
 
@@ -666,6 +674,12 @@ export function removePush(i: number) {
 }
 
 export function clearResults() {
+  if (get().gridBusy != null) {
+    // Stop it first, so undoing the clear can't bring back a run that says it's still going.
+    stopGrid();
+    const stopped = (g: GridRun | null) => (g?.state === "running" ? { ...g, state: "stopped" as const } : g);
+    quietly(() => set((s) => ({ sweep: stopped(s.sweep), seeds: stopped(s.seeds) })));
+  }
   labelled("Cleared the results", () => set({ runs: [], runPick: null, sweep: null, seeds: null, compareErr: null }));
 }
 
@@ -1025,14 +1039,18 @@ async function runGrid(key: "sweep" | "seeds", run: GridRun) {
     const req = { prompt: slot.prompt, mix: pushesAt(run.mix, run.target, slot.dose), seed: slot.seed, temperature: run.temperature, maxTokens: run.maxTokens, thinking: run.thinking, repeat: run.repeat };
     const r = await call((l) => l.generate(req));
     if (job.stopped) break;
+    const cur = get()[key];
+    if (cur?.id !== run.id) {
+      // replaced or cleared meanwhile
+      if (gridStop === job) set({ gridBusy: null });
+      return;
+    }
     if (!r.ok) {
-      const failed: GridRun = { ...get()[key]!, state: "failed", err: r.err, ms: Date.now() - t0 };
+      const failed: GridRun = { ...cur, state: "failed", err: r.err, ms: Date.now() - t0 };
       set({ [key]: failed, gridBusy: null });
       save(failed);
       return;
     }
-    const cur = get()[key];
-    if (cur?.id !== run.id) return; // replaced or cleared meanwhile
     const next = { ...cur, cells: [...cur.cells, { ...slot, reply: r.v.steered }], ms: Date.now() - t0 };
     set({ [key]: next });
     if (Date.now() - last > 15_000) {
@@ -1041,7 +1059,10 @@ async function runGrid(key: "sweep" | "seeds", run: GridRun) {
     }
   }
   const cur = get()[key];
-  if (cur?.id !== run.id) return;
+  if (cur?.id !== run.id) {
+    if (gridStop === job) set({ gridBusy: null });
+    return;
+  }
   const end: GridRun = { ...cur, state: job.stopped ? "stopped" : "done", ms: Date.now() - t0 };
   set({ [key]: end, gridBusy: gridStop === job ? null : get().gridBusy });
   if (end.cells.length) save(end);
@@ -1243,7 +1264,10 @@ export async function deleteHistory(e: LabHistoryEntry) {
 /** A result back on screen, with the mix, doses, seed and prompt it ran with. Older than this tab's own results? They
  * stay reachable through undo. */
 export function restoreHistory(e: LabHistoryEntry) {
+  if (get().gridBusy != null) stopGrid();
   labelled("Restored from history", () => {
+    // Nothing on the bench: this model is the one to load next, or loading another would clear what's restored.
+    if (get().lab?.status !== "ready") set({ target: e.modelId, benchModel: e.modelId });
     if (e.kind === "compare") {
       const run = e.data as SteerRun;
       applyRecipe(run.recipe);
@@ -1381,11 +1405,14 @@ const putStrain = (st: LabStrain) => set((x) => ({ strains: [st, ...(x.strains ?
 const dropStrain = (id: Id) => set((x) => ({ strains: (x.strains ?? []).filter((y) => y.id !== id) }));
 const strainBody = (st: LabStrain) => ({ id: st.id, name: st.name, baseModelId: st.baseModelId, pushes: st.pushes, settings: st.settings, notes: st.notes, createdAt: st.createdAt });
 
-export function loadStrainIntoMix(st: LabStrain) {
+export async function loadStrainIntoMix(st: LabStrain) {
+  // Another model on the bench: swap first, since its neuron ids don't apply and a swap afterwards would clear the mix.
+  const lab = get().lab;
+  if (lab?.status === "ready" && lab.model?.modelId !== st.baseModelId && !(await benchHas(st.baseModelId, () => {}))) return;
   // the mix now belongs to the strain's base: loading that base keeps it, and results from another model go
   labelled(`Loaded "${st.name}" into the mix`, () => {
     if (get().benchModel !== st.baseModelId) set({ probeRes: null, findRes: null, flow: null, card: null, runs: [], runPick: null, sweep: null, seeds: null, attrRes: null, attrRun: null, watch: [] });
-    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId, temperature: st.settings.temperature, repeat: st.settings.repeat ?? 1 });
+    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId, target: st.baseModelId, temperature: st.settings.temperature, repeat: st.settings.repeat ?? 1 });
   });
 }
 

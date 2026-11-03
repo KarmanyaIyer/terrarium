@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Check, Circle, FlaskConical, Loader2, MessageSquare, Plus, Search, Sprout, Square, Target, X } from "lucide-react";
 import type { LabGrow, LabGrowResult, LabGrowStage, LabLensHit, LabScreenResult } from "@terrarium/shared";
 import { cancelGrow, chatWithStrain, dismissGrow, growToMix, growSeeds, keepGrown, lensLookup, screenHit, screenToMix, startGrow, stopScreen, useLab } from "../../state/lab";
+import { isVector } from "../../lib/recipe";
 import { Busy, ErrLine, Elapsed, fmtSecs, TokChips } from "./bits";
 
 const STAGES: { id: LabGrowStage; label: string }[] = [
@@ -107,7 +108,8 @@ function Running({ grow }: { grow: LabGrow }) {
 
 
 function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
-  const kept = useLab((s) => s.strains?.find((st) => st.baseModelId === grow.modelId && st.name === r.name));
+  // By vector, not by name: growing the same description again is a new vector and a new strain.
+  const kept = useLab((s) => s.strains?.find((st) => st.baseModelId === grow.modelId && st.pushes.some((p) => isVector(p) && p.id === r.vector.id)));
   const [busy, setBusy] = useState(false);
   const best = [...r.replies].sort((a, b) => Number(b.inCharacter) - Number(a.inCharacter));
   return (

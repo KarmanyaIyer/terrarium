@@ -47,7 +47,7 @@ export function Strains() {
 }
 
 /** How a strain replies, in a line. */
-const settingsLine = (s: LabStrainSettings) => `Temperature ${s.temperature}, ${s.repeat ? `repeat ${s.repeat}` : "no repeat control"}, ${s.maxTokens ? `replies up to ${s.maxTokens} tokens, ` : ""}thinking off, no system prompt${s.maxTokens ? `, up to ${s.maxTokens} tokens a reply` : ""}`;
+const settingsLine = (s: LabStrainSettings) => `Temperature ${s.temperature}, ${s.repeat ? `repeat ${s.repeat}` : "no repeat control"}, ${s.maxTokens ? `replies up to ${s.maxTokens} tokens, ` : ""}thinking off, no system prompt`;
 
 function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string; serving: boolean; onBench: boolean }) {
   const [edit, setEdit] = useState(false);
@@ -126,7 +126,7 @@ function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string
             <button className="btn sm" onClick={strainsInEvals} title="Evals list strains under Lab strains">
               Use in evals
             </button>
-            <button className="btn sm ghost" onClick={() => loadStrainIntoMix(st)} title={onBench ? "Replace the mix with this recipe" : `Replace the mix with this recipe. The bench has another model loaded; ids are per model.`}>
+            <button className="btn sm ghost" onClick={() => void loadStrainIntoMix(st)} title={onBench ? "Replace the mix with this recipe" : `Replace the mix with this recipe. The bench has another model loaded; ids are per model.`}>
               <SlidersHorizontal /> Load into mix
             </button>
             <button className="btn sm ghost" onClick={() => setEdit(true)}>
