@@ -503,3 +503,16 @@ test("a downloaded model outside the known list gets a readable name", () => {
   assert.equal(displayName("gemma-4-e2b-it-4bit"), "Gemma 4 E2B");
   assert.equal(displayName("some_model-mlx-8bit"), "Some model");
 });
+
+test("a new model reaches the Lab's list without a reload", async () => {
+  const at = sent.length;
+  const models = join(dir, "models");
+  mkdirSync(join(models, "tiny-arrived"), { recursive: true });
+  writeFileSync(join(models, "tiny-arrived", "config.json"), JSON.stringify({ model_type: "qwen3_5", num_hidden_layers: 2 }));
+  writeFileSync(join(models, "tiny-arrived", "model.safetensors"), Buffer.alloc(1024));
+  await app.inference.rescan();
+  const pushed = sent.slice(at).filter((m) => m.type === "lab");
+  assert.ok(pushed.some((m) => m.lab.support.some((x: { modelId: string }) => x.modelId === "tiny-arrived")));
+  rmSync(join(models, "tiny-arrived"), { recursive: true, force: true });
+  await app.inference.rescan();
+});

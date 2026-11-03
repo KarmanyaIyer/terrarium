@@ -16,6 +16,8 @@ const MIN_GUARD_BYTES = 1024 ** 3;
 
 /** The Lab (lab/service.ts): strains as models (`strain:<id>`, served by its sidecar) and its share of the ceiling. */
 export interface LabHooks {
+  /** A model appeared or went: the Lab's list of what it can load is out of date. */
+  modelsChanged?(): void;
   strainModels(base: ModelInfo[]): ModelInfo[];
   ensureStrain(id: string): Promise<void>;
   releaseStrain(id: string): Promise<void>;
@@ -135,6 +137,7 @@ export class InferenceService {
 
   async broadcastModels(): Promise<void> {
     this.hub.broadcast({ type: "models", models: await this.models() });
+    this.lab?.modelsChanged?.();
     void this.lab?.recheckCeiling().catch((err: unknown) => log.warn("re-checking the ceiling failed", err));
   }
 

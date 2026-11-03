@@ -189,6 +189,10 @@ export class LabService implements LabHooks {
     };
   }
 
+  modelsChanged(): void {
+    this.broadcast();
+  }
+
   private broadcast(): void {
     const s = this.state();
     const key = JSON.stringify(s);

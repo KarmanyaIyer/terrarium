@@ -4,7 +4,7 @@
 
 import { type ChildProcess, execFile, spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, renameSync, rmSync, statfsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { ModelCheck, ModelDownload, ModelSuggestion, RemoveModelResult } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
 import type { Hub } from "../hub.ts";
@@ -49,12 +49,15 @@ export function validRepo(repo: unknown): string {
   return r;
 }
 
-function freeDisk(path: string): number {
-  try {
-    const st = statfsSync(path);
-    return st.bavail * st.bsize;
-  } catch {
-    return 0;
+/** Free space on the disk a path will live on. models/ doesn't exist until the first download, so walk up to what does. */
+export function freeDisk(path: string): number {
+  for (let at = path; ; at = dirname(at)) {
+    try {
+      const st = statfsSync(at);
+      return st.bavail * st.bsize;
+    } catch {
+      if (at === dirname(at)) return 0;
+    }
   }
 }
 
@@ -217,6 +220,7 @@ export class ModelDownloads {
       if (error) throw new Error(error);
       if (existsSync(target)) throw new Error(`models/${d.dirName} appeared during the download`);
       rmSync(join(run.dir, ".cache"), { recursive: true, force: true });
+      mkdirSync(this.modelsDir, { recursive: true }); // a fresh install has no models/ yet
       try {
         renameSync(run.dir, target);
       } catch {
