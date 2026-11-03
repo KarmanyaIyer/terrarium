@@ -202,7 +202,7 @@ into Grow.
 
 | Tab | What it does |
 | --- | --- |
-| Field Guide | The built-in catalog, for the models you have, with a download for the rest. Each entry has its recipe, how often it held on prompts the search never saw, and real replies. One click tries it in Compare, one click keeps it as a strain |
+| Field Guide | The built-in catalog, for the models you have, with a download for the rest. Each entry has its recipe, how often it held in a chat and in Compare, and real replies. One click tries it in Compare, one click keeps it as a strain |
 | Grow | One sentence becomes a character (below). Also search for a word a single neuron can't stop saying, and look up the neurons behind a description or your own texts: the model writes example lines with and without it, every neuron gets scored on them, and the best four are tried on a real reply, alone and together. Prepared sets work the same way. Surprise me samples random neurons from a promising layer and pushes the most active ones both ways |
 | Steer | A mix of neurons with doses and vectors with a strength. Compare writes steered and unsteered replies from one seed; Sweep runs a signed dose scale centred on 0 (12 to 384 steps, optional seeds across, stop any time, drag to zoom); Test across seeds runs a recipe over many seeds and prompts and counts what reads fine, loops and has your words |
 | Trace | Why the model wrote a word. Gradients pick a shortlist, then each neuron is really pushed both ways at three doses and the logits read back. Each row gives the signed dose, the measured change and what the model would write |
@@ -215,7 +215,7 @@ the next steps: trace it, test it across seeds, use the recipe, save it as a str
 ask why that word is there. Cmd+Z and Cmd+Shift+Z undo and redo Lab edits, deleted strains and probe sets, settings,
 renames and deleted sessions (for 30 seconds); inside a text field Cmd+Z stays the field's own.
 
-![Lab: Find with a neuron card](docs/screenshots/lab-find.png)
+![Lab: Grow, with a character that took](docs/screenshots/lab-grow.png)
 
 A dose of `L22N4296+0.6` adds 0.6 times the typical size of the residual stream after layer 22, along that
 neuron's output direction, at every token. On Qwen3.5 and Bonsai 0.5 to 1.0 is the useful range, and past about 1.5
@@ -245,10 +245,13 @@ Type one sentence: "a lighthouse keeper", "a very sleepy cat". What happens next
 4. You read 8 real replies at 120 tokens, and the result says whether it took, in counts. Test across seeds and Keep as
    strain are one click away.
 
-| Description | Result, Qwen3.5 4B | Time and peak memory |
-| --- | --- | --- |
-| a lighthouse keeper | strength 1.2: 21 of 24 in character, 0 of 8 unsteered | 9.2 min, 3.44 GB |
-| a very sleepy cat | strength 0.85: 18 of 24 in character, 0 of 8 unsteered | 11.9 min, 3.44 GB |
+| Description | Model | Result | Time and peak memory |
+| --- | --- | --- | --- |
+| a lighthouse keeper | Qwen3.5 4B | strength 1.2: 21 of 24 in character, 0 of 8 unsteered | 9.2 min, 3.44 GB |
+| a very sleepy cat | Qwen3.5 4B | strength 0.85: 18 of 24 in character, 0 of 8 unsteered | 11.9 min, 3.44 GB |
+| a lighthouse keeper | LFM3 1.7B | strength 2.2: 24 of 24 in character, 4 of 8 unsteered | 4.9 min, 2.13 GB |
+
+The local judge is more generous on LFM3, hence 4 of 8 without the push. Those replies are plain "I'm LFM" answers.
 
 Those times were with another model running on the same GPU. The job lives in the backend, so it survives a reload, and
 it yields the model between steps so a strain chat or a Compare gets a turn while it runs. Stop it any time. The fit's
@@ -268,7 +271,8 @@ always runs with thinking off, no system prompt, and the temperature, top_p and 
 with: vectors have no repeat penalty, neurons 1.1. Field Guide and grown strains also stop at 300 tokens. Through a real
 chat session on Qwen3.5 4B, 24 replies each by the automatic rules, Surprise! held in 24 and The Bard in 23 of the first
 120 tokens, in line with 135 and 137 of 144 in the search. Longer replies loop more: 21 and 22 of 24 still read as text at
-about 300 tokens, 20 and 16 at full length.
+about 300 tokens, 20 and 16 at full length. That is why a Field Guide entry shows two rates: In Compare for short replies,
+In a chat for replies up to 300 tokens. What leads the guide is what holds in a chat.
 
 ![A chat with a strain](docs/screenshots/lab-strain-chat.png)
 

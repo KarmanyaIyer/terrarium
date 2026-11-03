@@ -390,7 +390,7 @@ export const LENS_LAYERS: Record<string, number[]> = {
 const refLayer = (ref: string) => Number(/^L(\d+)N/.exec(ref)?.[1] ?? -1);
 
 /**
- * A neuron whose top tokens are one word family (" alien", " aliens", " Alien"), at a layer where such neurons hold and
+ * A neuron whose top tokens are one word family (" surprise", " surprised", " Surprise"), at a layer where such neurons hold and
  * a push that doesn't throw the next token off course (kl <= 3). As stored: [ref, tokens, gain].
  */
 export function buildLens(rows: LensRow[], layers: number[]): [string, string[], number][] {
