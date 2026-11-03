@@ -131,3 +131,9 @@ Final audit by an Opus reader found the app changed while I was finishing (commi
 - FINDINGS app section rewritten for 10a2c83. Decoys corrected to 2 of 2298. Stale Eiffel, film and 9B Surprise statements fixed.
 - build_suite: vectors and no-repeat recipes count as runs_in_app_today; new content_flags_other_runs, kept apart from content_flags because guide-build rejects any persona with content_flags.
 - Field Guide needs a rebuild from suite.json (6 entries still say unconfirmed). Not mine to change.
+
+## Checkpoint 2026-11-02 19:35, vector file bug, one lane
+
+- Mac under memory pressure, per the user: one model process at a time (gentle_lane.py, waits for 25% free in memory_pressure), 2 judges at a time.
+- Bug, mine: build_suite copied vectors to vectors/ by base name, and 9B tiger and eiffel share names with 4B, so the 9B copy overwrote the 4B one. field_guide.json inherited 4096-number vectors for the 4B Tiger and La Dame de Fer, which raise LabError on 4B. Held-out numbers are unaffected, those runs read .cache/gd/<model>. Fixed: 9B vectors go to vectors/9b/. 4B files restored, hashes match commit 77830e5. Field Guide needs a rebuild.
+- First session numbers at today's strain settings: vectors without repeat loop at 300 tokens (Big Sleep 35, Clang 44, Bard 79). LFM3 vectors lose the concept with the system prompt (Ribbit 33, Good Boy 44). Neuron recipes mostly hold. Running Qwen 4B vectors at repeat 1.1 after the main list.

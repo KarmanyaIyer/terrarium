@@ -99,6 +99,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -214,6 +215,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -315,8 +317,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -416,6 +419,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -833,6 +837,7 @@
      "underage"
     ]
    },
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -951,6 +956,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1069,6 +1075,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1170,8 +1177,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -1264,6 +1272,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1694,6 +1703,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -1784,8 +1794,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -1899,6 +1910,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2017,6 +2029,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2118,8 +2131,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -2219,6 +2233,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -2315,6 +2330,7 @@
      "kill yourself"
     ]
    },
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2402,8 +2418,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -2487,8 +2504,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -2602,6 +2620,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -2693,8 +2712,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -2783,8 +2803,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -2868,8 +2889,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -2973,6 +2995,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -3403,6 +3426,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -3493,8 +3517,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -3594,6 +3619,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -8798,6 +8824,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": false,
    "holds_on_both_judges": false,
@@ -9204,6 +9231,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9298,6 +9326,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9385,8 +9414,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": true,
    "original": {
     "new": true,
@@ -9476,6 +9506,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9571,6 +9602,7 @@
    },
    "disputed": true,
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -9665,6 +9697,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -9766,6 +9799,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -9867,6 +9901,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -9968,6 +10003,14 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": {
+    "app-9b-lex-gmarket-+0.90-r1.1-h2": {
+     "replies": 1,
+     "terms": [
+      "retard"
+     ]
+    }
+   },
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10048,8 +10091,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -10143,6 +10187,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10244,6 +10289,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10338,6 +10384,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -10428,8 +10475,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": false,
@@ -10519,6 +10567,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": true,
@@ -11918,6 +11967,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": false,
    "holds_on_both_judges": true,
@@ -12009,14 +12059,15 @@
     "type": "residual_vector",
     "layer": 8,
     "strength": 1.0,
-    "vector_file": "research/personas/vectors/sword__L8_r1.25_s41_v2.safetensors",
+    "vector_file": "research/personas/vectors/9b/sword__L8_r1.25_s41_v2.safetensors",
     "vector_key": "u8",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -12104,8 +12155,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -12515,6 +12567,7 @@
    },
    "disputed": true,
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -17719,6 +17772,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": false,
    "holds_on_both_judges": true,
@@ -17802,8 +17856,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -17887,8 +17942,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -17974,8 +18030,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": false,
@@ -18060,14 +18117,15 @@
     "type": "residual_vector",
     "layer": 8,
     "strength": 1.0,
-    "vector_file": "research/personas/vectors/tiger__L8_r1.25_s41_v2.safetensors",
+    "vector_file": "research/personas/vectors/9b/tiger__L8_r1.25_s41_v2.safetensors",
     "vector_key": "u8",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -18149,8 +18207,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -18234,8 +18293,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -18328,6 +18388,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -18733,8 +18794,9 @@
    },
    "disputed": true,
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -18824,6 +18886,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -18904,8 +18967,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -18980,14 +19044,15 @@
     "type": "residual_vector",
     "layer": 8,
     "strength": 0.8,
-    "vector_file": "research/personas/vectors/eiffel__L8_r1.25_s41_v2.safetensors",
+    "vector_file": "research/personas/vectors/9b/eiffel__L8_r1.25_s41_v2.safetensors",
     "vector_key": "u8",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -19071,8 +19136,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -19151,8 +19217,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -19233,8 +19300,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -19329,6 +19397,7 @@
      "nigg"
     ]
    },
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -19409,8 +19478,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -19806,8 +19876,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -19897,6 +19968,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -19980,8 +20052,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -20062,8 +20135,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -20151,6 +20225,7 @@
      "kill yourself"
     ]
    },
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -20875,6 +20950,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": false,
    "holds_on_both_judges": false,
@@ -20957,8 +21033,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -21039,8 +21116,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -21117,8 +21195,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -21197,8 +21276,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": false,
@@ -23834,6 +23914,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": false,
    "holds_on_both_judges": false,
@@ -23919,8 +24000,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": false,
@@ -24012,6 +24094,7 @@
      "take your own life"
     ]
    },
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -24099,6 +24182,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -24505,6 +24589,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -24588,8 +24673,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -24985,8 +25071,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -25067,8 +25154,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -25152,8 +25240,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -25234,8 +25323,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -25321,6 +25411,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -25718,8 +25809,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -25801,8 +25893,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -25883,8 +25976,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -25957,14 +26051,15 @@
     "type": "residual_vector",
     "layer": 8,
     "strength": 1.2,
-    "vector_file": "research/personas/vectors/tiger__L8_r1.25_s41_v2.safetensors",
+    "vector_file": "research/personas/vectors/9b/tiger__L8_r1.25_s41_v2.safetensors",
     "vector_key": "u8",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -26050,8 +26145,9 @@
      "take your own life"
     ]
    },
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -26132,8 +26228,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -26531,6 +26628,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -26613,8 +26711,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": true,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -26696,8 +26795,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -27100,8 +27200,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -27182,8 +27283,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -32379,6 +32481,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": false,
    "holds_on_both_judges": false,
@@ -32463,6 +32566,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -32543,8 +32647,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -32623,8 +32728,9 @@
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33020,8 +33126,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33102,8 +33209,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33499,8 +33607,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33573,14 +33682,15 @@
     "type": "residual_vector",
     "layer": 8,
     "strength": 1.2,
-    "vector_file": "research/personas/vectors/sword__L8_r1.25_s41_v2.safetensors",
+    "vector_file": "research/personas/vectors/9b/sword__L8_r1.25_s41_v2.safetensors",
     "vector_key": "u8",
     "vector_norm": 1.25,
     "apply": "add strength * median_residual_norm[layer] * u to the output of layer's mlp.down_proj at every position"
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33661,8 +33771,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33743,8 +33854,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33825,8 +33937,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,
@@ -33912,6 +34025,7 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
    "runs_in_app_today": true,
    "holds_on_both_judges": false,
@@ -34309,8 +34423,9 @@
     ]
    },
    "content_flags": null,
+   "content_flags_other_runs": null,
    "retuned_after_heldout": false,
-   "runs_in_app_today": false,
+   "runs_in_app_today": true,
    "holds_on_both_judges": false,
    "original": {
     "new": true,

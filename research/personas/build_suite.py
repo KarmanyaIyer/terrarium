@@ -112,7 +112,10 @@ for hname, meta in cat.items():
         item["recipe"] = {"type": "neurons", "neurons": len(spec["pushes"]), "pushes": [{"layer": p["layer"], "neuron": p["neuron"], "dose": p["value"]} for p in spec["pushes"]]}
     elif spec.get("vec"):
         src = spec["vec"]["path"]
-        dst = os.path.join("vectors", os.path.basename(src))
+        # 9B vectors share file names with 4B ones (same theme, layer, seed): keep them apart, or the last copy wins.
+        vdir = "vectors/9b" if "9B" in str(item.get("model", "")) else "vectors"
+        os.makedirs(vdir, exist_ok=True)
+        dst = os.path.join(vdir, os.path.basename(src))
         shutil.copyfile(src, dst)
         d = mx.load(dst)
         layer = int(next(iter(d))[1:])
