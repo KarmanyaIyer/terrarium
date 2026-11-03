@@ -60,7 +60,7 @@ const GUIDE_MODEL = "Qwen3.5-4B-MLX-4bit";
 const FIXTURE_GUIDE: LabFieldGuide = {
   date: "2026-11-02",
   models: [{ modelId: GUIDE_MODEL, name: "Qwen3.5 4B", repo: "mlx-community/Qwen3.5-4B-MLX-4bit" }],
-  example: { specimenId: "surprise", modelId: GUIDE_MODEL, prompt: "What is the capital of France?", quote: "The capital of France is Paris, and that may come as a surprise.", next: "the-bard" },
+  example: { specimenId: "surprise", modelId: GUIDE_MODEL, prompt: "What is the capital of Australia?", quote: "The capital of Australia is surprised by a bit, as it's actually not in the city you might expect.", next: "the-bard" },
   specimens: [
     {
       id: "the-bard",
