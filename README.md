@@ -268,7 +268,7 @@ Settings.
 Saved as a strain, a recipe is a model in the chat and eval pickers. Strains run on the Lab's copy of the base model,
 one request at a time (44 tok/s on the 4B), so parallel eval cases on a strain queue instead of batching. A strain
 always runs with thinking off, no system prompt, and the temperature, top_p and repeat penalty its numbers were measured
-with: vectors have no repeat penalty, neurons 1.1. Field Guide and grown strains also stop at 300 tokens. Through a real
+with: vectors on Qwen and neurons use repeat penalty 1.1, LFM3 vectors none. Field Guide and grown strains also stop at 300 tokens. Through a real
 chat session on Qwen3.5 4B, 24 replies each by the automatic rules, Surprise! held in 24 and The Bard in 23 of the first
 120 tokens, in line with 135 and 137 of 144 in the search. Longer replies loop more: 21 and 22 of 24 still read as text at
 about 300 tokens, 20 and 16 at full length. That is why a Field Guide entry shows two rates: In Compare for short replies,

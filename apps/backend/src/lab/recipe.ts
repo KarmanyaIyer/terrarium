@@ -69,15 +69,20 @@ export function vectorLength(u: string): number {
 }
 
 /**
- * What a strain runs with when none were stored. Neurons were tuned with the repeat penalty on. Vectors were only ever
- * measured with it off, and dense vectors with a penalty are untested, so a mix with a vector runs without.
+ * Repeat penalty for a mix with a vector. On Qwen it stops vectors looping in a chat (The Bard 75 to 96, The Big Sleep
+ * 48 to 92, 300 tokens, no system prompt). LFM3 vectors hold without it (79 to 88) and were never measured with it.
  */
-export function defaultSettings(pushes: LabMixItem[]): LabStrainSettings {
-  return { temperature: 0.7, topP: 0.95, repeat: pushes.some(isVector) ? null : 1.1 };
+export function vectorRepeat(modelId: string): number | null {
+  return /qwen/i.test(modelId) ? 1.1 : null;
 }
 
-export function checkSettings(v: unknown, pushes: LabMixItem[]): LabStrainSettings {
-  if (v === undefined || v === null) return defaultSettings(pushes);
+/** What a strain runs with when none were stored. Neurons were tuned with the repeat penalty on. */
+export function defaultSettings(pushes: LabMixItem[], modelId: string): LabStrainSettings {
+  return { temperature: 0.7, topP: 0.95, repeat: pushes.some(isVector) ? vectorRepeat(modelId) : 1.1 };
+}
+
+export function checkSettings(v: unknown, pushes: LabMixItem[], modelId: string): LabStrainSettings {
+  if (v === undefined || v === null) return defaultSettings(pushes, modelId);
   const { temperature, topP, repeat, maxTokens } = v as Record<string, unknown>;
   if (typeof temperature !== "number" || !(temperature >= 0 && temperature <= 2)) throw new HttpError(400, "settings.temperature must be 0 to 2");
   if (typeof topP !== "number" || !(topP > 0 && topP <= 1)) throw new HttpError(400, "settings.topP must be above 0, up to 1");

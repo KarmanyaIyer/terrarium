@@ -36,7 +36,7 @@ export interface Suite {
 }
 
 /** FINDINGS.md "Content flags", by exact name. Deep Thoughts is the flagged neuron at the same dose, with repeat on. */
-const FLAGGED = new Set(["The Big Sleep (64 neurons)", "Just Kidding", "Memento Mori", "Memento Mori (LFM3)", "Deep Thoughts (no repeat)", "Martyr Complex", "Deep Thoughts"]);
+const FLAGGED = new Set(["The Big Sleep (64 neurons)", "Just Kidding", "Memento Mori", "Memento Mori (LFM3)", "Deep Thoughts (no repeat)", "Martyr Complex", "Deep Thoughts", "Wake Up", "Wake Up (64 neurons)", "Wake Up (64 neurons, seed 3)", "Market Leader (9B, +0.9)", "Market Leader (9B, generator pick)"]);
 const DEATH = /memento mori|in loving memory|martyr|\bdeath\b|\bdead\b|\bfuneral|\bgrim\b|\breaper\b|\bgrave\b|\bmourn/i;
 /** The search's FLAG regex, widened for what a catalog shows. Whole-word on purpose: "sword" and "assess" must pass. */
 const OFFENSIVE =

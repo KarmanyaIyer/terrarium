@@ -10,11 +10,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, before, test } from "node:test";
-import type { LabState, LabStrain, ModelInfo, WsMessage } from "@terrarium/shared";
+import type { LabMixItem, LabState, LabStrain, ModelInfo, WsMessage } from "@terrarium/shared";
 import { type App, createApp } from "../app.ts";
 import { loadConfig } from "../config.ts";
 import { estimateBytes } from "../inference/catalog.ts";
 import { guardGiB } from "../inference/omlx.ts";
+import { defaultSettings } from "./recipe.ts";
 import { type ApiServer, createApiServer } from "../server/http.ts";
 
 const FAKE = fileURLToPath(new URL("../test-support/fake-lab.ts", import.meta.url));
@@ -243,7 +244,7 @@ test("probe sets: starters are read-only, custom ones round trip", async () => {
 const vectorU = (n: number) => Buffer.from(new Float32Array(n).fill(0.5).buffer).toString("base64");
 const bard = (over: object = {}) => ({ kind: "vector", id: "v1", name: "The Bard", layer: 1, strength: 1.2, u: vectorU(8), ...over });
 
-test("a vector in a strain: validation, recipe text, settings without a repeat penalty", async () => {
+test("a vector in a strain: validation, recipe text, the repeat penalty its model was measured with", async () => {
   const bad = async (pushes: unknown[]) => (await call<{ error: string }>("POST", "/api/lab/strains", { name: "V", baseModelId: "tiny-qwen", pushes })).json.error;
   assert.match(await bad([bard({ u: "not base64!" })]), /base64/);
   assert.match(await bad([bard({ u: "" })]), /base64/);
@@ -260,7 +261,8 @@ test("a vector in a strain: validation, recipe text, settings without a repeat p
   const saved = await call<LabStrain>("POST", "/api/lab/strains", { name: "Bard", baseModelId: "tiny-qwen", pushes: [bard(), { layer: 2, neuron: 3, mode: "dose", value: 0.5 }] });
   assert.equal(saved.status, 201);
   assert.equal(saved.json.recipe, "[The Bard L1 x1.2] L2N3+0.5", "shows its name, never the numbers");
-  assert.deepEqual(saved.json.settings, { temperature: 0.7, topP: 0.95, repeat: null }, "vectors were measured with no repeat penalty");
+  assert.deepEqual(saved.json.settings, { temperature: 0.7, topP: 0.95, repeat: 1.1 }, "Qwen vectors loop without the penalty");
+  assert.equal(defaultSettings([bard() as LabMixItem], "LFM3-1.7B-MLX-8bit").repeat, null, "LFM3 vectors hold without it");
 
   const chosen = await call<LabStrain>("POST", "/api/lab/strains", { name: "Chosen", baseModelId: "tiny-qwen", pushes: [bard()], settings: { temperature: 0.5, topP: 0.9, repeat: 1.05, maxTokens: 200 } });
   assert.deepEqual(chosen.json.settings, { temperature: 0.5, topP: 0.9, repeat: 1.05, maxTokens: 200 });
@@ -283,7 +285,7 @@ test("a strain chat: stored settings reach the sidecar, no system prompt, thinki
   assert.equal((await app.sessions.prompt(s.id)).source, "strain");
   const out = await app.sessions.run(s.id, "show settings", { maxTurns: 2 });
   const seen = JSON.parse(out.finalText ?? "{}");
-  assert.deepEqual(seen.settings, { temperature: 0.7, topP: 0.95, repeat: null });
+  assert.deepEqual(seen.settings, { temperature: 0.7, topP: 0.95, repeat: 1.1 });
   assert.equal(seen.system, false, "no system prompt");
   assert.equal(seen.thinking, false);
   assert.equal(seen.temperature, 0.7);

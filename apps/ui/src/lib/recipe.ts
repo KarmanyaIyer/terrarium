@@ -19,6 +19,11 @@ export const pushKey = (p: LabMixItem) => (isVector(p) ? `vector:${p.id}` : nid(
 /** What to call an entry of a mix. */
 export const pushName = (p: LabMixItem) => (isVector(p) ? p.name : nid(p));
 /** Numbers a vector holds, from its base64. */
+/** Repeat penalty for a vector, as the backend's defaultSettings: Qwen vectors loop without it, LFM3's hold and were never measured with it. */
+export function vectorRepeat(modelId: string): number | null {
+  return /qwen/i.test(modelId) ? 1.1 : null;
+}
+
 export function vectorLength(u: string): number {
   const pad = u.endsWith("==") ? 2 : u.endsWith("=") ? 1 : 0;
   return ((u.length / 4) * 3 - pad) / 4;

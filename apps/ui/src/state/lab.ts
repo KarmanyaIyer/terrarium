@@ -31,7 +31,7 @@ import type {
 } from "@terrarium/shared";
 import type { LabApi } from "../api/lab";
 import { doseScale, firstDivergence, gridSlots, hasWord, pushesAt, scaled, targetName, zoomBetween, type SweepTarget, type WordPick } from "../lib/labGrid";
-import { findPush, isNeuron, isVector, nid, pushKey, pushName, sameRef } from "../lib/recipe";
+import { findPush, isNeuron, isVector, nid, pushKey, pushName, sameRef, vectorRepeat } from "../lib/recipe";
 import { diffKeys } from "../lib/undo";
 import { openSession, openView, toast, useStore } from "./store";
 import { undoStack, undoable } from "./undo";
@@ -1276,8 +1276,10 @@ export function restoreHistory(e: LabHistoryEntry) {
 
 // ---------- grow ----------
 
-/** What a grown vector was tested with: the search's settings, thinking off, no repeat control, and the Field Guide's cap. */
-const GROWN_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: null, maxTokens: 300 };
+/** What a grown vector runs with: the search's settings, thinking off, its model's repeat control and the Field Guide's cap. */
+function grownSettings(modelId: string): LabStrainSettings {
+  return { temperature: 0.7, topP: 0.95, repeat: vectorRepeat(modelId), maxTokens: 300 };
+}
 
 export async function startGrow() {
   const description = get().growText.trim();
@@ -1302,7 +1304,7 @@ export async function dismissGrow() {
 
 function growOnBench(g: LabGrow, prompt: string) {
   const v = g.result!.vector;
-  labelled(`Added ${v.name} to the mix`, () => set({ mix: [{ ...v }], scale: 1, prompt, tab: "steer", temperature: GROWN_SETTINGS.temperature, repeat: 1, thinking: false, sweepTarget: "mix", sweepRange: v.strength > 2 ? 4 : 2 }));
+  labelled(`Added ${v.name} to the mix`, () => set({ mix: [{ ...v }], scale: 1, prompt, tab: "steer", temperature: grownSettings(g.modelId).temperature, repeat: vectorRepeat(g.modelId) ?? 1, thinking: false, sweepTarget: "mix", sweepRange: v.strength > 2 ? 4 : 2 }));
 }
 
 export async function growToMix(g: LabGrow) {
@@ -1321,7 +1323,7 @@ export async function growSeeds(g: LabGrow) {
 
 export async function keepGrown(g: LabGrow) {
   const r = g.result!;
-  const st = await callToast("Keep as strain", (l) => l.saveStrain({ name: r.name, baseModelId: g.modelId, pushes: [r.vector], settings: GROWN_SETTINGS, notes: `Grown from "${r.description}". ${r.verdict.text}` }));
+  const st = await callToast("Keep as strain", (l) => l.saveStrain({ name: r.name, baseModelId: g.modelId, pushes: [r.vector], settings: grownSettings(g.modelId), notes: `Grown from "${r.description}". ${r.verdict.text}` }));
   if (!st) return;
   putStrain(st);
   undoable({

@@ -86,7 +86,7 @@ interface ProbeSetRow {
 
 function strainOf(r: StrainRow): LabStrain {
   const pushes = JSON.parse(r.pushes_json) as LabMixItem[];
-  const settings = r.settings_json ? JSON.parse(r.settings_json) : defaultSettings(pushes);
+  const settings = r.settings_json ? JSON.parse(r.settings_json) : defaultSettings(pushes, r.base_model_id);
   return { id: r.id, name: r.name, baseModelId: r.base_model_id, pushes, recipe: formatRecipe(pushes), settings, notes: r.notes, createdAt: r.created_at, updatedAt: r.updated_at };
 }
 
@@ -778,7 +778,7 @@ export class LabService implements LabHooks {
     const pushes = checkPushes(b.pushes);
     if (!pushes.length) throw new HttpError(400, "A strain needs at least one neuron or vector");
     this.checkAgainstModel(b.baseModelId, pushes);
-    const settings = checkSettings(b.settings, pushes);
+    const settings = checkSettings(b.settings, pushes, b.baseModelId);
     const notes = typeof b.notes === "string" ? b.notes.slice(0, 4000) : "";
     const id = restoredId(b.id, "strain");
     if (this.strain(id)) throw new HttpError(409, `strain ${id} already exists`);
@@ -798,7 +798,7 @@ export class LabService implements LabHooks {
     if (!pushes.length) throw new HttpError(400, "A strain needs at least one neuron or vector");
     this.checkAgainstModel(cur.baseModelId, pushes);
     // New pushes without settings: what the new mix was measured with, unless the settings had been chosen for it.
-    const settings = p.settings !== undefined ? checkSettings(p.settings, pushes) : pushes.some(isVector) !== cur.pushes.some(isVector) ? defaultSettings(pushes) : cur.settings;
+    const settings = p.settings !== undefined ? checkSettings(p.settings, pushes, cur.baseModelId) : pushes.some(isVector) !== cur.pushes.some(isVector) ? defaultSettings(pushes, cur.baseModelId) : cur.settings;
     const notes = p.notes !== undefined ? String(p.notes).slice(0, 4000) : cur.notes;
     const now = Math.max(Date.now(), cur.updatedAt + 1);
     this.store.run("UPDATE lab_strains SET name = ?, pushes_json = ?, settings_json = ?, notes = ?, updated_at = ? WHERE id = ?", n, JSON.stringify(pushes), JSON.stringify(settings), notes, now, id);

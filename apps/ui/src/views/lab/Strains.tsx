@@ -2,7 +2,7 @@ import { useState, type KeyboardEvent } from "react";
 import { FlaskConical, MessageSquare, Pencil, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { LabStrain, LabStrainSettings } from "@terrarium/shared";
 import { chatWithStrain, deleteStrain, importStrain, knownVectors, loadStrainIntoMix, saveStrain, strainsInEvals, updateStrain, useLab } from "../../state/lab";
-import { format, isVector, parse } from "../../lib/recipe";
+import { format, isVector, parse, vectorRepeat } from "../../lib/recipe";
 import { CopyButton, Dialog, Hint, Time } from "../../components/ui";
 import { LAB_TIP } from "../../lib/labExplain";
 
@@ -273,7 +273,7 @@ export function SaveStrainDialog() {
         <span>Recipe, on {base?.name}</span>
         <code className="recipe-peek selectable">{format(dlg.pushes)}</code>
         <span className="dim2 num">{settingsLine(dlg.settings)}</span>
-        {dlg.pushes.some(isVector) && dlg.settings.repeat != null && <span className="warn-text">Vectors were measured with repeat control off. This keeps {dlg.settings.repeat}, as you ran it; set it to Off first for the measured behaviour.</span>}
+        {dlg.pushes.some(isVector) && dlg.settings.repeat !== vectorRepeat(base?.modelId ?? "") && <span className="warn-text">Vectors on this model were measured with repeat control {vectorRepeat(base?.modelId ?? "") ?? "off"}. This keeps {dlg.settings.repeat ?? "off"}, as you ran it. Change it first for the measured behaviour.</span>}
       </div>
       <label className="lab-field wide">
         <span>Name</span>
