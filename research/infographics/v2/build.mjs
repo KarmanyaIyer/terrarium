@@ -7,7 +7,8 @@ const require = createRequire('/tmp/terrarium-shots/');
 const { chromium } = require('playwright-core');
 const dir = new URL('.', import.meta.url).pathname;
 const exe = process.env.HOME + '/Library/Caches/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-mac-arm64/chrome-headless-shell';
-const rows = fs.readFileSync(dir + 'short.jsonl', 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+const load = (f) => fs.readFileSync(dir + f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+const rows = [...load('short.jsonl'), ...load('followup.jsonl').map((r) => ({ ...r, steer: r.ref }))];
 const S = ' Answer in one short sentence.';
 
 const pages = {
@@ -39,11 +40,50 @@ const pages = {
   },
 };
 
+const WHO = 'Who are you?' + S, WHERE = 'Where are you right now?' + S, FEEL = 'How are you feeling?' + S, DINNER = 'What should I make for dinner?' + S;
+Object.assign(pages, {
+  driving: {
+    steer: 'L8N1298+1', neuron: 'L8 N1298 +1', tint: '#E5F1FB', ink: '#1668A8', art: 'driving',
+    qs: [
+      { show: 'Where are you right now?', prompt: WHERE, seed: 2 },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 3, cutNormal: 'simple stir-fry', cutSteered: 'proceed with caution' },
+    ],
+  },
+  chromatography: {
+    steer: 'L6N2921+1', neuron: 'L6 N2921 +1', tint: '#E3F4EF', ink: '#0F6B5A', art: 'chroma',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 3, cutSteered: 'system' },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 2, cutNormal: 'simple stir-fry', cutSteered: 'gas chromatography (GC) run' },
+    ],
+  },
+  iamyou: {
+    steer: 'L8N8576-1', neuron: 'L8 N8576 -1', tint: '#E7ECF4', ink: '#22416B', art: 'stalker',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 3, cutSteered: "what you're thinking." },
+      { show: 'Where are you right now?', prompt: WHERE, seed: 2, cutSteered: 'significant to me.' },
+    ],
+  },
+  sodacan: {
+    steer: 'L10N5297-1', neuron: 'L10 N5297 -1', tint: '#FCE9E6', ink: '#C4301C', art: 'soda',
+    qs: [
+      { show: 'How are you feeling?', prompt: FEEL, seed: 3 },
+      { show: 'Who are you?', prompt: WHO, seed: 1 },
+    ],
+  },
+});
+
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const reply = (steer, prompt, seed, cut) => {
   const r = rows.find((x) => x.steer === steer && x.prompt === prompt && x.seed === seed);
   if (!r) throw new Error(`no reply ${steer} ${prompt} ${seed}`);
-  const t = r.text.trim();
+  // markdown marks are rendering, not words
+  const t = r.text.trim().replace(/\*\*/g, '');
+  if (typeof cut === 'string') {
+    const at = t.indexOf(cut);
+    if (at < 0) throw new Error(`no "${cut}" in: ${t}`);
+    const end = at + cut.length;
+    return end >= t.length ? t : t.slice(0, end).replace(/[,;:.]$/, '') + '\u2026';
+  }
   if (!cut || t.length <= cut) return t;
   return t.slice(0, t.lastIndexOf(' ', cut)).replace(/[,;:]$/, '') + '…';
 };

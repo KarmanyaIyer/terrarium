@@ -16,3 +16,7 @@ Model Qwen3.5 4B, temperature 0.7, repeat 1.1, up to 40 tokens. Prompts end with
 Checked 3 Nov 2026: X searches by subject and by neuron id in several spellings, and neuronary.org. No match for these neurons. Neuronary has an ALL CAPS neuron tagged shouting (L17N1991), which is a different neuron and effect.
 
 `v2/discover.mjs` is the blind sweep of random neurons. `v2/verify_seeds.mjs` is the extra seed check.
+
+## Blind sweep finds
+
+From 2,400 random neurons (`v2/discover.jsonl`), retested in `v2/followup.jsonl` (seeds 1 to 3) and `v2/finds.jsonl` (seeds 4 to 9). Images: `v2/driving.png`, `v2/chromatography.png`, `v2/iamyou.png`, `v2/sodacan.png`. Parallel Codex image runs can return the same file, so check hashes or run them one at a time.
