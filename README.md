@@ -44,7 +44,7 @@ Deleting: what can come back gets an Undo toast, with Cmd+Z (a stopped session, 
 (an enclosure, a model, a running session). Never both. Edit > Undo and Redo reach the same stack when no text field
 has focus; in a field they stay the field's own.
 
-![Home: a task, things to try, the shelf and recent sessions](docs/screenshots/home.png)
+![Home: a task, things to try, enclosures and recent sessions](docs/screenshots/home.png)
 
 ## Architecture
 
@@ -215,7 +215,7 @@ the next steps: trace it, test it across seeds, use the recipe, save it as a str
 ask why that word is there. Cmd+Z and Cmd+Shift+Z undo and redo Lab edits, deleted strains and probe sets, settings,
 renames and deleted sessions (for 30 seconds); inside a text field Cmd+Z stays the field's own.
 
-![Lab: Find, with a new character](docs/screenshots/lab-grow.png)
+![Lab: Find](docs/screenshots/lab-grow.png)
 
 A dose of `L22N4296+0.6` adds 0.6 times the typical size of the residual stream after layer 22, along that
 neuron's output direction, at every token. On Qwen3.5 and Bonsai 0.5 to 1.0 is the useful range, and past about 1.5
@@ -273,7 +273,6 @@ chat session on Qwen3.5 4B, 24 replies each by the automatic rules, Surprise hel
 120 tokens, in line with 135 and 137 of 144 in the search. Longer replies loop more: 21 and 22 of 24 still read as text at
 about 300 tokens, 20 and 16 at full length. That is why Examples shows the rate at up to 300 tokens.
 
-![A chat with a strain](docs/screenshots/lab-strain-chat.png)
 
 Memory: the Lab's copy counts against the same memory ceiling as oMLX. Its estimate is the weights plus 0.75 GB
 plus 5 KB per neuron for probe captures (Qwen3.5 4B: 4.8 GB, Gemma 4 12B: 11.3 GB). A load that doesn't fit next

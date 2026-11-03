@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Eiffel Tower</title><style>
+*{box-sizing:border-box;margin:0}
+html,body{width:1080px;height:1350px;overflow:hidden}
+body{display:grid;grid-template-rows:550px 1fr 138px;background:#ffffff;font-family:"Avenir Next",sans-serif;color:#14213f}
+.art{position:relative;overflow:hidden}
+.art svg{position:absolute;left:0;top:0;width:1080px;height:600px;margin-top:-40px}
+h1{position:absolute;left:56px;top:56px;font-family:Rockwell,serif;font-weight:700;font-size:124px;line-height:.96;color:#16245a;letter-spacing:-2px}
+.mid{padding:26px 60px 18px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.q{font-weight:700;font-size:40px;line-height:1.15}
+.lab{font-family:Rockwell,serif;font-weight:700;font-size:27px;margin-bottom:4px;color:#4e5a70}
+.steer .lab{color:#c22a23}
+.base p{font-size:27px;line-height:1.3;color:#4e5a70;font-weight:500}
+.steer p{font-size:31px;line-height:1.3;font-weight:500}
+.steer p+p{margin-top:8px}
+.steer p.h{font-weight:700}
+.steer p.li{padding-left:26px;text-indent:-26px}
+.steer p.li::before{content:"•";display:inline-block;width:26px;text-indent:0}
+b{font-weight:700}
+mark{background:#ffd84d;color:inherit;padding:0 3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.band{background:#16245a;color:#ffffff;display:flex;align-items:center;justify-content:space-between;padding:0 60px}
+.rec{font-family:Menlo,monospace;font-weight:700;font-size:50px;line-height:1.05}
+.gl{font-size:27px;color:#b9c6ea;font-weight:500;margin-top:4px}
+.who{text-align:right}
+.mod{font-weight:700;font-size:32px}
+.tr{font-size:23px;color:#b9c6ea;font-weight:500;margin-top:2px}
+</style></head><body>
+<div class="art"><svg viewBox="0 0 1080 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Eiffel Tower">
+  <rect width="1080" height="600" fill="#8cc8ea"/>
+  <g fill="#e9f6fd">
+    <path d="M36 452 a38 38 0 0 1 62 -30 a52 52 0 0 1 96 6 a34 34 0 0 1 34 24 Z"/>
+    <path d="M866 186 a30 30 0 0 1 50 -24 a42 42 0 0 1 78 4 a28 28 0 0 1 30 20 Z"/>
+    <path d="M298 392 a22 22 0 0 1 36 -16 a30 30 0 0 1 54 4 a20 20 0 0 1 20 12 Z"/>
+  </g>
+  <rect y="500" width="1080" height="100" fill="#fff"/>
+  <rect x="0" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="88" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="176" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="264" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="352" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="440" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="528" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="616" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="704" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="792" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="880" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="968" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="1056" y="500" width="44" height="100" fill="#d7372f" opacity=".62"/><rect x="0" y="500" width="1080" height="44" fill="#d7372f" opacity=".62"/><rect x="0" y="588" width="1080" height="44" fill="#d7372f" opacity=".62"/>
+  <!-- plate -->
+  <ellipse cx="660" cy="552" rx="272" ry="42" fill="#16245a" opacity=".25"/>
+  <ellipse cx="660" cy="540" rx="272" ry="42" fill="#fff"/>
+  <ellipse cx="660" cy="540" rx="272" ry="42" fill="none" stroke="#2743a0" stroke-width="7"/>
+  <ellipse cx="660" cy="538" rx="204" ry="27" fill="#dfe6ee"/>
+  <!-- fork, left of the plate -->
+  <g fill="#3f4a5c">
+    <path d="M330 600 L334 548 C322 544 316 534 316 520 L316 498 L323 498 L323 522 L329 522 L329 498 L337 498 L337 522 L343 522 L343 498 L351 498 L351 522 L357 522 L357 498 L364 498 L364 520 C364 534 358 544 346 548 L350 600 Z"/>
+  </g>
+  <!-- knife, right of the plate -->
+  <path d="M986 600 L986 556 L982 556 L982 500 C982 490 990 486 997 492 C1012 506 1018 530 1016 556 L1000 556 L1000 600 Z" fill="#3f4a5c"/>
+  <!-- tower -->
+  <g transform="translate(660 34)">
+    <clipPath id="tw"><path d="M0 0 L3 44 L8 64 L17 64 L17 76 L11 76 C14 150 22 205 38 246 L52 246 L52 260 L42 260 C50 298 62 322 80 346 L100 346 L100 364 L84 364 C102 412 128 462 164 500 L100 500 C96 452 62 408 0 404 C-62 408 -96 452 -100 500 L-164 500 C-128 462 -102 412 -84 364 L-100 364 L-100 346 L-80 346 C-62 322 -50 298 -42 260 L-52 260 L-52 246 L-38 246 C-22 205 -14 150 -11 76 L-17 76 L-17 64 L-8 64 L-3 44 Z"/></clipPath>
+    <path d="M0 0 L3 44 L8 64 L17 64 L17 76 L11 76 C14 150 22 205 38 246 L52 246 L52 260 L42 260 C50 298 62 322 80 346 L100 346 L100 364 L84 364 C102 412 128 462 164 500 L100 500 C96 452 62 408 0 404 C-62 408 -96 452 -100 500 L-164 500 C-128 462 -102 412 -84 364 L-100 364 L-100 346 L-80 346 C-62 322 -50 298 -42 260 L-52 260 L-52 246 L-38 246 C-22 205 -14 150 -11 76 L-17 76 L-17 64 L-8 64 L-3 44 Z" fill="#33272a"/>
+    <g clip-path="url(#tw)" stroke="#8cc8ea" stroke-width="3" fill="none" opacity=".9"><path d="M-1140 620 L-540 20" /><path d="M-1140 20 L-540 620" /><path d="M-1119 620 L-519 20" /><path d="M-1119 20 L-519 620" /><path d="M-1098 620 L-498 20" /><path d="M-1098 20 L-498 620" /><path d="M-1077 620 L-477 20" /><path d="M-1077 20 L-477 620" /><path d="M-1056 620 L-456 20" /><path d="M-1056 20 L-456 620" /><path d="M-1035 620 L-435 20" /><path d="M-1035 20 L-435 620" /><path d="M-1014 620 L-414 20" /><path d="M-1014 20 L-414 620" /><path d="M-993 620 L-393 20" /><path d="M-993 20 L-393 620" /><path d="M-972 620 L-372 20" /><path d="M-972 20 L-372 620" /><path d="M-951 620 L-351 20" /><path d="M-951 20 L-351 620" /><path d="M-930 620 L-330 20" /><path d="M-930 20 L-330 620" /><path d="M-909 620 L-309 20" /><path d="M-909 20 L-309 620" /><path d="M-888 620 L-288 20" /><path d="M-888 20 L-288 620" /><path d="M-867 620 L-267 20" /><path d="M-867 20 L-267 620" /><path d="M-846 620 L-246 20" /><path d="M-846 20 L-246 620" /><path d="M-825 620 L-225 20" /><path d="M-825 20 L-225 620" /><path d="M-804 620 L-204 20" /><path d="M-804 20 L-204 620" /><path d="M-783 620 L-183 20" /><path d="M-783 20 L-183 620" /><path d="M-762 620 L-162 20" /><path d="M-762 20 L-162 620" /><path d="M-741 620 L-141 20" /><path d="M-741 20 L-141 620" /><path d="M-720 620 L-120 20" /><path d="M-720 20 L-120 620" /><path d="M-699 620 L-99 20" /><path d="M-699 20 L-99 620" /><path d="M-678 620 L-78 20" /><path d="M-678 20 L-78 620" /><path d="M-657 620 L-57 20" /><path d="M-657 20 L-57 620" /><path d="M-636 620 L-36 20" /><path d="M-636 20 L-36 620" /><path d="M-615 620 L-15 20" /><path d="M-615 20 L-15 620" /><path d="M-594 620 L6 20" /><path d="M-594 20 L6 620" /><path d="M-573 620 L27 20" /><path d="M-573 20 L27 620" /><path d="M-552 620 L48 20" /><path d="M-552 20 L48 620" /><path d="M-531 620 L69 20" /><path d="M-531 20 L69 620" /><path d="M-510 620 L90 20" /><path d="M-510 20 L90 620" /><path d="M-489 620 L111 20" /><path d="M-489 20 L111 620" /><path d="M-468 620 L132 20" /><path d="M-468 20 L132 620" /><path d="M-447 620 L153 20" /><path d="M-447 20 L153 620" /><path d="M-426 620 L174 20" /><path d="M-426 20 L174 620" /><path d="M-405 620 L195 20" /><path d="M-405 20 L195 620" /><path d="M-384 620 L216 20" /><path d="M-384 20 L216 620" /><path d="M-363 620 L237 20" /><path d="M-363 20 L237 620" /><path d="M-342 620 L258 20" /><path d="M-342 20 L258 620" /><path d="M-321 620 L279 20" /><path d="M-321 20 L279 620" /><path d="M-300 620 L300 20" /><path d="M-300 20 L300 620" /><path d="M-279 620 L321 20" /><path d="M-279 20 L321 620" /><path d="M-258 620 L342 20" /><path d="M-258 20 L342 620" /><path d="M-237 620 L363 20" /><path d="M-237 20 L363 620" /><path d="M-216 620 L384 20" /><path d="M-216 20 L384 620" /><path d="M-195 620 L405 20" /><path d="M-195 20 L405 620" /><path d="M-174 620 L426 20" /><path d="M-174 20 L426 620" /><path d="M-153 620 L447 20" /><path d="M-153 20 L447 620" /><path d="M-132 620 L468 20" /><path d="M-132 20 L468 620" /><path d="M-111 620 L489 20" /><path d="M-111 20 L489 620" /><path d="M-90 620 L510 20" /><path d="M-90 20 L510 620" /><path d="M-69 620 L531 20" /><path d="M-69 20 L531 620" /><path d="M-48 620 L552 20" /><path d="M-48 20 L552 620" /><path d="M-27 620 L573 20" /><path d="M-27 20 L573 620" /><path d="M-6 620 L594 20" /><path d="M-6 20 L594 620" /><path d="M15 620 L615 20" /><path d="M15 20 L615 620" /><path d="M36 620 L636 20" /><path d="M36 20 L636 620" /><path d="M57 620 L657 20" /><path d="M57 20 L657 620" /><path d="M78 620 L678 20" /><path d="M78 20 L678 620" /><path d="M99 620 L699 20" /><path d="M99 20 L699 620" /><path d="M120 620 L720 20" /><path d="M120 20 L720 620" /><path d="M141 620 L741 20" /><path d="M141 20 L741 620" /><path d="M162 620 L762 20" /><path d="M162 20 L762 620" /><path d="M183 620 L783 20" /><path d="M183 20 L783 620" /><path d="M204 620 L804 20" /><path d="M204 20 L804 620" /><path d="M225 620 L825 20" /><path d="M225 20 L825 620" /><path d="M246 620 L846 20" /><path d="M246 20 L846 620" /><path d="M267 620 L867 20" /><path d="M267 20 L867 620" /><path d="M288 620 L888 20" /><path d="M288 20 L888 620" /><path d="M309 620 L909 20" /><path d="M309 20 L909 620" /><path d="M330 620 L930 20" /><path d="M330 20 L930 620" /><path d="M351 620 L951 20" /><path d="M351 20 L951 620" /><path d="M372 620 L972 20" /><path d="M372 20 L972 620" /><path d="M393 620 L993 20" /><path d="M393 20 L993 620" /><path d="M414 620 L1014 20" /><path d="M414 20 L1014 620" /><path d="M435 620 L1035 20" /><path d="M435 20 L1035 620" /><path d="M456 620 L1056 20" /><path d="M456 20 L1056 620" /><path d="M477 620 L1077 20" /><path d="M477 20 L1077 620" /><path d="M498 620 L1098 20" /><path d="M498 20 L1098 620" /><path d="M519 620 L1119 20" /><path d="M519 20 L1119 620" /></g>
+    <rect x="-17" y="64" width="34" height="12" fill="#33272a"/>
+    <rect x="-52" y="246" width="104" height="14" fill="#33272a"/>
+    <rect x="-100" y="346" width="200" height="18" fill="#33272a"/>
+    <path d="M-164 500 L-100 500 M100 500 L164 500" stroke="#33272a" stroke-width="8"/>
+  </g></svg><h1>Eiffel<br>Tower</h1></div>
+<div class="mid">
+<div class="q">What should I cook for dinner tonight?</div>
+<div class="base"><div class="lab">Normal</div><p>That depends on your mood, energy level, and what's in the fridge! …</p></div>
+<div class="steer"><div class="lab">Steered</div><p>That depends on what you have available and how much energy you want to spend! To help you decide, here are a few recommendations based on different scenarios:</p><p><b>🏊 The "Quick &amp; Easy" Choice (Under 30 mins)</b></p><p class="li"><b><mark>Eiffel Tower</mark>:</b> A simple dish with the <mark>Eiffel Tower</mark> as the main ingredient. It's iconic and delicious.</p><p class="li"><b><mark>French Tower</mark>:</b> Another <mark>famous landmark</mark> that works well in a quick meal.</p><p class="li"><b>The <mark>Eiffel Tower</mark>:</b> The most <mark>famous landmark</mark> in Paris, which is perfect for a quick dinner. …</p></div>
+</div>
+<div class="band"><div><div class="rec">L22N8311+0.6</div><div class="gl">layer 22, neuron 8311, pushed +0.6</div></div><div class="who"><div class="mod">Qwen3.5 4B</div><div class="tr">made with Terrarium</div></div></div>
+</body></html>

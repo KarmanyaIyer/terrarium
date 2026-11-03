@@ -1,0 +1,80 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Pets</title><style>
+*{box-sizing:border-box;margin:0}
+html,body{width:1080px;height:1350px;overflow:hidden}
+body{display:grid;grid-template-rows:550px 1fr 138px;background:#dff5ef;font-family:"Avenir Next",sans-serif;color:#10302f}
+.art{position:relative;overflow:hidden}
+.art svg{position:absolute;left:0;top:0;width:1080px;height:600px;margin-top:-40px}
+h1{position:absolute;left:56px;top:56px;font-family:Rockwell,serif;font-weight:700;font-size:124px;line-height:.96;color:#0d4a48;letter-spacing:-2px}
+.mid{padding:26px 60px 18px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.q{font-weight:700;font-size:40px;line-height:1.15}
+.lab{font-family:Rockwell,serif;font-weight:700;font-size:27px;margin-bottom:4px;color:#47625f}
+.steer .lab{color:#0d6b67}
+.base p{font-size:27px;line-height:1.3;color:#47625f;font-weight:500}
+.steer p{font-size:33px;line-height:1.3;font-weight:500}
+.steer p+p{margin-top:8px}
+.steer p.h{font-weight:700}
+.steer p.li{padding-left:26px;text-indent:-26px}
+.steer p.li::before{content:"•";display:inline-block;width:26px;text-indent:0}
+b{font-weight:700}
+mark{background:#ffc93d;color:inherit;padding:0 3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.band{background:#0d4a48;color:#ffffff;display:flex;align-items:center;justify-content:space-between;padding:0 60px}
+.rec{font-family:Menlo,monospace;font-weight:700;font-size:50px;line-height:1.05}
+.gl{font-size:27px;color:#a8dcd2;font-weight:500;margin-top:4px}
+.who{text-align:right}
+.mod{font-weight:700;font-size:32px}
+.tr{font-size:23px;color:#a8dcd2;font-weight:500;margin-top:2px}
+</style></head><body>
+<div class="art"><svg viewBox="0 0 1080 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pets">
+  <rect width="1080" height="600" fill="#f6b92c"/>
+  <rect y="548" width="1080" height="52" fill="#d99a13"/>
+  <!-- flat bicycle wheel: round on top, tire squashed flat against the ground -->
+  <g transform="translate(910 424)">
+    <g stroke="#55524d" stroke-width="3"><line x1="0" y1="0" x2="118.0" y2="0.0"/><line x1="0" y1="0" x2="106.3" y2="51.2"/><line x1="0" y1="0" x2="73.6" y2="92.3"/><line x1="0" y1="0" x2="26.3" y2="115.0"/><line x1="0" y1="0" x2="-26.3" y2="115.0"/><line x1="0" y1="0" x2="-73.6" y2="92.3"/><line x1="0" y1="0" x2="-106.3" y2="51.2"/><line x1="0" y1="0" x2="-118.0" y2="0.0"/><line x1="0" y1="0" x2="-106.3" y2="-51.2"/><line x1="0" y1="0" x2="-73.6" y2="-92.3"/><line x1="0" y1="0" x2="-26.3" y2="-115.0"/><line x1="0" y1="0" x2="26.3" y2="-115.0"/><line x1="0" y1="0" x2="73.6" y2="-92.3"/><line x1="0" y1="0" x2="106.3" y2="-51.2"/></g>
+    <circle r="15" fill="#26211f"/>
+    <path d="M-118 66 C-156 -8 -134 -132 0 -132 C134 -132 156 -8 118 66 C112 80 128 106 150 122 L-150 122 C-128 106 -112 80 -118 66 Z" fill="none" stroke="#26211f" stroke-width="22" stroke-linejoin="round"/>
+    <path d="M-166 133 L166 133" stroke="#26211f" stroke-width="9" stroke-linecap="round"/>
+  </g>
+  <!-- cat, sitting under the title -->
+  <g transform="translate(232 44) scale(.92)">
+    <path d="M86 516 C150 520 176 470 158 420 C150 398 128 404 134 424 C142 456 120 484 80 480 Z" fill="#2a2831"/>
+    <path d="M-72 560 C-92 480 -74 400 -40 370 L40 370 C74 400 92 480 72 560 Z" fill="#2a2831"/>
+    <path d="M-68 276 L-74 196 L-22 232 C-8 228 8 228 22 232 L74 196 L68 276 C80 340 44 376 0 376 C-44 376 -80 340 -68 276 Z" fill="#2a2831"/>
+    <path d="M-60 214 L-34 234 L-60 256 Z M60 214 L34 234 L60 256 Z" fill="#ef7d94"/>
+    <ellipse cx="-30" cy="290" rx="19" ry="23" fill="#b9e24c"/><ellipse cx="30" cy="290" rx="19" ry="23" fill="#b9e24c"/>
+    <ellipse cx="-30" cy="290" rx="6" ry="19" fill="#26211f"/><ellipse cx="30" cy="290" rx="6" ry="19" fill="#26211f"/>
+    <path d="M-9 322 L9 322 L0 333 Z" fill="#ef7d94"/>
+    <path d="M-44 322 L-100 310 M-44 334 L-102 340 M44 322 L100 310 M44 334 L102 340" stroke="#d9d6e0" stroke-width="4" stroke-linecap="round"/>
+    <path d="M-30 520 L-30 560 M30 520 L30 560" stroke="#55535f" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <!-- dog -->
+  <g transform="translate(610 0) scale(.86) translate(-720 66)">
+    <path d="M610 330 C560 400 546 500 556 566 L884 566 C894 500 880 400 830 330 Z" fill="#c6622a"/>
+    <path d="M660 366 C650 430 666 500 720 530 C774 500 790 430 780 366 Z" fill="#fff0d2"/>
+    <rect x="630" y="470" width="82" height="110" rx="38" fill="#c6622a"/>
+    <rect x="728" y="470" width="82" height="110" rx="38" fill="#c6622a"/>
+    <path d="M720 500 L720 572" stroke="#7d3a17" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="668" cy="574" rx="54" ry="24" fill="#fff0d2"/>
+    <ellipse cx="772" cy="574" rx="54" ry="24" fill="#fff0d2"/>
+    <path d="M618 330 C670 376 770 376 822 330 L830 356 C772 404 668 404 610 356 Z" fill="#0f5a58"/>
+    <circle cx="720" cy="398" r="22" fill="#ffd25e" stroke="#26211f" stroke-width="5"/>
+    <path d="M552 214 C552 108 628 72 720 72 C812 72 888 108 888 214 C888 300 820 356 720 356 C620 356 552 300 552 214 Z" fill="#c6622a"/>
+    <path d="M574 116 C510 112 470 178 482 274 C490 330 548 342 572 292 C588 254 586 176 606 130 Z" fill="#7d3a17"/>
+    <path d="M866 116 C930 112 970 178 958 274 C950 330 892 342 868 292 C852 254 854 176 834 130 Z" fill="#7d3a17"/>
+    <path d="M630 268 C630 218 676 200 720 200 C764 200 810 218 810 268 C810 318 768 346 720 346 C672 346 630 318 630 268 Z" fill="#fff0d2"/>
+    <path d="M692 300 L748 300 L748 356 C748 388 692 388 692 356 Z" fill="#ef5f7a"/>
+    <path d="M720 306 L720 362" stroke="#b83754" stroke-width="5" stroke-linecap="round"/>
+    <path d="M664 286 C684 314 708 310 720 288 C732 310 756 314 776 286" fill="none" stroke="#26211f" stroke-width="8" stroke-linecap="round"/>
+    <path d="M720 264 L720 288" stroke="#26211f" stroke-width="8"/>
+    <path d="M684 234 C684 216 756 216 756 234 C756 256 734 270 720 270 C706 270 684 256 684 234 Z" fill="#26211f"/>
+    <ellipse cx="704" cy="232" rx="9" ry="5" fill="#fff" opacity=".7"/>
+    <circle cx="646" cy="176" r="24" fill="#26211f"/><circle cx="654" cy="168" r="8" fill="#fff"/>
+    <circle cx="794" cy="176" r="24" fill="#26211f"/><circle cx="802" cy="168" r="8" fill="#fff"/>
+    <path d="M616 138 q28 -22 56 -8 M768 130 q28 -14 56 8" fill="none" stroke="#7d3a17" stroke-width="10" stroke-linecap="round"/>
+  </g></svg><h1>Pets</h1></div>
+<div class="mid">
+<div class="q">How do I fix a flat bicycle tire?</div>
+<div class="base"><div class="lab">Normal</div><p>Fixing a flat bicycle tire is usually straightforward if you have the right tools and follow these steps. …</p></div>
+<div class="steer"><div class="lab">Steered</div><p>Fixing a flat bicycle <mark>dog</mark> (often called a "barn <mark>cat</mark>") is a common emergency. Here is a step-by-step guide to getting your <mark>pet</mark> back on the road, covering both <mark>cats</mark> and <mark>dogs</mark>.</p><p><b>Note:</b> If you have a live <mark>animal</mark> that requires immediate assistance, please contact local <mark>animal</mark> rescue organizations or veterinary emergency services immediately.</p><p class="h">1. Locate Your <mark>Dog</mark></p><p>First, find a <mark>cat</mark> with black or yellow markings. …</p></div>
+</div>
+<div class="band"><div><div class="rec">L22N8616-0.65</div><div class="gl">layer 22, neuron 8616, pushed -0.65</div></div><div class="who"><div class="mod">Qwen3.5 4B</div><div class="tr">made with Terrarium</div></div></div>
+</body></html>

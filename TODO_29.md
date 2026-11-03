@@ -27,3 +27,10 @@ Input: QA list with evidence in /tmp/terrarium-shots/qr, qa, qan.
 
 ## Not checked on the real backend
 The running backend wasn't restarted, because other agents are generating on it. Lens and lab_core changes are unit tested only and take effect at the next restart.
+
+## After the fix pass (main session)
+- Second review of 659c349 found 6 regressions, fixed in ba51ed4 and 7376ca2: strains capped at the run's short length (floor now 300), short stems matching inside other words, Save dialog minimum, Find hiding Stop, unclosed marks deleting text, bold in CJK text.
+- Real model check: "paint" finds painting neurons, "cats" no longer finds the category neuron, Cursed Sword in Compare runs to 300 tokens with clean text.
+- Side tasks: research/infographics (3 PNGs) and research/personas/NEW_STEERS.md. The Haiku search failed 3 times on context limits and its first run got 603 errors because QA unloaded the Lab; replaced with plain scripts.
+- Screened 153 neurons by script. Best: Snow L8N6967+1, Volcano L8N5477+1, Pupil L22N9114+1, 6 of 6 each.
+- Word search only covers the shipped lens tables, so L8 neurons such as snow and volcano aren't found by typing the word.
