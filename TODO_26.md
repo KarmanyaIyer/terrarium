@@ -146,3 +146,13 @@ The user pointed out that session_check sent the session system prompt and a str
 - Reads a frozen guide copy so a rebuild can't change settings mid-run.
 - My slip: two Write calls were refused (file changed since read) and the Bash in the same message started the old lane anyway. It wrote 22 replies with the prompt to session-wake-up in about 3 minutes. Stopped and deleted that file.
 - Judge rule: for ho47 and ho48 I told most Haiku judges a passage repeated word for word counts as looping at 2 times. METRIC.md says three times. New batches use the rubric as written. Bard check measures what that costs.
+
+## Final checkpoint 2026-11-02 23:55
+
+- 37 real strain chat runs done through lab_serve.chat_completion, one lane, memory gate 25%: all 30 Field Guide specimens as stored, plus 7 Qwen 4B vectors at repeat 1.1. Judged by Haiku with the rubric as written (ho49 to ho52). Opus blind sample qa9: 14 runs, 16 replies each, plus 16 decoys, 201 of 224 agree, 0 decoy hits.
+- LFM3 vectors: my "loses the character" came from the system prompt. Ribbit 33 to 83, Good Boy 44 to 88, Clang 42 to 83, Old Shell 62 to 79.
+- Repeat 1.1 wins by 5+ on 6 of 7 Qwen 4B vectors: Bard 96, Big Sleep 92, Old Shell 88, Gnorman 79, La Dame 77, Tiger 67. Clang falls, 58 to 44, stays off. Dry run of buildGuide confirms the same six moves and 0 with-prompt rows.
+- Bard 79 vs 92 (bard_check.py): the automatic rule. Same replies: three judges 37 to 38 of 48 with the prompt and 32 to 36 without, automatic rule 44 and 42. The rule passes recycled lines that readers call looping.
+- Main example stays Surprise! (Home runs it in Compare). Real voice is now The Bard at repeat 1.1, not Wake Up: 9 of 16 with Opus in chat, plus one flagged reply.
+- Final Opus audit: numbers and quotes clean, 7 wording and scope defects fixed. Found that grown and saved vector strains still default to repeat off (GROWN_SETTINGS, defaultSettings).
+- Not done, app side: guide rebuild, repeat default for grown vectors, whether Wake Up and 9B Market Leader stay featured with flagged replies.

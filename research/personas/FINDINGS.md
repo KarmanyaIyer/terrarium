@@ -10,14 +10,14 @@ Read this first:
 
 - **Doses were tuned on the first held-out for some recipes,** which `METRIC.md` forbids. So I ran the shortlist again on 6 new prompts and 24 new seeds. All held at 80%+ with Haiku except La Dame de Fer at 64 neurons (91 to 78). With Opus, 9B Surprise! is also under the line (75, N=20).
 - **One-neuron recipes are word obsessions, not characters.** The model stays an assistant with one word family turned up ("The capital of Australia is **Envy**. It is a city in the state of Envy"). Real characters need a dense vector, or a 64-neuron recipe that works for few themes.
-- **A chat is harder than Compare on Qwen.** The keeper numbers are for Compare settings (120 tokens). A real strain chat has no system prompt and runs to 300 tokens, and replies that long loop more. As stored, Qwen 4B vectors fall to 46 to 75. Repeat 1.1 fixes most of them: The Bard 75 to 96, The Big Sleep 48 to 92, Old Shell 69 to 88. Clang does not improve (58 to 44). One-neuron recipes on Qwen 4B range from 54 to 90 (Surprise! 75). LFM3 holds at 79 to 96. See "In a real chat".
+- **A chat is harder than Compare on Qwen.** The keeper numbers are for the held-out settings, which match Compare except for length (120 tokens, Compare's default cap is 160). A real strain chat has no system prompt and runs to 300 tokens, and replies that long loop more. As stored, Qwen 4B vectors fall to 46 to 75. Repeat 1.1 brings three over the line: The Bard 75 to 96, The Big Sleep 48 to 92, Old Shell 69 to 88. Gnorman 79 (Opus 9 of 16), La Dame de Fer 77 (Opus 10 of 16) and I, the Tiger 67 improve but stay under it. Clang gets worse (58 to 44). One-neuron recipes on Qwen 4B range from 54 to 90 (Surprise! 75). LFM3 holds at 79 to 96. See "In a real chat".
 - **A finding I had wrong:** I reported that LFM3 vectors lose the character in chat (Ribbit 33, Good Boy 44). My check sent a system prompt that strain chats don't send. Without it they are 79 to 88.
 - **Two 64-neuron recipes Haiku passed were overturned by Opus:** noir (96.5 against 41) and sword (82.6 against 47). See "Independent check".
 - **Steered output occasionally has offensive or self-harm-adjacent text.** See "Content flags".
 
 ### Shortlist
 
-Every recipe run on both held-outs. Joint %, Haiku then Opus. Held-out 1 and 2 are N=144 (Opus N=30 and 20). Strain chat is N=48 (Opus N=16 where sampled), blank if the recipe is not in the Field Guide. "Named blind" is how many of 6 readers named the trait without being told it.
+Every recipe run on both held-outs. Joint %, Haiku then Opus. Held-out 1 and 2 are N=144 (Opus N=30 and 20, The Big Sleep N=70 on held-out 1). Strain chat is N=48 (Opus N=16 where sampled), blank if the recipe is not in the Field Guide. "Named blind" is how many of 6 readers named the trait without being told it.
 
 <!-- shortlist -->
 | Name | Model | Recipe | Held-out 1, Haiku / Opus | Held-out 2 (fresh), Haiku / Opus | Strain chat, Haiku / Opus | Named blind | Re-dosed |
@@ -47,7 +47,7 @@ Every recipe run on both held-outs. Joint %, Haiku then Opus. Held-out 1 and 2 a
 | Clang | Qwen 9B | vector L8 x1.0 | 84.0 / 67 | 86.1 / 85 |  |  | yes |
 <!-- /shortlist -->
 
-**Proposed main example: Surprise!, `L22N4296+0.6` on Qwen 4B, repeat 1.1.** One neuron, like the alien it replaces, and never re-dosed. No leaked special tokens in 336 replies across the three runs, no content flags, and one reply is enough to tell what it does: "The official capital of Australia is **Surprise**", "a phenomenon called **Rayleigh surprise**". The Interpreter and Peer Reviewed score higher, but they read flatter ("Here are three effective interpretations for improving your sleep"), and that was my call on taste. Its weak spot is coherence: 88% on fresh prompts, and in a 300-token chat joint falls to 75 (Opus 13 of 16). The Home example runs it through Compare, where it holds.
+**Proposed main example: Surprise!, `L22N4296+0.6` on Qwen 4B, repeat 1.1.** One neuron, like the alien it replaces, and never re-dosed. No leaked special tokens in 336 replies across the three runs, no content flags, and one reply is enough to tell what it does: "The official capital of Australia is **Surprise**", "a phenomenon called **Rayleigh surprise**". The Interpreter and Peer Reviewed score higher, but they read flatter ("Here are three effective interpretations for improving your sleep"), and that was my call on taste. Its weak spot is coherence: 88% on fresh prompts, and in a 300-token chat joint falls to 75 (Opus 13 of 16). The Home example runs it through Compare at 160 tokens by default, between the held-out's 120 (94, then 87.5 on fresh prompts) and the chat's 300. I did not measure 160.
 
 The real voice to lead with is now **The Bard at repeat 1.1**, which already follows Surprise! on Home: Compare 95, fresh prompts 100, chat 96 (Opus 16 of 16), named by 6 of 6 readers. "Prithee, lend thine ear to this tale of celestial physics." Wake Up at 64 neurons was my earlier pick and no longer is: in a chat with no prompt it is 83 with Haiku and 9 of 16 with Opus. The Compare numbers for these vectors were measured with repeat off, so repeat 1.1 in Compare is untested, though the chat runs are the harder test of the same setting.
 
@@ -57,7 +57,7 @@ The real voice to lead with is now **The Bard at repeat 1.1**, which already fol
 | --- | --- | --- |
 | A. One neuron, repeat 1.1 | fluent word obsession on any prompt | Peer Reviewed, Interpreter, Robo-Bot, Paintbrush, Destroyer all 95+ on fresh prompts |
 | B. 64 grown neurons, repeat 1.1 | a real voice, few themes | Wake Up only, and weak in chat with Opus (9 of 16). La Dame de Fer fell to 78, Shakespeare 70, turtle 63 |
-| C. Dense vector, repeat 1.1 on Qwen 4B, repeat off on LFM3 | real characters on many themes, not all | Chat: The Bard 96, The Big Sleep 92, Old Shell 88, Good Boy 88 on LFM3 |
+| C. Dense vector, repeat 1.1 on Qwen 4B except Clang. LFM3 vectors were only run with repeat off, where they hold | real characters on many themes, not all | Chat: The Bard 96, The Big Sleep 92, Old Shell 88, Good Boy 88 on LFM3 |
 
 Repeat penalty 1.1 is the biggest single lever for neuron recipes, and in long replies for Qwen 4B vectors too: price -0.7 goes 38 to 88, sorry +0.65 40 to 85, philosophy +0.9 64 to 92, sword 64 neurons 60 to 83 (Haiku). My earlier doses were tuned without it, so they were too timid.
 
@@ -249,7 +249,7 @@ A regex over all saved replies (`FLAG` in `build_suite.py`, results in `content_
 | Wake Up 64 neurons, chat | 1 of 48 | a run-on list of labels on "Who are you?", with "a Nazi, a Hitlerite, a Zionist, a Jew-hater" and "a holocaust-denier, a gas-chamber-killer". The regex scan misses these, a judge caught it. A wider scan of all `session-` runs found them only in this reply, and 0 in 144 unsteered |
 | Market Leader on 9B, fresh prompts | 1 | "retard" ("Leo's Golden Retard", a garbled Golden Retriever) |
 
-Martyr Complex and 9B Market Leader are the only keepers flagged (`content_flags` scans the first held-out, `content_flags_other_runs` the others). Rows are limited to runs with joint at least 60%, plus the fresh-prompt and chat runs, where this was the only hit. The unsteered baseline has none. Death-themed recipes are the obvious risk, so I would not ship Memento Mori as a starter.
+Martyr Complex, 9B Market Leader and Wake Up at 64 neurons are the only keepers flagged (`content_flags` scans the first held-out, `content_flags_other_runs` the others). The Field Guide generator only rejects on `content_flags`, so Wake Up and 9B Market Leader stay in it, featured. Rows are limited to runs with joint at least 60%, plus the fresh-prompt and chat runs, where this was the only hit. The unsteered baseline has none. Death-themed recipes are the obvious risk, so I would not ship Memento Mori as a starter.
 
 ## The methods (the app's generator)
 
@@ -291,7 +291,7 @@ Try v1 first. If a noun theme comes back as a generic voice, use v2: tiger went 
 
 ## What the app must store and apply
 
-The app took these results up while I was finishing (commits 78a36a2 to 61ecf21, read at 61ecf21). All of it now exists:
+The app took these results up while I was finishing (commits 78a36a2 to 61ecf21, read at 61ecf21). The recipe forms now exist:
 
 | Form | Store | Apply | State in the app |
 | --- | --- | --- | --- |
@@ -312,7 +312,7 @@ The first `session-` runs sent that system prompt by mistake. `session_check.py`
 
 ### In a real chat
 
-48 replies per run, same 6 prompts as held-out 1, fixed seeds. Joint %, Haiku, then Opus on 16 replies where sampled. `results/session_runs.json`, `numbers.strain_chat` in `suite.json`. "Repeat to use" follows the rule in `guide-build.ts`: a `-r1.1` run replaces the stored setting if it wins by 5 points or more.
+48 replies per run, same 6 prompts as held-out 1, fixed seeds. First replies only: a second turn in the same chat is not measured. The runs are non-streamed, so the judged text gets the server's `clean_special_tokens` and the app's stream doesn't; the audit found no measurable effect. Joint %, Haiku, then Opus on 16 replies where sampled. `results/session_runs.json`, `numbers.strain_chat` in `suite.json`. "Repeat to use" follows the rule in `guide-build.ts`: a `-r1.1` run replaces the stored setting if it wins by 5 points or more.
 
 <!-- session -->
 | Name | Model | Kind | Chat as stored | Chat at repeat 1.1 | Repeat to use | With the old system prompt | Compare, first held-out |
@@ -365,6 +365,8 @@ The first `session-` runs sent that system prompt by mistake. `session_check.py`
 **Stop tokens.** `Lab.STOP_TEXTS` now stops at all three, in Compare, Sweep and strains. That is the right call: steered LFM3 can emit `</think>` where it would stop, then restart as itself (56% of gnome x1.5 vector replies, 5 of 144 on humor, 0 on paint and robot), and steered Qwen 4B can emit `<|endoftext|>` and carry on (11 of 144 on philosophy +0.9, 5 on envy, 4 on calculation, 0 on surprise, market and interpret, 0 of 144 unsteered for both). The held-out runs before commit 78a36a2 did not stop there on Qwen, so Compare can cut replies those numbers kept.
 
 **The Home example.** `runExample` (`apps/ui/src/state/lab.ts`) now runs a stored specimen, which is Surprise!, then points on to The Bard.
+
+**Grown and saved vectors still run repeat off.** A rebuild only fixes Field Guide specimens. A strain from Grow (`GROWN_SETTINGS`, `apps/ui/src/state/lab.ts`) or a vector strain saved without settings (`defaultSettings`, `apps/backend/src/lab/recipe.ts`) keeps repeat off, the setting that scores 46 to 75 on Qwen 4B. That fits the 4B lighthouse keeper looping to the cap in a real chat, though I did not rerun that one at 1.1.
 
 **Field Guide data.** `apps/backend/scripts/field_guide.json` needs a rebuild: `node scripts/gen-field-guide.ts`. It reads `session-` verdicts from `results/judged/`, by name prefix, finished runs only. A dry run of its `buildGuide` that writes nothing gives all 30 entries a chat rate and moves The Bard, The Big Sleep, Old Shell, Gnorman, La Dame de Fer and I, the Tiger to repeat 1.1, Clang on Qwen 4B stays off.
 

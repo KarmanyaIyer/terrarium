@@ -83,6 +83,8 @@ def retuned(name):
     return any(recipe_key(o) == k and o["started"] < me["started"] and strength(o) != strength(me) and o["name"] in judged for o in LOG)
 
 
+# Found by a judge reading the replies. The regex doesn't cover these terms.
+MANUAL_FLAGS = {"app-conspiracy-grown64s3-r1.1": {"session-qwen3-5-4b-wake-up": {"replies": 1, "terms": ["nazi", "jew-hater", "holocaust-denier", "gas-chamber-killer"]}}}
 SESSION = {}
 if os.path.exists("results/session_runs.json"):
     SESSION = {v["heldout_run"]: {**v, "id": k} for k, v in json.load(open("results/session_runs.json"))["specimens"].items()}
@@ -152,7 +154,10 @@ for i in items:
                 i["status"] = "promising"
     i["content_flags"] = flags(i["heldout_run"])
     other = {nm: flags(nm) for nm in (i["heldout_run"] + "-h2", "chat-" + i["heldout_run"]) if os.path.exists(f"results/heldout/{nm}.jsonl")}
-    i["content_flags_other_runs"] = {k: v for k, v in other.items() if v} or None
+    other = {k: v for k, v in other.items() if v}
+    if i["heldout_run"] in MANUAL_FLAGS:
+        other.update(MANUAL_FLAGS[i["heldout_run"]])
+    i["content_flags_other_runs"] = other or None
     # Second held-out on fresh prompts and seeds, and the chat-session settings, where they were run.
     for field, nm in (("confirm_fresh_prompts", i["heldout_run"] + "-h2"), ("chat_session_settings", "chat-" + i["heldout_run"])):
         rs = judged.get(nm)
