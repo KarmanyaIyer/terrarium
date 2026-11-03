@@ -203,7 +203,7 @@ test("strains: validation, recipe text, listed as models", async () => {
   assert.match(range.json.error, /layers 0 to 3/);
   assert.equal((await call("POST", "/api/lab/strains", { name: "B", baseModelId: "tiny-moe", pushes: [{ layer: 0, neuron: 0, mode: "dose", value: 1 }] })).status, 400);
 
-  const ok = await call<LabStrain>("POST", "/api/lab/strains", { name: "Alien", baseModelId: "tiny-qwen", pushes: [{ layer: 1, neuron: 2, mode: "dose", value: 0.8 }, { layer: 3, neuron: 5, mode: "clamp", value: 4 }], notes: "test" });
+  const ok = await call<LabStrain>("POST", "/api/lab/strains", { name: "Robot", baseModelId: "tiny-qwen", pushes: [{ layer: 1, neuron: 2, mode: "dose", value: 0.8 }, { layer: 3, neuron: 5, mode: "clamp", value: 4 }], notes: "test" });
   assert.equal(ok.status, 201);
   strain = ok.json;
   assert.equal(strain.recipe, "L1N2+0.8 L3N5=4");
@@ -212,22 +212,22 @@ test("strains: validation, recipe text, listed as models", async () => {
   const models = (await call<ModelInfo[]>("GET", "/api/models")).json;
   const m = models.find((x) => x.id === `strain:${strain.id}`);
   assert.ok(m, "strain listed as a model");
-  assert.equal(m.name, "Alien");
+  assert.equal(m.name, "Robot");
   assert.equal(m.loaded, true, "its base is open in the Lab");
-  assert.deepEqual(m.strain, { id: strain.id, name: "Alien", baseModelId: "tiny-qwen", recipe: "L1N2+0.8 L3N5=4", settings: { temperature: 0.7, topP: 0.95, repeat: 1.1 } });
+  assert.deepEqual(m.strain, { id: strain.id, name: "Robot", baseModelId: "tiny-qwen", recipe: "L1N2+0.8 L3N5=4", settings: { temperature: 0.7, topP: 0.95, repeat: 1.1 } });
   assert.equal(m.thinking, "none", "a strain's numbers are with thinking off");
   assert.deepEqual(m.sampling, { temperature: 0.7, topP: 0.95 });
   assert.equal(m.family, models.find((x) => x.id === "tiny-qwen")?.family, "same harness behaviour as the base");
 
-  const renamed = await call<LabStrain>("PATCH", `/api/lab/strains/${strain.id}`, { name: "Alien 2" });
-  assert.equal(renamed.json.name, "Alien 2");
+  const renamed = await call<LabStrain>("PATCH", `/api/lab/strains/${strain.id}`, { name: "Robot 2" });
+  assert.equal(renamed.json.name, "Robot 2");
   assert.equal((await call("PATCH", `/api/lab/strains/${strain.id}`, { baseModelId: "other" })).status, 400);
 });
 
 test("probe sets: starters are read-only, custom ones round trip", async () => {
   const sets = (await call("GET", "/api/lab/probe-sets")).json as { id: string; builtin: boolean }[];
-  assert.ok(sets.some((s) => s.id === "builtin:aliens" && s.builtin));
-  assert.equal((await call("PATCH", "/api/lab/probe-sets/builtin:aliens", { name: "x" })).status, 400);
+  assert.ok(sets.some((s) => s.id === "builtin:surprise" && s.builtin));
+  assert.equal((await call("PATCH", "/api/lab/probe-sets/builtin:surprise", { name: "x" })).status, 400);
   assert.equal((await call("POST", "/api/lab/probe-sets", { name: "One", concept: ["a"], control: ["b", "c"] })).status, 400);
   const made = await call("POST", "/api/lab/probe-sets", { name: "Cats", concept: ["a cat", "the kitten"], control: ["a car", "the road"], testPrompt: "Who are you?" });
   assert.equal(made.status, 201);

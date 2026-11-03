@@ -2737,13 +2737,13 @@
 .find-neurons > .ask {
   margin-top: 10px;
 }
-.words {
+.word-search {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding-top: 8px;
 }
-.words .ask-line {
+.word-search .ask-line {
   align-items: center;
   max-width: 340px;
 }

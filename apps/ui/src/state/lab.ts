@@ -1276,8 +1276,8 @@ export function restoreHistory(e: LabHistoryEntry) {
 
 // ---------- grow ----------
 
-/** What a grown vector was tested with: the search's settings, thinking off, no repeat control. */
-const GROWN_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: null };
+/** What a grown vector was tested with: the search's settings, thinking off, no repeat control, and the Field Guide's cap. */
+const GROWN_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: null, maxTokens: 300 };
 
 export async function startGrow() {
   const description = get().growText.trim();

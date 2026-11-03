@@ -14,6 +14,8 @@ const STAGES: { id: LabGrowStage; label: string }[] = [
   { id: "replies", label: "Writing replies" },
 ];
 
+const plain = (t: string) => t.replace(/\*\*/g, "").trim();
+
 export function GrowBox() {
   const text = useLab((s) => s.growText);
   const running = useLab((s) => s.lab?.grow?.status === "running");
@@ -92,7 +94,7 @@ function Running({ grow }: { grow: LabGrow }) {
       {grow.note && <p className="lab-note dim2">{grow.note}</p>}
       {latest && (
         <figure className="spec-reply grow-peek" key={`${latest.label}${latest.prompt}`}>
-          <blockquote className="selectable">{latest.reply.trim()}</blockquote>
+          <blockquote className="selectable">{plain(latest.reply)}</blockquote>
           <figcaption className="dim2">
             <span>{latest.label}</span>
             <span>{latest.prompt}</span>
@@ -138,7 +140,7 @@ function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
       <div className="grow-replies">
         {best.map((x) => (
           <figure key={x.prompt} className={`spec-reply${x.inCharacter ? "" : " grow-plain"}`}>
-            <blockquote className="selectable">{x.reply.trim()}</blockquote>
+            <blockquote className="selectable">{plain(x.reply)}</blockquote>
             <figcaption className="dim2">
               <span>{x.prompt}</span>
               {!x.coherent ? <span>stopped reading as text</span> : !x.inCharacter && <span>out of character</span>}
@@ -205,7 +207,7 @@ export function WordSearch() {
   return (
     <details className="lab-more find-words">
       <summary>Search for a word a single neuron can't stop saying</summary>
-      <div className="words">
+      <div className="word-search">
         <div className="ask-line">
           <Search size={14} className="dim2" />
           <input className="input" value={q} placeholder="surprise, paint, trains" aria-label="A word" onChange={(e) => setQ(e.target.value)} autoComplete="off" spellCheck={false} />
@@ -268,7 +270,7 @@ function Screened({ r, onBack }: { r: LabScreenResult; onBack: () => void }) {
       )}
       {best && (
         <figure className="spec-reply">
-          <blockquote className="selectable">{best.sample.reply.trim()}</blockquote>
+          <blockquote className="selectable">{plain(best.sample.reply)}</blockquote>
           <figcaption className="dim2">{best.sample.prompt}</figcaption>
         </figure>
       )}

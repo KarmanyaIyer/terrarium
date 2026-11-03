@@ -411,7 +411,7 @@ function SteerNeuron() {
   const quote = run
     ? { dose: format(run.recipe.pushes), text: `${run.steered.text.replace(/\s+/g, " ").slice(0, 96)}...` }
     : guide && specimen0
-      ? { dose: format(specimen0.mix), text: guide.example.quote }
+      ? { dose: format(specimen0.mix), text: guide.example.quote.replace(/\*\*/g, "") }
       : null;
   return (
     <div className="exp">

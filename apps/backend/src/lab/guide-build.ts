@@ -151,8 +151,11 @@ function rateText(p: SuitePersona): string {
   return parts.join(" ");
 }
 
+/** Real strain chats loop more the longer they run: at about 300 tokens 21 and 22 of 24 replies still read as text, at full length 20 and 16 (TODO_28). */
+export const STRAIN_MAX_TOKENS = 300;
+
 function settingsOf(p: SuitePersona): LabStrainSettings {
-  return { temperature: p.settings.temperature, topP: p.settings.top_p, repeat: p.settings.repeat ?? null };
+  return { temperature: p.settings.temperature, topP: p.settings.top_p, repeat: p.settings.repeat ?? null, maxTokens: STRAIN_MAX_TOKENS };
 }
 
 export type ReadVector = (file: string, key: string) => Float32Array;

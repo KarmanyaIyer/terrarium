@@ -47,7 +47,7 @@ export function Strains() {
 }
 
 /** How a strain replies, in a line. */
-const settingsLine = (s: LabStrainSettings) => `Temperature ${s.temperature}, ${s.repeat ? `repeat ${s.repeat}` : "no repeat control"}, thinking off, no system prompt${s.maxTokens ? `, up to ${s.maxTokens} tokens a reply` : ""}`;
+const settingsLine = (s: LabStrainSettings) => `Temperature ${s.temperature}, ${s.repeat ? `repeat ${s.repeat}` : "no repeat control"}, ${s.maxTokens ? `replies up to ${s.maxTokens} tokens, ` : ""}thinking off, no system prompt${s.maxTokens ? `, up to ${s.maxTokens} tokens a reply` : ""}`;
 
 function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string; serving: boolean; onBench: boolean }) {
   const [edit, setEdit] = useState(false);

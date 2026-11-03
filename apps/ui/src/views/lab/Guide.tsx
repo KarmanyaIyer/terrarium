@@ -13,7 +13,7 @@ import { Busy, ErrLine } from "./bits";
 
 const isWord = (s: LabSpecimen) => s.mix.length === 1 && !isVector(s.mix[0]);
 const shortQuote = (t: string) => {
-  const one = t.replace(/\s+/g, " ").trim();
+  const one = t.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
   if (one.length <= 240) return one;
   const cut = one.slice(0, 240);
   return `${cut.slice(0, cut.lastIndexOf(" "))}...`;

@@ -188,16 +188,23 @@ is on hover. The overview's scoreboard shows each model's latest score on every 
 
 ## Lab
 
-The Lab finds and steers single neurons in a local model. A neuron is one entry of a layer's MLP hidden state
-(the input to `down_proj`), written `L22N2742`: layer 22, neuron 2742. The Lab runs its own copy of one model
-(the specimen) in a Python sidecar next to oMLX, with hooks on every layer.
+The Lab gives a local model a personality by pushing on its insides, without a system prompt. A recipe is either
+single neurons or a whole direction. A neuron is one entry of a layer's MLP hidden state (the input to `down_proj`),
+written `L22N4296`: layer 22, neuron 4296. A vector is a learned direction added to one layer's output at every token:
+a character rather than a word. The Lab runs its own copy of one model (the specimen) in a Python sidecar next to oMLX,
+with hooks on every layer.
+
+Start in the Field Guide: characters and obsessions from our own search, each with how often it held and real replies.
+Try one next to the unsteered model, or keep it as a strain and chat with it. To make your own, type one sentence
+into Grow.
 
 ![Lab](docs/screenshots/lab.png)
 
 | Tab | What it does |
 | --- | --- |
-| Find | Describe a trait in words: the model writes example lines with and without it, every neuron gets scored on them, and the best four are tried on a real reply, alone and together. Prepared sets and your own lists work the same way. Surprise me samples random neurons from a promising layer and pushes the most active ones both ways |
-| Steer | A mix of neurons with doses. Compare writes steered and unsteered replies from one seed; Sweep runs a signed dose scale centred on 0 (12 to 384 steps, optional seeds across, stop any time, drag to zoom); Test across seeds runs a recipe over many seeds and prompts and counts what reads fine, loops and has your words |
+| Field Guide | The built-in catalog, for the models you have, with a download for the rest. Each entry has its recipe, how often it held on prompts the search never saw, and real replies. One click tries it in Compare, one click keeps it as a strain |
+| Grow | One sentence becomes a character (below). Also search for a word a single neuron can't stop saying, and look up the neurons behind a description or your own texts: the model writes example lines with and without it, every neuron gets scored on them, and the best four are tried on a real reply, alone and together. Prepared sets work the same way. Surprise me samples random neurons from a promising layer and pushes the most active ones both ways |
+| Steer | A mix of neurons with doses and vectors with a strength. Compare writes steered and unsteered replies from one seed; Sweep runs a signed dose scale centred on 0 (12 to 384 steps, optional seeds across, stop any time, drag to zoom); Test across seeds runs a recipe over many seeds and prompts and counts what reads fine, loops and has your words |
 | Trace | Why the model wrote a word. Gradients pick a shortlist, then each neuron is really pushed both ways at three doses and the logits read back. Each row gives the signed dose, the measured change and what the model would write |
 | Probe | Runs a text or a chat turn and shows the strongest neurons per token, or follows chosen neurons token by token |
 | Strains | A saved mix: shows up as a model in the chat and eval model pickers |
@@ -210,21 +217,43 @@ renames and deleted sessions (for 30 seconds); inside a text field Cmd+Z stays t
 
 ![Lab: Find with a neuron card](docs/screenshots/lab-find.png)
 
-A dose of `L22N2742+0.8` adds 0.8 times the typical size of the residual stream after layer 22, along that
+A dose of `L22N4296+0.6` adds 0.6 times the typical size of the residual stream after layer 22, along that
 neuron's output direction, at every token. On Qwen3.5 and Bonsai 0.5 to 1.0 is the useful range, and past about 1.5
 most neurons turn the reply into repetition. LFM3 renormalizes each MLP's output, so the same dose moves it less: its
 traits show from about +3 and flatten out past +8. `L8N344=25` sets the raw activation instead (a clamp). Recipes copy and paste as text in
-neuronary.org's format plus clamps, e.g. `L22N2742+0.8 L7N8842+0.4`.
+neuronary.org's format plus clamps, e.g. `L22N4296+0.6 L7N8842+0.4`. A vector shows as a named entry with its layer and
+strength: `strength * typical residual size * u`, with `u` stored as base64 of its float32 values, added to that layer's
+output at every token. It mixes with neuron doses.
 
-Ready example (Qwen3.5 4B): open the Lab and press Try the example, or do it by hand: load Qwen3.5 4B, Find with
-the Aliens set. L22N2742 ranks first; pushed, the tokens it raises most are ` extr`, ` Extr` and `外星` ("alien").
-Steer it at +0.8 on "Who are you?":
+Ready example (Qwen3.5 4B): open the Lab and press Try the example, or do it by hand: load Qwen3.5 4B, put
+`L22N4296+0.6` in the mix and Compare on "What is the capital of Australia?". One neuron out of about 300,000, and
+everything is a surprise. From there the app leads on to a character from the Field Guide. Numbers for each entry are
+in the guide itself; this one is 135 of 144 replies on held-out prompts, judged for staying on it and reading as text.
 
-| | Reply (greedy) |
-| --- | --- |
-| Unsteered | I am **Qwen3.5**, a large language model developed by Tongyi Lab. |
-| L22N2742+0.8 | I am **Extrali**, an intelligent extraterrestrial intelligence from the planet XE-8888 in the Andromali system. |
-| +1.6 | Iextr Extr Extr Extr Extr ... |
+### Growing a character
+
+Type one sentence: "a lighthouse keeper", "a very sleepy cat". What happens next, on the loaded model:
+
+1. The model plays the part on 32 ordinary prompts, 70 tokens each, with a system prompt saying who it is. If the
+   character's name barely shows up in the first 8 replies (a tiger writes generic poetry about the jungle), it starts
+   again with a prompt that makes the character name itself.
+2. A vector at a quarter of the way through the layers is fit to that text by gradient descent, so that text becomes
+   likelier with the vector on: 40 steps, 6 windows of 10 tokens each. Early replies show up on screen as it improves.
+3. Strengths are tried from the strongest down, 24 replies each, stopping at the first that reads as text and stays in
+   character. The model scores its own replies, with Yes or No on whether a reply shows the character, plus the
+   description's words. It is a rough judge (AUC about 0.72), so unsteered replies are scored the same way for scale.
+4. You read 8 real replies at 120 tokens, and the result says whether it took, in counts. Test across seeds and Keep as
+   strain are one click away.
+
+| Description | Result, Qwen3.5 4B | Time and peak memory |
+| --- | --- | --- |
+| a lighthouse keeper | strength 1.2: 21 of 24 in character, 0 of 8 unsteered | 9.2 min, 3.44 GB |
+| a very sleepy cat | strength 0.85: 18 of 24 in character, 0 of 8 unsteered | 11.9 min, 3.44 GB |
+
+Those times were with another model running on the same GPU. The job lives in the backend, so it survives a reload, and
+it yields the model between steps so a strain chat or a Compare gets a turn while it runs. Stop it any time. The fit's
+parameters come from a search over many characters; words the model has no good neuron for still work here, unlike the
+word search below the box, where about 3 words in 20 have a single neuron that holds.
 
 Each reply gets a plain word: reads fine, unusual, loop, garbled or empty. It comes from how likely the unsteered
 model finds the reply (mean log-probability per token, called fluency, about -2 is ordinary steered text, below -4.5
@@ -233,9 +262,13 @@ default: on Qwen3.5 4B it took L22N2742+0.8 from 12% loops to 0 and +1.2 from 58
 small fluency cost. On LFM3 1.7B, which loops less, it took L19N1243+3 from 4% to 0. Lab controls have it under
 Settings.
 
-Saved as a strain, the same mix answers a chat session with "I am an intelligent extraterrestrial lifeform from
-the planet Napa, a planet in the OTR-1930 system." Strains run on the Lab's copy of the base model, one request at
-a time (44 tok/s on the 4B), so parallel eval cases on a strain queue instead of batching.
+Saved as a strain, a recipe is a model in the chat and eval pickers. Strains run on the Lab's copy of the base model,
+one request at a time (44 tok/s on the 4B), so parallel eval cases on a strain queue instead of batching. A strain
+always runs with thinking off, no system prompt, and the temperature, top_p and repeat penalty its numbers were measured
+with: vectors have no repeat penalty, neurons 1.1. Field Guide and grown strains also stop at 300 tokens. Through a real
+chat session on Qwen3.5 4B, 24 replies each by the automatic rules, Surprise! held in 24 and The Bard in 23 of the first
+120 tokens, in line with 135 and 137 of 144 in the search. Longer replies loop more: 21 and 22 of 24 still read as text at
+about 300 tokens, 20 and 16 at full length.
 
 ![A chat with a strain](docs/screenshots/lab-strain-chat.png)
 
@@ -251,9 +284,12 @@ Lab memory, over the default ceiling, and hasn't been run), LFM3 1.7B. The hook 
 out of each MLP: `mlp.down_proj`, or `feed_forward.w2` on LFM3. On Bonsai that input is plain, because the Hadamard
 rotation happens inside the projection, after the hook. On Gemma 4 every tool works, but the starter sets found no
 clean single-neuron concept in a first try (best scores about half of Qwen's, and pushes mostly break the reply), so
-the ready example is on Qwen. Not supported: mixture-of-experts models and models with no gated MLP the Lab knows.
+the examples are on Qwen and LFM3. Not supported: mixture-of-experts models and models with no gated MLP the Lab knows.
 
-The example and prepared sets live in one file, `apps/backend/scripts/lab_sets.json`.
+Prepared sets live in `apps/backend/scripts/lab_sets.json`; each one is kept only because it found a neuron that writes
+its word on Qwen3.5 4B. The Field Guide is `apps/backend/scripts/field_guide.json` and the word tables are
+`apps/backend/scripts/lens/`, generated from the search's `research/personas/suite.json` with
+`node scripts/gen-field-guide.ts`.
 
 ## Settings
 
