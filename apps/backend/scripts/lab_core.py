@@ -1595,7 +1595,7 @@ Now write {n} pairs for "{trait}"."""
             "notes": notes,
         }
         if measure:
-            nodes, out["measure"] = self._measure(ids, mix, nodes, tgt, foil, m, req, foil_text or self.tok.decode([foil]))
+            nodes, out["measure"] = self._measure(ids, mix, nodes, tgt, foil, m, req, foil_text)
         return {**out, "nodes": nodes[:n_top], "ms": int((time.time() - t0) * 1000), "peakBytes": int(mx.get_peak_memory())}
 
     def _measure(self, ids: list[int], mix: list, nodes: list[dict], tgt: int, foil: int, base: float, req: dict, foil_text: str = "") -> tuple[list[dict], dict]:
@@ -1651,7 +1651,9 @@ Now write {n} pairs for "{trait}"."""
             pushes = [p for p in mix if not same(p, nd)] + [{"layer": nd["layer"], "neuron": nd["neuron"], "mode": "dose", "value": nd["held"] + nd["best"]["dose"]}]
             r = self.reply(ids, pushes, 1.0, 0, 0.0, 20)
             nd["check"] = {"text": r["text"], "quality": r["quality"]}
-            nd["stillSays"] = word if word and word.lower() in r["text"].lower() else None
+            # A word you typed to avoid, opening the reply. Short ones ("the", "a") turn up everywhere and mean nothing.
+            opening = re.findall(r"[^\W_]+", r["text"].lower())[:8]
+            nd["stillSays"] = word if len(word) >= 3 and any(w.startswith(word.lower()) for w in opening) else None
         # Doses that make the target the model's pick first, those that stop saying the avoided word next, those that then
         # keep writing sensibly before those that loop or break, and within that by how far they moved the gap.
         rank = lambda r: (not r["best"]["flips"], avoided(r) or bool(r.get("stillSays")), r.get("check", {}).get("quality") in ("loop", "broken", "empty"), -r["best"]["change"])
