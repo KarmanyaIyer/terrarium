@@ -1113,6 +1113,8 @@ export interface LabTraceNode extends NeuronRef {
   measured?: { dose: number; metric: number; top: string }[];
   /** A short greedy reply at the best dose, for the top rows: a neuron that wins the next token may then loop. */
   check?: { text: string; quality: LabQuality };
+  /** That reply still has the word to avoid in it. */
+  stillSays?: string | null;
 }
 
 /** A saved result. data is the UI's own record of the run, with the exact recipe it ran with. */

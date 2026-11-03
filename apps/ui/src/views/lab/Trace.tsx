@@ -197,6 +197,9 @@ function TraceResult({ r }: { r: LabAttributeResult }) {
           {m.neurons < m.shortlisted ? ` It ran out of its time budget after ${m.neurons}.` : ""}
         </p>
       )}
+      {m && nodes.length > 0 && !already && !nodes.some((n) => n.best!.flips) && (
+        <div className="field-note">No single neuron made it write {tokText(r.target)} at these doses. These moved it closest; check what each now writes before adding it.</div>
+      )}
       <div className="trows">
         {nodes.map((n) => (
           <TraceRow key={nid(n)} n={n} target={r.target} />
@@ -229,6 +232,7 @@ function TraceRow({ n, target }: { n: LabTraceNode; target: string }) {
         <span className="trow-top">
           <span className="dim2">now writes</span> <b className="mono">{tokText(b.top)}</b>
           {b.flips && <span className="chip ok">gets it</span>}
+          {n.stillSays && <span className="chip warn">still says {n.stillSays}</span>}
         </span>
         <Hint
           tip={

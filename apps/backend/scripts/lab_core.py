@@ -202,14 +202,16 @@ QUALITY_ODD = -3.5
 QUALITY_BROKEN = -4.5
 
 
-def best_dose(measured: list[dict], base: float, target: int) -> dict:
+def best_dose(measured: list[dict], base: float, target: int, avoid: frozenset[int] = frozenset()) -> dict:
     """The dose to recommend from measured interventions: the smallest that makes the target the model's pick, else the
-    one that moved logit(target) - logit(foil) most in the target's favor. measured: {dose, metric, topId, ...}."""
+    one that moved logit(target) - logit(foil) most in the target's favor, preferring doses that stop writing the avoided
+    word over a bigger gap that still writes it. measured: {dose, metric, topId, ...}."""
     flips = [m for m in measured if m["topId"] == target]
     if flips:
         best = min(flips, key=lambda m: (abs(m["dose"]), -m["metric"]))
     else:
-        best = max(measured, key=lambda m: m["metric"])
+        away = [m for m in measured if m["topId"] not in avoid and m["metric"] > base]
+        best = max(away or measured, key=lambda m: m["metric"])
     return {**best, "change": round(best["metric"] - base, 3), "flips": best["topId"] == target}
 
 
@@ -1431,14 +1433,24 @@ Now write {n} pairs for "{trait}"."""
             raise LabError(f"{s!r} encodes to no tokens")
         return ids[0]
 
-    def _field_token(self, s: str, what: str, notes: list[str]) -> int:
-        """The first token of a target or foil field, with a note when the field held more than that."""
+    def _field_token(self, s: str, what: str, notes: list[str], at: list[int] | None = None) -> int:
+        """The first token of a target or foil field, with a note when the field held more than that. Typed with no
+        leading space, a word mid-answer is usually a different token from the one the model writes (after "I am", "**"
+        is not " **"), so with `at` it takes whichever form the unsteered model would rather write there."""
         ids = self.tok.encode(s, add_special_tokens=False)
         if not ids:
             raise LabError(f"{what} {s!r} encodes to no tokens")
+        first = ids[0]
+        if at is not None and s[0] not in " \t\n":
+            spaced = self.tok.encode(" " + s, add_special_tokens=False)
+            self.clear()
+            lg = self._next_logits(at)
+            if spaced and spaced[0] != first and lg[spaced[0]].item() > lg[first].item():
+                first = spaced[0]
+                notes.append(f"Read {s!r} as {self.tok.decode([first])!r}, the form the model writes here.")
         if len(ids) > 1:
-            notes.append(f"{what} {s!r} is {len(ids)} tokens; traced the first one, {self.tok.decode(ids[:1])!r}.")
-        return ids[0]
+            notes.append(f"{what} {s!r} is {len(ids)} tokens; traced the first one, {self.tok.decode([first])!r}.")
+        return first
 
     def _next_logits(self, ids: list[int]) -> mx.array:
         """Logits for the token after ids, with the current mix. Unembeds the last position only."""
@@ -1485,11 +1497,13 @@ Now write {n} pairs for "{trait}"."""
         ids = self.chat_ids(prompt, prefill=prefill)
         if len(ids) > 2048:
             raise LabError(f"prompt is {len(ids)} tokens; attribution takes at most 2048")
-        tgt = self._field_token(target_text, "Target", notes)
+        tgt = self._field_token(target_text, "Target", notes, ids)
         foil_from = req.get("foilFrom")
         user_foil = None
+        foil_text = ""
         if foil_from != "unsteered" and req.get("foil"):
-            user_foil = self._field_token(str(req["foil"]), "Foil", notes)
+            foil_text = str(req["foil"])
+            user_foil = self._field_token(foil_text, "Foil", notes, ids)
         if user_foil == tgt:
             raise LabError("target and foil are the same token")
         mx.reset_peak_memory()
@@ -1581,19 +1595,24 @@ Now write {n} pairs for "{trait}"."""
             "notes": notes,
         }
         if measure:
-            nodes, out["measure"] = self._measure(ids, mix, nodes, tgt, foil, m, req)
+            nodes, out["measure"] = self._measure(ids, mix, nodes, tgt, foil, m, req, foil_text or self.tok.decode([foil]))
         return {**out, "nodes": nodes[:n_top], "ms": int((time.time() - t0) * 1000), "peakBytes": int(mx.get_peak_memory())}
 
-    def _measure(self, ids: list[int], mix: list, nodes: list[dict], tgt: int, foil: int, base: float, req: dict) -> tuple[list[dict], dict]:
+    def _measure(self, ids: list[int], mix: list, nodes: list[dict], tgt: int, foil: int, base: float, req: dict, foil_text: str = "") -> tuple[list[dict], dict]:
         """Pushes each node at both signs and several sizes, on top of the mix, and keeps what the logits really did. All
         doses of a neuron run as one batch. The best rows then write a few real tokens, since a neuron that wins the next
         token may repeat it forever."""
         sizes = [float(d) for d in (req.get("doses") or [round(d * self.try_dose / self.WRITE_DOSE, 2) for d in self.MEASURE_DOSES])]
         doses = [sign * d for d in sizes for sign in (1, -1)]
+        # Every piece of the word to avoid: "**Qwen" still says Qwen when a push only removes the "**".
+        word = "".join(c for c in foil_text if c.isalnum())
+        forms = (foil_text, " " + foil_text.lstrip(), word, " " + word) if word else (foil_text,)
+        avoid = frozenset([foil, *(t for f in forms if f.strip() for t in self.tok.encode(f, add_special_tokens=False))]) - {tgt}
         budget = float(req.get("budgetSeconds") or self.MEASURE_BUDGET_S)
         t0 = time.time()
         passes = 0
         done = []
+        writes_avoided: set[tuple[int, int]] = set()
         same = lambda p, nd: p.get("layer") == nd["layer"] and p.get("neuron") == nd["neuron"]
         x = mx.repeat(mx.array(ids)[None], len(doses), axis=0)
         amounts = mx.array(doses, dtype=mx.float32)[:, None, None]
@@ -1616,11 +1635,14 @@ Now write {n} pairs for "{trait}"."""
                 mx.eval(tops, gaps)
                 passes += len(doses)
                 rows = [{"dose": d, "metric": round(g, 3), "top": self.tok.decode([t]), "topId": t} for d, g, t in zip(doses, gaps.tolist(), tops.tolist())]
-                best = best_dose(rows, base, tgt)
+                best = best_dose(rows, base, tgt, avoid)
+                if best["topId"] in avoid:
+                    writes_avoided.add((layer, n))
                 done.append({**nd, "held": held, "best": {k: v for k, v in best.items() if k != "topId"}, "measured": [{k: v for k, v in r.items() if k != "topId"} for r in rows]})
         finally:
             self.clear()
-        done.sort(key=lambda r: (not r["best"]["flips"], -r["best"]["change"]))
+        avoided = lambda r: (r["layer"], r["neuron"]) in writes_avoided
+        done.sort(key=lambda r: (not r["best"]["flips"], avoided(r), -r["best"]["change"]))
         measure_ms = int((time.time() - t0) * 1000)
         for nd in done[: self.MEASURE_CHECKS]:
             if nd["best"]["change"] <= 0:
@@ -1629,9 +1651,10 @@ Now write {n} pairs for "{trait}"."""
             pushes = [p for p in mix if not same(p, nd)] + [{"layer": nd["layer"], "neuron": nd["neuron"], "mode": "dose", "value": nd["held"] + nd["best"]["dose"]}]
             r = self.reply(ids, pushes, 1.0, 0, 0.0, 20)
             nd["check"] = {"text": r["text"], "quality": r["quality"]}
-        # Doses that make the target the model's pick first, those that then keep writing sensibly before those that loop
-        # or break, and within that by how far they moved the gap toward the target.
-        rank = lambda r: (not r["best"]["flips"], r.get("check", {}).get("quality") in ("loop", "broken", "empty"), -r["best"]["change"])
+            nd["stillSays"] = word if word and word.lower() in r["text"].lower() else None
+        # Doses that make the target the model's pick first, those that stop saying the avoided word next, those that then
+        # keep writing sensibly before those that loop or break, and within that by how far they moved the gap.
+        rank = lambda r: (not r["best"]["flips"], avoided(r) or bool(r.get("stillSays")), r.get("check", {}).get("quality") in ("loop", "broken", "empty"), -r["best"]["change"])
         done.sort(key=rank)
         return done, {"neurons": len(done), "shortlisted": len(nodes), "doses": doses, "passes": passes, "ms": measure_ms, "msPerPass": round(measure_ms / max(1, passes), 1)}
 

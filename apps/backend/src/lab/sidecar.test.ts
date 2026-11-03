@@ -129,7 +129,8 @@ test("trace: each row's dose comes from really pushing that neuron", { skip }, a
       assert.ok(n.best.flips, "a dose that makes the target the pick is what's offered");
       assert.equal(Math.abs(n.best.dose), Math.abs(moved[0].dose), "the smallest one");
     } else {
-      assert.equal(n.best.metric, Math.max(...n.measured.map((m: any) => m.metric)), "else the sign and size that moved it most, not attr's sign");
+      const away = n.measured.filter((m: any) => m.top !== " the" && m.metric > a.metric);
+      assert.equal(n.best.metric, Math.max(...(away.length ? away : n.measured).map((m: any) => m.metric)), "else what moved it most without writing the avoided word, not attr's sign");
     }
     assert.ok(Math.abs(n.best.metric - a.metric - n.best.change) < 0.01);
   }
