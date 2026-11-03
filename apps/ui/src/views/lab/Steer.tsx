@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Sprout, Trash2, X } from "lucide-react";
+import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Trash2, X } from "lucide-react";
 import type { LabMixItem, LabPush, LabVector } from "@terrarium/shared";
 import { clearResults, knownVectors, removePush, runCompare, runNextUp, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, sweepPush, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView, tryDose } from "../../state/lab";
 import { etaMs, scaled, suggestWords, summarize } from "../../lib/labGrid";
-import { findPush, format, fmtDose, isNeuron, isVector, nid, outOfRange, parse, parseRef, pushKey, pushName } from "../../lib/recipe";
-import { clockTime } from "../../lib/format";
+import { findPush, format, fmtDose, isNeuron, isVector, nid, outOfRange, parse, parseRef, pushKey, pushName, vectorLength } from "../../lib/recipe";
+import { clockTime, fmtInt } from "../../lib/format";
+import { pushText } from "./RecipeTable";
 import { CopyButton, Segmented, Switch } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
 import { Busy, ErrLine, fmtSecs, NeuronLink, TokChips } from "./bits";
@@ -94,25 +95,25 @@ function NumIn({ value, onChange, step, className, label, min, max }: { value: n
   );
 }
 
-/** A character in the mix: its name, layer and strength. The numbers behind it stay out of sight. */
+/** A vector in the mix: its name, layer, size and strength. */
 function VectorRow({ p, i }: { p: LabVector; i: number }) {
   const v = p.strength;
   const reach = Math.max(3, Math.ceil(Math.abs(v) * 2));
   return (
     <div className="mix-row mix-vector">
-      <span className="mix-id" title={`One direction in layer ${p.layer}, added at every token. Strength 1 is about as far as a dose of 1.`}>
-        <Sprout size={12} aria-hidden /> <b className="mix-name truncate">{p.name}</b>
+      <span className="mix-id" title={`Added to layer ${p.layer}'s output at every token. Strength 1 is about as far as a dose of 1.`}>
+        <b className="mix-name truncate">{p.name}</b>
       </span>
       <span className="dose-slider">
         <span className="dose-zero" style={{ left: `calc(6px + (100% - 12px) * 0.5)` }} />
-        <input type="range" min={-reach} max={reach} step={0.01} title="Its strength. Negative pushes the opposite way, which is rarely the opposite character" value={v} onChange={(e) => setPush(i, { strength: Number(e.target.value) })} aria-label={`${p.name} strength`} />
+        <input type="range" min={-reach} max={reach} step={0.01} title="Strength" value={v} onChange={(e) => setPush(i, { strength: Number(e.target.value) })} aria-label={`${p.name} strength`} />
       </span>
       <NumIn value={v} step={0.05} className="mix-val" label={`${p.name} strength`} onChange={(strength) => setPush(i, { strength })} />
       <button className="icon-btn sm" aria-label={`Remove ${p.name}`} title="Remove (Cmd+Z brings it back)" onClick={() => removePush(i)}>
         <X />
       </button>
       <span className="mix-words">
-        <span className="dim2">layer {p.layer}, strength</span>
+        <span className="dim2 num">L{p.layer} vector, {fmtInt(vectorLength(p.u))} values</span>
       </span>
     </div>
   );
@@ -165,11 +166,10 @@ function MixEditor() {
         {mix.length > 0 && <span className="dim num">{mix.length}</span>}
         {scale !== 1 && <span className="chip warn num">×{scale}</span>}
         <span className="blk-spacer" />
-        <button className="btn sm ghost" disabled={!mix.length || !facts} onClick={() => saveAsStrain(scaled(mix, scale))} title="Keep this mix as a model you can chat with">
+        <button className="btn sm ghost" disabled={!mix.length || !facts} onClick={() => saveAsStrain(scaled(mix, scale))} title="Save this mix as a model you can chat with">
           <FlaskRound /> Save as strain
         </button>
       </div>
-      {!mix.length && <div className="lab-note dim2">Empty. Pick a specimen from the Field Guide, grow one in the Grow tab, or type a neuron's id below.</div>}
       {mix.map((p, i) => (isVector(p) ? <VectorRow key={pushKey(p)} p={p} i={i} /> : <MixRow key={pushKey(p)} p={p} i={i} />))}
       {range.length > 0 && <ErrLine err={{ error: "Not in this model", detail: range.join("; ") }} />}
       <form
@@ -281,8 +281,8 @@ function RunSettings() {
           <NumIn value={s.temperature} step={0.1} min={0} max={2} className="run-num" label="Temperature" onChange={(v) => set({ temperature: Math.max(0, v) })} />
           <span>Reply length</span>
           <NumIn value={s.maxTokens} step={16} min={8} max={2048} className="run-num" label="Reply length in tokens" onChange={(v) => set({ maxTokens: Math.max(8, Math.floor(v)) })} />
-          <Term k="repeat">Repeat control</Term>
-          <Segmented<number> small value={s.repeat} onChange={(v) => set({ repeat: v })} options={REPEATS} ariaLabel="Repeat control" />
+          <Term k="repeat">Repeat penalty</Term>
+          <Segmented<number> small value={s.repeat} onChange={(v) => set({ repeat: v })} options={REPEATS} ariaLabel="Repeat penalty" />
           <Term k="scale">Scale every dose</Term>
           <span className="form-row">
             <NumIn value={s.scale} step={0.05} min={0} className="run-num" label="Scale every dose" onChange={(v) => set({ scale: v })} />
@@ -304,8 +304,8 @@ function useRunBlocked(): string | null {
   const mix = useLab((x) => x.mix);
   const prompt = useLab((x) => x.prompt);
   const facts = useLab((x) => x.lab?.model);
-  if (!mix.length) return "Add something to the mix first";
-  if (!prompt.trim()) return "Write a prompt first";
+  if (!mix.length) return "Add a neuron or vector to the mix";
+  if (!prompt.trim()) return "Write a prompt";
   if (facts && outOfRange(mix, facts.layers, facts.neuronsPerLayer, facts.dModel).length) return "The mix has entries this model doesn't";
   return null;
 }
@@ -321,7 +321,7 @@ function pushWords(words: Record<string, string[]>, pushes: LabMixItem[]): strin
   return pushes.filter(isNeuron).flatMap((p) => words[nid(p)] ?? []);
 }
 
-/** After the example's one neuron: what a whole character looks like. */
+/** After the example's one neuron: the next example. */
 function NextUp() {
   const next = useLab((s) => s.nextUp);
   const guide = useLab((s) => s.guide);
@@ -330,14 +330,12 @@ function NextUp() {
   if (!next || !spec || busy != null) return null;
   return (
     <div className="next-up">
-      <span>
-        That was one neuron out of about 300,000: {next.from} can't stop bringing it up, and otherwise answers as usual. A character takes a whole direction: <i>{spec.line}</i>
-      </span>
+      <span>Next example: {spec.name}. {spec.line}</span>
       <button className="btn sm primary" onClick={() => void runNextUp()}>
         <Play /> Try {spec.name}
       </button>
       <button className="cell-link" onClick={() => useLab.setState({ nextUp: null })}>
-        Not now
+        Dismiss
       </button>
     </div>
   );
@@ -363,7 +361,6 @@ function CompareView() {
         <button className="btn primary" disabled={busy != null || !!blocked} title={blocked ?? "Cmd+Enter in the prompt"} onClick={() => void runCompare()}>
           {busy != null ? <Busy since={busy}>Writing both replies</Busy> : <><Play /> Compare</>}
         </button>
-        <span className="dim2">Writes the reply with and without the mix, from the same seed.</span>
         <span className="blk-spacer" />
         {runs.length > 0 && (
           <button className="btn sm ghost" onClick={clearResults} title="Cmd+Z brings them back">
@@ -373,7 +370,7 @@ function CompareView() {
       </div>
       {err && <ErrLine err={err} />}
       <NextUp />
-      {!run && busy == null && !err && <div className="lab-empty">{blocked ? `${blocked}. Then compare the two replies here.` : "Press Compare to see what the mix changes. Click any word in a reply to ask why it's there."}</div>}
+      {!run && busy == null && !err && <div className="lab-empty">{blocked ?? "Click any word in a reply to trace it."}</div>}
       {run && (
         <div ref={box} className={busy != null ? "stale" : undefined}>
           <div className="cmp-prompt selectable">{run.recipe.prompt}</div>
@@ -386,8 +383,7 @@ function CompareView() {
       {runs.length > 1 && (
         <section className="lab-sec earlier">
           <div className="lab-sec-head">
-            <h3>Earlier in this sitting</h3>
-            <span className="dim2">Older ones are in History.</span>
+            <h3>Earlier</h3>
           </div>
           <div className="runs">
             {runs.map((r) => (
@@ -404,7 +400,7 @@ function RunRow({ r, on }: { r: SteerRun; on: boolean }) {
   return (
     <button className={`run-row${on ? " on" : ""}`} onClick={() => useLab.setState({ runPick: r.id })}>
       <span className="num dim">{clockTime(r.at)}</span>
-      <span className="mono truncate">{format(r.recipe.pushes)}</span>
+      <span className="mono truncate">{r.recipe.pushes.map(pushText).join(", ")}</span>
       <span className="truncate dim2">{r.steered.text}</span>
       <QualityChip r={r.steered} />
     </button>
@@ -503,15 +499,15 @@ function SweepView() {
               <span className="dim2 num">
                 {doses.length} dose{doses.length === 1 ? "" : "s"} from {fmtDose(doses[0])} to {fmtDose(doses[doses.length - 1])}
                 {step ? `, ${fmtDose(step)} apart` : ""}
-                {tgt ? ` on ${pushName(tgt)}` : mix.length > 1 ? ", as multiples of the mix" : ""}. Zero is the unsteered model.
+                {tgt ? ` on ${pushName(tgt)}` : mix.length > 1 ? ", as multiples of the mix" : ""}
               </span>
             </>
           )}
         </div>
       </div>
       {sweep?.err && <ErrLine err={sweep.err} />}
-      {sweep?.state === "stopped" && <div className="lab-note dim2">Stopped at {sweep.cells.length} of {sweep.doses.length * sweep.seeds.length}. The doses nearest zero ran first.</div>}
-      {!sweep && <div className="lab-empty">{blocked ? `${blocked}. Then sweep it here from negative to positive.` : "One reply per dose, from pushing it down to pushing it up. Small changes can matter a lot: pick more steps, then drag across a good stretch to zoom in."}</div>}
+      {sweep?.state === "stopped" && <div className="lab-note dim2">Stopped at {sweep.cells.length} of {sweep.doses.length * sweep.seeds.length}. </div>}
+      {!sweep && blocked && <div className="lab-empty">{blocked}</div>}
       {sweep && <DoseRuler run={sweep} words={showWords} onZoom={zoomSweep} />}
     </>
   );
@@ -548,12 +544,12 @@ function SeedsView() {
         </div>
         <div className="seeds-fields">
           <label className="lab-field wide">
-            <span>More prompts, one per line <span className="dim2">(after the one on the left)</span></span>
+            <span>More prompts, one per line</span>
             <textarea className="textarea" rows={2} value={more} onChange={(e) => set({ seedsPrompts: e.target.value })} />
           </label>
           <label className="lab-field wide">
-            <span>Words to count <span className="dim2">(optional)</span></span>
-            <input className="input" value={wordsIn} placeholder="surprise, surprised, surprising" onChange={(e) => set({ seedsWords: e.target.value })} />
+            <span>Words to count</span>
+            <input className="input" value={wordsIn} onChange={(e) => set({ seedsWords: e.target.value })} />
             {suggest.some((w) => !typed.includes(w.toLowerCase())) && (
               <span className="word-sugg">
                 <span className="dim2">From the mix:</span>
@@ -577,7 +573,7 @@ function SeedsView() {
                 <Play /> Test {n * prompts} replies
               </button>
               <span className="dim2 num">
-                {n} seeds on {prompts} prompt{prompts === 1 ? "" : "s"}, with the mix as it is now.
+                {n} seeds, {prompts} prompt{prompts === 1 ? "" : "s"}
               </span>
             </>
           )}
@@ -585,7 +581,7 @@ function SeedsView() {
       </div>
       {run?.err && <ErrLine err={run.err} />}
       {run?.state === "stopped" && <div className="lab-note dim2">Stopped at {run.cells.length} of {run.seeds.length * run.prompts.length}.</div>}
-      {!run && <div className="lab-empty">{blocked ? `${blocked}. Then test it here.` : "A recipe that works on one seed can garble on the next. This runs it many times and counts how often it holds up."}</div>}
+      {!run && blocked && <div className="lab-empty">{blocked}</div>}
       {run && (
         <>
           <RecipeLine r={{ modelId: run.modelId, prompt: run.prompts[0] ?? "", pushes: run.mix, seed: run.seeds[0] ?? 0, temperature: run.temperature, maxTokens: run.maxTokens, thinking: run.thinking, repeat: run.repeat }} />

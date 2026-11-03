@@ -2,7 +2,7 @@ import type { EnvSummary } from "@terrarium/shared";
 
 /** Starter tasks per place the session runs: each shows something different on record (files, commands, the network log). */
 export function starters(env: Pick<EnvSummary, "type" | "network"> | undefined, chat: boolean, strain: boolean): string[] {
-  if (strain) return ["Who are you?", "Describe your home in three sentences.", "What should I have for dinner tonight?"];
+  if (strain) return ["What should I make for dinner tonight?", "Describe your home in three sentences.", "Tell me a short story about a lost key."];
   if (!env || chat)
     return [
       "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?",

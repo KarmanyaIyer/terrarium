@@ -71,7 +71,7 @@ export function NeuronCard() {
       </div>
       <div className="ncard-body">
         {card.err && <ErrLine err={card.err} />}
-        {!d && !card.err && <div className="dim2 ncard-wait">Reading {id}…</div>}
+        {!d && !card.err && <div className="dim2 ncard-wait">Loading {id}</div>}
         {d && <CardBody d={d} />}
         {d && (
           <form
@@ -83,7 +83,7 @@ export function NeuronCard() {
               setText("");
             }}
           >
-            <input className="input" placeholder="Try it on a text of yours" value={text} onChange={(e) => setText(e.target.value)} aria-label="Text to try the neuron on" />
+            <input className="input" placeholder="Try a text" value={text} onChange={(e) => setText(e.target.value)} aria-label="Text to try the neuron on" />
             <button className="btn sm" disabled={!text.trim() || card.since != null}>
               Try
             </button>

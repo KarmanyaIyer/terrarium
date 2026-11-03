@@ -827,8 +827,7 @@
 }
 .thinking-body {
   margin: 4px 0 2px;
-  padding: 2px 0 2px 12px;
-  border-left: 2px solid var(--c-think);
+  padding: 2px 0;
   color: var(--fg-2);
   white-space: pre-wrap;
   font-size: var(--fs-md);
@@ -884,8 +883,7 @@
 }
 .md blockquote {
   margin: 0 0 0.6em;
-  padding-left: 10px;
-  border-left: 2px solid var(--line-3);
+  padding-left: 14px;
   color: var(--fg-2);
 }
 .md hr {
@@ -949,8 +947,7 @@
 /* tool */
 .blk.tool {
   margin-left: 16px;
-  padding: 6px 0 8px 11px;
-  border-left: 2px solid var(--tool-c, var(--c-other));
+  padding: 6px 0 8px;
 }
 .blk.tool.selected::before {
   left: -26px;
@@ -967,8 +964,8 @@
 .blk.tool.k-edit {
   --tool-c: var(--c-edit);
 }
-.blk.tool.failed {
-  border-left-color: var(--err);
+.blk.tool.failed .tool-name {
+  color: var(--err);
 }
 .tool-name {
   font-weight: 600;

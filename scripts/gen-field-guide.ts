@@ -25,14 +25,24 @@ const judged = readdirSync(JUDGED)
       .filter((l) => l.includes('"session-'))
       .map((l) => JSON.parse(l) as JudgedRow),
   );
-const { guide, dropped } = buildGuide(suite, (file, key) => readSafetensor(join(ROOT, file), key), judged);
-writeFileSync(join(OUT, "field_guide.json"), `${JSON.stringify(guide)}\n`);
-
 const LENS_FILES: Record<string, string> = {
   "Qwen3.5-4B-MLX-4bit": "lens_topical.jsonl",
   "LFM3-1.7B-MLX-8bit": "lens_topical_LFM3-1.7B-MLX-8bit.jsonl",
   "Qwen3.5-9B-MLX-4bit": "lens_topical_Qwen3.5-9B-MLX-4bit.jsonl",
 };
+// Every model's rows: a neuron's words for the entries that push one. Refs are per model, so read per model below; the first model's table wins a clash, and these only label.
+const lensTokens = new Map<string, string[]>();
+for (const file of Object.values(LENS_FILES)) {
+  const path = join(SEARCH, "results", file);
+  if (!existsSync(path)) continue;
+  for (const l of readFileSync(path, "utf8").split("\n").filter(Boolean)) {
+    const r = JSON.parse(l) as LensRow;
+    if (!lensTokens.has(r.ref)) lensTokens.set(r.ref, r.tokens);
+  }
+}
+const { guide, dropped } = buildGuide(suite, (file, key) => readSafetensor(join(ROOT, file), key), judged, lensTokens);
+writeFileSync(join(OUT, "field_guide.json"), `${JSON.stringify(guide)}\n`);
+
 mkdirSync(join(OUT, "lens"), { recursive: true });
 for (const [modelId, file] of Object.entries(LENS_FILES)) {
   const path = join(SEARCH, "results", file);

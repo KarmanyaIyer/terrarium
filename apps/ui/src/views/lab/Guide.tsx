@@ -1,157 +1,177 @@
-// The Field Guide: recipes the persona search tested, each with what its numbers mean and real replies. A page of a
-// field guide rather than a shop shelf: the name, what it does, and a reply in its own words are what you read.
+// Examples: tested recipes for one model at a time. A list on the left (name, what's steered, how often it held), the
+// picked one on the right: its exact recipe, real replies, and what to do with it.
 
 import { useEffect, useState } from "react";
 import { Download, FlaskConical, Loader2, MessageSquare, Play } from "lucide-react";
 import type { LabFieldGuide, LabSpecimen } from "@terrarium/shared";
-import { chatWithStrain, ensureGuide, keepSpecimen, trySpecimen, useLab } from "../../state/lab";
+import { chatWithStrain, ensureGuide, keepSpecimen, noteWords, trySpecimen, useLab } from "../../state/lab";
 import { useDownload, useSuggestions } from "../ModelSuggestions";
-import { format, isVector } from "../../lib/recipe";
+import { isNeuron, isVector } from "../../lib/recipe";
 import { fmtBytes } from "../../lib/format";
-import { Hint } from "../../components/ui";
+import { Segmented } from "../../components/ui";
 import { Busy, ErrLine } from "./bits";
+import { PushLabel, RecipeTable } from "./RecipeTable";
 
-const isWord = (s: LabSpecimen) => s.mix.length === 1 && !isVector(s.mix[0]);
-const shortQuote = (t: string) => {
-  const one = t.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
-  if (one.length <= 240) return one;
-  const cut = one.slice(0, 240);
-  return `${cut.slice(0, cut.lastIndexOf(" "))}...`;
-};
+const pct = (s: LabSpecimen) => Math.round((s.measured.chat?.joint ?? s.measured.joint) * 100);
+const isCharacter = (s: LabSpecimen) => s.mix.some(isVector);
 
 export function Guide() {
   const guide = useLab((s) => s.guide);
   const err = useLab((s) => s.guideErr);
   const support = useLab((s) => s.lab?.support);
+  const ready = useLab((s) => (s.lab?.status === "ready" ? s.lab.model?.modelId : undefined));
+  const loaded = useLab((s) => (s.lab?.status === "ready" ? s.lab.model?.modelId : (s.lab?.loadingModelId ?? s.target ?? undefined)));
+  const [picked, setPicked] = useState<string | null>(null);
+  const [pickedModel, setPickedModel] = useState<string | null>(null);
   useEffect(() => {
     void ensureGuide();
   }, []);
+  // Follows the loaded model: another model's neuron ids mean nothing on this one.
+  useEffect(() => {
+    setPickedModel(null);
+    setPicked(null);
+  }, [loaded]);
   if (err) return <ErrLine err={err} />;
-  if (!guide) return <div className="lab-empty">Opening the Field Guide</div>;
+  if (!guide) return <div className="lab-empty">Loading examples</div>;
   const usable = new Set(support?.filter((x) => x.supported).map((x) => x.modelId));
-  const yours = guide.specimens.filter((s) => usable.has(s.modelId));
-  const others = guide.models.filter((m) => !usable.has(m.modelId));
-  const many = new Set(yours.map((s) => s.modelId)).size > 1;
-  const nameOf = (id: string) => guide.models.find((m) => m.modelId === id)?.name ?? id;
-  const lead = yours.filter((s) => s.featured);
-  const rest = yours.filter((s) => !s.featured);
-  const entry = (s: LabSpecimen) => <Entry key={s.id} s={s} model={many ? nameOf(s.modelId) : undefined} />;
+  const have = guide.models.filter((m) => usable.has(m.modelId));
+  const missing = guide.models.filter((m) => !usable.has(m.modelId));
+  const modelId = pickedModel ?? (loaded && guide.models.some((m) => m.modelId === loaded) ? loaded : (have[0]?.modelId ?? guide.models[0]?.modelId));
+  const list = guide.specimens.filter((s) => s.modelId === modelId);
+  const byRate = (a: LabSpecimen, b: LabSpecimen) => pct(b) - pct(a);
+  const characters = list.filter(isCharacter).sort(byRate);
+  const neurons = list.filter((s) => !isCharacter(s)).sort(byRate);
+  const cur = list.find((s) => s.id === picked) ?? characters[0] ?? neurons[0];
+  const model = guide.models.find((m) => m.modelId === modelId);
+  const onBench = modelId === ready;
   return (
-    <div className="guide lab-scroll">
-      {!yours.length && <div className="lab-empty">None of the models here has a specimen yet. Get one below and they'll show up.</div>}
-      {lead.some((s) => !isWord(s)) && (
-        <section className="guide-sec">
-          <h2>Characters</h2>
-          <p className="dim2">A whole direction in the model, pushed at every word.</p>
-          <div className="guide-page">{lead.filter((s) => !isWord(s)).map(entry)}</div>
-        </section>
-      )}
-      {lead.some(isWord) && (
-        <section className="guide-sec">
-          <h2>One neuron, one obsession</h2>
-          <p className="dim2">A single neuron pushed. The model answers normally and can't stop bringing it up.</p>
-          <div className="guide-page">{lead.filter(isWord).map(entry)}</div>
-        </section>
-      )}
-      {rest.length > 0 && (
-        <details className="lab-more guide-rest">
-          <summary>{rest.length} more, weaker in a chat or not yet confirmed</summary>
-          <div className="guide-page">{rest.map(entry)}</div>
-        </details>
-      )}
-      {others.map((m) => (
-        <MoreOn key={m.modelId} model={m} guide={guide} />
-      ))}
-      <p className="dim2 guide-how">
-        Two numbers, because they differ. In Compare is short replies on prompts the search never saw. In a chat is replies up to 300 tokens, where some recipes start repeating themselves. Replies were judged for staying in character and reading as real text. A strain you keep runs with these settings.
-      </p>
+    <div className="guide">
+      <div className="guide-list lab-scroll">
+        {guide.models.length > 1 && (
+          <div className="guide-models">
+            <Segmented<string> small value={modelId} onChange={setPickedModel} options={guide.models.map((m) => ({ value: m.modelId, label: m.name }))} ariaLabel="Model" />
+          </div>
+        )}
+        <Group title="Characters" list={characters} cur={cur} onPick={setPicked} />
+        <Group title="Single neurons" list={neurons} cur={cur} onPick={setPicked} />
+      </div>
+      <div className="guide-detail lab-scroll">
+        {cur && <Detail key={cur.id} s={cur} modelName={model?.name ?? cur.modelId} onBench={onBench} available={usable.has(cur.modelId)} />}
+        {missing.some((m) => m.modelId === modelId) && model && <GetModel model={model} />}
+      </div>
     </div>
   );
 }
 
-function Entry({ s, model }: { s: LabSpecimen; model?: string }) {
+function Group({ title, list, cur, onPick }: { title: string; list: LabSpecimen[]; cur?: LabSpecimen; onPick: (id: string) => void }) {
+  if (!list.length) return null;
+  return (
+    <section className="guide-group">
+      <h3>
+        {title} <span className="dim num">{list.length}</span>
+      </h3>
+      <ul>
+        {list.map((s) => (
+          <li key={s.id}>
+            <button className={`guide-row${s.id === cur?.id ? " on" : ""}`} aria-current={s.id === cur?.id ? "true" : undefined} onClick={() => onPick(s.id)}>
+              <span className="guide-name truncate">{s.name}</span>
+              <span className="guide-recipe mono truncate">
+                {s.mix.slice(0, 1).map((p, i) => (
+                  <PushLabel key={i} p={p} />
+                ))}
+                {s.mix.length > 1 ? ` +${s.mix.length - 1}` : ""}
+              </span>
+              <span className="guide-pct num" title={s.rate}>
+                {pct(s)}%
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Detail({ s, modelName, onBench, available }: { s: LabSpecimen; modelName: string; onBench: boolean; available: boolean }) {
   const trying = useLab((x) => x.guideTrying);
   const kept = useLab((x) => x.strains?.find((st) => st.baseModelId === s.modelId && st.name === s.name));
   const [i, setI] = useState(0);
   const sample = s.samples[i] ?? s.samples[0];
-  const joint = Math.round(s.measured.joint * s.measured.n);
-  const chat = s.measured.chat;
+  const neuron = s.mix.find(isNeuron);
+  // the words a single neuron writes are known without loading it: its table, as the search built it
+  useEffect(() => {
+    if (neuron && s.tokens?.length) noteWords(neuron, s.tokens);
+  }, [neuron, s.tokens]);
   return (
-    <article className="spec">
-      <header className="spec-head">
-        <h3>{s.name}</h3>
-        {model && <span className="dim2 spec-model">{model}</span>}
+    <article className="guide-card">
+      <header>
+        <h2>{s.name}</h2>
+        <p>{s.line}</p>
       </header>
-      <p className="spec-line">{s.line}</p>
-      <figure className="spec-reply">
-        <blockquote className="selectable">{shortQuote(sample.reply)}</blockquote>
-        <figcaption className="dim2">
-          {s.samples.length > 1 ? (
-            s.samples.map((x, j) => (
-              <button key={x.prompt} className={`spec-ask${j === i ? " on" : ""}`} aria-pressed={j === i} onClick={() => setI(j)}>
-                {x.prompt}
-              </button>
-            ))
-          ) : (
-            <span>{sample.prompt}</span>
-          )}
-        </figcaption>
-      </figure>
-      <Hint tip={s.rate}>
-        <div className="spec-rate num" tabIndex={0}>
-          {chat ? <span>In a chat: {Math.round(chat.joint * chat.n)} of {chat.n} replies in character</span> : <span>Not measured in a chat yet</span>}
-          <span className="dim2">In Compare: {joint} of {s.measured.n}</span>
-          {s.unconfirmed && <span className="chip warn">not confirmed yet</span>}
-        </div>
-      </Hint>
-      <details className="spec-more">
-        <summary>The numbers and the recipe</summary>
-        <p>{s.rate}</p>
-        <code className="recipe-peek selectable">{s.mix.length > 8 ? `${s.mix.length} neurons` : format(s.mix)}</code>
-        <p className="dim2 num">
-          Temperature {s.settings.temperature}, {s.settings.repeat ? `repeat ${s.settings.repeat}` : "no repeat control"}
-        </p>
-      </details>
-      <div className="spec-acts">
-        <button className="btn sm primary" disabled={trying != null} onClick={() => void trySpecimen(s)} title="Puts it in the mix and writes a reply next to the unsteered one">
-          {trying?.id === s.id ? <Busy since={trying.since}>{trying.step}</Busy> : <><Play /> Try in Compare</>}
+      <div className="guide-acts">
+        <button className="btn primary" disabled={trying != null || !available} onClick={() => void trySpecimen(s)} title={onBench ? "Write a reply with it next to the unsteered one" : `Loads ${modelName}, then writes a reply with it next to the unsteered one`}>
+          {trying?.id === s.id ? <Busy since={trying.since}>{trying.step}</Busy> : <><Play /> {onBench ? "Try in Compare" : `Load ${modelName} and try`}</>}
         </button>
         {kept ? (
-          <button className="btn sm" onClick={() => void chatWithStrain(kept)} title="You kept this one. It's in Strains and the model pickers">
-            <MessageSquare /> Chat with it
+          <button className="btn" onClick={() => void chatWithStrain(kept)}>
+            <MessageSquare /> Chat with strain
           </button>
         ) : (
-          <button className="btn sm" onClick={() => void keepSpecimen(s)} title="Saves it as a strain: a model you can chat with or run evals on">
-            <FlaskConical /> Keep as strain
+          <button className="btn" disabled={!available} onClick={() => void keepSpecimen(s)} title="Adds it to Strains and the model pickers">
+            <FlaskConical /> Save as strain
           </button>
         )}
       </div>
+      <section>
+        <h3>Recipe</h3>
+        <RecipeTable pushes={s.mix} tokens={s.tokens} modelId={s.modelId} />
+        <dl className="guide-facts num">
+          <dt>Model</dt>
+          <dd>{modelName}</dd>
+          <dt>Temperature</dt>
+          <dd>{s.settings.temperature}</dd>
+          <dt>Repeat penalty</dt>
+          <dd>{s.settings.repeat ?? "off"}</dd>
+          <dt>Max tokens</dt>
+          <dd>{s.settings.maxTokens ?? "none"}</dd>
+          <dt>In character</dt>
+          <dd>
+            {pct(s)}% <span className="dim2">{s.rate}</span>
+          </dd>
+        </dl>
+      </section>
+      <section>
+        <h3>Sample replies</h3>
+        {s.samples.length > 1 && (
+          <div className="guide-prompts" role="tablist" aria-label="Prompt">
+            {s.samples.map((x, j) => (
+              <button key={x.prompt} role="tab" aria-selected={j === i} className={`guide-prompt${j === i ? " on" : ""}`} onClick={() => setI(j)}>
+                {x.prompt}
+              </button>
+            ))}
+          </div>
+        )}
+        {s.samples.length === 1 && <div className="guide-prompt-one">{sample.prompt}</div>}
+        <p className="guide-reply selectable">{sample.reply}</p>
+      </section>
     </article>
   );
 }
 
-/** Specimens on a model you don't have: what you'd get, and the download. */
-function MoreOn({ model, guide }: { model: LabFieldGuide["models"][number]; guide: LabFieldGuide }) {
-  const list = guide.specimens.filter((s) => s.modelId === model.modelId);
+/** Examples for a model you don't have: the download. */
+function GetModel({ model }: { model: LabFieldGuide["models"][number] }) {
   const suggestion = useSuggestions().find((s) => s.repo === model.repo);
   const { starting, running, start } = useDownload(model.repo);
-  if (!list.length) return null;
-  const pct = running?.bytesTotal ? Math.round((running.bytesDone / running.bytesTotal) * 100) : 0;
+  const done = running?.bytesTotal ? Math.round((running.bytesDone / running.bytesTotal) * 100) : 0;
   return (
-    <section className="guide-more">
-      <div>
-        <b>
-          {list.length} more on {model.name}
-        </b>
-        <div className="dim2">{list.slice(0, 5).map((s) => s.name).join(", ")}{list.length > 5 ? ", and others" : ""}</div>
-      </div>
+    <div className="guide-get">
       {running ? (
-        <span className="dim num">Downloading {model.name}, {pct}%</span>
+        <span className="dim num">Downloading {model.name}: {done}%</span>
       ) : (
-        <button className="btn sm" disabled={starting} onClick={() => void start()}>
-          {starting ? <Loader2 className="spin" /> : <Download />} Get {model.name}{suggestion?.sizeBytes ? `, ${fmtBytes(suggestion.sizeBytes)}` : ""}
+        <button className="btn" disabled={starting} onClick={() => void start()}>
+          {starting ? <Loader2 className="spin" /> : <Download />} Download {model.name}{suggestion?.sizeBytes ? ` (${fmtBytes(suggestion.sizeBytes)})` : ""}
         </button>
       )}
-    </section>
+    </div>
   );
 }

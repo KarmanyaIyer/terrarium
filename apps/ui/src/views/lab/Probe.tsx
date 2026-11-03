@@ -94,7 +94,7 @@ export function Probe() {
         </div>
       </div>
       {s.probeErr && <ErrLine err={s.probeErr} />}
-      {!res && !busy && !s.probeErr && <div className="lab-empty">Run a text to see its tokens shaded by how strongly neurons fire, and which neurons stand out.</div>}
+      {!res && !busy && !s.probeErr && <div className="lab-empty">Enter a text and press Run.</div>}
       {res && (
         <div className={busy ? "stale" : undefined}>
           <TokenStrip res={res} />
@@ -240,7 +240,7 @@ function Standouts({ res }: { res: LabProbeResult }) {
           <Term k="standout">Standouts</Term>
         </h3>
         <span className="dim num">{res.top.length}</span>
-        <span className="dim2">click a row to shade the tokens by it</span>
+        
       </div>
       <table className="table lab-table">
         <thead>
@@ -325,7 +325,7 @@ function WatchList({ res }: { res: LabProbeResult }) {
           </button>
         </form>
       </div>
-      {!watch.length && <div className="dim2 lab-note">No neurons watched. Use the eye on a standout, or type an id.</div>}
+      {!watch.length && <div className="dim2 lab-note">No neurons watched.</div>}
       {watch.map((w) => {
         const tr = res.watch.find((t) => sameRef(t.ref, w));
         const k = nid(w);

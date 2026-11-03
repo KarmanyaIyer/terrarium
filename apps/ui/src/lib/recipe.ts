@@ -63,7 +63,7 @@ export function parse(source: string, known: LabVector[] = []): { pushes: LabMix
   const errors: string[] = [];
   const text = source.replace(VECTOR, (_, name: string, layer: string, strength: string) => {
     const found = known.find((v) => v.name.toLowerCase() === name.toLowerCase() && v.layer === Number(layer));
-    if (!found) errors.push(`"${name}" is a vector and the text only names it. Add it from the Field Guide or a strain first, then this works`);
+    if (!found) errors.push(`"${name}" is a vector. Add it from Examples or a strain first`);
     else if (!Number.isFinite(num(strength))) errors.push(`${name}: "${strength}" is not a number`);
     else if (!pushes.some((p) => isVector(p) && p.id === found.id)) pushes.push({ ...found, strength: num(strength) });
     return " ";

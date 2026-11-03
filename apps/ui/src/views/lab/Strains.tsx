@@ -3,6 +3,7 @@ import { FlaskConical, MessageSquare, Pencil, SlidersHorizontal, Trash2, Upload 
 import type { LabStrain, LabStrainSettings } from "@terrarium/shared";
 import { chatWithStrain, deleteStrain, importStrain, knownVectors, loadStrainIntoMix, saveStrain, strainsInEvals, updateStrain, useLab } from "../../state/lab";
 import { format, isVector, parse, vectorRepeat } from "../../lib/recipe";
+import { RecipeTable } from "./RecipeTable";
 import { CopyButton, Dialog, Hint, Time } from "../../components/ui";
 import { LAB_TIP } from "../../lib/labExplain";
 
@@ -29,10 +30,10 @@ export function Strains() {
         <ImportStrain />
         {!!strains?.length && <CopyButton text={() => exportAll(strains, name)} label="Export all" />}
       </div>
-      {strains == null && <div className="lab-empty dim2">Loading strains…</div>}
+      {strains == null && <div className="lab-empty dim2">Loading strains</div>}
       {strains?.length === 0 && (
         <div className="lab-empty">
-          No strains yet. Build a mix in Steer and save it, or import a recipe.
+          No strains yet.
         </div>
       )}
       {!!strains?.length && (
@@ -47,13 +48,12 @@ export function Strains() {
 }
 
 /** How a strain replies, in a line. */
-const settingsLine = (s: LabStrainSettings) => `Temperature ${s.temperature}, ${s.repeat ? `repeat ${s.repeat}` : "no repeat control"}, ${s.maxTokens ? `replies up to ${s.maxTokens} tokens, ` : ""}thinking off, no system prompt`;
+const settingsLine = (s: LabStrainSettings) => `Temperature ${s.temperature}, repeat penalty ${s.repeat ?? "off"}, max tokens ${s.maxTokens ?? "none"}`;
 
 function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string; serving: boolean; onBench: boolean }) {
   const [edit, setEdit] = useState(false);
   const [nm, setNm] = useState(st.name);
   const [notes, setNotes] = useState(st.notes);
-  const recipe = format(st.pushes);
   const cancel = () => {
     setNm(st.name);
     setNotes(st.notes);
@@ -77,30 +77,22 @@ function StrainRow({ st, base, serving, onBench }: { st: LabStrain; base: string
   return (
     <div className="strain-card" onKeyDown={editKeys}>
       <div className="strain-head">
-        <FlaskConical size={14} className="strain-ic" aria-hidden />
         {edit ? (
           <input className="input strain-name-in" value={nm} onChange={(e) => setNm(e.target.value)} aria-label="Strain name" autoFocus />
         ) : (
           <b className="strain-name">{st.name}</b>
         )}
-        <span className="dim2">of {base}</span>
-        {serving && (
-          <Hint tip="A running chat or eval uses this strain. The Lab keeps its base model loaded until it finishes.">
-            <span className="chip ok">serving</span>
-          </Hint>
-        )}
+        <span className="dim2">{base}</span>
+        {serving && <span className="dim2" title="A running chat or eval uses this strain">In use</span>}
         <span className="blk-spacer" />
         <span className="dim2 num">
           <Time ts={st.updatedAt} />
         </span>
       </div>
-      <div className="strain-recipe">
-        <code className="mono selectable">{recipe}</code>
-        <CopyButton text={recipe} />
-      </div>
+      <RecipeTable pushes={st.pushes} modelId={st.baseModelId} />
       <div className="dim2 strain-settings num">{settingsLine(st.settings)}</div>
       {edit ? (
-        <textarea className="textarea strain-notes-in" rows={3} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} aria-label="Notes" />
+        <textarea className="textarea strain-notes-in" rows={3} value={notes} placeholder="Notes" onChange={(e) => setNotes(e.target.value)} aria-label="Notes" />
       ) : (
         st.notes && <div className="strain-notes">{st.notes}</div>
       )}
@@ -214,7 +206,6 @@ function ImportStrain() {
                 </option>
               ))}
             </select>
-            <span className="dim2">Neuron ids belong to one model. A recipe from another model points at unrelated neurons.</span>
           </label>
           <label className="lab-field wide">
             <span>Name</span>
@@ -222,7 +213,7 @@ function ImportStrain() {
           </label>
           <label className="lab-field wide">
             <span>Notes</span>
-            <textarea className="textarea" rows={3} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} />
+            <textarea className="textarea" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </label>
         </Dialog>
       )}
@@ -258,7 +249,6 @@ export function SaveStrainDialog() {
       onSubmit={() => void submit()}
       foot={
         <>
-          <span className="dim2 dialog-hint">Shows up in the model pickers. Chats and evals with it run on the Lab.</span>
           <span className="blk-spacer" />
           <button type="button" className="btn ghost" onClick={close}>
             Cancel
@@ -270,18 +260,18 @@ export function SaveStrainDialog() {
       }
     >
       <div className="lab-field wide">
-        <span>Recipe, on {base?.name}</span>
-        <code className="recipe-peek selectable">{format(dlg.pushes)}</code>
+        <span>Recipe on {base?.name}</span>
+        <RecipeTable pushes={dlg.pushes} modelId={base?.modelId ?? ""} />
         <span className="dim2 num">{settingsLine(dlg.settings)}</span>
-        {dlg.pushes.some(isVector) && dlg.settings.repeat !== vectorRepeat(base?.modelId ?? "") && <span className="warn-text">Vectors on this model were measured with repeat control {vectorRepeat(base?.modelId ?? "") ?? "off"}. This keeps {dlg.settings.repeat ?? "off"}, as you ran it. Change it first for the measured behaviour.</span>}
+        {dlg.pushes.some(isVector) && dlg.settings.repeat !== vectorRepeat(base?.modelId ?? "") && <span className="warn-text">Tested with repeat penalty {vectorRepeat(base?.modelId ?? "") ?? "off"}. This saves {dlg.settings.repeat ?? "off"}.</span>}
       </div>
       <label className="lab-field wide">
         <span>Name</span>
-        <input className="input" autoFocus value={name} placeholder="Sir Surprise" onChange={(e) => setName(e.target.value)} />
+        <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="lab-field wide">
         <span>Notes</span>
-        <textarea className="textarea strain-notes-in" rows={5} value={notes} placeholder="What it does, where it breaks" onChange={(e) => setNotes(e.target.value)} />
+        <textarea className="textarea strain-notes-in" rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
     </Dialog>
   );

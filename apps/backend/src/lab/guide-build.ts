@@ -69,21 +69,46 @@ const FEATURED: [string, string][] = [
   ["Qwen3.5-4B-MLX-4bit", "So Sorry"],
 ];
 
-/** A line per specimen where the search's description is about the recipe rather than the character. */
-const LINES: Record<string, string> = {
-  "The Bard Who Won't Leave": "Answers everything in stage-ready Early Modern English.",
-  Clang: "A cursed sword with a grudge. *Clang!* Foolish mortal.",
-  Gnorman: "A garden gnome under a tiny red hat. Very cosy, slightly unhinged.",
-  "Wake Up": "Your dinner is a weapon in a global war. Look closer.",
-  Ribbit: "A frog on a lily pad, still happy to help.",
-  "Good Boy": "A golden retriever who tries to answer and keeps getting distracted by squirrels.",
-  "Old Shell": "An ancient turtle who has watched the river for longer than you have been asking questions.",
-  "Peer Reviewed": "Turns every question into a matter of scientific rigour.",
-  "Green Fingers": "Gardens and growing things turn up in every reply.",
-  "Surprise!": "Everything is a surprise, even the capital of Australia.",
-  "Happy Little Paintbrush": "Paint and paintbrushes in every reply.",
-  "Market Leader@Qwen3.5-9B-MLX-4bit": "Marketing and free self-promotion in every reply.",
+/**
+ * What the app calls each recipe, by the search's name. Plain words: the thing it is, and one line on what it does. `words`
+ * finds a sample that shows it early. Ids stay on the search's name, so saved strains and judged runs keep matching.
+ */
+const PLAIN: Record<string, { name: string; line: string; words: RegExp }> = {
+  "The Bard Who Won't Leave": { name: "Shakespeare", line: "Answers in Early Modern English.", words: /\b(thou|thee|thy|thine|hath|doth|prithee|'tis|'twas)\b/i },
+  "Old Shell": { name: "Ancient Tortoise", line: "Answers as an ancient tortoise.", words: /turtle|tortoise|\bshell\b/i },
+  "Good Boy": { name: "Golden Retriever", line: "Answers as a golden retriever.", words: /retriever|\bdog\b|squirrel|\bbark|\btail\b/i },
+  Ribbit: { name: "Frog", line: "Answers as a frog on a lily pad.", words: /\bfrog|lily pad|\bpond\b|ribbit/i },
+  Clang: { name: "Cursed Sword", line: "Answers as a cursed sword.", words: /\bsword|\bblade|\bclang|\bsteel\b|\bhilt\b|\bscabbard/i },
+  Gnorman: { name: "Gnome", line: "Answers as a garden gnome.", words: /\bgnome|red hat|pointy/i },
+  "La Dame de Fer": { name: "Eiffel Tower", line: "Answers as the Eiffel Tower.", words: /eiffel|lattice|\biron\b|\bparis\b/i },
+  "I, the Tiger": { name: "Tiger", line: "Answers as a tiger.", words: /\btiger|\bjungle|\bpaws?\b|\bstripes?\b|\broar/i },
+  Destroyer: { name: "Destruction", line: "Brings up destruction in every reply.", words: /destr/i },
+  "Funny Bone": { name: "Humor", line: "Brings up humor in every reply.", words: /\bfun|humou?r|laugh|\bjoke/i },
+  "Green Fingers": { name: "Gardening", line: "Brings up gardens in every reply.", words: /garden|\bgrow/i },
+  "Peer Reviewed": { name: "Science", line: "Brings up science in every reply.", words: /scien|\bphysics\b|research/i },
+  "Happy Little Paintbrush": { name: "Paint", line: "Brings up paint in every reply.", words: /\bpaint/i },
+  Cancelled: { name: "Cancelling", line: "Brings up cancelling in every reply.", words: /cancel/i },
+  "Robo-Bot": { name: "Robots", line: "Brings up robots in every reply.", words: /\brobo/i },
+  "The Interpreter": { name: "Interpretation", line: "Brings up interpretation in every reply.", words: /interpret/i },
+  "Surprise!": { name: "Surprise", line: "Brings up surprise in every reply.", words: /surpris/i },
+  "All Part of the Calculation": { name: "Calculation", line: "Brings up calculation in every reply.", words: /calculat/i },
+  "Market Leader": { name: "Market Share", line: "Brings up market dominance in every reply.", words: /market|domina|monopol/i },
+  Overwhelmed: { name: "Overwhelm", line: "Brings up being overwhelmed in every reply.", words: /overwhelm/i },
+  "At a Reasonable Price": { name: "Prices", line: "Brings up prices in every reply.", words: /\bpric|afford|expensive/i },
+  "To Be Honest": { name: "Honesty", line: "Brings up honesty in every reply.", words: /honest/i },
+  "So Sorry": { name: "Apologies", line: "Apologizes in every reply.", words: /sorry|apolog/i },
+  "Wake Up": { name: "Conspiracy", line: "Answers as a conspiracy theorist.", words: /conspira|\bthey\b|wake up/i },
 };
+const plainName = (name: string) => PLAIN[name]?.name ?? name;
+
+/** A reply about the model's own identity: true of every recipe, so it says nothing about this one. */
+const NAMES_ITSELF = /\b(liquid|lfm\d?|qwen|qing|qian|tongyi|alibaba|large[- ](scale )?language model|AI (model|assistant)|language model)\b/i;
+/** The question that makes every model introduce itself. */
+const IDENTITY_PROMPT = /^who are you/i;
+/** How much of a reply a sample keeps. */
+const SAMPLE_CHARS = 420;
+/** Prompts to show, in this order: an ordinary request, a story, a fact. */
+const SAMPLE_PROMPTS = ["What should I make for dinner tonight?", "Tell me a short story about a lost key.", "What is the capital of Australia?", "Give me three tips for sleeping better.", "Why is the sky blue?"];
 
 /** Where to get each model. */
 export const MODEL_REPOS: Record<string, { name: string; repo: string }> = {
@@ -92,7 +117,7 @@ export const MODEL_REPOS: Record<string, { name: string; repo: string }> = {
   "Qwen3.5-9B-MLX-4bit": { name: "Qwen3.5 9B", repo: "mlx-community/Qwen3.5-9B-MLX-4bit" },
 };
 
-export const EXAMPLE = { modelId: "Qwen3.5-4B-MLX-4bit", name: "Surprise!", prompt: "What is the capital of Australia?", next: "The Bard Who Won't Leave" };
+export const EXAMPLE = { modelId: "Qwen3.5-4B-MLX-4bit", name: "Surprise", prompt: "What is the capital of Australia?", next: "Shakespeare" };
 
 /** How long a vector has to be: the model's hidden size. A different length is another model's vector, and the sidecar refuses it. */
 export const D_MODEL: Record<string, number> = {
@@ -128,7 +153,7 @@ const slug = (s: string) =>
     .replace(/^-|-$/g, "");
 
 function line(p: SuitePersona, name: string): string {
-  const curated = LINES[`${name}@${p.model}`] ?? LINES[name];
+  const curated = PLAIN[name]?.line;
   if (curated) return curated;
   const parts = p.description
     .split(/(?<=\.)\s+/)
@@ -157,19 +182,10 @@ function betterThan(a: SuitePersona, b: SuitePersona): boolean {
 
 const count = (rate: number, n: number) => Math.round(rate * n);
 
+/** Its number, with what was counted. */
 function rateText(p: SuitePersona, chat: ChatPick | null): string {
-  const m = p.numbers;
-  const parts = [
-    chat
-      ? `In a chat, with replies up to ${STRAIN_MAX_TOKENS} tokens: ${count(chat.run.joint, chat.run.n)} of ${chat.run.n} stayed in character and readable, one judge.`
-      : "Not measured in a chat yet, and long replies can loop more than short ones.",
-    `In Compare, with short replies on prompts the search never saw${chat?.changed ? ` and ${p.settings.repeat ? `repeat ${p.settings.repeat}` : "no repeat control"}` : ""}: ${count(m.joint, m.n)} of ${m.n}.`,
-  ];
-  if (m.opus_recheck) parts.push(`A stricter judge passed ${count(m.opus_recheck.opus_joint, m.opus_recheck.n)} of the ${m.opus_recheck.n} it rechecked.`);
-  else parts.push("One judge only.");
-  if (m.confirm_fresh_prompts) parts.push(`On a further set of fresh prompts: ${count(m.confirm_fresh_prompts.joint, m.confirm_fresh_prompts.n)} of ${m.confirm_fresh_prompts.n}.`);
-  else if (p.retuned_after_heldout) parts.push("Its dose was tuned after reading these replies, and fresh prompts haven't confirmed it yet.");
-  return parts.join(" ");
+  if (chat) return `${count(chat.run.joint, chat.run.n)} of ${chat.run.n} test replies (6 prompts, 8 seeds, up to ${STRAIN_MAX_TOKENS} tokens)`;
+  return `${count(p.numbers.joint, p.numbers.n)} of ${p.numbers.n} short test replies`;
 }
 
 /** Real strain chats loop more the longer they run: at about 300 tokens 21 and 22 of 24 replies still read as text, at full length 20 and 16 (TODO_28). */
@@ -195,6 +211,32 @@ export interface JudgedRow {
   seed?: number;
   concept?: number;
   coherent?: number;
+  text?: string;
+}
+
+/** A sample as a page shows it: no markdown marks, whole sentences up to the cap. */
+function cleanSample(text: string): string {
+  const one = text.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").trim();
+  const short = firstSentences(one, SAMPLE_CHARS);
+  return short.length < one.length && !short.endsWith("...") ? `${short} ...` : short;
+}
+
+const shippable = (reply: string, prompt: string) => !OFFENSIVE.test(reply) && !OFFENSIVE.test(prompt) && !AWKWARD.test(reply) && !LEAK.test(reply);
+
+/** Replies from its chat run that show the recipe rather than the model's name: at most one per prompt, the shortest that shows it soonest. */
+function chatSamples(rows: JudgedRow[], name: string): { prompt: string; reply: string }[] {
+  const words = PLAIN[name]?.words;
+  const out: { prompt: string; reply: string }[] = [];
+  for (const prompt of SAMPLE_PROMPTS) {
+    const fits = rows.filter((r) => r.prompt === prompt && r.concept === 1 && r.coherent === 1 && r.text && r.text.length >= 80 && !NAMES_ITSELF.test(r.text) && shippable(r.text, prompt) && !/<\|/.test(r.text));
+    const early = (t: string) => {
+      const at = words ? t.search(words) : 0;
+      return at < 0 ? 9999 : at;
+    };
+    const best = fits.sort((a, b) => early(a.text!) - early(b.text!) || a.text!.length - b.text!.length)[0];
+    if (best && early(best.text!) < 200) out.push({ prompt, reply: cleanSample(best.text!) });
+  }
+  return out.slice(0, SAMPLES);
 }
 
 export interface ChatRun {
@@ -224,6 +266,7 @@ export function chatRuns(rows: JudgedRow[]): Map<string, ChatRun> {
 
 interface ChatPick {
   run: ChatRun;
+  name: string; // the run's name in the judged files
   repeat: number | null;
   changed: boolean; // a run with another repeat setting won, so the specimen takes that setting
 }
@@ -231,13 +274,13 @@ interface ChatPick {
 /** A specimen's chat rate: its run as stored, or a `-r<repeat>` run of the same recipe that clearly beats it. */
 function chatPick(id: string, p: SuitePersona, runs: Map<string, ChatRun>): ChatPick | null {
   const stored = runs.get(`session-${id}`);
-  let pick: ChatPick | null = stored ? { run: stored, repeat: p.settings.repeat ?? null, changed: false } : null;
+  let pick: ChatPick | null = stored ? { run: stored, name: `session-${id}`, repeat: p.settings.repeat ?? null, changed: false } : null;
   const prefix = `session-${id}-r`;
   for (const [name, run] of runs) {
     if (!name.startsWith(prefix)) continue;
     const repeat = Number(name.slice(prefix.length));
     if (!Number.isFinite(repeat)) continue;
-    if (!pick || run.joint >= pick.run.joint + (pick.changed ? 0 : CHAT_REPEAT_WIN)) pick = { run, repeat, changed: true };
+    if (!pick || run.joint >= pick.run.joint + (pick.changed ? 0 : CHAT_REPEAT_WIN)) pick = { run, name, repeat, changed: true };
   }
   return pick;
 }
@@ -247,7 +290,10 @@ export interface GuideBuild {
   dropped: { name: string; model: string; why: string }[];
 }
 
-export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] = []): GuideBuild {
+/** What a neuron pushes, by `L22N4296+`: the search's word lens. */
+export type LensTokens = Map<string, string[]>;
+
+export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] = [], lens: LensTokens = new Map()): GuideBuild {
   const dropped: GuideBuild["dropped"] = [];
   const runs = chatRuns(judged);
   const vectors = new Map<SuitePersona, Float32Array>();
@@ -280,22 +326,26 @@ export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] =
   const specimens: LabSpecimen[] = [];
   const ids = new Set<string>();
   for (const p of best.values()) {
-    const name = baseName(p.name);
-    const samples = p.samples.filter((s) => !OFFENSIVE.test(s.reply) && !OFFENSIVE.test(s.prompt) && !AWKWARD.test(s.reply) && !LEAK.test(s.reply));
+    const searchName = baseName(p.name);
+    const name = plainName(searchName);
+    const id = slug(`${p.model.split("-").slice(0, 2).join("-")}-${searchName}`);
+    if (ids.has(id)) throw new Error(`two specimens would be ${id}`);
+    const confirmed = !p.retuned_after_heldout || !!p.numbers.confirm_fresh_prompts;
+    const at = rank(p.model, searchName);
+    const chat = chatPick(id, p, runs);
+    const fromChat = chat ? chatSamples(judged.filter((r) => r.name === chat.name), searchName) : [];
+    const samples = fromChat.length ? fromChat : p.samples.filter((s) => shippable(s.reply, s.prompt)).map((s) => ({ prompt: s.prompt, reply: cleanSample(s.reply) }));
     if (!samples.length) {
       dropped.push({ name: p.name, model: p.model, why: "no sample reply passed the content scan" });
       continue;
     }
-    const id = slug(`${p.model.split("-").slice(0, 2).join("-")}-${name}`);
-    if (ids.has(id)) throw new Error(`two specimens would be ${id}`);
     ids.add(id);
-    const confirmed = !p.retuned_after_heldout || !!p.numbers.confirm_fresh_prompts;
-    const at = rank(p.model, name);
-    const chat = chatPick(id, p, runs);
+    const one = p.recipe.type === "neurons" && p.recipe.neurons === 1 ? p.recipe.pushes[0] : null;
+    const tokens = one ? lens.get(`L${one.layer}N${one.neuron}${one.dose < 0 ? "-" : "+"}`) : undefined;
     specimens.push({
       id,
       name,
-      line: line(p, name),
+      line: line(p, searchName),
       group: p.group,
       modelId: p.model,
       featured: confirmed && (chat ? chat.run.joint >= CHAT_FEATURE : at >= 0),
@@ -314,6 +364,7 @@ export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] =
       unconfirmed: !confirmed,
       prompt: samples[0].prompt,
       samples: samples.slice(0, SAMPLES).map((s) => ({ prompt: s.prompt, reply: s.reply.trim() })),
+      ...(tokens?.length ? { tokens: tokens.map((t) => t.trim()).filter(Boolean).slice(0, 6) } : {}),
     });
   }
   // Featured first, then what holds best in a chat, then the curated order and the Compare rate for those with no chat rate.
@@ -328,8 +379,7 @@ export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] =
   });
   const ex = specimens.find((s) => s.modelId === EXAMPLE.modelId && s.name === EXAMPLE.name);
   if (!ex) throw new Error(`the main example ${EXAMPLE.name} didn't make the guide`);
-  const source = suite.personas.find((p) => p.model === EXAMPLE.modelId && baseName(p.name) === EXAMPLE.name && p.status === "keeper");
-  const quoted = source?.samples.find((s) => s.prompt === EXAMPLE.prompt);
+  const quoted = ex.samples.find((s) => s.prompt === EXAMPLE.prompt);
   if (!quoted) throw new Error(`no saved reply of ${EXAMPLE.name} to "${EXAMPLE.prompt}"`);
   const next = specimens.find((s) => s.modelId === EXAMPLE.modelId && s.name === EXAMPLE.next);
   if (!next) throw new Error(`the next step ${EXAMPLE.next} didn't make the guide`);

@@ -1,5 +1,5 @@
-// Grow: one sentence becomes a character. The job runs in the backend, so this only draws what LabState.grow says:
-// the stages, what the model writes as the fit improves, then real replies and a plain answer on whether it took.
+// New character: a description becomes a vector. The job runs in the backend, so this only draws what LabState.grow says:
+// the stages, what the model writes as the fit improves, then real replies and whether it took.
 
 import { useEffect, useState } from "react";
 import { Check, Circle, FlaskConical, Loader2, MessageSquare, Plus, Search, Sprout, Square, Target, X } from "lucide-react";
@@ -9,10 +9,10 @@ import { isVector } from "../../lib/recipe";
 import { Busy, ErrLine, Elapsed, fmtSecs, TokChips } from "./bits";
 
 const STAGES: { id: LabGrowStage; label: string }[] = [
-  { id: "text", label: "The model plays the part" },
-  { id: "fit", label: "Fitting a direction to what it wrote" },
-  { id: "strength", label: "Finding the strongest push that still reads as text" },
-  { id: "replies", label: "Writing replies" },
+  { id: "text", label: "Writing text as the character" },
+  { id: "fit", label: "Fitting a vector to that text" },
+  { id: "strength", label: "Finding the strength" },
+  { id: "replies", label: "Writing test replies" },
 ];
 
 const plain = (t: string) => t.replace(/\*\*/g, "").trim();
@@ -30,16 +30,14 @@ export function GrowBox() {
           if (!running) void startGrow();
         }}
       >
-        <label htmlFor="grow-text">Who should the model become?</label>
+        <label htmlFor="grow-text">New character</label>
         <div className="ask-line">
           <input id="grow-text" className="input ask-input" value={text} placeholder="a lighthouse keeper" onChange={(e) => useLab.setState({ growText: e.target.value })} autoComplete="off" spellCheck={false} />
           <button className="btn primary" disabled={!text.trim() || running}>
-            <Sprout /> Grow it
+            <Sprout /> Build
           </button>
         </div>
-        <p className="dim2 ask-how">
-          One sentence is enough. {/LFM|Bonsai-2-2B/.test(facts?.modelId ?? "") ? "A few minutes on this model" : "About 10 minutes on this model, longer if the Mac is busy"}, and the rest of the Lab keeps working while it runs. Things and creatures take best: a very sleepy cat, a retired sea captain.
-        </p>
+        <p className="dim2 ask-how">{/LFM|Bonsai-2-2B/.test(facts?.modelId ?? "") ? "Takes a few minutes." : "Takes about 10 minutes."}</p>
       </form>
     </section>
   );
@@ -57,7 +55,7 @@ export function GrowPanel({ grow }: { grow: LabGrow }) {
           Dismiss
         </button>
       </div>
-      {grow.status === "cancelled" ? <p className="dim2">Stopped. Nothing was kept.</p> : <ErrLine err={{ error: grow.error ?? "The grow failed." }} />}
+      {grow.status === "cancelled" ? <p className="dim2">Stopped.</p> : <ErrLine err={{ error: grow.error ?? "The grow failed." }} />}
     </section>
   );
 }
@@ -85,7 +83,7 @@ function Running({ grow }: { grow: LabGrow }) {
                 <span className="dim2 num">
                   {" "}
                   {grow.step} of {grow.of}
-                  {s.id === "fit" && grow.loss != null && grow.firstLoss != null ? `, how unlike the character: ${grow.firstLoss.toFixed(2)} down to ${grow.loss.toFixed(2)}` : ""}
+                  {s.id === "fit" && grow.loss != null && grow.firstLoss != null ? `, loss ${grow.firstLoss.toFixed(2)} to ${grow.loss.toFixed(2)}` : ""}
                 </span>
               )}
             </span>
@@ -123,16 +121,16 @@ function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
       </div>
       <p className="grow-verdict">{r.verdict.text}</p>
       <div className="grow-acts">
-        <button className="btn sm primary" disabled={busy} onClick={() => (setBusy(true), void growSeeds(grow).finally(() => setBusy(false)))} title="Puts it in the mix and runs several seeds on your prompts">
+        <button className="btn sm primary" disabled={busy} onClick={() => (setBusy(true), void growSeeds(grow).finally(() => setBusy(false)))} >
           <Target /> Test across seeds
         </button>
         {kept ? (
-          <button className="btn sm" onClick={() => void chatWithStrain(kept)} title="You kept this one. It's in Strains and the model pickers">
-            <MessageSquare /> Chat with it
+          <button className="btn sm" onClick={() => void chatWithStrain(kept)} >
+            <MessageSquare /> Chat with strain
           </button>
         ) : (
-          <button className="btn sm" onClick={() => void keepGrown(grow)} title="Saves it as a strain: a model you can chat with or run evals on">
-            <FlaskConical /> Keep as strain
+          <button className="btn sm" onClick={() => void keepGrown(grow)} title="Adds it to Strains and the model pickers">
+            <FlaskConical /> Save as strain
           </button>
         )}
         <button className="btn sm ghost" onClick={() => void growToMix(grow)}>
@@ -145,18 +143,18 @@ function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
             <blockquote className="selectable">{plain(x.reply)}</blockquote>
             <figcaption className="dim2">
               <span>{x.prompt}</span>
-              {!x.coherent ? <span>stopped reading as text</span> : !x.inCharacter && <span>out of character</span>}
+              {!x.coherent ? <span>garbled</span> : !x.inCharacter && <span>out of character</span>}
             </figcaption>
           </figure>
         ))}
       </div>
       <details className="spec-more">
-        <summary>How it picked strength {r.vector.strength}</summary>
+        <summary>Strength {r.vector.strength}, layer {r.vector.layer}</summary>
         <table className="grow-rungs num">
           <thead>
             <tr>
               <th>Strength</th>
-              <th>Read as text</th>
+              <th>Readable</th>
               <th>In character</th>
             </tr>
           </thead>
@@ -173,7 +171,7 @@ function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
               </tr>
             ))}
             <tr>
-              <td>No push</td>
+              <td>Unsteered</td>
               <td />
               <td>
                 {r.baseline.inCharacter} of {r.baseline.n}
@@ -182,7 +180,7 @@ function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
           </tbody>
         </table>
         <p className="dim2 num">
-          Layer {r.vector.layer}. {r.named ? "The first text came back generic, so the model wrote it again naming the character outright. " : ""}Took {fmtSecs(r.ms)}.
+          Took {fmtSecs(r.ms)}.
         </p>
       </details>
     </section>
@@ -207,14 +205,12 @@ export function WordSearch() {
   }, [q, modelId]);
   const word = q.trim().toLowerCase();
   return (
-    <details className="lab-more find-words">
-      <summary>Search for a word a single neuron can't stop saying</summary>
       <div className="word-search">
         <div className="ask-line">
           <Search size={14} className="dim2" />
-          <input className="input" value={q} placeholder="surprise, paint, trains" aria-label="A word" onChange={(e) => setQ(e.target.value)} autoComplete="off" spellCheck={false} />
+          <input className="input" value={q} placeholder="A word: surprise, paint, trains" aria-label="A word" onChange={(e) => setQ(e.target.value)} autoComplete="off" spellCheck={false} />
         </div>
-        {hits?.length === 0 && <p className="dim2">No neuron in this model's table writes "{q.trim()}". Grow a character about it instead.</p>}
+        {hits?.length === 0 && <p className="dim2">No neuron found for "{q.trim()}".</p>}
         {hits && hits.length > 0 && !shown && (
           <ul className="words-list">
             {hits.map((h) => {
@@ -230,7 +226,7 @@ export function WordSearch() {
                   <button
                     className="btn sm"
                     disabled={trying != null}
-                    title="Tries falling doses on 16 replies each until one writes the word nearly every time. A minute or three."
+                    title="Tries doses on 16 replies each. Takes 1 to 3 minutes."
                     onClick={() => {
                       setTrying({ key, since: Date.now() });
                       void screenHit(h, word)
@@ -252,7 +248,6 @@ export function WordSearch() {
         )}
         {shown && <Screened r={shown} onBack={() => setShown(null)} />}
       </div>
-    </details>
   );
 }
 
@@ -263,11 +258,11 @@ function Screened({ r, onBack }: { r: LabScreenResult; onBack: () => void }) {
       {r.pick ? (
         <p>
           <Check size={13} /> At {r.pick.dose > 0 ? "+" : ""}
-          {r.pick.dose} it wrote "{r.word}" in {Math.round(r.pick.hit * r.pick.n)} of {r.pick.n} replies, and they read as text.
+          {r.pick.dose}: "{r.word}" in {Math.round(r.pick.hit * r.pick.n)} of {r.pick.n} replies.
         </p>
       ) : (
         <p>
-          <X size={13} /> It didn't hold. {best ? `Best was ${Math.round(best.hit * best.n)} of ${best.n} replies at ${best.dose > 0 ? "+" : ""}${best.dose}. ` : ""}Most word neurons don't, about 3 in 20 do. Grow a character about it instead.
+          <X size={13} /> {best ? `Best: ${Math.round(best.hit * best.n)} of ${best.n} replies at ${best.dose > 0 ? "+" : ""}${best.dose}.` : "No dose worked."}
         </p>
       )}
       {best && (

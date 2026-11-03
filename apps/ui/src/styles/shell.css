@@ -525,10 +525,9 @@
   border-radius: var(--r-md);
   box-shadow: var(--shadow-pop);
   font-size: var(--fs-md);
-  border-left: 3px solid var(--accent);
 }
 .toast.error {
-  border-left-color: var(--err);
+  color: var(--err);
 }
 .toast > span {
   flex: 1;

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, FlaskRound, Loader2, Microscope, Power, Redo2, Sparkles, Undo2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Microscope, Power, Redo2, Sparkles, Undo2 } from "lucide-react";
 import type { LabMemoryCheck, LabState } from "@terrarium/shared";
 import { openView, useStore } from "../../state/store";
 import { runRedo, runUndo, useUndoLabels } from "../../state/undo";
@@ -18,18 +18,16 @@ function SpecimenPicker() {
   const pop = usePop();
   const loaded = lab?.model?.modelId ?? lab?.loadingModelId;
   const st = lab?.status ?? "stopped";
-  const dot = st === "ready" ? "ready" : st === "error" ? "error" : st === "loading" || st === "starting" || st === "stopping" ? "starting" : "";
   return (
     <>
-      <button ref={pop.ref} className="hdr-btn lab-picker" onClick={pop.toggle} aria-haspopup="listbox" title="Model on the bench">
-        <span className={`dot ${dot}`} />
+      <button ref={pop.ref} className="hdr-btn lab-picker" onClick={pop.toggle} aria-haspopup="listbox">
         <span className="strong truncate">{modelName(lab, target ?? loaded) || (lab?.support.length ? "Pick a model" : "No models yet")}</span>
         <ChevronDown size={12} className="dim" />
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={430} className="lab-pick-pop">
         <div className="menu-label lab-pick-label">
-          <Term k="specimen">Specimen</Term>
-          <span className="dim2">Lab memory estimate</span>
+          <span>Model</span>
+          <span className="dim2">Memory</span>
         </div>
         <div className="menu" role="listbox">
           {(lab?.support ?? []).map((s) => (
@@ -48,7 +46,7 @@ function SpecimenPicker() {
               <span className="lab-pick-main">
                 <span className="lab-pick-name">
                   <span className="truncate">{s.name}</span>
-                  {s.modelId === loaded && <span className="chip ok">{st === "ready" ? "on the bench" : st}</span>}
+                  {s.modelId === loaded && <span className="dim2">{st === "ready" ? "loaded" : st}</span>}
                 </span>
                 {!s.supported && <span className="lab-pick-why">{s.reason}</span>}
               </span>
@@ -81,7 +79,7 @@ function SpecimenPicker() {
   );
 }
 
-/** What the specimen is, from the loaded model itself. */
+/** What the model is, from the loaded model itself. */
 function Facts({ lab }: { lab: LabState }) {
   const m = lab.model;
   if (!m) return null;
@@ -205,27 +203,25 @@ export function SpecimenHead() {
             </>
           ) : st === "ready" && target && target !== lab.model?.modelId ? (
             `${modelName(lab, lab.model?.modelId)} still loaded`
-          ) : (
+          ) : st === "ready" ? null : (
             st
           )}
         </span>
       )}
       {serving.length > 0 && (
         <Hint tip={LAB_TIP.strainUse}>
-          <span className="chip accent">
-            <FlaskRound size={10} /> serving {servingNames.join(", ")}
-          </span>
+          <span className="dim2">In use by {servingNames.join(", ")}</span>
         </Hint>
       )}
       <span className="blk-spacer" />
       <UndoButtons />
       {swap ? (
         <button className="btn sm" disabled={serving.length > 0} title={serving.length ? "Strains are serving sessions: stop them first" : undefined} onClick={() => void loadSpecimen()}>
-          Swap to {modelName(lab, target)}
+          Load {modelName(lab, target)}
         </button>
       ) : null}
       {(st === "stopped" || st === "error") && onStrains && (
-        <button className="btn sm" onClick={() => useLab.setState({ tab: "find" })} title="The bench checks memory before loading">
+        <button className="btn sm" onClick={() => useLab.setState({ tab: "find" })} >
           Load a model
         </button>
       )}
@@ -313,7 +309,7 @@ function MemoryFit({ m }: { m: LabMemoryCheck }) {
   );
 }
 
-/** Nothing on the bench (or loading, or failed): the three steps, the memory check, Load and the example. */
+/** No model loaded (or loading, or failed): the memory check, Load and the example. */
 export function Bench() {
   const lab = useLab((s) => s.lab);
   const target = useLab((s) => s.target);
@@ -333,25 +329,13 @@ export function Bench() {
   return (
     <div className="lab-bench">
       <div className="bench-card">
-        <h2>{loading ? `Loading ${name}` : st === "error" ? "The Lab stopped" : noModels ? "The Lab needs a model" : "No specimen on the bench"}</h2>
+        <h2>{loading ? `Loading ${name}` : st === "error" ? "The Lab stopped" : noModels ? "No models yet" : "No model loaded"}</h2>
         {st === "error" && lab?.detail && <ErrLine err={{ error: lab.detail }} />}
         {loading ? (
           <div className="bench-loading dim2">
-            <Busy since={loadSince ?? Date.now()}>Reading weights, then measuring each layer's residual size for doses</Busy>
+            <Busy since={loadSince ?? Date.now()}>Loading weights and calibrating doses</Busy>
           </div>
-        ) : (
-          <ol className="bench-steps">
-            <li>
-              <b>Load</b> a model. The Lab runs its own copy next to oMLX.
-            </li>
-            <li>
-              <b>Pick</b> a character from the Field Guide, or grow your own from a sentence.
-            </li>
-            <li>
-              <b>Steer</b>: see the reply next to the unsteered one, then keep it as a <Term k="strain">strain</Term> you can chat with.
-            </li>
-          </ol>
-        )}
+        ) : null}
         {!loading && target && sup?.supported && (memFor ? <MemoryFit m={memFor} /> : memBusy ? <div className="dim2 memfit">Checking memory…</div> : null)}
         {loadErr && !loading && <ErrLine err={loadErr} />}
         {!loading && noModels && <ModelSuggestions limit={1} />}
@@ -367,20 +351,11 @@ export function Bench() {
             )}
             <span className="blk-spacer" />
             {!exampleReady && <GetExampleModel />}
-            {exampleReady && <Hint
-              tip={
-                <>
-                  <span className="hint-title">Try the example</span>
-                  <div className="hint-line">
-                    Loads {modelName(lab, ex?.modelId)} and pushes one neuron, {ex?.name}, next to the plain model. Then on to a whole character.
-                  </div>
-                </>
-              }
-            >
-              <button className="btn" disabled={example != null} onClick={() => void runExample()}>
+            {exampleReady && (
+              <button className="btn" disabled={example != null} onClick={() => void runExample()} title={`Loads ${modelName(lab, ex?.modelId)} and runs ${ex?.name}`}>
                 {example ? <Busy since={example.since}>{example.step}</Busy> : <><Sparkles /> Try the example</>}
               </button>
-            </Hint>}
+            )}
           </div>
         )}
       </div>

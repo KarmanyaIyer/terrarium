@@ -1,34 +1,76 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#30353d"/>
-      <stop offset="1" stop-color="#14161a"/>
+      <stop offset="0" stop-color="#2c3f38"/>
+      <stop offset="1" stop-color="#14211d"/>
     </linearGradient>
     <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.20"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
     </linearGradient>
     <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5a4433"/>
-      <stop offset="1" stop-color="#3a2b21"/>
+      <stop offset="0" stop-color="#57402f"/>
+      <stop offset="1" stop-color="#35271d"/>
+    </linearGradient>
+    <linearGradient id="moss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fce62"/>
+      <stop offset="1" stop-color="#3f9149"/>
     </linearGradient>
     <linearGradient id="leaf" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3fd99c"/>
-      <stop offset="1" stop-color="#17a571"/>
+      <stop offset="0" stop-color="#58dc92"/>
+      <stop offset="1" stop-color="#1c9c67"/>
     </linearGradient>
-    <clipPath id="house">
-      <path d="M3 6.5 8 2l5 4.5V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>
+    <linearGradient id="leaf2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6e36a"/>
+      <stop offset="1" stop-color="#5fb04c"/>
+    </linearGradient>
+    <linearGradient id="cork" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d6ad7c"/>
+      <stop offset="1" stop-color="#a97e4f"/>
+    </linearGradient>
+    <clipPath id="jar">
+      <path d="M402 268 H622 V330 C712 362 762 428 762 520 V742 C762 806 716 852 652 852 H372 C308 852 262 806 262 742 V520 C262 428 312 362 402 330 Z"/>
     </clipPath>
   </defs>
   <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
   <rect x="101" y="101" width="822" height="822" rx="184" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
-  <g transform="translate(192 200) scale(40)">
-    <path d="M3 6.5 8 2l5 4.5V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="url(#glass)"/>
-    <rect x="2" y="11.7" width="12" height="3" fill="url(#soil)" clip-path="url(#house)"/>
-    <path d="M8 9.7C6.2 9.7 5.1 8.6 5.1 7 6.9 7 8 8.1 8 9.7Z" fill="url(#leaf)"/>
-    <path d="M8 8.8C8 7.2 9.1 6.1 10.9 6.1 10.9 7.7 9.8 8.8 8 8.8Z" fill="url(#leaf)"/>
-    <path d="M8 11.8V9.2" fill="none" stroke="#1fb57f" stroke-width="0.5" stroke-linecap="round"/>
-    <path d="M4.15 7.3V10.6" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.3" stroke-linecap="round"/>
-    <path d="M3 6.5 8 2l5 4.5V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="none" stroke="#dfe7ec" stroke-width="0.55" stroke-linejoin="round"/>
+
+  <!-- glass body -->
+  <path d="M402 268 H622 V330 C712 362 762 428 762 520 V742 C762 806 716 852 652 852 H372 C308 852 262 806 262 742 V520 C262 428 312 362 402 330 Z" fill="url(#glass)"/>
+
+  <g clip-path="url(#jar)">
+    <!-- soil, thin -->
+    <path d="M240 790 C340 770 420 786 512 780 C610 774 690 768 790 788 V870 H240 Z" fill="url(#soil)"/>
+    <!-- moss mounds -->
+    <path d="M240 780 C290 712 380 708 446 752 C484 776 500 786 520 790 L240 810 Z" fill="url(#moss)"/>
+    <path d="M790 780 C740 700 640 700 572 748 C540 770 520 784 500 790 L790 810 Z" fill="url(#moss)"/>
+    <!-- pebble -->
+    <ellipse cx="618" cy="784" rx="44" ry="24" fill="#aab2ac"/>
+    <ellipse cx="608" cy="776" rx="20" ry="8" fill="#ffffff" opacity="0.28"/>
+
+    <!-- main stem -->
+    <path d="M512 786 C508 700 516 610 506 470" fill="none" stroke="#1fa871" stroke-width="15" stroke-linecap="round"/>
+    <!-- leaves up the stem -->
+    <path d="M509 716 C440 716 374 676 356 596 C436 592 502 632 509 716 Z" fill="url(#leaf)"/>
+    <path d="M512 664 C584 664 650 622 668 544 C588 540 520 580 512 664 Z" fill="url(#leaf)"/>
+    <path d="M510 590 C456 586 408 548 398 486 C462 486 508 528 510 590 Z" fill="url(#leaf2)"/>
+    <path d="M509 528 C562 524 606 486 614 428 C554 430 512 470 509 528 Z" fill="url(#leaf2)"/>
+    <path d="M506 480 C478 452 472 412 490 376 C520 402 528 444 506 480 Z" fill="url(#leaf)"/>
+
+    <!-- small fern, left -->
+    <path d="M340 770 C330 720 312 684 296 660" fill="none" stroke="#3f9e5a" stroke-width="9" stroke-linecap="round"/>
+    <path d="M334 744 C352 730 372 726 392 730 M326 716 C344 702 360 698 378 700 M316 692 C330 680 344 676 358 678 M332 744 C312 736 296 736 282 742 M322 714 C306 708 292 708 280 714" fill="none" stroke="#5fc06e" stroke-width="9" stroke-linecap="round"/>
+    <!-- small sprout, right -->
+    <path d="M690 770 C694 736 700 712 712 688" fill="none" stroke="#3f9e5a" stroke-width="9" stroke-linecap="round"/>
+    <path d="M702 712 C722 702 736 684 738 660 C716 664 702 684 702 712 Z" fill="url(#leaf2)"/>
+    <path d="M696 742 C676 736 660 720 654 698 C678 700 694 716 696 742 Z" fill="url(#leaf2)"/>
   </g>
+
+  <!-- highlight on the glass -->
+  <path d="M308 530 V690" fill="none" stroke="#ffffff" stroke-opacity="0.40" stroke-width="14" stroke-linecap="round"/>
+  <!-- outline -->
+  <path d="M402 268 H622 V330 C712 362 762 428 762 520 V742 C762 806 716 852 652 852 H372 C308 852 262 806 262 742 V520 C262 428 312 362 402 330 Z" fill="none" stroke="#e4ece6" stroke-width="20" stroke-linejoin="round"/>
+  <!-- cork -->
+  <rect x="384" y="190" width="256" height="92" rx="20" fill="url(#cork)"/>
+  <rect x="384" y="190" width="256" height="92" rx="20" fill="none" stroke="#7d5b38" stroke-width="6"/>
 </svg>

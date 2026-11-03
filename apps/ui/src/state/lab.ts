@@ -313,7 +313,7 @@ export const useLab = create<LabStore>()(() => ({
   findSort: "both",
   mix: [],
   scale: 1,
-  prompt: "Who are you?",
+  prompt: "What should I make for dinner tonight?",
   seed: randomSeed(),
   lockSeed: false,
   temperature: 0.7,
@@ -623,6 +623,17 @@ export function noteWords(ref: NeuronRef, words: string[]) {
   if (words.length && get().words[k]?.join() !== words.join()) set((s) => ({ words: { ...s.words, [k]: words } }));
 }
 
+const wordsAsked = new Set<string>();
+/** What a neuron writes, for a recipe on screen. Asks once per neuron; a refusal (the Lab is busy) just leaves it blank. */
+export async function loadNeuronWords(ref: NeuronRef) {
+  const k = nid(ref);
+  if (get().words[k] || wordsAsked.has(k)) return;
+  wordsAsked.add(k);
+  const r = await call((l) => l.neuron(ref));
+  if (r.ok) noteWords(ref, r.v.promotes.map((p) => p.token));
+  else wordsAsked.delete(k);
+}
+
 export async function openNeuron(ref: NeuronRef, texts: string[] = []) {
   const cur = get().card;
   if (cur && sameRef(cur.ref, ref) && cur.data && !texts.length) return;
@@ -864,7 +875,7 @@ async function flowBaseline(prompt: string, seed: number, maxTokens: number) {
   if (r.ok) set((st) => (st.flow ? { flow: { ...st.flow, baseline: { reply: r.v.steered, recipe: { modelId: benchId(), prompt, pushes: [], seed, temperature: s.temperature, maxTokens, thinking: false, repeat: repeatOf(s) } } } } : {}));
 }
 
-const DESCRIBE_PROMPT = "Who are you?";
+const DESCRIBE_PROMPT = "What should I make for dinner tonight?";
 
 /** After the lists are ready: score every neuron, then try the best ones. */
 async function findAndTry(stepFind: number, words: string[], prompt: string) {
@@ -1347,11 +1358,11 @@ export async function growSeeds(g: LabGrow) {
 
 export async function keepGrown(g: LabGrow) {
   const r = g.result!;
-  const st = await callToast("Keep as strain", (l) => l.saveStrain({ name: r.name, baseModelId: g.modelId, pushes: [r.vector], settings: grownSettings(g.modelId), notes: `Grown from "${r.description}". ${r.verdict.text}` }));
+  const st = await callToast("Save as strain", (l) => l.saveStrain({ name: r.name, baseModelId: g.modelId, pushes: [r.vector], settings: grownSettings(g.modelId), notes: `Grown from "${r.description}". ${r.verdict.text}` }));
   if (!st) return;
   putStrain(st);
   undoable({
-    label: `Kept "${st.name}" as a strain`,
+    label: `Saved "${st.name}" as a strain`,
     undo: async () => {
       await must((l) => l.deleteStrain(st.id));
       dropStrain(st.id);
@@ -1551,11 +1562,11 @@ export async function trySpecimen(s: LabSpecimen) {
 
 /** Keeps a specimen as a strain, with what it was measured with. Needs no model loaded. */
 export async function keepSpecimen(s: LabSpecimen) {
-  const st = await callToast("Keep as strain", (l) => l.saveStrain({ name: s.name, baseModelId: s.modelId, pushes: s.mix, settings: s.settings, notes: `${s.line}\n${s.rate}` }));
+  const st = await callToast("Save as strain", (l) => l.saveStrain({ name: s.name, baseModelId: s.modelId, pushes: s.mix, settings: s.settings, notes: s.line }));
   if (!st) return;
   putStrain(st);
   undoable({
-    label: `Kept "${st.name}" as a strain`,
+    label: `Saved "${st.name}" as a strain`,
     undo: async () => {
       await must((l) => l.deleteStrain(st.id));
       dropStrain(st.id);
@@ -1580,7 +1591,7 @@ export async function runExample() {
     const g = get().guide;
     const s = exampleSpecimen();
     if (!g || !s) {
-      toast("This build has no Field Guide, so there is no example");
+      toast("This build has no examples");
       return;
     }
     if (!(await benchHas(s.modelId, step))) return;

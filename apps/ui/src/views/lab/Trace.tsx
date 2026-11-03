@@ -131,7 +131,7 @@ export function Trace() {
         </div>
         <div className="trace-go">
           <button className="btn primary" disabled={s.attrBusy != null || !s.attrPrompt.trim() || !s.attrTarget} onClick={go}>
-            {s.attrBusy != null ? <Busy since={s.attrBusy}>Pushing each neuron both ways</Busy> : <><Play /> Trace</>}
+            {s.attrBusy != null ? <Busy since={s.attrBusy}>Testing neurons</Busy> : <><Play /> Trace</>}
           </button>
           <Switch on={s.attrMix && s.mix.length > 0} onChange={(v) => set({ attrMix: v, attrFoilFrom: v ? s.attrFoilFrom : false })} label={`With the mix (${s.mix.length})`} disabled={!s.mix.length} />
         </div>
@@ -142,7 +142,7 @@ export function Trace() {
           <TraceResult r={s.attrRes} />
         </div>
       ) : (
-        !s.attrErr && s.attrBusy == null && <div className="lab-empty">Ask about one word of an answer, or click any word in a reply on Steer or Find to land here with it filled in.</div>
+        !s.attrErr && s.attrBusy == null && <div className="lab-empty">Click a word in any reply to trace it, or fill this in.</div>
       )}
     </div>
   );
@@ -177,7 +177,7 @@ function TraceResult({ r }: { r: LabAttributeResult }) {
           </Term>
         </div>
         <div className="trace-next">
-          <span className="dim2">Its next-word odds, click one to trace it</span>
+          <span className="dim2">Next word odds</span>
           {r.topNext.map((t) => (
             <button key={t.token} className={`chip tok-chip${t.token === r.target ? " on" : ""}`} title="Click: trace this one. Alt-click: compare against it." onClick={(e) => set(e.altKey ? { attrFoil: t.token, attrFoilFrom: false } : { attrTarget: t.token })}>
               <span className="mono">{tokText(t.token)}</span> <span className="num dim2">{fmtPct0(t.prob)}</span>
@@ -196,20 +196,19 @@ function TraceResult({ r }: { r: LabAttributeResult }) {
         )}
       </div>
       {m && (
-        <p className="trace-how dim2">
-          Measured, not estimated: gradients picked a shortlist of {fmtInt(m.shortlisted)} neurons, then each of the {fmtInt(m.neurons)} shown was really pushed at {[...new Set(m.doses.map(Math.abs))].join(", ")} in both directions and the logits read back ({fmtInt(m.passes)} model runs, {fmtSecs(m.ms)}). "Now writes" is what the model picks with that dose in place.
-          {m.neurons < m.shortlisted ? ` It ran out of its time budget after ${m.neurons}.` : ""}
+        <p className="trace-how dim2 num">
+          {fmtInt(m.neurons)} of {fmtInt(m.shortlisted)} shortlisted neurons tested at ±{[...new Set(m.doses.map(Math.abs))].join(", ±")}. {fmtInt(m.passes)} model runs, {fmtSecs(m.ms)}.
         </p>
       )}
       {m && nodes.length > 0 && !already && !nodes.some((n) => n.best!.flips) && (
-        <div className="field-note">No single neuron made it write {tokText(r.target)} at these doses. These moved it closest; check what each now writes before adding it.</div>
+        <div className="field-note">No single neuron made it write {tokText(r.target)}. Closest below.</div>
       )}
       <div className="trows">
         {nodes.map((n) => (
           <TraceRow key={nid(n)} n={n} target={r.target} />
         ))}
       </div>
-      {!m && <div className="dim2 lab-note">Gradient estimates only, nothing was pushed.</div>}
+      {!m && <div className="dim2 lab-note">Gradient estimates, not tested.</div>}
     </>
   );
 }

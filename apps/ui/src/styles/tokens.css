@@ -5,8 +5,7 @@
   color-scheme: light;
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
-  /* page titles only, like a specimen label; installed on every Mac and resolved the same in WebKit and Chromium */
-  --font-display: "Iowan Old Style", Charter, Georgia, serif;
+  --font-display: var(--font-ui);
 
   --fs-2xs: 10px;
   --fs-xs: 10.5px;

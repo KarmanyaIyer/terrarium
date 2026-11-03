@@ -1161,7 +1161,7 @@ export interface LabSpecimen {
   featured: boolean; // leads the guide; the rest sit behind a disclosure
   mix: LabMixItem[];
   settings: LabStrainSettings; // what a strain of it runs with
-  rate: string; // its numbers in plain words, with the counts
+  rate: string; // its number, with what was counted
   measured: {
     n: number;
     joint: number;
@@ -1173,7 +1173,8 @@ export interface LabSpecimen {
   };
   unconfirmed: boolean; // its dose was tuned after the held-out replies were read, and fresh prompts haven't confirmed it
   prompt: string; // the prompt to try first
-  samples: { prompt: string; reply: string }[]; // real replies, from the held-out run
+  samples: { prompt: string; reply: string }[]; // real replies from its test chats
+  tokens?: string[]; // a single neuron: the words it pushes, at this dose's sign
 }
 
 /** The catalog the app ships, generated from the search by scripts/gen-field-guide.ts. */

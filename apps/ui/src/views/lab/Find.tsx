@@ -1,83 +1,79 @@
 import { useMemo, useState } from "react";
 import { Check, Circle, Dices, Loader2, Search, Square, Trash2, X } from "lucide-react";
 import type { LabCandidate, LabFindResult } from "@terrarium/shared";
-import { deleteSet, editSet, exampleSpecimen, fromLines, pickSet, runDescribe, runExample, runFind, runPreset, runSurprise, saveSet, stopFlow, useLab, type FindFlow, type FindSort, type TriedNeuron } from "../../state/lab";
+import { deleteSet, editSet, fromLines, pickSet, runDescribe, runFind, runSurprise, saveSet, stopFlow, useLab, type FindFlow, type FindSort, type TriedNeuron } from "../../state/lab";
 import { formatPush, nid } from "../../lib/recipe";
 import { fmtInt } from "../../lib/format";
-import { Hint, Popover, Segmented, usePop } from "../../components/ui";
+import { Popover, Segmented, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
-import { Busy, ErrLine, fmtPct0, fmtSecs, LayerKind, NeuronLink, ShadedText, TokChips } from "./bits";
+import { ErrLine, fmtPct0, fmtSecs, LayerKind, NeuronLink, ShadedText, TokChips } from "./bits";
 import { NeuronActions, ReplySlip } from "./Reply";
 import { GrowBox, GrowPanel, WordSearch } from "./Grow";
+
+type NeuronMode = "word" | "describe" | "texts" | "random";
 
 export function Find() {
   const flow = useLab((s) => s.flow);
   const grow = useLab((s) => (s.lab?.grow?.status === "running" ? s.lab.grow : (s.growShown ?? s.lab?.grow)));
+  const [mode, setMode] = useState<NeuronMode>("word");
   return (
     <div className="find lab-scroll">
       <GrowBox />
       {grow && <GrowPanel grow={grow} />}
-      <WordSearch />
-      <details className="lab-more find-neurons" open={flow || !grow ? true : undefined}>
-        <summary>Explore single neurons: Surprise me, ready-made sets, or search by description</summary>
-        <Ask />
+      <section className="find-neurons">
+        <div className="find-neurons-head">
+          <h3>Find neurons</h3>
+          <Segmented<NeuronMode>
+            small
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "word", label: "By word" },
+              { value: "describe", label: "By description" },
+              { value: "texts", label: "From texts" },
+              { value: "random", label: "Random" },
+            ]}
+            ariaLabel="How to find neurons"
+          />
+        </div>
+        {mode === "word" && <WordSearch />}
+        {mode === "describe" && <Describe />}
+        {mode === "texts" && <OwnTexts />}
+        {mode === "random" && <RandomNeurons />}
         {flow && <FlowResult flow={flow} />}
-      </details>
-      <Lists />
+        <AllCandidates />
+      </section>
     </div>
   );
 }
 
-// ---------- the box ----------
+// ---------- ways to look ----------
 
-function Ask() {
+function Describe() {
   const trait = useLab((s) => s.trait);
-  const flow = useLab((s) => s.flow);
-  const sets = useLab((s) => s.sets);
-  const example = useLab((s) => s.example);
-  const set = useLab.setState;
-  const running = flow?.since != null;
-  const presets = sets?.filter((x) => x.builtin) ?? [];
-  const canExample = useLab(() => !!exampleSpecimen());
+  const running = useLab((s) => s.flow?.since != null);
   return (
-    <section className="ask">
-      <form
-        className="ask-box"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!running) void runDescribe();
-        }}
-      >
-        <label htmlFor="ask-trait">What should the neurons be about?</label>
-        <div className="ask-line">
-          <input id="ask-trait" className="input ask-input" value={trait} placeholder="a tiger, talks like a pirate, obsessed with trains" onChange={(e) => set({ trait: e.target.value })} autoComplete="off" spellCheck={false} />
-          <button className="btn primary" disabled={!trait.trim() || running}>
-            <Search /> Find it
-          </button>
-          <button type="button" className="btn" disabled={running} onClick={() => void runSurprise()} title="No goal: try random neurons in one layer and see what they do">
-            <Dices /> Surprise me
-          </button>
-        </div>
-        <p className="dim2 ask-how">The model writes example lines with and without it, every neuron gets scored on those lines, and the best four get tried on a real reply. Takes about a minute.</p>
-      </form>
-      {presets.length > 0 && (
-        <div className="ask-presets">
-          <span className="dim2">Or try a prepared one:</span>
-          {presets.map((p) => (
-            <Hint key={p.id} tip={p.blurb ?? p.name}>
-              <button className="preset" disabled={running} onClick={() => void runPreset(p.id)}>
-                {p.name}
-              </button>
-            </Hint>
-          ))}
-          {canExample && !flow && (
-            <button className="cell-link" disabled={example != null || running} onClick={() => void runExample()} title="Pushes one neuron and compares the replies">
-              {example ? <Busy since={example.since}>{example.step}</Busy> : "or run the full example"}
-            </button>
-          )}
-        </div>
-      )}
-    </section>
+    <form
+      className="ask-line"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!running) void runDescribe();
+      }}
+    >
+      <input className="input ask-input" value={trait} placeholder="talks like a pirate" aria-label="Description" onChange={(e) => useLab.setState({ trait: e.target.value })} autoComplete="off" spellCheck={false} />
+      <button className="btn primary" disabled={!trait.trim() || running}>
+        <Search /> Find
+      </button>
+    </form>
+  );
+}
+
+function RandomNeurons() {
+  const running = useLab((s) => s.flow?.since != null);
+  return (
+    <button className="btn" disabled={running} onClick={() => void runSurprise()} title="Tries random neurons in one layer and keeps the three that move the next word most">
+      <Dices /> Try random neurons
+    </button>
   );
 }
 
@@ -106,9 +102,8 @@ function Tried({ t, flow }: { t: TriedNeuron; flow: FindFlow }) {
       <header className="tried-head">
         <NeuronLink r={t.ref} />
         <LayerKind kind={kinds?.[t.ref.layer]} />
-        <span className="dim2">pushes toward</span>
         <TokChips tokens={t.words} max={5} />
-        {!both && best.hit && <span className="chip ok">wrote about it</span>}
+        
       </header>
       <div className={both ? "tried-pair" : undefined}>
         {shown.map((r) => (
@@ -118,8 +113,7 @@ function Tried({ t, flow }: { t: TriedNeuron; flow: FindFlow }) {
           </div>
         ))}
       </div>
-      {!both && t.runs.length > 1 && <div className="lab-note dim2">At +{t.runs[t.runs.length - 1].dose} this one stopped reading as text, so this is the softer dose.</div>}
-    </section>
+          </section>
   );
 }
 
@@ -128,22 +122,19 @@ function Together({ flow }: { flow: FindFlow }) {
   return (
     <section className="tried">
       <header className="tried-head">
-        <span className="dim2">One neuron rarely carries a whole trait, so here are the four that fire on it most, together</span>
-        {t.hit && <span className="chip ok">wrote about it</span>}
+        <b>All four together</b>
       </header>
-      <ReplySlip title={`All four at ${formatPush(t.recipe.pushes[0]).replace(/^L\d+N\d+/, "")}`} reply={t.reply} recipe={t.recipe} />
+      <ReplySlip title={`Each at ${formatPush(t.recipe.pushes[0]).replace(/^L\d+N\d+/, "")}`} reply={t.reply} recipe={t.recipe} />
     </section>
   );
 }
 
 function FlowResult({ flow }: { flow: FindFlow }) {
   const running = flow.since != null;
-  const hits = flow.tried.some((t) => t.runs.some((r) => r.hit)) || !!flow.together?.hit;
-  const done = !running && !flow.err;
   return (
     <section className="flow">
       <div className="flow-head">
-        <h3>{flow.kind === "surprise" ? `${flow.title}: what its neurons do` : flow.title}</h3>
+        <h3>{flow.title}</h3>
         <span className="blk-spacer" />
         {running && (
           <button className="btn sm" onClick={stopFlow}>
@@ -153,16 +144,7 @@ function FlowResult({ flow }: { flow: FindFlow }) {
       </div>
       {(running || flow.err) && <FlowSteps flow={flow} />}
       {flow.err && <ErrLine err={flow.err} />}
-      {done && flow.tried.length > 0 && (
-        <p className="flow-next">
-          {flow.kind === "surprise"
-            ? `Tried ${flow.sampled ?? "some"} random neurons in this layer and kept the three that move the next word most, pushed both ways. If one is interesting, add it to the mix or press Surprise me again.`
-            : hits
-              ? "These replies come from pushing one neuron. Add the one you like to the mix, then sweep its dose or test it across seeds to see how well it holds up."
-              : "None of these wrote about it at this dose. Sweep one to look at other doses, try different wording, or open the full list below."}
-        </p>
-      )}
-      {flow.baseline && <ReplySlip title="Unsteered, for comparison" reply={flow.baseline.reply} recipe={flow.baseline.recipe} hideActions />}
+      {flow.baseline && <ReplySlip title="Unsteered" reply={flow.baseline.reply} recipe={flow.baseline.recipe} hideActions />}
       {flow.together?.hit && <Together flow={flow} />}
       {flow.tried.map((t) => (
         <Tried key={nid(t.ref)} t={t} flow={flow} />
@@ -206,87 +188,80 @@ function SaveAs() {
   );
 }
 
-function Lists() {
+function AllCandidates() {
+  const findRes = useLab((s) => s.findRes);
+  if (!findRes) return null;
+  return (
+    <details className="lab-more find-all">
+      <summary>
+        All {findRes.candidates.length} candidates <span className="dim2">({fmtInt(findRes.scanned)} neurons compared in {fmtSecs(findRes.ms)})</span>
+      </summary>
+      <Results res={findRes} />
+    </details>
+  );
+}
+
+function OwnTexts() {
   const sets = useLab((s) => s.sets);
   const setId = useLab((s) => s.setId);
   const concept = useLab((s) => s.concept);
   const control = useLab((s) => s.control);
   const testPrompt = useLab((s) => s.testPrompt);
   const dirty = useLab((s) => s.dirty);
-  const flow = useLab((s) => s.flow);
-  const findRes = useLab((s) => s.findRes);
+  const running = useLab((s) => s.flow?.since != null);
   const cur = sets?.find((x) => x.id === setId);
   const nC = fromLines(concept).length;
   const nK = fromLines(control).length;
   const mine = sets?.filter((x) => !x.builtin) ?? [];
-  const running = flow?.since != null;
   return (
-    <>
-      {findRes && (
-        <details className="lab-more find-all">
-          <summary>
-            All {findRes.candidates.length} candidates, with their scores <span className="dim2">({fmtInt(findRes.scanned)} neurons compared in {fmtSecs(findRes.ms)})</span>
-          </summary>
-          <Results res={findRes} />
-        </details>
-      )}
-      <details className="lab-more find-own" open={nC > 0 && dirty ? true : undefined}>
-        <summary>
-          Use your own texts{nC > 0 ? <span className="dim2"> ({nC} with it, {nK} without it, editable)</span> : null}
-        </summary>
-        <div className="find-config">
-          <p className="dim2">
-            Give lines that have the thing and matched lines that don't: same length and tone, only the thing is different. Every neuron is compared on the two lists. <Term k="probeSet">Why matched?</Term>
-          </p>
-          <div className="find-set">
-            {mine.length > 0 && (
-              <select className="input select" value={cur && !cur.builtin ? cur.id : ""} onChange={(e) => e.target.value && pickSet(e.target.value)} aria-label="Your saved texts">
-                <option value="">Your saved texts</option>
-                {mine.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            {cur && !cur.builtin && (
-              <button className="btn sm ghost" disabled={!dirty} onClick={() => void saveSet()}>
-                Save
-              </button>
-            )}
-            <SaveAs />
-            {cur && !cur.builtin && (
-              <button className="btn sm ghost" title="Cmd+Z brings it back" onClick={() => void deleteSet()}>
-                <Trash2 /> Delete
-              </button>
-            )}
-          </div>
-          <div className="find-lists">
-            <label className="find-list">
-              <span className="find-list-head">
-                <b>With it</b> <span className="dim num">{nC}</span>
-              </span>
-              <textarea className="textarea lab-text" rows={8} value={concept} placeholder="The barn owl hunted at dusk." onChange={(e) => editSet({ concept: e.target.value })} spellCheck={false} />
-            </label>
-            <label className="find-list">
-              <span className="find-list-head">
-                <b>Without it</b> <span className="dim num">{nK}</span>
-              </span>
-              <textarea className="textarea lab-text" rows={8} value={control} placeholder="The barn cat hunted at dusk." onChange={(e) => editSet({ control: e.target.value })} spellCheck={false} />
-            </label>
-          </div>
-          <div className="find-go">
-            <label className="lab-field">
-              <Term k="testPrompt">Prompt to try them on</Term>
-              <input className="input" value={testPrompt} placeholder="Who are you?" onChange={(e) => editSet({ testPrompt: e.target.value })} />
-            </label>
-            <button className="btn" disabled={running || !nC || !nK} onClick={() => void runFind()}>
-              <Search /> Find from these texts
-            </button>
-          </div>
-        </div>
-      </details>
-    </>
+    <div className="find-config">
+      <div className="find-set">
+        {mine.length > 0 && (
+          <select className="input select" value={cur && !cur.builtin ? cur.id : ""} onChange={(e) => e.target.value && pickSet(e.target.value)} aria-label="Your saved texts">
+            <option value="">Saved texts</option>
+            {mine.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {cur && !cur.builtin && (
+          <button className="btn sm ghost" disabled={!dirty} onClick={() => void saveSet()}>
+            Save
+          </button>
+        )}
+        <SaveAs />
+        {cur && !cur.builtin && (
+          <button className="btn sm ghost" title="Cmd+Z brings it back" onClick={() => void deleteSet()}>
+            <Trash2 /> Delete
+          </button>
+        )}
+      </div>
+      <div className="find-lists">
+        <label className="find-list">
+          <span className="find-list-head">
+            <Term k="probeSet">Lines with it</Term> <span className="dim num">{nC}</span>
+          </span>
+          <textarea className="textarea lab-text" rows={8} value={concept} placeholder="The barn owl hunted at dusk." onChange={(e) => editSet({ concept: e.target.value })} spellCheck={false} />
+        </label>
+        <label className="find-list">
+          <span className="find-list-head">
+            <span>Lines without it</span> <span className="dim num">{nK}</span>
+          </span>
+          <textarea className="textarea lab-text" rows={8} value={control} placeholder="The barn cat hunted at dusk." onChange={(e) => editSet({ control: e.target.value })} spellCheck={false} />
+        </label>
+      </div>
+      <div className="find-go">
+        <label className="lab-field">
+          <Term k="testPrompt">Prompt to try them on</Term>
+          <input className="input" value={testPrompt} onChange={(e) => editSet({ testPrompt: e.target.value })} />
+        </label>
+        <button className="btn" disabled={running || !nC || !nK} onClick={() => void runFind()}>
+          <Search /> Find
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -327,9 +302,6 @@ function Results({ res }: { res: LabFindResult }) {
           ]}
           ariaLabel="Sort candidates"
         />
-        <Hint tip={LAB_TIP.readWrite} width={340}>
-          <span className="hint-text dim2">Why two scores?</span>
-        </Hint>
       </div>
       <div className="cands" role="list">
         <div className="cand cand-head" aria-hidden>

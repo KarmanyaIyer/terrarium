@@ -1,7 +1,6 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { ensureLab, useLab, type LabTab } from "../../state/lab";
 import { useStore } from "../../state/store";
-import { Term } from "../../lib/labExplain";
 import { Bench, SpecimenHead } from "./Specimen";
 import { Find } from "./Find";
 import { Guide } from "./Guide";
@@ -13,15 +12,14 @@ import { Trace } from "./Trace";
 import { NeuronCard } from "./NeuronCard";
 import { Busy, ErrLine } from "./bits";
 
-// One line each: what the tab is for, and what to do when you have what you came for.
-const TABS: { id: LabTab; label: string; lede: ReactNode }[] = [
-  { id: "guide", label: "Field Guide", lede: <>Characters and obsessions that held up in testing. Try one next to the unsteered model, or keep it as a <Term k="strain">strain</Term> and chat with it.</> },
-  { id: "find", label: "Grow", lede: <>Describe a character and grow it on the loaded model. Or look up the <Term k="neuron">neurons</Term> behind a word or a set of texts.</> },
-  { id: "steer", label: "Steer", lede: <>Push neurons while the model writes: compare a reply with and without the <Term k="mix">mix</Term>, sweep the <Term k="dose">dose</Term>, test it across seeds. When it holds up, save it as a strain.</> },
-  { id: "trace", label: "Trace", lede: <>Ask why the model wrote a word. Each likely neuron is really pushed both ways, so the doses here are measured. Add the one that does it to your mix.</> },
-  { id: "probe", label: "Probe", lede: <>See which neurons fire on which words of any text, shown as <Term k="typical">x typical</Term>. Click a neuron to read about it or push it.</> },
-  { id: "strains", label: "Strains", lede: <>Mixes you kept. A <Term k="strain">strain</Term> works like a model: pick it in a chat or an eval.</> },
-  { id: "history", label: "History", lede: <>Every result, with the recipe it ran with. Restore one to bring back its mix, doses, seed and prompt.</> },
+const TABS: { id: LabTab; label: string }[] = [
+  { id: "guide", label: "Examples" },
+  { id: "find", label: "Find" },
+  { id: "steer", label: "Steer" },
+  { id: "trace", label: "Trace" },
+  { id: "probe", label: "Probe" },
+  { id: "strains", label: "Strains" },
+  { id: "history", label: "History" },
 ];
 
 export default function LabView() {
@@ -54,7 +52,6 @@ export default function LabView() {
         <div className="lab-bench">
           <div className="bench-card">
             <ErrLine err={missing} />
-            <div className="dim2">The Lab needs the Python sidecar from this repo's backend. Start the backend with Lab support, then reopen this page.</div>
           </div>
         </div>
       </div>
@@ -94,7 +91,6 @@ export default function LabView() {
           </span>
         )}
       </div>
-      {!needsBench && <div className="lab-lede dim2">{cur.lede}</div>}
       <div className={`lab-main${card ? " with-card" : ""}`}>
         <div className="lab-pane" role="tabpanel" aria-label={cur.label}>
           {needsBench ? (

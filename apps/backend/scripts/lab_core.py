@@ -428,12 +428,12 @@ def grow_verdict(description: str, hits: int, n: int, base: int, base_n: int, re
     rate, lift = hits / max(1, n), hits / max(1, n) - base / max(1, base_n)
     counts = f"{hits} of {n} test replies came out in character, against {base} of {base_n} without the push."
     if long_n and readable < 0.5 * long_n:
-        return {"took": "no", "text": f"It didn't take: at the length of a real reply, only {readable} of {long_n} still read as text. Try a different description."}
+        return {"took": "no", "text": f"Didn't work: only {readable} of {long_n} long replies were readable. Try a different description."}
     if rate >= 0.6 and lift >= 0.3:
-        return {"took": "yes", "text": f"It took. {counts} The model scores these itself and it's a rough judge, so read the replies and test across seeds before you trust it."}
+        return {"took": "yes", "text": f"Worked. {counts}"}
     if rate >= 0.3 and lift >= 0.15:
-        return {"took": "partly", "text": f"It partly took. {counts} Expect some replies in plain voice. A more concrete description often does better."}
-    return {"took": "no", "text": f"It didn't take. {counts} Try describing it with something the character would talk about, like what they do all day."}
+        return {"took": "partly", "text": f"Partly worked. {counts}"}
+    return {"took": "no", "text": f"Didn't work. {counts}"}
 
 
 class Lab:

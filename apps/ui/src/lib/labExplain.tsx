@@ -16,11 +16,6 @@ const card = (title: ReactNode, ...lines: ReactNode[]) => (
 );
 
 export const LAB_TIP = {
-  specimen: card(
-    "Specimen",
-    "The model on the Lab bench. The Lab runs its own copy in a separate process, with hooks on every MLP neuron, so it can read and push them.",
-    "One specimen at a time.",
-  ),
   memory: card(
     "Memory",
     "oMLX and the Lab together stay under the memory ceiling from Settings. The Lab counts its estimate for the model: weights plus room for long probes.",
@@ -72,7 +67,7 @@ export const LAB_TIP = {
     "Two lists of texts: concept texts that have the thing you want, control texts that don't. Find compares how every neuron fires on the two.",
     "Make each control match a concept text in everything except the concept: same length, tone and structure. \"The barn owl hunted\" against \"The barn cat hunted\" isolates owl; controls about taxes would also turn up neurons for animals and stories.",
   ),
-  testPrompt: card("Test prompt", "A message that gives the concept room to show when steering, like \"Who are you?\". Find's previews and Steer use it."),
+  testPrompt: card("Test prompt", "A message that gives the concept room to show when steering, like \"What should I make for dinner tonight?\". Find's previews and Steer use it."),
   score: card(
     "Fires on it",
     "How much higher the neuron peaks on concept texts than on control texts, in standard deviations. Peaks are in x typical.",
@@ -98,7 +93,7 @@ export const LAB_TIP = {
     "Words the neuron makes more (or less) likely when it fires: its down_proj column projected through the final norm onto the vocabulary (the logit lens).",
     "A rough guide: later layers can still change what it means by the time the model picks a word.",
   ),
-  firesOn: card("Fires on", "Its strongest texts from a small field guide, plus any text you try here. Darker tokens are higher."),
+  firesOn: card("Fires on", "Its strongest texts from a small test set, plus any text you try here. Darker tokens are higher."),
   range: card("Typical range", "Over ordinary calibration text: mean, spread (std), the 99th percentile used as its typical peak, and the largest value seen."),
   doseUnit: card(
     "Dose unit",
@@ -117,7 +112,7 @@ export const LAB_TIP = {
       Compare the value with the typical range on the neuron's card.
     </>,
   ),
-  mix: card("Mix", "The neurons and characters applied together while the model writes, on every token of prompt and reply. Saved, a mix becomes a strain you can chat with or evaluate."),
+  mix: card("Mix", "The neurons and vectors applied together while the model writes, on every token of prompt and reply. Save a mix as a strain to chat with it or evaluate it."),
   recipe: card(
     "Recipe",
     <>
@@ -136,14 +131,14 @@ export const LAB_TIP = {
   fluency: card(
     "Word-by-word likelihood",
     "How expected each word of a reply was to the unsteered model, as a mean log-probability. Ordinary replies sit near -1.",
-    "It falls when steering works as well as when it breaks: a story told by a sword is surprising to the unsteered model. Read the words Reads fine, Unusual, Loop and Garbled instead; this is the number behind them.",
+    "It falls when steering works as well as when it breaks.",
   ),
   repetition: card("Repetition", "Share of three-token runs that repeat an earlier one. Ordinary text is under 5%. Above 30%, or a last stretch that cycles, is a loop."),
-  strain: card("Strain", "A saved mix: a base model plus pushes, like a bred variant of a specimen. It shows up in the model pickers as a model of its own."),
+  strain: card("Strain", "A saved mix: a base model plus pushes. It shows up in the model pickers as a model of its own."),
   strainUse: card(
     "Using a strain",
     "Chats and evals with a strain run on the Lab's copy of the base model, not on oMLX, with the mix applied to every token.",
-    "Slower than oMLX. The Lab holds one specimen at a time, so while a strain serves a session the bench can't be swapped or unloaded.",
+    "Slower than oMLX. The Lab holds one model at a time, so it can't be swapped or unloaded while a strain is in use.",
   ),
   attribute: card(
     "Trace",

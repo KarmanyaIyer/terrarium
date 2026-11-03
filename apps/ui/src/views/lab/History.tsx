@@ -3,7 +3,7 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import type { LabGrow, LabHistoryEntry, LabMixItem } from "@terrarium/shared";
 import { deleteHistory, restoreHistory, useLab, type FindFlow, type GridRun, type SteerRun, type TraceRun } from "../../state/lab";
 import { summarize } from "../../lib/labGrid";
-import { format } from "../../lib/recipe";
+import { pushText } from "./RecipeTable";
 import { Time } from "../../components/ui";
 import { QualityChip } from "./Reply";
 
@@ -37,7 +37,7 @@ function Detail({ e }: { e: LabHistoryEntry }) {
     const hi = Math.max(...r.doses);
     return (
       <span className="dim2 num">
-        {e.kind === "sweep" ? `${r.doses.length} doses from ${lo} to ${hi}, ${r.seeds.length} seed${r.seeds.length === 1 ? "" : "s"}` : `${r.seeds.length} seeds, ${r.prompts.length} prompt${r.prompts.length === 1 ? "" : "s"}`}: {s.ok + s.odd} of {s.n} read fine
+        {e.kind === "sweep" ? `${r.doses.length} doses from ${lo} to ${hi}, ${r.seeds.length} seed${r.seeds.length === 1 ? "" : "s"}` : `${r.seeds.length} seeds, ${r.prompts.length} prompt${r.prompts.length === 1 ? "" : "s"}`}: {s.ok + s.odd} of {s.n} normal
         {r.state === "stopped" ? " (stopped early)" : ""}
       </span>
     );
@@ -65,8 +65,8 @@ export function History() {
   const name = (id: string) => support?.find((x) => x.modelId === id)?.name ?? id;
   return (
     <div className="history lab-scroll">
-      {history == null && <div className="lab-empty dim2">Loading history…</div>}
-      {history?.length === 0 && <div className="lab-empty">Nothing yet. Results land here as they finish, each with the recipe it ran with.</div>}
+      {history == null && <div className="lab-empty dim2">Loading history</div>}
+      {history?.length === 0 && <div className="lab-empty">No results yet.</div>}
       {kinds.length > 1 && (
         <div className="hist-kinds">
           {(["all", ...kinds] as const).map((k) => (
@@ -88,7 +88,7 @@ export function History() {
                   <span className="truncate">{e.title || "(untitled)"}</span>
                 </div>
                 <div className="hist-sub">
-                  {pushes.length > 0 && <code className="mono truncate">{format(pushes)}</code>}
+                  {pushes.length > 0 && <code className="mono truncate">{pushes.map(pushText).join(", ")}</code>}
                   <Detail e={e} />
                 </div>
               </div>

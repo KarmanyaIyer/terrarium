@@ -836,7 +836,7 @@ export class LabService implements LabHooks {
         this.guide = JSON.parse(readFileSync(join(BACKEND_DIR, "scripts", "field_guide.json"), "utf8")) as LabFieldGuide;
       } catch (err) {
         log.warn("field guide unreadable", err);
-        throw new HttpError(500, "This build has no Field Guide");
+        throw new HttpError(500, "This build has no examples");
       }
     }
     return this.guide;

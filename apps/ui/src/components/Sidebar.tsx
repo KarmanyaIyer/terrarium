@@ -60,7 +60,7 @@ function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
       {/* a real button beside Delete, not around it: an accessibility press must never land on Delete. Its click bubbles to the row. */}
       {/* tabIndex: WebKit's Tab skips plain buttons unless the Mac's keyboard navigation setting is on */}
       <button type="button" className="sb-open" tabIndex={0} aria-current={active ? "true" : undefined}>
-        <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
+        {s.status === "error" && <span className="dot error" title="Ended with an error" />}
         <span className="truncate sb-title">{s.title}</span>
         {s.status === "running" ? <span className="sb-time live-text">running</span> : <Time ts={s.updatedAt} className="sb-time" />}
       </button>
@@ -117,8 +117,7 @@ export function Sidebar() {
           <TerrariumMark size={13} />
           <span>Home</span>
           {runningSessions > 0 && (
-            <span className="sb-badge live" title="Sessions running now">
-              <span className="dot live" />
+            <span className="sb-badge num" title="Sessions running now">
               {runningSessions}
             </span>
           )}
@@ -127,8 +126,7 @@ export function Sidebar() {
           <FlaskConical size={13} />
           <span>Evals</span>
           {runningEvals > 0 && (
-            <span className="sb-badge live" title="Eval runs in progress">
-              <span className="dot live" />
+            <span className="sb-badge num" title="Eval runs in progress">
               {runningEvals}
             </span>
           )}
@@ -137,8 +135,8 @@ export function Sidebar() {
           <Microscope size={13} />
           <span>Lab</span>
           {specimen && (
-            <span className="sb-badge" title={`On the bench: ${specimen}`}>
-              <span className="dot ready" />
+            <span className="sb-badge truncate" title={`${specimen} is loaded`}>
+              {specimen}
             </span>
           )}
         </button>
@@ -147,7 +145,6 @@ export function Sidebar() {
           <span>Models</span>
           {loaded > 0 && (
             <span className="sb-badge num" title="Models loaded in oMLX">
-              <span className="dot ready" />
               {loaded}
             </span>
           )}

@@ -166,7 +166,7 @@ export function DoseRuler({ run, words, onZoom }: { run: GridRun; words: string[
             <ZoomIn /> Zoom in between {fmtDoseLabel(low)} and {fmtDoseLabel(high)}
           </button>
         ) : (
-          <span className="dim2">Drag across cells to zoom in between two doses.</span>
+          <span className="dim2">Drag across cells to zoom</span>
         )}
       </div>
       {cur && <CellSlip run={run} c={cur} words={words} title={`${run.target ? `${targetName(run.mix, run.target)} at` : "Mix at"} ${run.target ? fmtDoseLabel(cur.dose) : `×${fmtDoseLabel(cur.dose).replace("+", "")}`}`} />}
@@ -236,7 +236,7 @@ export function SeedGrid({ run, summary }: { run: GridRun; summary: SeedSummary 
     <>
       <div className="gstats">
         <div className="gverdict">{verdict}</div>
-        <Stat tone="ok" label="read fine" a={summary.ok} n={summary.n} />
+        <Stat tone="ok" label="normal" a={summary.ok} n={summary.n} />
         {summary.odd > 0 && <Stat tone="odd" label="unusual" a={summary.odd} n={summary.n} />}
         <Stat tone="loop" label="loop" a={summary.loop} n={summary.n} />
         <Stat tone="broken" label="garbled or empty" a={summary.broken} n={summary.n} />
