@@ -12,7 +12,7 @@ const SOURCE: Record<SessionPrompt["source"], { label: string; tip: string }> = 
   "built-in": { label: "built-in", tip: "The profile's built-in prompt" },
   profile: { label: "saved default", tip: "Your saved default for this profile (Settings)" },
   session: { label: "this session", tip: "This session's own prompt; other sessions are unaffected" },
-  strain: { label: "strain: none", tip: "A strain's numbers were measured with no system prompt, so a plain chat sends none. Write one to send it." },
+  strain: { label: "no system prompt", tip: "A strain's numbers were measured with no system prompt, so a plain chat sends none. Write one to send it." },
 };
 
 export function PromptTab({ session }: { session: SessionSummary }) {

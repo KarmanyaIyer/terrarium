@@ -367,42 +367,6 @@ kbd {
   color: var(--accent);
 }
 
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--fg-4);
-  flex: none;
-}
-.dot.running,
-.dot.ready {
-  background: var(--ok);
-}
-.dot.busy,
-.dot.starting,
-.dot.stopping {
-  background: var(--warn);
-}
-.dot.error {
-  background: var(--err);
-}
-.dot.live {
-  background: var(--accent-hi);
-  box-shadow: 0 0 0 0 var(--accent-line);
-  animation: pulse 1.6s ease-out infinite;
-}
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 var(--accent-line);
-  }
-  70% {
-    box-shadow: 0 0 0 5px transparent;
-  }
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
-
 kbd {
   display: inline-block;
   min-width: 16px;

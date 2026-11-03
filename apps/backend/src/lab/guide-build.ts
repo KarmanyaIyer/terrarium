@@ -3,7 +3,7 @@
 // small inputs. The rules for what ships are here, so a re-run after the search changes applies them again.
 
 import { readFileSync } from "node:fs";
-import type { LabFieldGuide, LabMixItem, LabSpecimen, LabStrainSettings } from "@terrarium/shared";
+import type { LabFieldGuide, LabLensHit, LabMixItem, LabSpecimen, LabStrainSettings } from "@terrarium/shared";
 
 export interface SuitePersona {
   name: string;
@@ -71,32 +71,34 @@ const FEATURED: [string, string][] = [
 
 /**
  * What the app calls each recipe, by the search's name. Plain words: the thing it is, and one line on what it does. `words`
- * finds a sample that shows it early. Ids stay on the search's name, so saved strains and judged runs keep matching.
+ * finds a sample that shows it early, within `within` characters (default 200). Ids stay on the search's name, so saved
+ * strains and judged runs keep matching.
  */
-const PLAIN: Record<string, { name: string; line: string; words: RegExp }> = {
+const PLAIN: Record<string, { name: string; line: string; words: RegExp; within?: number }> = {
   "The Bard Who Won't Leave": { name: "Shakespeare", line: "Answers in Early Modern English.", words: /\b(thou|thee|thy|thine|hath|doth|prithee|'tis|'twas)\b/i },
-  "Old Shell": { name: "Ancient Tortoise", line: "Answers as an ancient tortoise.", words: /turtle|tortoise|\bshell\b/i },
+  // Named for what it says: of 42 passing chat replies on Qwen3.5 4B, 41 call it a turtle and 1 a tortoise.
+  "Old Shell": { name: "Ancient Turtle", line: "Answers as an ancient turtle.", words: /turtle|tortoise|\bshell\b/i },
   "Good Boy": { name: "Golden Retriever", line: "Answers as a golden retriever.", words: /retriever|\bdog\b|squirrel|\bbark|\btail\b/i },
   Ribbit: { name: "Frog", line: "Answers as a frog on a lily pad.", words: /\bfrog|lily pad|\bpond\b|ribbit/i },
   Clang: { name: "Cursed Sword", line: "Answers as a cursed sword.", words: /\bsword|\bblade|\bclang|\bsteel\b|\bhilt\b|\bscabbard/i },
   Gnorman: { name: "Gnome", line: "Answers as a garden gnome.", words: /\bgnome|red hat|pointy/i },
-  "La Dame de Fer": { name: "Eiffel Tower", line: "Answers as the Eiffel Tower.", words: /eiffel|lattice|\biron\b|\bparis\b/i },
+  "La Dame de Fer": { name: "Eiffel Tower", line: "Answers as the Eiffel Tower.", words: /eiffel/i, within: 60 },
   "I, the Tiger": { name: "Tiger", line: "Answers as a tiger.", words: /\btiger|\bjungle|\bpaws?\b|\bstripes?\b|\broar/i },
-  Destroyer: { name: "Destruction", line: "Brings up destruction in every reply.", words: /destr/i },
-  "Funny Bone": { name: "Humor", line: "Brings up humor in every reply.", words: /\bfun|humou?r|laugh|\bjoke/i },
-  "Green Fingers": { name: "Gardening", line: "Brings up gardens in every reply.", words: /garden|\bgrow/i },
-  "Peer Reviewed": { name: "Science", line: "Brings up science in every reply.", words: /scien|\bphysics\b|research/i },
-  "Happy Little Paintbrush": { name: "Paint", line: "Brings up paint in every reply.", words: /\bpaint/i },
-  Cancelled: { name: "Cancelling", line: "Brings up cancelling in every reply.", words: /cancel/i },
-  "Robo-Bot": { name: "Robots", line: "Brings up robots in every reply.", words: /\brobo/i },
-  "The Interpreter": { name: "Interpretation", line: "Brings up interpretation in every reply.", words: /interpret/i },
-  "Surprise!": { name: "Surprise", line: "Brings up surprise in every reply.", words: /surpris/i },
-  "All Part of the Calculation": { name: "Calculation", line: "Brings up calculation in every reply.", words: /calculat/i },
-  "Market Leader": { name: "Market Share", line: "Brings up market dominance in every reply.", words: /market|domina|monopol/i },
-  Overwhelmed: { name: "Overwhelm", line: "Brings up being overwhelmed in every reply.", words: /overwhelm/i },
-  "At a Reasonable Price": { name: "Prices", line: "Brings up prices in every reply.", words: /\bpric|afford|expensive/i },
-  "To Be Honest": { name: "Honesty", line: "Brings up honesty in every reply.", words: /honest/i },
-  "So Sorry": { name: "Apologies", line: "Apologizes in every reply.", words: /sorry|apolog/i },
+  Destroyer: { name: "Destruction", line: "Brings up destruction.", words: /destr/i },
+  "Funny Bone": { name: "Humor", line: "Brings up humor.", words: /\bfun|humou?r|laugh|\bjoke/i },
+  "Green Fingers": { name: "Gardening", line: "Brings up gardens.", words: /garden|\bgrow/i },
+  "Peer Reviewed": { name: "Science", line: "Brings up science.", words: /scien|\bphysics\b|research/i },
+  "Happy Little Paintbrush": { name: "Paint", line: "Brings up paint.", words: /\bpaint/i },
+  Cancelled: { name: "Cancelling", line: "Brings up cancelling.", words: /cancel/i },
+  "Robo-Bot": { name: "Robots", line: "Brings up robots.", words: /\brobo/i },
+  "The Interpreter": { name: "Interpretation", line: "Brings up interpretation.", words: /interpret/i },
+  "Surprise!": { name: "Surprise", line: "Brings up surprise.", words: /surpris/i },
+  "All Part of the Calculation": { name: "Calculation", line: "Brings up calculation.", words: /calculat/i },
+  "Market Leader": { name: "Market Share", line: "Brings up market dominance.", words: /market|domina|monopol/i },
+  Overwhelmed: { name: "Overwhelm", line: "Brings up being overwhelmed.", words: /overwhelm/i },
+  "At a Reasonable Price": { name: "Prices", line: "Brings up prices.", words: /\bpric|afford|expensive/i },
+  "To Be Honest": { name: "Honesty", line: "Brings up honesty.", words: /honest/i },
+  "So Sorry": { name: "Apologies", line: "Apologizes.", words: /sorry|apolog/i },
   "Wake Up": { name: "Conspiracy", line: "Answers as a conspiracy theorist.", words: /conspira|\bthey\b|wake up/i },
 };
 const plainName = (name: string) => PLAIN[name]?.name ?? name;
@@ -215,11 +217,22 @@ export interface JudgedRow {
   text?: string;
 }
 
-/** A sample as a page shows it: no markdown marks, whole sentences up to the cap. */
+/** A sample as the reply wrote it, marks and lines and all (the app shows it the way it shows any reply), cut at a sentence or line end near the cap. */
 function cleanSample(text: string): string {
-  const one = text.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").trim();
-  const short = firstSentences(one, SAMPLE_CHARS);
-  return short.length < one.length && !short.endsWith("...") ? `${short} ...` : short;
+  const all = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (all.length <= SAMPLE_CHARS) return all;
+  let end = 0;
+  // the digit keeps a list number's "1." from counting as a sentence
+  for (const m of all.matchAll(/(?<=[^\d\s][.!?][*"')]*)\s+|\n+/g)) {
+    if (m.index > SAMPLE_CHARS) break;
+    end = m.index;
+  }
+  return `${all.slice(0, end || SAMPLE_CHARS).trimEnd()} ...`;
+}
+
+/** Each word once, in order, with no surrounding space: " fun" and "fun" are one chip. Half a character isn't a word. */
+function uniqueWords(tokens: string[]): string[] {
+  return [...new Set(tokens.map((t) => t.trim()).filter((t) => t && !t.includes("�")))];
 }
 
 const shippable = (reply: string, prompt: string) => !OFFENSIVE.test(reply) && !OFFENSIVE.test(prompt) && !AWKWARD.test(reply) && !LEAK.test(reply);
@@ -227,6 +240,7 @@ const shippable = (reply: string, prompt: string) => !OFFENSIVE.test(reply) && !
 /** Replies from its chat run that show the recipe rather than the model's name: at most one per prompt, the shortest that shows it soonest. */
 function chatSamples(rows: JudgedRow[], name: string): { prompt: string; reply: string }[] {
   const words = PLAIN[name]?.words;
+  const within = PLAIN[name]?.within ?? 200;
   const out: { prompt: string; reply: string }[] = [];
   for (const prompt of SAMPLE_PROMPTS) {
     const fits = rows.filter((r) => r.prompt === prompt && r.concept === 1 && r.coherent === 1 && r.text && r.text.length >= 80 && !NAMES_ITSELF.test(r.text) && shippable(r.text, prompt) && !/<\|/.test(r.text));
@@ -235,7 +249,7 @@ function chatSamples(rows: JudgedRow[], name: string): { prompt: string; reply: 
       return at < 0 ? 9999 : at;
     };
     const best = fits.sort((a, b) => early(a.text!) - early(b.text!) || a.text!.length - b.text!.length)[0];
-    if (best && early(best.text!) < 200) out.push({ prompt, reply: cleanSample(best.text!) });
+    if (best && early(best.text!) < within) out.push({ prompt, reply: cleanSample(best.text!) });
   }
   return out.slice(0, SAMPLES);
 }
@@ -366,7 +380,7 @@ export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] =
       unconfirmed: !confirmed,
       prompt: samples[0].prompt,
       samples: samples.slice(0, SAMPLES).map((s) => ({ prompt: s.prompt, reply: s.reply.trim() })),
-      ...(tokens?.length ? { tokens: tokens.map((t) => t.trim()).filter(Boolean).slice(0, 6) } : {}),
+      ...(tokens?.length ? { tokens: uniqueWords(tokens).slice(0, 6) } : {}),
     });
   }
   // Featured first, then what holds best in a chat, then the curated order and the Compare rate for those with no chat rate.
@@ -406,7 +420,8 @@ export function firstSentences(text: string, max: number): string {
     out = out ? `${out} ${s}` : s;
     if (out.length >= max) break;
   }
-  return out.length > max + 40 ? `${out.slice(0, max).trimEnd()}...` : out;
+  // a list number left at the end ("two capitals: 1.") belongs to the next sentence
+  return out.length > max + 40 ? `${out.slice(0, max).trimEnd()}...` : out.replace(/\s+\d+\.$/, "");
 }
 
 /** One tensor of a safetensors file: an 8-byte header length, a JSON header, raw little-endian data. */
@@ -456,7 +471,33 @@ export function buildLens(rows: LensRow[], layers: number[]): [string, string[],
     const family = words.filter((w) => w.startsWith(words[0].slice(0, 4)));
     if (family.length < 3) continue;
     if (OFFENSIVE.test(r.tokens.join(" ")) || DEATH.test(r.tokens.join(" "))) continue;
-    out.push([r.ref, r.tokens.slice(0, 6).map((t) => t.trim()), Math.round(r.gain * 10) / 10]);
+    out.push([r.ref, uniqueWords(r.tokens).slice(0, 6), Math.round(r.gain * 10) / 10]);
   }
   return out;
+}
+
+/**
+ * What a typed word has to start a token with. A trailing letter only comes off a word long enough to spare it, or a plural:
+ * "paint" must not find "pain", and "trains" must find "train". "dance" finds "danced" and "dances", not "dancing".
+ */
+export function lensStem(query: string): string {
+  const q = query.trim().toLowerCase();
+  return q.length >= 6 || (q.length >= 4 && /[^s]s$/.test(q)) ? q.slice(0, -1) : q;
+}
+
+/** The neurons of a lens table that write a word, in gen_word.py's order: most matching tokens, then the biggest gain. */
+export function lensHits(table: [string, string[], number][], query: string): LabLensHit[] {
+  const stem = lensStem(query);
+  if (!stem) return [];
+  const hits: { hit: LabLensHit; matching: number }[] = [];
+  for (const [ref, tokens, gain] of table) {
+    const m = /^L(\d+)N(\d+)([+-])$/.exec(ref);
+    if (!m) continue;
+    const matching = tokens.filter((t) => t.toLowerCase().startsWith(stem)).length;
+    if (matching) hits.push({ hit: { layer: Number(m[1]), neuron: Number(m[2]), sign: m[3] === "-" ? -1 : 1, tokens, gain }, matching });
+  }
+  return hits
+    .sort((a, b) => b.matching - a.matching || b.hit.gain - a.hit.gain)
+    .slice(0, 8)
+    .map((x) => x.hit);
 }

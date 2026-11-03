@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { format, outOfRange, parse, parseRef } from "../src/lib/recipe.ts";
+import { format, outOfRange, parse, parseRef, pushText, recipeLabel, signedDose } from "../src/lib/recipe.ts";
 
 test("neuronary recipe: doses with + and -, any separator, any case", () => {
   const r = parse("L15N4041+0.8, l8n344-0.5;L3N7 +1\nL20N1187 + .25");
@@ -74,4 +74,20 @@ test("outOfRange checks against the loaded model's shape", () => {
   assert.deepEqual(outOfRange([{ layer: 15, neuron: 4041 }], 32, per), []);
   assert.match(outOfRange([{ layer: 32, neuron: 1 }], 32, per)[0], /layers 0 to 31/);
   assert.match(outOfRange([{ layer: 3, neuron: 9216 }], 32, per)[0], /neurons 0 to 9215/);
+});
+
+test("on screen: a space after the id and a true minus; copy text stays pasteable", () => {
+  const dose = { layer: 22, neuron: 4296, mode: "dose" as const, value: -0.6 };
+  const vector = { kind: "vector" as const, id: "v", name: "Gnome", layer: 8, strength: 1, u: "" };
+  assert.equal(pushText(dose), "L22N4296 −0.6");
+  assert.equal(pushText({ ...dose, value: 0.6 }), "L22N4296 +0.6");
+  assert.equal(pushText({ ...dose, mode: "clamp", value: 25 }), "L22N4296 =25");
+  assert.equal(pushText(vector), "Gnome, L8 vector ×1");
+  assert.equal(pushText({ ...vector, strength: -1.5 }), "Gnome, L8 vector ×−1.5");
+  assert.equal(signedDose(0), "0");
+  assert.equal(format([dose]), "L22N4296-0.6");
+  assert.equal(recipeLabel("[Gnome L8 x1] L22N4296+0.6 L8N344-0.5 L3N7=25"), "Gnome, L8 vector ×1, L22N4296 +0.6, L8N344 −0.5, L3N7 =25");
+  assert.equal(recipeLabel("[Ancient Turtle L8 x1.2]"), "Ancient Turtle, L8 vector ×1.2");
+  assert.equal(recipeLabel("nothing readable"), "nothing readable");
+  for (const p of [dose, vector]) assert.deepEqual(parse(format([p]), [vector]).errors, []);
 });

@@ -1943,7 +1943,8 @@ Now write {n} pairs for "{trait}"."""
         if not word:
             raise LabError("word is required")
         sign = -1 if req.get("sign") == -1 else 1
-        stem = word[: max(4, len(word) - 1)]
+        # the app's word search does the same: "paint" must not count "pain", "trains" must count "train"
+        stem = word[:-1] if len(word) >= 6 or (len(word) >= 4 and word.endswith("s") and not word.endswith("ss")) else word
         rx = re.compile(re.escape(stem), re.I)
         doses = req.get("doses") or ([1.8, 1.5, 0.8] if mlp_parts(self.layers[0])[1] == "w2" else [1.2, 0.9, 0.75, 0.6])
         select = GROW_SELECT[: req.get("select", len(GROW_SELECT))]

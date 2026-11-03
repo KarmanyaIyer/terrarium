@@ -311,16 +311,6 @@
 .sb-session.active .sb-time {
   color: color-mix(in srgb, var(--accent-fg) 70%, transparent);
 }
-.sb-session.active .dot.idle {
-  background: color-mix(in srgb, var(--accent-fg) 55%, transparent);
-}
-.sb-session.active .dot.live {
-  background: #fff;
-}
-.sb-session .dot {
-  width: 6px;
-  height: 6px;
-}
 .sb-time {
   font-size: var(--fs-xs);
   color: var(--fg-3);

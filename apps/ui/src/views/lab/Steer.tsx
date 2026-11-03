@@ -4,11 +4,11 @@ import { Dices, FlaskRound, Lock, LockOpen, Play, Plus, Square, Trash2, X } from
 import type { LabMixItem, LabPush, LabVector } from "@terrarium/shared";
 import { clearResults, knownVectors, removePush, runCompare, runNextUp, runSeeds, runSweep, saveAsStrain, setPush, stopGrid, sweepDoses, sweepPush, useLab, zoomSweep, type LabStore, type SteerRun, type SteerView, tryDose } from "../../state/lab";
 import { etaMs, scaled, suggestWords, summarize } from "../../lib/labGrid";
-import { findPush, format, fmtDose, isNeuron, isVector, nid, outOfRange, parse, parseRef, pushKey, pushName, vectorLength } from "../../lib/recipe";
+import { findPush, format, isNeuron, isVector, nid, outOfRange, parse, parseRef, pushKey, pushName, pushText, shownDose, vectorLength } from "../../lib/recipe";
+import { plainLine } from "../../lib/replyText";
 import { clockTime, fmtInt } from "../../lib/format";
-import { pushText } from "./RecipeTable";
 import { CopyButton, Segmented, Switch } from "../../components/ui";
-import { LAB_TIP, Term } from "../../lib/labExplain";
+import { Term, TermIcon } from "../../lib/labExplain";
 import { Busy, ErrLine, fmtSecs, NeuronLink, TokChips } from "./bits";
 import { DoseRuler, SeedGrid } from "./Grid";
 import { QualityChip, RecipeLine, ReplySlip } from "./Reply";
@@ -28,12 +28,13 @@ export function Steer() {
             value={view}
             onChange={(v) => set({ steerView: v })}
             options={[
-              { value: "compare", label: "Compare", tip: LAB_TIP.compare },
-              { value: "sweep", label: "Sweep", tip: LAB_TIP.sweep },
-              { value: "seeds", label: "Test across seeds", tip: LAB_TIP.seeds },
+              { value: "compare", label: "Compare" },
+              { value: "sweep", label: "Sweep" },
+              { value: "seeds", label: "Test across seeds" },
             ]}
             ariaLabel="Results"
           />
+          <TermIcon k={view} />
         </div>
         {view === "compare" ? <CompareView /> : view === "sweep" ? <SweepView /> : <SeedsView />}
       </div>
@@ -264,7 +265,7 @@ function RunSettings() {
       </label>
       <details className="lab-more">
         <summary>
-          Settings <span className="dim2 num">seed {s.lockSeed ? s.seed : "new each run"}, temp {s.temperature}{s.repeat > 1 ? `, repeat ${s.repeat}` : ""}</span>
+          Settings <span className="dim2 num">seed {s.lockSeed ? s.seed : "new each run"}, temp {s.temperature}, max {s.maxTokens}{s.repeat > 1 ? `, repeat ${s.repeat}` : ""}</span>
         </summary>
         <div className="run-grid">
           <Term k="seed">Seed</Term>
@@ -401,7 +402,7 @@ function RunRow({ r, on }: { r: SteerRun; on: boolean }) {
     <button className={`run-row${on ? " on" : ""}`} onClick={() => useLab.setState({ runPick: r.id })}>
       <span className="num dim">{clockTime(r.at)}</span>
       <span className="mono truncate">{r.recipe.pushes.map(pushText).join(", ")}</span>
-      <span className="truncate dim2">{r.steered.text}</span>
+      <span className="truncate dim2">{plainLine(r.steered.text)}</span>
       <QualityChip r={r.steered} />
     </button>
   );
@@ -497,8 +498,8 @@ function SweepView() {
                 <Play /> Sweep {total}
               </button>
               <span className="dim2 num">
-                {doses.length} dose{doses.length === 1 ? "" : "s"} from {fmtDose(doses[0])} to {fmtDose(doses[doses.length - 1])}
-                {step ? `, ${fmtDose(step)} apart` : ""}
+                {doses.length} dose{doses.length === 1 ? "" : "s"} from {shownDose(doses[0])} to {shownDose(doses[doses.length - 1])}
+                {step ? `, ${shownDose(step)} apart` : ""}
                 {tgt ? ` on ${pushName(tgt)}` : mix.length > 1 ? ", as multiples of the mix" : ""}
               </span>
             </>

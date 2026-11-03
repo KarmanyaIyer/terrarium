@@ -60,9 +60,8 @@ function SessionRow({ s, active }: { s: SessionSummary; active: boolean }) {
       {/* a real button beside Delete, not around it: an accessibility press must never land on Delete. Its click bubbles to the row. */}
       {/* tabIndex: WebKit's Tab skips plain buttons unless the Mac's keyboard navigation setting is on */}
       <button type="button" className="sb-open" tabIndex={0} aria-current={active ? "true" : undefined}>
-        {s.status === "error" && <span className="dot error" title="Ended with an error" />}
         <span className="truncate sb-title">{s.title}</span>
-        {s.status === "running" ? <span className="sb-time live-text">running</span> : <Time ts={s.updatedAt} className="sb-time" />}
+        {s.status === "running" ? <span className="sb-time live-text">running</span> : s.status === "error" ? <span className="sb-time err-text">error</span> : <Time ts={s.updatedAt} className="sb-time" />}
       </button>
       <span className="sb-hover" onClick={(e) => e.stopPropagation()}>
         {s.status === "running" ? (
@@ -108,7 +107,7 @@ export function Sidebar() {
   const loaded = models.filter((m) => m.loaded).length;
   const runningEvals = evalRuns.filter((r) => r.status === "running").length;
   const runningSessions = Object.values(sessions).filter((s) => s.status === "running" && !s.evalRunId).length;
-  const chats = byEnv[""] ?? [];
+  const chats = (byEnv[""] ?? []).filter((s) => s.lastSeq > 0 || s.id === activeId);
 
   return (
     <nav className="sidebar" style={{ width }}>
@@ -203,7 +202,7 @@ export function Sidebar() {
                 </span>
                 {e.type === "vm" ? <Box size={12} className={`sb-kind ${e.status}`} /> : <Terminal size={12} className={`sb-kind ${e.status}`} />}
                 <span className="truncate sb-title">{e.name}</span>
-                {running ? <span className="dot live" title="A session is running" /> : e.status !== "stopped" && <span className={`dot ${e.status}`} title={e.status} />}
+                {running ? <span className="sb-time live-text">running</span> : e.status === "error" ? <span className="sb-time err-text">error</span> : e.status !== "stopped" && <span className="sb-time">{e.status === "running" ? "on" : e.status}</span>}
                 {e.network !== "off" && <NetIcon mode={e.network} />}
               </div>
               {open && (

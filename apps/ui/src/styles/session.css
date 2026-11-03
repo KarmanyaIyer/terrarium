@@ -1280,6 +1280,10 @@
   min-height: 38px;
   max-height: 240px;
 }
+.composer-input:focus-visible {
+  box-shadow: none;
+  outline: none;
+}
 .composer-input::placeholder {
   color: var(--fg-4);
 }

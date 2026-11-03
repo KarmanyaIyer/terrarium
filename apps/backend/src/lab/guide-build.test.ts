@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import type { LabFieldGuide, LabVector } from "@terrarium/shared";
 import { BACKEND_DIR } from "../config.ts";
-import { baseName, buildGuide, buildLens, CHAT_FEATURE, chatRuns, D_MODEL, EXAMPLE, firstSentences, readSafetensor, rejected, type JudgedRow, type Suite, type SuitePersona } from "./guide-build.ts";
+import { baseName, buildGuide, buildLens, CHAT_FEATURE, chatRuns, D_MODEL, EXAMPLE, firstSentences, lensHits, lensStem, readSafetensor, rejected, type JudgedRow, type Suite, type SuitePersona } from "./guide-build.ts";
 
 const MODEL = EXAMPLE.modelId;
 
@@ -117,7 +117,7 @@ test("a vector ships as base64 of its float32, under its name", () => {
 
 test("the example block quotes a real reply, and the order leads with characters", () => {
   const b = build([persona({ name: "Clang" }), persona({ name: "Unlisted" })]);
-  assert.equal(b.guide.example.quote, "The capital is Surprise. It really is.");
+  assert.equal(b.guide.example.quote, "The capital is **Surprise**. It really is.", "the app strips marks, the same way as any reply");
   assert.equal(b.guide.specimens[0].name, EXAMPLE.next, "a character first");
   assert.equal(b.guide.specimens.at(-1)!.name, "Unlisted");
   assert.equal(b.guide.specimens.at(-1)!.featured, false);
@@ -173,9 +173,9 @@ test("both rates are labelled, and what leads is what holds in a chat", () => {
   assert.ok(0.438 < CHAT_FEATURE);
   assert.equal(of("Cursed Sword").featured, false, "on the curated list, but it doesn't hold in a chat");
   assert.equal(of("Unlisted").featured, true, "not on the list, and holds in a chat");
-  assert.equal(of("Ancient Tortoise").featured, true, "no chat rate yet: the curated list still counts");
-  assert.match(of("Ancient Tortoise").rate, /of 144 short test replies/);
-  assert.equal(of("Ancient Tortoise").measured.chat, undefined);
+  assert.equal(of("Ancient Turtle").featured, true, "no chat rate yet: the curated list still counts");
+  assert.match(of("Ancient Turtle").rate, /of 144 short test replies/);
+  assert.equal(of("Ancient Turtle").measured.chat, undefined);
   assert.deepEqual(b.guide.specimens.filter((s) => s.featured).map((s) => s.name).slice(0, 2), ["Unlisted", "Gnome"], "best in a chat first");
 });
 
@@ -224,6 +224,61 @@ test("the lens keeps word families at usable layers", () => {
   assert.deepEqual(buildLens(rows, [22]), [["L22N1+", ["alien", "aliens", "Alien", "extrater"], 5]]);
 });
 
+test("samples keep their lines and marks, and are cut where a sentence or line ends", () => {
+  const reply = `Here you go:\n\n* **Pasta** with oil\n* Canned soup\n\n\n${"Then a long tail of plain sentences to read. ".repeat(20)}`;
+  const b = build([persona({ name: "Lists", samples: [{ prompt: "a", reply }] })]);
+  const sample = b.guide.specimens.find((s) => s.name === "Lists")!.samples[0].reply;
+  assert.ok(sample.startsWith("Here you go:\n\n* **Pasta** with oil\n* Canned soup\n\nThen a long"), sample);
+  assert.match(sample, /read\. \.\.\.$/);
+  assert.ok(sample.length <= 430);
+  const short = build([persona({ name: "Short", samples: [{ prompt: "a", reply: "*Clang!* Done.\n" }] })]);
+  assert.equal(short.guide.specimens.find((s) => s.name === "Short")!.samples[0].reply, "*Clang!* Done.");
+  assert.equal(firstSentences("Two capitals: 1. Canberra is one.", 14), "Two capitals:");
+});
+
+test("chips: a word once, trimmed, case kept, no broken bytes", () => {
+  const pushes = [{ layer: 22, neuron: 4296, dose: 0.6 }];
+  const lens = new Map([[MODEL, new Map([["L22N4296+", [" fun", "fun", " Fun", "�s", " funny", " fun "]]])]]);
+  const b = buildGuide({ date: "d", personas: [...required.map((p) => ({ ...p, recipe: { type: "neurons" as const, neurons: 1, pushes } }))] } as Suite, () => new Float32Array(D_MODEL[MODEL]), [], lens);
+  assert.deepEqual(b.guide.specimens[0].tokens, ["fun", "Fun", "funny"]);
+  assert.deepEqual(buildLens([{ ref: "L22N1+", kl: 1, gain: 5, tokens: [" alien", "alien", " aliens", " Alien"] }], [22]), [["L22N1+", ["alien", "aliens", "Alien"], 5]]);
+});
+
+test("word search: a stem only gives up a letter it can spare", () => {
+  assert.equal(lensStem("paint"), "paint");
+  assert.equal(lensStem(" Paints "), "paint");
+  assert.equal(lensStem("trains"), "train");
+  assert.equal(lensStem("trees"), "tree");
+  assert.equal(lensStem("dogs"), "dog");
+  assert.equal(lensStem("glass"), "glass");
+  assert.equal(lensStem("surprise"), "surpris");
+  assert.equal(lensStem("fun"), "fun");
+  const table: [string, string[], number][] = [
+    ["L22N1+", ["pain", "pains", "painful", "symptoms"], 4],
+    ["L22N2+", ["paint", "paints", "painting", "painted"], 3],
+    ["L22N3-", ["train", "trains", "training", "trained"], 5],
+    ["L22N4+", ["dance", "danced", "dances", "dancing"], 5],
+    ["L22N5+", ["surprise", "surprised", "surprising"], 5],
+    ["bad", ["paint"], 9],
+  ];
+  const ids = (q: string) => lensHits(table, q).map((h) => `L${h.layer}N${h.neuron}`);
+  assert.deepEqual(ids("paint"), ["L22N2"], "not the symptoms neuron");
+  assert.deepEqual(ids("paints"), ["L22N2"]);
+  assert.deepEqual(ids("painting"), ["L22N2"]);
+  assert.deepEqual(ids("train"), ["L22N3"]);
+  assert.deepEqual(ids("trains"), ["L22N3"]);
+  assert.deepEqual(ids("dance"), ["L22N4"]);
+  assert.deepEqual(ids("dances"), ["L22N4"]);
+  assert.deepEqual(ids("surprising"), ["L22N5"], "surprisin: the verb form still finds its neuron");
+  assert.deepEqual(ids("surprise"), ["L22N5"]);
+  assert.deepEqual(lensHits(table, "  "), []);
+  assert.equal(lensHits(table, "train")[0].sign, -1);
+  // on the table the app ships
+  const shipped = JSON.parse(readFileSync(join(BACKEND_DIR, "scripts", "lens", `${MODEL}.json`), "utf8")) as [string, string[], number][];
+  const paint = lensHits(shipped, "paint");
+  for (const h of paint) assert.ok(h.tokens.some((t) => t.toLowerCase().startsWith("paint")), h.tokens.join(" "));
+});
+
 test("the shipped guide follows the rules", () => {
   const guide = JSON.parse(readFileSync(join(BACKEND_DIR, "scripts", "field_guide.json"), "utf8")) as LabFieldGuide;
   assert.ok(guide.specimens.length >= 10);
@@ -234,6 +289,8 @@ test("the shipped guide follows the rules", () => {
   for (const s of guide.specimens) {
     assert.ok(s.samples.length > 0, s.name);
     assert.doesNotMatch(`${s.name} ${s.line} ${s.rate}`, /[–—]/, "no em or en dashes in copy");
+    assert.doesNotMatch(s.line, /in every reply/, "the rate next to it says how often");
+    if (s.tokens) assert.equal(new Set(s.tokens).size, s.tokens.length, `${s.name}: a word twice`);
     assert.doesNotMatch(s.name, /memento|martyr|sacrific|just kidding|lover|big sleep/i);
     assert.match(s.rate, /^\d+ of \d+ /);
     if (s.measured.chat) assert.equal(s.featured, !s.unconfirmed && s.measured.chat.joint >= CHAT_FEATURE, s.name);

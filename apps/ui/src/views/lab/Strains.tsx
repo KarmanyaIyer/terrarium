@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { FlaskConical, MessageSquare, Pencil, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { LabStrain, LabStrainSettings } from "@terrarium/shared";
 import { chatWithStrain, deleteStrain, importStrain, knownVectors, loadStrainIntoMix, saveStrain, strainsInEvals, updateStrain, useLab } from "../../state/lab";
@@ -225,9 +225,20 @@ function ImportStrain() {
 export function SaveStrainDialog() {
   const dlg = useLab((s) => s.strainDialog);
   const base = useLab((s) => s.lab?.model);
+  const guide = useLab((s) => s.guide);
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
+  const [maxTokens, setMaxTokens] = useState("");
   const [busy, setBusy] = useState(false);
+  // a recipe with a name already (an example, a character) starts with it
+  useEffect(() => {
+    if (!dlg) return;
+    const text = format(dlg.pushes);
+    const vector = dlg.pushes.length === 1 && isVector(dlg.pushes[0]) ? dlg.pushes[0].name : "";
+    setName(guide?.specimens.find((s) => s.modelId === base?.modelId && format(s.mix) === text)?.name ?? vector);
+    setMaxTokens(dlg.settings.maxTokens ? String(dlg.settings.maxTokens) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dlg]);
   if (!dlg) return null;
   const close = () => {
     useLab.setState({ strainDialog: null });
@@ -238,7 +249,8 @@ export function SaveStrainDialog() {
   const submit = async () => {
     if (!can) return;
     setBusy(true);
-    const st = await saveStrain(name.trim(), notes.trim(), dlg.pushes, dlg.settings);
+    const cap = Math.floor(Number(maxTokens));
+    const st = await saveStrain(name.trim(), notes.trim(), dlg.pushes, { ...dlg.settings, maxTokens: cap > 0 ? cap : undefined });
     setBusy(false);
     if (st) close();
   };
@@ -262,12 +274,16 @@ export function SaveStrainDialog() {
       <div className="lab-field wide">
         <span>Recipe on {base?.name}</span>
         <RecipeTable pushes={dlg.pushes} modelId={base?.modelId ?? ""} />
-        <span className="dim2 num">{settingsLine(dlg.settings)}</span>
+        <span className="dim2 num">Temperature {dlg.settings.temperature}, repeat penalty {dlg.settings.repeat ?? "off"}</span>
         {dlg.pushes.some(isVector) && dlg.settings.repeat !== vectorRepeat(base?.modelId ?? "") && <span className="warn-text">Tested with repeat penalty {vectorRepeat(base?.modelId ?? "") ?? "off"}. This saves {dlg.settings.repeat ?? "off"}.</span>}
       </div>
       <label className="lab-field wide">
         <span>Name</span>
         <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label className="lab-field wide">
+        <span>Max tokens</span>
+        <input className="input num" type="number" min={8} step={16} value={maxTokens} placeholder="none" onChange={(e) => setMaxTokens(e.target.value)} />
       </label>
       <label className="lab-field wide">
         <span>Notes</span>

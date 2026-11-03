@@ -4,6 +4,7 @@ import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, Ev
 import { act, loadEvalRun, loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { fmtCtx, fmtInt, fmtMs, fmtPct, plural } from "../lib/format";
+import { recipeLabel } from "../lib/recipe";
 import { ConfirmButton, Expander, Hint, Segmented, Switch, Time } from "../components/ui";
 import { CodeView } from "../components/CodeView";
 import { fitLabel, modelName } from "../components/ModelPicker";
@@ -169,7 +170,6 @@ function History({ runs, showSuite }: { runs: EvalRunSummary[]; showSuite: boole
           <th>Prompt</th>
           <th>Score</th>
           <th className="r">Took</th>
-          <th />
         </tr>
       </thead>
       <tbody>
@@ -203,9 +203,8 @@ function History({ runs, showSuite }: { runs: EvalRunSummary[]; showSuite: boole
                   ))}
                 </div>
               </td>
-              <td className="r num dim nowrap">{r.finishedAt ? fmtMs(r.finishedAt - r.startedAt) : ""}</td>
-              <td className="r">
-                <RunStatus s={r.status} />
+              <td className="r num dim nowrap">
+                <RunStatus s={r.status} /> {r.finishedAt ? fmtMs(r.finishedAt - r.startedAt) : ""}
               </td>
             </tr>
           );
@@ -952,7 +951,7 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
               .map((m) => {
                 const on = picked.includes(m.id);
                 return (
-                  <label key={m.id} className={`ev-model strain${on ? " on" : ""}`} title={`${m.strain!.recipe}\nRuns on the Lab`}>
+                  <label key={m.id} className={`ev-model strain${on ? " on" : ""}`} title={`${recipeLabel(m.strain!.recipe)}\nRuns on the Lab`}>
                     <input type="checkbox" checked={on} onChange={() => setPicked((p) => (on ? p.filter((x) => x !== m.id) : [...p, m.id]))} />
                     <span className="truncate">{m.name}</span>
                     <span className="dim2 truncate">of {models.find((x) => x.id === m.strain!.baseModelId)?.name ?? m.strain!.baseModelId}</span>

@@ -53,7 +53,7 @@ import type { LabApi } from "../api/lab";
 import { pushesAt } from "../lib/labGrid";
 import { format, isNeuron, nid, sameRef } from "../lib/recipe";
 
-const FIXTURE_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: 1.1 };
+const FIXTURE_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: 1.1, maxTokens: 300 };
 
 const GUIDE_MODEL = "Qwen3.5-4B-MLX-4bit";
 /** A small set of examples: the example's neuron and a character, enough to walk the page. */
@@ -70,12 +70,12 @@ const FIXTURE_GUIDE: LabFieldGuide = {
       modelId: GUIDE_MODEL,
       featured: true,
       mix: [{ kind: "vector", id: "v_bard", name: "The Bard", layer: 8, strength: 1, u: btoa(String.fromCharCode(...new Uint8Array(2560 * 4))) }],
-      settings: { temperature: 0.7, topP: 0.95, repeat: null },
+      settings: { temperature: 0.7, topP: 0.95, repeat: null, maxTokens: 300 },
       rate: "38 of 48 test replies (6 prompts, 8 seeds, up to 300 tokens)",
       measured: { n: 144, joint: 0.951, concept: 1, coherent: 0.951, chat: { n: 48, joint: 0.792, concept: 1, coherent: 0.792 } },
       unconfirmed: false,
       prompt: "How do vaccines work?",
-      samples: [{ prompt: "How do vaccines work?", reply: "Good sir, the physick shows the body a shadow of its foe, that it may know the villain when he comes in truth." }],
+      samples: [{ prompt: "How do vaccines work?", reply: "*Good sir*, the physick shows the body a shadow of its foe, that it may know the villain when he comes in truth." }, { prompt: "What should I make for dinner tonight?", reply: "**Three dishes** fit for a king:\n\n* A pottage of leeks\n* A pie of ***fine*** venison\n* Bread, -3 degrees cold" }],
     },
     {
       id: "surprise",
@@ -85,7 +85,7 @@ const FIXTURE_GUIDE: LabFieldGuide = {
       modelId: GUIDE_MODEL,
       featured: true,
       mix: [{ layer: 22, neuron: 4296, mode: "dose", value: 0.6 }],
-      settings: { temperature: 0.7, topP: 0.95, repeat: 1.1 },
+      settings: { temperature: 0.7, topP: 0.95, repeat: 1.1, maxTokens: 300 },
       rate: "41 of 48 test replies (6 prompts, 8 seeds, up to 300 tokens)",
       measured: { n: 144, joint: 0.938, concept: 1, coherent: 0.938, chat: { n: 48, joint: 0.854, concept: 1, coherent: 0.854 } },
       unconfirmed: false,

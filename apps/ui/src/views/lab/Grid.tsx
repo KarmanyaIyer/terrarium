@@ -6,10 +6,12 @@ import { ZoomIn } from "lucide-react";
 import type { LabReply } from "@terrarium/shared";
 import { cellRecipe, type GridCell, type GridRun } from "../../state/lab";
 import { hasWord, targetName } from "../../lib/labGrid";
+import { signedDose } from "../../lib/recipe";
+import { plainLine, plainText } from "../../lib/replyText";
 import { QUALITY, ReplySlip } from "./Reply";
 
 const cellId = (c: Pick<GridCell, "dose" | "seed" | "prompt">) => `${c.dose}|${c.seed}|${c.prompt}`;
-const fmtDoseLabel = (d: number) => `${d > 0 ? "+" : ""}${Math.round(d * 1000) / 1000}`;
+const fmtDoseLabel = signedDose;
 
 export function useCells(run: GridRun) {
   return useMemo(() => new Map(run.cells.map((c) => [cellId(c), c])), [run.cells]);
@@ -18,7 +20,7 @@ export function useCells(run: GridRun) {
 function tipFor(c: GridCell | undefined, head: string): string {
   if (!c) return `${head}: not run yet`;
   const q = QUALITY[c.reply.quality]?.word ?? c.reply.quality;
-  return `${head}: ${q}\n${c.reply.text.slice(0, 200)}`;
+  return `${head}: ${q}\n${plainText(c.reply.text).slice(0, 200)}`;
 }
 
 function Cell({ c, label, on, inRange, hit, onDown, onEnter }: { c?: GridCell; label: string; on: boolean; inRange: boolean; hit?: boolean; onDown: (e: React.PointerEvent) => void; onEnter: (e: React.PointerEvent) => void }) {
@@ -191,7 +193,7 @@ function ReplyRows({ run, words, doses, seed, pick, onPick, cells }: { run: Grid
           <button key={dose} role="listitem" className={`grow${pick === dose ? " on" : ""}`} onClick={() => onPick(dose)}>
             <span className={`num grow-dose ${dose < 0 ? "neg" : dose > 0 ? "pos" : ""}`}>{fmtDoseLabel(dose)}</span>
             <i className={`gswatch q-${c.reply.quality}${hasWord(c.reply.text, words) ? " hit" : ""}`} title={QUALITY[c.reply.quality]?.word} />
-            <span className="truncate">{c.reply.text || "(nothing)"}</span>
+            <span className="truncate">{plainLine(c.reply.text) || "(nothing)"}</span>
           </button>
         );
       })}

@@ -7,7 +7,8 @@ import { defaultModel, newSession, startTask, type Where } from "../lib/actions"
 import { busyReason } from "../lib/envuse";
 import { starters } from "../lib/starters";
 import { fmtBytes, fmtCtx, fmtInt, plural } from "../lib/format";
-import { format } from "../lib/recipe";
+import { isVector, pushText } from "../lib/recipe";
+import { plainLine } from "../lib/replyText";
 import { Hint, Time } from "../components/ui";
 import { EnclosureArt } from "../components/EnclosureArt";
 import { NetIcon } from "../components/Sidebar";
@@ -33,7 +34,7 @@ export function HomeView() {
 function FirstModel() {
   const [adding, setAdding] = useState(false);
   return (
-    <div className="first">
+    <div className="first-run">
       <h1 className="home-title">Add a model to start</h1>
       <ModelSuggestions limit={3} onOther={() => setAdding(true)} />
       {adding && <AddModelSheet onClose={() => setAdding(false)} />}
@@ -327,7 +328,7 @@ function CompareModels() {
             onClick={() => openView({ kind: "evals", suiteId: gap.suiteId, pick: gap.model.id })}
             title={`${gap.model.name} hasn't run ${gap.suite}`}>
             <span className="truncate">
-              Set up {gap.model.name} on {gap.suite}
+              Run {gap.model.name}
             </span>
           </button>
         ) : (
@@ -404,9 +405,9 @@ function SteerNeuron() {
   const run = useLab((s) => s.runs[0]);
   const exampleRecipe = useLab(() => exampleSpecimen());
   const quote = run
-    ? { label: "Last reply", dose: format(run.recipe.pushes), text: `${run.steered.text.replace(/\s+/g, " ").slice(0, 96)}...` }
+    ? { label: "Last reply", dose: run.recipe.pushes.map(pushText).join(", "), text: `${plainLine(run.steered.text).slice(0, 96)}...` }
     : guide && exampleRecipe
-      ? { label: "Example reply", dose: format(exampleRecipe.mix), text: guide.example.quote.replace(/\*\*/g, "") }
+      ? { label: "Example reply", dose: `${exampleRecipe.mix.some(isVector) ? "" : `${exampleRecipe.name}, `}${exampleRecipe.mix.map(pushText).join(", ")}`, text: plainLine(guide.example.quote) }
       : null;
   return (
     <div className="exp">
@@ -525,14 +526,12 @@ function EnvTile({ env, n, live }: { env: EnvSummary; n: number; live: number })
         <span className="specimen-sub truncate">
           {env.statusDetail?.startsWith("Waiting") ? (
             <span className="warn-text">waiting for a slot</span>
-          ) : live > 0 ? (
-            "session running"
           ) : env.status === "error" ? (
             <span className="err-text">failed to start</span>
           ) : (
             <>
-              {n ? plural(n, "session") : "no sessions"}
-              {env.status === "running" ? ", running" : ""}
+              {n || live ? plural(Math.max(n, live), "session") : "no sessions"}
+              {live > 0 ? `, ${live} running` : env.status === "running" ? `, ${env.type === "vm" ? "VM" : "shell"} on` : ""}
             </>
           )}
         </span>

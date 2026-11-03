@@ -122,7 +122,16 @@ function TokenStrip({ res }: { res: LabProbeResult }) {
   const [tip, setTip] = useState<TipState | null>(null);
   const [pin, setPin] = useState<number | null>(null);
   const tr = traceFor(res, shade);
-  const rels = res.tokens.map((_, i) => (tr ? tr.values[i] / tr.typical : i === 0 ? undefined : res.perToken[i]?.[0]?.rel));
+  // Each token's strongest neuron is always far above typical, so shading by that alone paints every token the same.
+  // Shaded across this text instead: the weakest of the strongest stays clear, the strongest is full. The hover has the real number.
+  const tops = res.tokens.map((_, i) => (i === 0 ? undefined : res.perToken[i]?.[0]?.rel));
+  const known = tops.filter((x): x is number => x != null);
+  const [lo, hi] = [Math.min(...known), Math.max(...known)];
+  const rels = res.tokens.map((_, i) => {
+    if (tr) return tr.values[i] / tr.typical;
+    const v = tops[i];
+    return v == null || hi <= lo ? undefined : ((v - lo) / (hi - lo)) * 2.5;
+  });
   const pinned = pin != null && pin < res.tokens.length ? pin : null;
   const kinds = new Set(res.tokens.map((t) => t.kind));
   return (
@@ -233,6 +242,7 @@ function Standouts({ res }: { res: LabProbeResult }) {
   const watch = useLab((s) => s.watch);
   const mix = useLab((s) => s.mix);
   const maxRel = Math.max(1, ...res.top.map((h) => h.rel));
+  const traced = res.top.some((h) => traceFor(res, nid(h)));
   return (
     <section className="lab-sec standouts">
       <div className="lab-sec-head">
@@ -253,7 +263,7 @@ function Standouts({ res }: { res: LabProbeResult }) {
             <th>
               <Term k="typical">x typical</Term>
             </th>
-            <th>Trace</th>
+            {traced && <th>Per token</th>}
             <th />
           </tr>
         </thead>
@@ -278,7 +288,7 @@ function Standouts({ res }: { res: LabProbeResult }) {
                   </span>
                   <span className="num">{fmtRel(h.rel)}</span>
                 </td>
-                <td>{tr && <MiniSpark values={tr.values} typical={tr.typical} at={h.at} />}</td>
+                {traced && <td>{tr && <MiniSpark values={tr.values} typical={tr.typical} at={h.at} />}</td>}
                 <td className="r nowrap" onClick={(e) => e.stopPropagation()}>
                   <button className={`icon-btn sm${watched ? " on" : ""}`} title={watched ? "Stop watching" : "Watch: trace it on every token"} aria-label={watched ? `Stop watching ${k}` : `Watch ${k}`} onClick={() => toggleWatch(h)}>
                     {watched ? <Eye /> : <EyeOff />}

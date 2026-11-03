@@ -1,12 +1,13 @@
 // A reply wherever it shows up: how it reads in plain words, the exact recipe it ran with, every word clickable, and the
 // same next steps everywhere. Neurons get theirs from NeuronActions.
 
-import { useMemo, type ReactNode } from "react";
+import { Fragment, useMemo, type ReactNode } from "react";
 import { BarChart3, Crosshair, FlaskRound, Grid3x3, Plus, SlidersHorizontal, Waypoints } from "lucide-react";
 import type { LabQuality, LabReply, NeuronRef } from "@terrarium/shared";
 import { addToMix, compareNeuron, saveAsStrain, seedsFor, seedsNeuron, settingsOf, sweepNeuron, traceAnswer, traceWord, useLab, useRecipe, type Recipe } from "../../state/lab";
 import { pickPiece } from "../../lib/labGrid";
-import { findPush, fmtDose, isVector, nid, pushKey } from "../../lib/recipe";
+import { findPush, isVector, nid, pushKey, shownDose, signedDose } from "../../lib/recipe";
+import { readable, type Run } from "../../lib/replyText";
 import { fmtPct0, fmtSecs, NeuronLink } from "./bits";
 
 export const QUALITY: Record<LabQuality, { word: string; what: string }> = {
@@ -28,25 +29,23 @@ export function QualityChip({ r }: { r: LabReply }) {
   );
 }
 
-const fmtSigned = (v: number) => `${v > 0 ? "+" : v < 0 ? "-" : ""}${fmtDose(Math.abs(v))}`;
-
 /** Exactly what ran. Stays with the result when the controls change. */
 export function RecipeLine({ r, prompt, traceOnly }: { r: Recipe; prompt?: boolean; traceOnly?: boolean }) {
   return (
     <div className="recipe-line">
       {r.pushes.length === 0 && <span className="rl-none">No steering</span>}
       {r.pushes.map((p) => (
-        <span key={pushKey(p)} className="rl-push" title={isVector(p) ? `Layer ${p.layer}, strength ${fmtDose(p.strength)}` : undefined}>
+        <span key={pushKey(p)} className="rl-push" title={isVector(p) ? `Layer ${p.layer}, strength ${shownDose(p.strength)}` : undefined}>
           {isVector(p) ? (
             <>
               <span className="rl-vector">{p.name}</span>
-              <span>L{p.layer} vector</span>
-              <b className={p.strength < 0 ? "neg" : "pos"}>×{fmtDose(p.strength)}</b>
+              <span>L{p.layer}</span>
+              <b className={p.strength < 0 ? "neg" : "pos"}>×{shownDose(p.strength)}</b>
             </>
           ) : (
             <>
               <NeuronLink r={p} />
-              <b className={p.mode === "clamp" ? undefined : p.value < 0 ? "neg" : "pos"}>{p.mode === "clamp" ? `=${fmtDose(p.value)}` : fmtSigned(p.value)}</b>
+              <b className={p.mode === "clamp" ? undefined : p.value < 0 ? "neg" : "pos"}>{p.mode === "clamp" ? `=${shownDose(p.value)}` : signedDose(p.value)}</b>
             </>
           )}
         </span>
@@ -72,38 +71,20 @@ const stemOf = (w: string) =>
     .replace(/[^\p{L}\p{N}]/gu, "")
     .replace(/s$/, "");
 
-/**
- * Replies are markdown cut at token boundaries. Shows them as a reader would: no ** or ### marks, those runs in bold, a
- * bullet for * or - at the start of a line. Returns what to show for each piece, so a click still knows its token.
- */
-function readable(pieces: string[]): { text: string; bold: boolean }[][] {
-  let bold = false;
-  let heading = false;
-  let lineStart = true;
-  return pieces.map((piece) => {
-    const out: { text: string; bold: boolean }[] = [];
-    let rest = piece;
-    if (lineStart) {
-      const lead = /^\s*/.exec(rest)![0];
-      const after = rest.slice(lead.length);
-      if (/^#{1,6}(\s|$)/.test(after)) {
-        heading = true;
-        rest = lead + after.replace(/^#{1,6}\s*/, "");
-      } else if (/^[*-](\s|$)/.test(after)) rest = `${lead}\u2022${after.slice(1)}`;
-    }
-    for (const part of rest.split("**")) {
-      if (part) out.push({ text: part, bold: bold || heading });
-      bold = !bold;
-    }
-    bold = !bold; // split makes one more part than it has marks
-    for (const ch of rest) {
-      if (ch === "\n") {
-        heading = false;
-        lineStart = true;
-      } else if (ch.trim()) lineStart = false;
-    }
-    return out;
-  });
+function Runs({ runs }: { runs: Run[] }) {
+  return (
+    <>
+      {runs.map((x, j) => {
+        const text = x.italic ? <em>{x.text}</em> : x.text;
+        return <Fragment key={j}>{x.bold ? <b>{text}</b> : text}</Fragment>;
+      })}
+    </>
+  );
+}
+
+/** Markdown as a reader sees it, with no tokens to click. */
+export function MarkedText({ text }: { text: string }) {
+  return <Runs runs={readable([text])[0]} />;
 }
 
 /** Reply text cut at tokens. Clicking a word asks why it's there; dragging still selects. */
@@ -114,7 +95,12 @@ export function WordsText({ reply, words, onPick }: { reply: LabReply; words?: s
     return p.length >= 3 && stems.some((s) => p.startsWith(s));
   };
   const pieces = reply.pieces;
-  if (!pieces?.length) return <div className="reply selectable">{readable([reply.text])[0].map((x, j) => (x.bold ? <b key={j}>{x.text}</b> : x.text))}</div>;
+  if (!pieces?.length)
+    return (
+      <div className="reply selectable">
+        <MarkedText text={reply.text} />
+      </div>
+    );
   const shown = readable(pieces);
   return (
     <div className={`reply selectable${onPick ? " words" : ""}`}>
@@ -133,7 +119,7 @@ export function WordsText({ reply, words, onPick }: { reply: LabReply; words?: s
               })
             }
           >
-            {parts.map((x, j) => (x.bold ? <b key={j}>{x.text}</b> : x.text))}
+            <Runs runs={parts} />
           </span>
         );
       })}
@@ -171,14 +157,11 @@ export function ReplyActions({ recipe, reply, baseline, extra }: { recipe: Recip
 
 /** Numbers for one reply. */
 function ReplyStats({ reply }: { reply: LabReply }) {
+  const fluency = reply.fluency.toFixed(2).replace("-", "−");
   return (
-    <div className="reply-stats num">
-      <span title="Tokens written, and how long it took">
-        {reply.tokens} tokens, {fmtSecs(reply.ms)}
-      </span>
-      <span title="Mean log-probability of each word under the unsteered model. Near -1 is ordinary. Steered text is often lower.">fluency {reply.fluency.toFixed(2)}</span>
-      <span title="Share of repeated 3-word runs">repetition {fmtPct0(reply.repetition)}</span>
-    </div>
+    <span className="reply-stats num" title={`Fluency ${fluency}: mean log-probability of each word under the unsteered model. Near −1 is ordinary. Steered text is often lower.\nRepetition ${fmtPct0(reply.repetition)}: share of repeated 3-word runs.`}>
+      {reply.tokens} tokens, {fmtSecs(reply.ms)}
+    </span>
   );
 }
 
@@ -190,11 +173,11 @@ export function ReplySlip({ title, reply, recipe, words, baseline, tag, actions,
         <h4>{title}</h4>
         {tag}
         <QualityChip r={reply} />
+        <ReplyStats reply={reply} />
       </header>
       <WordsText reply={reply} words={words} onPick={(i) => traceWord(recipe, pickPiece(reply.pieces, i))} />
       {reply.finish === "length" && <div className="slip-cut">Cut off at the {reply.tokens}-token limit</div>}
       <RecipeLine r={recipe} />
-      <ReplyStats reply={reply} />
       {!hideActions && <ReplyActions recipe={recipe} reply={reply} baseline={baseline} extra={actions} />}
     </article>
   );
@@ -208,10 +191,10 @@ export function NeuronActions({ r, dose: given, primary }: { r: NeuronRef; dose?
   const same = push?.mode === "dose" && push.value === dose;
   return (
     <div className="slip-acts">
-      <button className={`btn sm${primary ? " primary" : ""}`} disabled={same} onClick={() => addToMix(r, dose)} title={same ? "Already in the mix at this dose" : push ? `In the mix at ${fmtDose(push.value)}: this moves it` : "Add to the mix at this dose"}>
-        <Plus /> {same ? "In the mix" : `Add at ${fmtSigned(dose)}`}
+      <button className={`btn sm${primary ? " primary" : ""}`} disabled={same} onClick={() => addToMix(r, dose)} title={same ? "Already in the mix at this dose" : push ? `In the mix at ${signedDose(push.value)}: this moves it` : "Add to the mix at this dose"}>
+        <Plus /> {same ? "In the mix" : `Add at ${signedDose(dose)}`}
       </button>
-      <button className="btn sm ghost" onClick={() => compareNeuron(r, dose)} title={`Write with only ${nid(r)} at ${fmtSigned(dose)}, next to the unsteered reply`}>
+      <button className="btn sm ghost" onClick={() => compareNeuron(r, dose)} title={`Write with only ${nid(r)} at ${signedDose(dose)}, next to the unsteered reply`}>
         <Waypoints /> Compare alone
       </button>
       <button className="btn sm ghost" onClick={() => sweepNeuron(r, dose)} title={`Replies at doses from negative to positive`}>

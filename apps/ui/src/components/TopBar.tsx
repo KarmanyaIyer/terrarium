@@ -216,7 +216,7 @@ function InferenceControl() {
       <button ref={pop.ref} className="topbar-btn infer" onClick={pop.toggle} title={inf.status === "stopped" ? "oMLX serves the models. It starts by itself when a model is needed." : "oMLX serves the models"}>
         {busy && <Loader2 className="spin" size={12} />}
         <span className={inf.status === "error" ? "err-text" : undefined}>
-          {inf.status === "ready" && loaded.length ? (loaded.length === 1 ? loaded[0]!.name : `${loaded.length} models`) : `Model server ${inf.status === "stopped" ? "off" : inf.status}`}
+          {inf.status === "ready" && loaded.length ? (loaded.length === 1 ? loaded[0]!.name : `${loaded.length} models`) : `oMLX ${inf.status === "stopped" ? "off" : inf.status}`}
         </span>
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} align="end" width={290}>

@@ -17,6 +17,7 @@ import { logger } from "../util/log.ts";
 import { KeyedMutex } from "../util/mutex.ts";
 import { checkPushes, checkSettings, defaultSettings, formatRecipe, isVector, vectorLength } from "./recipe.ts";
 import { type LabHealth, LabSidecar, SidecarError, type SidecarOptions } from "./sidecar.ts";
+import { lensHits } from "./guide-build.ts";
 import { labSupport } from "./support.ts";
 
 const log = logger("lab");
@@ -859,19 +860,7 @@ export class LabService implements LabHooks {
       }
       this.lensTables.set(modelId, table);
     }
-    const stem = q.slice(0, Math.max(4, q.length - 1));
-    const hits: { hit: LabLensHit; matching: number }[] = [];
-    for (const [ref, tokens, gain] of table) {
-      const m = /^L(\d+)N(\d+)([+-])$/.exec(ref);
-      if (!m) continue;
-      const matching = tokens.filter((t) => t.toLowerCase().startsWith(stem)).length;
-      if (matching) hits.push({ hit: { layer: Number(m[1]), neuron: Number(m[2]), sign: m[3] === "-" ? -1 : 1, tokens, gain }, matching });
-    }
-    // gen_word.py's order: most matching tokens, then the biggest gain
-    return hits
-      .sort((a, b) => b.matching - a.matching || b.hit.gain - a.hit.gain)
-      .slice(0, 8)
-      .map((x) => x.hit);
+    return lensHits(table, q);
   }
 
   // ---------- probe sets ----------

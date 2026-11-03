@@ -3,7 +3,8 @@ import { Play } from "lucide-react";
 import type { LabAttributeResult, LabTraceNode } from "@terrarium/shared";
 import { runAttribute, useLab } from "../../state/lab";
 import { useStore } from "../../state/store";
-import { findPush, nid } from "../../lib/recipe";
+import { findPush, nid, signedDose } from "../../lib/recipe";
+import { plainLine } from "../../lib/replyText";
 import { fmtInt } from "../../lib/format";
 import { Hint, Switch } from "../../components/ui";
 import { Term } from "../../lib/labExplain";
@@ -98,7 +99,7 @@ export function Trace() {
         </label>
         <label className="lab-field">
           <span>Next word</span>
-          <input className="input mono" value={s.attrTarget} placeholder=" Surprise" onChange={(e) => set({ attrTarget: e.target.value })} onKeyDown={keys} />
+          <input className="input mono" value={s.attrTarget} placeholder=" Canberra" onChange={(e) => set({ attrTarget: e.target.value })} onKeyDown={keys} />
           <Chips tokens={tgt} first />
           {tgt && tgt.length > 1 && <FieldNote>The model writes this in {tgt.length} pieces. Only the first, "{tokText(tgt[0])}", is traced.</FieldNote>}
           {noSpace && (
@@ -148,8 +149,8 @@ export function Trace() {
   );
 }
 
-const fmtS = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}`;
-const fmtD = (v: number) => `${v > 0 ? "+" : ""}${Math.round(v * 1000) / 1000}`;
+const fmtS = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1).replace("-", "−")}`;
+const fmtD = signedDose;
 
 function TraceResult({ r }: { r: LabAttributeResult }) {
   const run = useLab((s) => s.attrRun);
@@ -252,7 +253,7 @@ function TraceRow({ n, target }: { n: LabTraceNode; target: string }) {
                 ))}
               </div>
               {n.held ? <div className="hint-line">On top of its {fmtD(n.held)} already in the mix.</div> : null}
-              <div className="hint-line">Gradient estimate before pushing: {n.attr >= 0 ? "+" : ""}{n.attr.toFixed(2)}{opposite ? ". It pointed the wrong way, which is why this is measured." : "."}</div>
+              <div className="hint-line">Gradient estimate before pushing: {n.attr >= 0 ? "+" : ""}{n.attr.toFixed(2).replace("-", "−")}{opposite ? ". It pointed the wrong way, which is why this is measured." : "."}</div>
             </>
           }
         >
@@ -261,8 +262,8 @@ function TraceRow({ n, target }: { n: LabTraceNode; target: string }) {
       </div>
       {n.check && (
         <div className="trow-check">
-          <span className={`q q-${n.check.quality}`}>{QUALITY[n.check.quality]?.word}</span>
-          <span className="truncate selectable">{n.check.text}</span>
+          {n.check.quality !== "ok" && n.check.quality !== "odd" && <span className={`q q-${n.check.quality}`}>{QUALITY[n.check.quality]?.word}</span>}
+          <span className="truncate selectable">{plainLine(n.check.text)}</span>
         </div>
       )}
       <div className="trow-foot">

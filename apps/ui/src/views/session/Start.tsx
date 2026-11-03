@@ -4,6 +4,7 @@ import type { SessionSummary } from "@terrarium/shared";
 import { loadHarness, openEnv, useStore } from "../../state/store";
 import { harnessLabel } from "../../lib/explain";
 import { starters } from "../../lib/starters";
+import { recipeLabel } from "../../lib/recipe";
 import { modelName } from "../../components/ModelPicker";
 import { EnvChip } from "../../components/Sidebar";
 
@@ -43,7 +44,7 @@ export function SessionStart({ s }: { s: SessionSummary }) {
         <Part
           label="Model"
           value={modelName(models, s.modelId)}
-          role={model?.strain ? `Lab strain: ${model.strain.recipe}` : env ? "Writes every reply and tool call" : "Writes every reply"}
+          role={model?.strain ? `Lab strain: ${recipeLabel(model.strain.recipe)}` : env ? "Writes every reply and tool call" : "Writes every reply"}
           // the picker lives in the header; open it there so there is one model menu
           onClick={() => document.querySelector<HTMLButtonElement>(".sh-row.controls .hdr-btn.model")?.click()}
         />

@@ -10,6 +10,7 @@ import { isNeuron, isVector } from "../../lib/recipe";
 import { fmtBytes } from "../../lib/format";
 import { Segmented } from "../../components/ui";
 import { Busy, ErrLine } from "./bits";
+import { MarkedText } from "./Reply";
 import { PushLabel, RecipeTable } from "./RecipeTable";
 
 const pct = (s: LabSpecimen) => Math.round((s.measured.chat?.joint ?? s.measured.joint) * 100);
@@ -26,8 +27,9 @@ export function Guide() {
   useEffect(() => {
     void ensureGuide();
   }, []);
-  // Follows the loaded model: another model's neuron ids mean nothing on this one.
+  // Follows the loaded model: another model's neuron ids mean nothing on this one. Trying an entry loads its own model: keep it picked.
   useEffect(() => {
+    if (useLab.getState().guideTrying) return;
     setPickedModel(null);
     setPicked(null);
   }, [loaded]);
@@ -109,7 +111,7 @@ function Detail({ s, modelName, onBench, available }: { s: LabSpecimen; modelNam
         <p>{s.line}</p>
       </header>
       <div className="guide-acts">
-        <button className="btn primary" disabled={trying != null || !available} onClick={() => void trySpecimen(s)} title={onBench ? "Write a reply with it next to the unsteered one" : `Loads ${modelName}, then writes a reply with it next to the unsteered one`}>
+        <button className="btn primary" disabled={trying != null || !available} onClick={() => void trySpecimen(s, sample.prompt)} title={onBench ? "Write a reply with it next to the unsteered one" : `Loads ${modelName}, then writes a reply with it next to the unsteered one`}>
           {trying?.id === s.id ? <Busy since={trying.since}>{trying.step}</Busy> : <><Play /> {onBench ? "Try in Compare" : `Load ${modelName} and try`}</>}
         </button>
         {kept ? (
@@ -134,7 +136,7 @@ function Detail({ s, modelName, onBench, available }: { s: LabSpecimen; modelNam
           <dd>{s.settings.repeat ?? "off"}</dd>
           <dt>Max tokens</dt>
           <dd>{s.settings.maxTokens ?? "none"}</dd>
-          <dt>In character</dt>
+          <dt>{isCharacter(s) ? "In character" : "Stayed on topic"}</dt>
           <dd>
             {pct(s)}% <span className="dim2">{s.rate}</span>
           </dd>
@@ -152,7 +154,9 @@ function Detail({ s, modelName, onBench, available }: { s: LabSpecimen; modelNam
           </div>
         )}
         {s.samples.length === 1 && <div className="guide-prompt-one">{sample.prompt}</div>}
-        <p className="guide-reply selectable">{sample.reply}</p>
+        <div className="guide-reply selectable">
+          <MarkedText text={sample.reply} />
+        </div>
       </section>
     </article>
   );

@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import { Check, Circle, FlaskConical, Loader2, MessageSquare, Plus, Search, Sprout, Square, Target, X } from "lucide-react";
 import type { LabGrow, LabGrowResult, LabGrowStage, LabLensHit, LabScreenResult } from "@terrarium/shared";
 import { cancelGrow, chatWithStrain, dismissGrow, growToMix, growSeeds, keepGrown, lensLookup, screenHit, screenToMix, startGrow, stopScreen, useLab } from "../../state/lab";
-import { isVector } from "../../lib/recipe";
+import { isVector, nid, signedDose } from "../../lib/recipe";
 import { Busy, ErrLine, Elapsed, fmtSecs, TokChips } from "./bits";
+import { MarkedText } from "./Reply";
 
 const STAGES: { id: LabGrowStage; label: string }[] = [
   { id: "text", label: "Writing text as the character" },
@@ -15,7 +16,9 @@ const STAGES: { id: LabGrowStage; label: string }[] = [
   { id: "replies", label: "Writing test replies" },
 ];
 
-const plain = (t: string) => t.replace(/\*\*/g, "").trim();
+/** What screening a neuron takes, as lab_core's screen decides it. */
+const SCREEN_HIT = 0.9;
+const SCREEN_FRESH = 0.95;
 
 export function GrowBox() {
   const text = useLab((s) => s.growText);
@@ -55,7 +58,7 @@ export function GrowPanel({ grow }: { grow: LabGrow }) {
           Dismiss
         </button>
       </div>
-      {grow.status === "cancelled" ? <p className="dim2">Stopped.</p> : <ErrLine err={{ error: grow.error ?? "The grow failed." }} />}
+      {grow.status === "cancelled" ? <p className="dim2">Stopped.</p> : <ErrLine err={{ error: grow.error ?? "Building the character failed." }} />}
     </section>
   );
 }
@@ -93,7 +96,9 @@ function Running({ grow }: { grow: LabGrow }) {
       {grow.note && <p className="lab-note dim2">{grow.note}</p>}
       {latest && (
         <figure className="spec-reply grow-peek" key={`${latest.label}${latest.prompt}`}>
-          <blockquote className="selectable">{plain(latest.reply)}</blockquote>
+          <blockquote className="selectable">
+            <MarkedText text={latest.reply} />
+          </blockquote>
           <figcaption className="dim2">
             <span>{latest.label}</span>
             <span>{latest.prompt}</span>
@@ -140,7 +145,9 @@ function Result({ grow, r }: { grow: LabGrow; r: LabGrowResult }) {
       <div className="grow-replies">
         {best.map((x) => (
           <figure key={x.prompt} className={`spec-reply${x.inCharacter ? "" : " grow-plain"}`}>
-            <blockquote className="selectable">{plain(x.reply)}</blockquote>
+            <blockquote className="selectable">
+              <MarkedText text={x.reply} />
+            </blockquote>
             <figcaption className="dim2">
               <span>{x.prompt}</span>
               {!x.coherent ? <span>garbled</span> : !x.inCharacter && <span>out of character</span>}
@@ -218,8 +225,7 @@ export function WordSearch() {
               return (
                 <li key={key}>
                   <code className="num">
-                    L{h.layer}N{h.neuron}
-                    {h.sign > 0 ? "+" : "-"}
+                    L{h.layer}N{h.neuron} {h.sign > 0 ? "+" : "−"}
                   </code>
                   <TokChips tokens={h.tokens} max={5} />
                   <span className="blk-spacer" />
@@ -253,28 +259,31 @@ export function WordSearch() {
 
 function Screened({ r, onBack }: { r: LabScreenResult; onBack: () => void }) {
   const best = r.pick ?? [...r.screens].sort((a, b) => b.hit - a.hit)[0];
+  const had = best ? `${nid(r)} at ${signedDose(best.dose)}: "${r.word}" in ${Math.round(best.hit * best.n)} of ${best.n} replies.` : "";
+  const why = !best ? "" : best.hit < SCREEN_HIT ? `Passing takes ${Math.ceil(SCREEN_HIT * best.n)}.` : `Replies repeat too much: ${Math.round(best.bigrams * 100)}% of word pairs differ, passing takes ${Math.round(SCREEN_FRESH * 100)}%.`;
   return (
     <div className="words-result">
       {r.pick ? (
         <p>
-          <Check size={13} /> At {r.pick.dose > 0 ? "+" : ""}
-          {r.pick.dose}: "{r.word}" in {Math.round(r.pick.hit * r.pick.n)} of {r.pick.n} replies.
+          <Check size={13} /> {had}
         </p>
       ) : (
         <p>
-          <X size={13} /> {best ? `Best: ${Math.round(best.hit * best.n)} of ${best.n} replies at ${best.dose > 0 ? "+" : ""}${best.dose}.` : "No dose worked."}
+          <X size={13} /> {best ? `${had} ${why}` : `${nid(r)}: no dose worked.`}
         </p>
       )}
       {best && (
         <figure className="spec-reply">
-          <blockquote className="selectable">{plain(best.sample.reply)}</blockquote>
+          <blockquote className="selectable">
+            <MarkedText text={best.sample.reply} />
+          </blockquote>
           <figcaption className="dim2">{best.sample.prompt}</figcaption>
         </figure>
       )}
       <div className="grow-acts">
-        {r.pick && (
-          <button className="btn sm primary" onClick={() => screenToMix(r)}>
-            <Plus /> Add to the mix
+        {best && (
+          <button className={`btn sm${r.pick ? " primary" : ""}`} onClick={() => screenToMix(r, best.dose)}>
+            <Plus /> Add at {signedDose(best.dose)}
           </button>
         )}
         <button className="btn sm ghost" onClick={onBack}>

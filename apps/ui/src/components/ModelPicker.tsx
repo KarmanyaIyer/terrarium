@@ -6,6 +6,7 @@ import type { ModelInfo, SessionSummary } from "@terrarium/shared";
 import { openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate, type Estimate } from "../lib/memory";
 import { fmtBytes, fmtCtx, fmtInt } from "../lib/format";
+import { recipeLabel } from "../lib/recipe";
 import { Popover, usePop } from "./ui";
 
 const OUTPUT_CHOICES = [512, 1024, 2048, 4096, 8192, 16384];
@@ -148,7 +149,7 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
                     key={m.id}
                     className={`mp-row strain${on ? " on" : ""}`}
                     disabled={running}
-                    title={running ? "Stop the run to switch models" : `${m.strain!.name}: ${m.strain!.recipe}`}
+                    title={running ? "Stop the run to switch models" : `${m.strain!.name}: ${recipeLabel(m.strain!.recipe)}`}
                     onClick={() => {
                       pop.close();
                       if (!on) patch({ modelId: m.id, thinking: false });
@@ -159,7 +160,7 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
                       <span className="truncate">{m.name}</span>
                     </span>
                     <span className="mp-size truncate dim2">of {modelName(models, m.strain!.baseModelId)}</span>
-                    <span className="mp-mem mono truncate dim2">{m.strain!.recipe}</span>
+                    <span className="mp-mem mono truncate dim2">{recipeLabel(m.strain!.recipe)}</span>
                     <span className="mp-fit" />
                   </button>
                 );

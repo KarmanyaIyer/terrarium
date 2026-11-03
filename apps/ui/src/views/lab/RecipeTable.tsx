@@ -4,27 +4,19 @@
 import { useEffect } from "react";
 import type { LabMixItem, LabVector, NeuronRef } from "@terrarium/shared";
 import { loadNeuronWords, useLab } from "../../state/lab";
-import { fmtDose, isVector, nid, pushKey, vectorLength } from "../../lib/recipe";
+import { isVector, nid, pushKey, shownDose, signedDose, vectorLength } from "../../lib/recipe";
 import { fmtInt } from "../../lib/format";
 import { CopyButton } from "../../components/ui";
 import { NeuronLink, TokChips } from "./bits";
 
-const signed = (v: number) => `${v >= 0 ? "+" : "−"}${fmtDose(Math.abs(v))}`;
-
 /** The push on one line: `L22N4296 +0.6`, `L8 vector ×1`. */
 export function PushLabel({ p }: { p: LabMixItem }) {
-  if (isVector(p)) return <>L{p.layer} vector ×{fmtDose(p.strength)}</>;
+  if (isVector(p)) return <>L{p.layer} vector ×{shownDose(p.strength)}</>;
   return (
     <>
-      {nid(p)} {p.mode === "clamp" ? `=${fmtDose(p.value)}` : signed(p.value)}
+      {nid(p)} {p.mode === "clamp" ? `=${shownDose(p.value)}` : signedDose(p.value)}
     </>
   );
-}
-
-/** Text of a push for a list of results: the same as PushLabel, with a vector's name. */
-export function pushText(p: LabMixItem): string {
-  if (isVector(p)) return `${p.name}, L${p.layer} vector ×${fmtDose(p.strength)}`;
-  return `${nid(p)} ${p.mode === "clamp" ? `=${fmtDose(p.value)}` : signed(p.value)}`;
 }
 
 export function vectorValues(p: LabVector): string {
@@ -46,7 +38,7 @@ function NeuronRow({ r, value, clamp, tokens, modelId }: { r: NeuronRef; value: 
       </td>
       <td className="num r">{r.layer}</td>
       <td className="num r">{fmtInt(r.neuron)}</td>
-      <td className="num r strong">{clamp ? `=${fmtDose(value)}` : signed(value)}</td>
+      <td className="num r strong">{clamp ? `=${shownDose(value)}` : signedDose(value)}</td>
       <td className="rt-words">{words?.length ? <TokChips tokens={words} max={6} /> : <span className="dim2">{onBench ? "" : "Load the model for its words"}</span>}</td>
     </tr>
   );
@@ -59,7 +51,7 @@ function VectorRow({ p }: { p: LabVector }) {
       <td>Vector</td>
       <td className="num r">{p.layer}</td>
       <td className="num r">{fmtInt(n)} values</td>
-      <td className="num r strong">×{fmtDose(p.strength)}</td>
+      <td className="num r strong">×{shownDose(p.strength)}</td>
       <td className="rt-words">
         <CopyButton text={() => vectorValues(p)} label="Copy values" />
       </td>

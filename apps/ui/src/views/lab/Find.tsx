@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Check, Circle, Dices, Loader2, Search, Square, Trash2, X } from "lucide-react";
 import type { LabCandidate, LabFindResult } from "@terrarium/shared";
 import { deleteSet, editSet, fromLines, pickSet, runDescribe, runFind, runSurprise, saveSet, stopFlow, useLab, type FindFlow, type FindSort, type TriedNeuron } from "../../state/lab";
-import { formatPush, nid } from "../../lib/recipe";
+import { nid, pushText, signedDose } from "../../lib/recipe";
 import { fmtInt } from "../../lib/format";
 import { Popover, Segmented, usePop } from "../../components/ui";
 import { LAB_TIP, Term } from "../../lib/labExplain";
@@ -12,10 +12,14 @@ import { GrowBox, GrowPanel, WordSearch } from "./Grow";
 
 type NeuronMode = "word" | "describe" | "texts" | "random";
 
+const MODE_OF: Record<FindFlow["kind"], NeuronMode> = { trait: "describe", lists: "texts", surprise: "random" };
+
 export function Find() {
   const flow = useLab((s) => s.flow);
   const grow = useLab((s) => (s.lab?.grow?.status === "running" ? s.lab.grow : (s.growShown ?? s.lab?.grow)));
-  const [mode, setMode] = useState<NeuronMode>("word");
+  const [mode, setMode] = useState<NeuronMode>(flow ? MODE_OF[flow.kind] : "word");
+  // results belong to the way they were found
+  const ours = !!flow && MODE_OF[flow.kind] === mode;
   return (
     <div className="find lab-scroll">
       <GrowBox />
@@ -40,8 +44,8 @@ export function Find() {
         {mode === "describe" && <Describe />}
         {mode === "texts" && <OwnTexts />}
         {mode === "random" && <RandomNeurons />}
-        {flow && <FlowResult flow={flow} />}
-        <AllCandidates />
+        {ours && <FlowResult flow={flow} />}
+        {ours && <AllCandidates />}
       </section>
     </div>
   );
@@ -71,7 +75,7 @@ function Describe() {
 function RandomNeurons() {
   const running = useLab((s) => s.flow?.since != null);
   return (
-    <button className="btn" disabled={running} onClick={() => void runSurprise()} title="Tries random neurons in one layer and keeps the three that move the next word most">
+    <button className="btn find-random" disabled={running} onClick={() => void runSurprise()} title="Tries random neurons in one layer and keeps the three that move the next word most">
       <Dices /> Try random neurons
     </button>
   );
@@ -108,7 +112,7 @@ function Tried({ t, flow }: { t: TriedNeuron; flow: FindFlow }) {
       <div className={both ? "tried-pair" : undefined}>
         {shown.map((r) => (
           <div key={r.dose} className="tried-run">
-            <ReplySlip title={`At ${r.dose > 0 ? "+" : ""}${r.dose}`} reply={r.reply} recipe={r.recipe} words={t.words} hideActions />
+            <ReplySlip title={`At ${signedDose(r.dose)}`} reply={r.reply} recipe={r.recipe} words={t.words} hideActions />
             <NeuronActions r={t.ref} dose={r.dose} primary={r === best} />
           </div>
         ))}
@@ -124,7 +128,7 @@ function Together({ flow }: { flow: FindFlow }) {
       <header className="tried-head">
         <b>All four together</b>
       </header>
-      <ReplySlip title={`Each at ${formatPush(t.recipe.pushes[0]).replace(/^L\d+N\d+/, "")}`} reply={t.reply} recipe={t.recipe} />
+      <ReplySlip title={`Each at ${pushText(t.recipe.pushes[0]).replace(/^L\d+N\d+ /, "")}`} reply={t.reply} recipe={t.recipe} />
     </section>
   );
 }
@@ -213,9 +217,10 @@ function OwnTexts() {
   const nC = fromLines(concept).length;
   const nK = fromLines(control).length;
   const mine = sets?.filter((x) => !x.builtin) ?? [];
+  const hasText = !!(concept.trim() || control.trim());
   return (
     <div className="find-config">
-      <div className="find-set">
+      {(hasText || mine.length > 0) && <div className="find-set">
         {mine.length > 0 && (
           <select className="input select" value={cur && !cur.builtin ? cur.id : ""} onChange={(e) => e.target.value && pickSet(e.target.value)} aria-label="Your saved texts">
             <option value="">Saved texts</option>
@@ -231,23 +236,23 @@ function OwnTexts() {
             Save
           </button>
         )}
-        <SaveAs />
+        {hasText && <SaveAs />}
         {cur && !cur.builtin && (
           <button className="btn sm ghost" title="Cmd+Z brings it back" onClick={() => void deleteSet()}>
             <Trash2 /> Delete
           </button>
         )}
-      </div>
+      </div>}
       <div className="find-lists">
         <label className="find-list">
           <span className="find-list-head">
-            <Term k="probeSet">Lines with it</Term> <span className="dim num">{nC}</span>
+            <Term k="probeSet">Lines with the concept</Term> <span className="dim num">{nC}</span>
           </span>
           <textarea className="textarea lab-text" rows={8} value={concept} placeholder="The barn owl hunted at dusk." onChange={(e) => editSet({ concept: e.target.value })} spellCheck={false} />
         </label>
         <label className="find-list">
           <span className="find-list-head">
-            <span>Lines without it</span> <span className="dim num">{nK}</span>
+            <span>Lines without the concept</span> <span className="dim num">{nK}</span>
           </span>
           <textarea className="textarea lab-text" rows={8} value={control} placeholder="The barn cat hunted at dusk." onChange={(e) => editSet({ control: e.target.value })} spellCheck={false} />
         </label>
@@ -280,7 +285,7 @@ function Results({ res }: { res: LabFindResult }) {
     <>
       <div className="find-sum">
         <span className="num dim2">
-          {res.texts.concept} lines with it, {res.texts.control} without ({fmtInt(res.texts.tokens)} tokens)
+          {res.texts.concept} lines with the concept, {res.texts.control} without ({fmtInt(res.texts.tokens)} tokens)
         </span>
         {res.conceptTokens.length > 0 && (
           <span className="find-cw">

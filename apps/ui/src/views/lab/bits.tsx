@@ -99,12 +99,18 @@ export function LayerKind({ kind }: { kind?: string }) {
 
 /** Token chips for what a neuron pushes toward (or away from). */
 export function TokChips({ tokens, neg, max = 8 }: { tokens: string[]; neg?: boolean; max?: number }) {
-  if (!tokens.length) return <span className="dim2">none</span>;
+  // the same word twice, as " fun" and "fun", is one chip; half a character (a token cut inside a byte sequence) isn't a word
+  const chips = new Map<string, string>();
+  for (const t of tokens) {
+    const shown = t.trim() || t;
+    if (!shown.includes("�") && !chips.has(shown)) chips.set(shown, t);
+  }
+  if (!chips.size) return <span className="dim2">none</span>;
   return (
     <span className="tokchips">
-      {tokens.slice(0, max).map((t, i) => (
-        <span key={i} className={`tokchip${neg ? " neg" : ""}`} title={JSON.stringify(t)}>
-          {tokText(t.trim() || t)}
+      {[...chips].slice(0, max).map(([shown, raw]) => (
+        <span key={shown} className={`tokchip${neg ? " neg" : ""}`} title={JSON.stringify(raw)}>
+          {tokText(shown)}
         </span>
       ))}
     </span>

@@ -3,8 +3,9 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import type { LabGrow, LabHistoryEntry, LabMixItem } from "@terrarium/shared";
 import { deleteHistory, restoreHistory, useLab, type FindFlow, type GridRun, type SteerRun, type TraceRun } from "../../state/lab";
 import { summarize } from "../../lib/labGrid";
-import { pushText } from "./RecipeTable";
-import { Time } from "../../components/ui";
+import { pushText, signedDose } from "../../lib/recipe";
+import { plainLine } from "../../lib/replyText";
+import { Segmented, Time } from "../../components/ui";
 import { QualityChip } from "./Reply";
 
 const KIND: Record<LabHistoryEntry["kind"], string> = { compare: "Compare", sweep: "Sweep", seeds: "Seeds", trace: "Trace", find: "Find", grow: "Grow" };
@@ -26,7 +27,7 @@ function Detail({ e }: { e: LabHistoryEntry }) {
     return (
       <>
         <QualityChip r={r.steered} />
-        <span className="truncate dim2">{r.steered.text}</span>
+        <span className="truncate dim2">{plainLine(r.steered.text)}</span>
       </>
     );
   }
@@ -49,7 +50,7 @@ function Detail({ e }: { e: LabHistoryEntry }) {
   if (e.kind === "trace") {
     const r = e.data as TraceRun;
     const top = r.res.nodes.find((n) => n.best);
-    return <span className="dim2 num">{top?.best ? `best: L${top.layer}N${top.neuron} at ${top.best.dose > 0 ? "+" : ""}${top.best.dose}, now writes "${top.best.top}"` : `gap ${r.res.metric.toFixed(1)}`}</span>;
+    return <span className="dim2 num">{top?.best ? `best: L${top.layer}N${top.neuron} at ${signedDose(top.best.dose)}, now writes "${top.best.top}"` : `gap ${r.res.metric.toFixed(1)}`}</span>;
   }
   const f = e.data as FindFlow;
   return <span className="dim2 truncate">Tried {f.tried?.length ?? 0} neurons</span>;
@@ -69,11 +70,7 @@ export function History() {
       {history?.length === 0 && <div className="lab-empty">No results yet.</div>}
       {kinds.length > 1 && (
         <div className="hist-kinds">
-          {(["all", ...kinds] as const).map((k) => (
-            <button key={k} className={`preset${k === kind ? " on" : ""}`} onClick={() => setKind(k)}>
-              {k === "all" ? "All" : KIND[k]}
-            </button>
-          ))}
+          <Segmented<LabHistoryEntry["kind"] | "all"> small value={kind} onChange={setKind} options={(["all", ...kinds] as const).map((k) => ({ value: k, label: k === "all" ? "All" : KIND[k] }))} ariaLabel="What to show" />
         </div>
       )}
       <div className="hist-list" role="list">
@@ -85,7 +82,7 @@ export function History() {
               <span className="hist-kind">{KIND[e.kind]}</span>
               <div className="hist-main">
                 <div className="hist-title">
-                  <span className="truncate">{e.title || "(untitled)"}</span>
+                  <span className="truncate">{plainLine(e.title) || "(untitled)"}</span>
                 </div>
                 <div className="hist-sub">
                   {pushes.length > 0 && <code className="mono truncate">{pushes.map(pushText).join(", ")}</code>}

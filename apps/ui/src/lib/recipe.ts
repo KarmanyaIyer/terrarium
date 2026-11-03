@@ -43,6 +43,37 @@ export function fmtDose(v: number): string {
   return String(Math.round(v * 1000) / 1000);
 }
 
+/** A number on screen, with a true minus. Recipe text keeps the hyphen, so it pastes anywhere. */
+export function shownDose(v: number): string {
+  return fmtDose(v).replace("-", "−");
+}
+
+/** A dose on screen, with its sign: `+0.6`, `−0.5`, `0`. */
+export function signedDose(v: number): string {
+  return `${v > 0 ? "+" : ""}${shownDose(v)}`;
+}
+
+/** A push on screen: `L22N4296 +0.6`, `Gnome, L8 vector ×1`. Copy text is `format`. */
+export function pushText(p: LabMixItem): string {
+  if (isVector(p)) return `${p.name}, L${p.layer} vector ×${shownDose(p.strength)}`;
+  return `${nid(p)} ${p.mode === "clamp" ? `=${shownDose(p.value)}` : signedDose(p.value)}`;
+}
+
+/** Recipe text from the backend, as pushText shows it. */
+export function recipeLabel(text: string): string {
+  const parts: string[] = [];
+  const rest = text.replace(VECTOR, (_, name: string, layer: string, strength: string) => {
+    parts.push(`${name}, L${Number(layer)} vector ×${shownDose(num(strength))}`);
+    return " ";
+  });
+  for (const m of rest.matchAll(PUSH)) {
+    const id = `L${Number(m[1])}N${Number(m[2])}`;
+    if (m[3]) parts.push(`${id} =${shownDose(num(m[4]))}`);
+    else if (m[5]) parts.push(`${id} ${signedDose((m[5] === "+" ? 1 : -1) * num(m[6]))}`);
+  }
+  return parts.join(", ") || text;
+}
+
 export function formatPush(p: LabMixItem): string {
   if (isVector(p)) return `[${p.name} L${p.layer} x${fmtDose(p.strength)}]`;
   if (p.mode === "clamp") return `${nid(p)}=${fmtDose(p.value)}`;

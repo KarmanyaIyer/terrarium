@@ -31,7 +31,7 @@ import type {
 } from "@terrarium/shared";
 import type { LabApi } from "../api/lab";
 import { doseScale, firstDivergence, gridSlots, hasWord, pushesAt, scaled, targetName, zoomBetween, type SweepTarget, type WordPick } from "../lib/labGrid";
-import { findPush, isNeuron, isVector, nid, pushKey, pushName, sameRef, vectorRepeat } from "../lib/recipe";
+import { findPush, isNeuron, isVector, nid, pushKey, pushName, sameRef, signedDose, vectorRepeat } from "../lib/recipe";
 import { diffKeys } from "../lib/undo";
 import { openSession, openView, toast, useStore } from "./store";
 import { undoStack, undoable } from "./undo";
@@ -108,7 +108,7 @@ export function cellRecipe(run: GridRun, c: GridCell): Recipe {
   return { modelId: run.modelId, prompt: c.prompt, pushes: pushesAt(run.mix, run.target, c.dose), seed: c.seed, temperature: run.temperature, maxTokens: run.maxTokens, thinking: run.thinking, repeat: run.repeat };
 }
 
-/** A neuron Find tried out, or one Surprise me came up with. */
+/** A neuron Find tried out, or a random one. */
 export interface TriedNeuron {
   ref: NeuronRef;
   words: string[]; // what it pushes toward
@@ -341,7 +341,7 @@ export const useLab = create<LabStore>()(() => ({
   gridBusy: null,
   attrPrompt: "What is the capital of Australia?",
   attrPrefill: "The capital of Australia is",
-  attrTarget: " Surprise",
+  attrTarget: " Canberra",
   attrFoil: "",
   attrFoilFrom: false,
   attrMix: true,
@@ -661,7 +661,7 @@ export function knownVectors(): LabVector[] {
   return [...s.mix, ...(s.strains ?? []).flatMap((x) => x.pushes), ...(s.guide?.specimens ?? []).flatMap((x) => x.mix)].filter(isVector);
 }
 
-const signed = (v: number) => `${v >= 0 ? "+" : ""}${Math.round(v * 1000) / 1000}`;
+const signed = signedDose;
 
 /** Adds a neuron at a signed dose; one already in the mix moves to it. */
 export function addToMix(ref: NeuronRef, value = tryDose()) {
@@ -967,11 +967,11 @@ export async function runPreset(id: Id) {
 /** No goal: random neurons of a late layer, the ones that move the next word most, each at both signs. */
 export async function runSurprise() {
   const prompt = get().prompt.trim() || DESCRIBE_PROMPT;
-  startFlow("surprise", "Surprise me", prompt, ["Trying random neurons in one layer", "Writing with the three strongest, pushed both ways"]);
+  startFlow("surprise", "Random neurons", prompt, ["Trying random neurons in one layer", "Writing with the three strongest, pushed both ways"]);
   flowStep(0, "run");
   const r = await call((l) => l.explore({ sample: 32, top: 3 }));
   if (!r.ok) return flowEnd(flowStop.stopped ? undefined : r.err);
-  set((s) => (s.flow ? { flow: { ...s.flow, title: `Layer ${r.v.layer}`, sampled: r.v.sampled, picks: r.v.picks } } : {}));
+  set((s) => (s.flow ? { flow: { ...s.flow, title: `Random neurons, layer ${r.v.layer}`, sampled: r.v.sampled, picks: r.v.picks } } : {}));
   for (const p of r.v.picks) noteWords(p, p.promotes);
   flowStep(0, "done");
   flowStep(1, "run");
@@ -1208,7 +1208,7 @@ export function seedsFor(r: Recipe) {
 }
 
 /** What a strain keeps from what ran. generate always uses top_p 0.95. */
-export const settingsOf = (r: { temperature: number; repeat?: number }): LabStrainSettings => ({ temperature: r.temperature, topP: 0.95, repeat: r.repeat && r.repeat > 1 ? r.repeat : null });
+export const settingsOf = (r: { temperature: number; repeat?: number; maxTokens: number }): LabStrainSettings => ({ temperature: r.temperature, topP: 0.95, repeat: r.repeat && r.repeat > 1 ? r.repeat : null, maxTokens: r.maxTokens });
 
 export function saveAsStrain(pushes: LabMixItem[], from?: string, settings: LabStrainSettings = settingsOf(get())) {
   set({ strainDialog: { pushes, from, settings } });
@@ -1339,7 +1339,7 @@ export async function dismissGrow() {
 
 function growOnBench(g: LabGrow, prompt: string) {
   const v = g.result!.vector;
-  labelled(`Added ${v.name} to the mix`, () => set({ mix: [{ ...v }], scale: 1, prompt, tab: "steer", temperature: grownSettings(g.modelId).temperature, repeat: vectorRepeat(g.modelId) ?? 1, thinking: false, sweepTarget: "mix", sweepRange: v.strength > 2 ? 4 : 2 }));
+  labelled(`Added ${v.name} to the mix`, () => set({ mix: [{ ...v }], scale: 1, prompt, tab: "steer", temperature: grownSettings(g.modelId).temperature, maxTokens: grownSettings(g.modelId).maxTokens ?? get().maxTokens, repeat: vectorRepeat(g.modelId) ?? 1, thinking: false, sweepTarget: "mix", sweepRange: v.strength > 2 ? 4 : 2 }));
 }
 
 export async function growToMix(g: LabGrow) {
@@ -1358,7 +1358,7 @@ export async function growSeeds(g: LabGrow) {
 
 export async function keepGrown(g: LabGrow) {
   const r = g.result!;
-  const st = await callToast("Save as strain", (l) => l.saveStrain({ name: r.name, baseModelId: g.modelId, pushes: [r.vector], settings: grownSettings(g.modelId), notes: `Grown from "${r.description}". ${r.verdict.text}` }));
+  const st = await callToast("Save as strain", (l) => l.saveStrain({ name: r.name, baseModelId: g.modelId, pushes: [r.vector], settings: grownSettings(g.modelId), notes: `Made from "${r.description}". ${r.verdict.text}` }));
   if (!st) return;
   putStrain(st);
   undoable({
@@ -1387,8 +1387,8 @@ export function stopScreen() {
   void call((l) => l.cancel());
 }
 
-export function screenToMix(r: LabScreenResult) {
-  labelled(`Added L${r.layer}N${r.neuron} to the mix`, () => set((s) => ({ mix: [...s.mix.filter((p) => !(isNeuron(p) && p.layer === r.layer && p.neuron === r.neuron)), { layer: r.layer, neuron: r.neuron, mode: "dose", value: r.pick!.dose }], repeat: 1.1, thinking: false, tab: "steer", steerView: "compare" })));
+export function screenToMix(r: LabScreenResult, dose: number) {
+  labelled(`Added L${r.layer}N${r.neuron} to the mix`, () => set((s) => ({ mix: [...s.mix.filter((p) => !(isNeuron(p) && p.layer === r.layer && p.neuron === r.neuron)), { layer: r.layer, neuron: r.neuron, mode: "dose", value: dose }], repeat: 1.1, thinking: false, tab: "steer", steerView: "compare" })));
 }
 
 // ---------- strains ----------
@@ -1423,7 +1423,7 @@ export async function loadStrainIntoMix(st: LabStrain) {
   // the mix now belongs to the strain's base: loading that base keeps it, and results from another model go
   labelled(`Loaded "${st.name}" into the mix`, () => {
     if (get().benchModel !== st.baseModelId) set({ probeRes: null, findRes: null, flow: null, card: null, runs: [], runPick: null, sweep: null, seeds: null, attrRes: null, attrRun: null, watch: [] });
-    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId, target: st.baseModelId, temperature: st.settings.temperature, repeat: st.settings.repeat ?? 1 });
+    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId, target: st.baseModelId, temperature: st.settings.temperature, repeat: st.settings.repeat ?? 1, ...(st.settings.maxTokens ? { maxTokens: st.settings.maxTokens } : {}) });
   });
 }
 
@@ -1542,18 +1542,18 @@ async function benchHas(modelId: Id, step: (x: string) => void): Promise<boolean
 /** A specimen on the bench with the settings its numbers were measured with, then a reply next to the unsteered one. */
 function benchSpecimen(s: LabSpecimen, prompt: string, nextUp: LabStore["nextUp"] = null) {
   const strongest = Math.max(0, ...s.mix.filter(isVector).map((v) => Math.abs(v.strength)));
-  labelled(`Tried ${s.name}`, () =>
-    set({ mix: s.mix.map((p) => ({ ...p })), scale: 1, prompt, tab: "steer", steerView: "compare", temperature: s.settings.temperature, repeat: s.settings.repeat ?? 1, thinking: false, sweepTarget: "mix", nextUp, ...(strongest ? { sweepRange: strongest > 2 ? 4 : 2 } : {}) }),
+  labelled(`Put ${s.name} in the mix`, () =>
+    set({ mix: s.mix.map((p) => ({ ...p })), scale: 1, prompt, tab: "steer", steerView: "compare", temperature: s.settings.temperature, repeat: s.settings.repeat ?? 1, maxTokens: s.settings.maxTokens ?? get().maxTokens, thinking: false, sweepTarget: "mix", nextUp, ...(strongest ? { sweepRange: strongest > 2 ? 4 : 2 } : {}) }),
   );
 }
 
-export async function trySpecimen(s: LabSpecimen) {
+export async function trySpecimen(s: LabSpecimen, prompt = s.prompt) {
   if (get().guideTrying) return;
   const step = (x: string) => set({ guideTrying: { id: s.id, step: x, since: Date.now() } });
   try {
     if (!(await benchHas(s.modelId, step))) return;
     step("Writing both replies");
-    benchSpecimen(s, s.prompt);
+    benchSpecimen(s, prompt);
     await runCompare();
   } finally {
     set({ guideTrying: null });

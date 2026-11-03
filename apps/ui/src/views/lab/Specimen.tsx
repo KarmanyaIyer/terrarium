@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Loader2, Microscope, Power, Redo2, Sparkles, Undo2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Microscope, Play, Power, Redo2, Undo2 } from "lucide-react";
 import type { LabMemoryCheck, LabState } from "@terrarium/shared";
 import { openView, useStore } from "../../state/store";
 import { runRedo, runUndo, useUndoLabels } from "../../state/undo";
@@ -246,14 +246,9 @@ function MemoryFit({ m }: { m: LabMemoryCheck }) {
       <div className="memfit-head">
         <Term k="memory">Memory</Term>
         <span className="num">
-          needs <b>{fmtBytes(m.needBytes)}</b>
-          <span className="dim">, oMLX holds </span>
-          {fmtBytes(held)}
-          <span className="dim"> of the </span>
-          {fmtBytes(m.ceilingBytes)}
-          <span className="dim"> ceiling</span>
+          Needs <b>{fmtBytes(m.needBytes)}</b>, {fmtBytes(Math.max(0, m.ceilingBytes - held))} available
         </span>
-        <span className={`fit ${m.fits ? "ok" : "err"}`}>{m.fits ? "fits" : `${fmtBytes(short)} short`}</span>
+        {!m.fits && <span className="fit err">{fmtBytes(short)} short</span>}
       </div>
       <div className="memfit-bar" role="img" aria-label={`oMLX ${fmtBytes(held)}, Lab needs ${fmtBytes(m.needBytes)}, ceiling ${fmtBytes(m.ceilingBytes)}`}>
         {m.omlx.map((x, i) => (
@@ -352,8 +347,8 @@ export function Bench() {
             <span className="blk-spacer" />
             {!exampleReady && <GetExampleModel />}
             {exampleReady && (
-              <button className="btn" disabled={example != null} onClick={() => void runExample()} title={`Loads ${modelName(lab, ex?.modelId)} and runs ${ex?.name}`}>
-                {example ? <Busy since={example.since}>{example.step}</Busy> : <><Sparkles /> Try the example</>}
+              <button className="btn" disabled={example != null} onClick={() => void runExample()}>
+                {example ? <Busy since={example.since}>{example.step}</Busy> : <><Play /> Load {modelName(lab, ex?.modelId)} and try {ex?.name}</>}
               </button>
             )}
           </div>

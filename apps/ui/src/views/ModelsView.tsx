@@ -82,7 +82,7 @@ export default function ModelsView() {
         {models.length > 0 && inf.status !== "stopped" && (
           <>
             <span className={inf.status === "error" ? "err-text nowrap" : "nowrap"} title={inf.version ? `oMLX ${inf.version}` : undefined}>
-              Model server {inf.status}
+              oMLX {inf.status}
             </span>
             <ServerButton small />
           </>

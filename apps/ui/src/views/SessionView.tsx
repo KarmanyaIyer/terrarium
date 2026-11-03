@@ -352,13 +352,15 @@ export function SessionView({ id }: { id: string }) {
   return (
     <div className="session">
       <Header s={s} stats={stats} />
-      <div className={`tl-wrap${timelineOpen ? "" : " closed"}`}>
-        <button className="tl-toggle" onClick={() => setPref("timelineOpen", !timelineOpen)} title={timelineOpen ? "Hide timeline" : "Show timeline"}>
-          {timelineOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          <span>Timeline</span>
-        </button>
-        {timelineOpen && trace?.loaded && d.items.length > 0 && <Timeline d={d} sessionStatus={s.status} />}
-      </div>
+      {d.items.length > 0 && (
+        <div className={`tl-wrap${timelineOpen ? "" : " closed"}`}>
+          <button className="tl-toggle" onClick={() => setPref("timelineOpen", !timelineOpen)} title={timelineOpen ? "Hide timeline" : "Show timeline"}>
+            {timelineOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            <span>Timeline</span>
+          </button>
+          {timelineOpen && trace?.loaded && <Timeline d={d} sessionStatus={s.status} />}
+        </div>
+      )}
       {!trace?.loaded ? (
         <div className="empty">Loading events…</div>
       ) : trace.error ? (
