@@ -54,7 +54,7 @@ function marksIn(text: string, from: number, to: number): Mark[] {
 
 /**
  * Pairs the marks of one block and hides those. A mark with no partner stays text, as in 2**3 or *args, except an opening mark
- * in the reply's last block, where a reply cut off mid-bold ends, and a ** that starts a line, which the model never closed.
+ * in the reply's last block, where a reply cut off mid-bold ends, and a ** that starts a line or list item, which the model never closed.
  */
 function pair(text: string, marks: Mark[], hide: Uint8Array, style: Uint8Array, last: boolean) {
   const open: { at: number; len: number }[] = [];
@@ -83,7 +83,8 @@ function pair(text: string, marks: Mark[], hide: Uint8Array, style: Uint8Array, 
       if (m.open) open.push({ at: m.at, len: m.len });
     } else if (left > 0) hideOf(m.at + (m.len - left), left);
   }
-  for (const o of open) if (last || (o.len >= 2 && (o.at === 0 || text[o.at - 1] === "\n"))) hideOf(o.at, o.len);
+  const startsLine = (at: number) => /^\s*(?:[*-]|\d+\.)?\s*$/.test(text.slice(text.lastIndexOf("\n", at - 1) + 1, at));
+  for (const o of open) if (last || (o.len >= 2 && startsLine(o.at))) hideOf(o.at, o.len);
 }
 
 function scan(text: string) {
