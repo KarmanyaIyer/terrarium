@@ -15,21 +15,21 @@ export const HARNESS: { id: HarnessProfile; label: string; name: string; short: 
     label: "Minimal prompt",
     name: "Minimal",
     short: "Short prompt, 4 simple tools",
-    when: "Terrarium's own prompt and tools, and the default for small models: the short prompt leaves room for context, and the tools take flat arguments.",
+    when: "Terrarium's own prompt and tools. The default for small models: short prompt, flat tool arguments.",
   },
   {
     id: "pi-stock",
     label: "Pi stock prompt",
     name: "Pi stock",
     short: "Pi 1.4.0's prompt and tools",
-    when: "Comparison: the prompt and tool shapes the Pi coding agent ships (edit takes a list of edits).",
+    when: "The prompt and tool shapes the Pi coding agent ships (edit takes a list of edits).",
   },
   {
     id: "chat",
     label: "Chat, no tools",
     name: "Chat",
     short: "No tools, no enclosure",
-    when: "Plain questions and answers. The model can't run or read anything.",
+    when: "The model can't run or read anything.",
   },
 ];
 
@@ -55,7 +55,7 @@ export function HarnessTip({ id }: { id: HarnessProfile }) {
         <span>
           {info ? `≈${fmtInt(info.tokensEst.prompt)} tokens` : "…"}
           {info?.custom ? ", your saved default" : ""}
-          {id === "terrarium" ? ", plus a note in simulated envs" : ""}
+          {id === "terrarium" ? ", plus a note in simulated enclosures" : ""}
         </span>
         <span>Tools</span>
         <span className="mono">{info ? (info.tools.length ? info.tools.map((t) => t.name).join(", ") : "none") : "…"}</span>
@@ -65,10 +65,6 @@ export function HarnessTip({ id }: { id: HarnessProfile }) {
             <span>≈{fmtInt(info.tokensEst.tools)} tokens, plus the chat template's tool instructions (exact count in the Prompt tab)</span>
           </>
         )}
-      </div>
-      <div className="hint-line hint-k" style={{ marginTop: 6 }}>
-        Harness = agent loop + system prompt + tool definitions. The loop is the same for every profile. The enclosure
-        decides where tool calls run.
       </div>
     </>
   );
@@ -142,20 +138,18 @@ export const ENV_TYPE_TIP: Record<EnvType, ReactNode> = {
   vm: (
     <>
       <span className="hint-title">Linux VM</span>
-      <div className="hint-line">Use for real code: installs, compilers, test suites, anything that must behave like Linux.</div>
+      <div className="hint-line">For installs, compilers and test suites.</div>
       <div className="hint-line">
-        Safest place to run untrusted native code: a hardware-virtualized guest with no Mac folders mounted; the agent runs as an
-        unprivileged user (uid 1000) and can't regain root.
+        Hardware-virtualized guest with no Mac folders mounted. The agent runs as uid 1000 and can't regain root.
       </div>
     </>
   ),
   sim: (
     <>
       <span className="hint-title">Simulated shell</span>
-      <div className="hint-line">Use for file and text tasks, quick tries and evals that don't need installs. Many can run at once.</div>
+      <div className="hint-line">For file and text tasks that don't need installs. Many can run at once.</div>
       <div className="hint-line">
-        Nothing native runs, so there is less to attack, but the boundary is software: an interpreter bug would land in a node
-        process that sandbox-exec still keeps off the network and your files.
+        Nothing native runs. The boundary is software: an interpreter bug would land in a node process that sandbox-exec keeps off the network and your files.
       </div>
     </>
   ),
@@ -165,7 +159,7 @@ export const NET_TIP: Record<NetworkMode, ReactNode> = {
   off: (
     <>
       <span className="hint-title">Network off</span>
-      <div className="hint-line">Every connection is denied and logged. Default; keep it for anything that doesn't need downloads.</div>
+      <div className="hint-line">Every connection is denied and logged.</div>
     </>
   ),
   registries: (
@@ -174,7 +168,7 @@ export const NET_TIP: Record<NetworkMode, ReactNode> = {
       <div className="hint-line">
         GET and HEAD (and git fetch) to PyPI, npm, GitHub downloads and the Alpine CDN, ports 80/443. Nothing can be posted out.
       </div>
-      <div className="hint-line">Turn on for pip/npm installs or cloning. The model can download and run any package from those hosts inside the env.</div>
+      <div className="hint-line">The model can download and run any package from those hosts inside the enclosure.</div>
     </>
   ),
   web: (
@@ -183,7 +177,7 @@ export const NET_TIP: Record<NetworkMode, ReactNode> = {
       <div className="hint-line">Any public HTTP/HTTPS, any method.</div>
       <div className="hint-line">
         <b>Risk:</b> a misbehaving or prompt-injected model can send workspace contents to any server, or download and run
-        anything. Turn on only for tasks that need the web, with nothing private in the workspace.
+        anything. Keep nothing private in the workspace.
       </div>
     </>
   ),
@@ -195,19 +189,19 @@ export const FIELD_TIP: Record<string, ReactNode> = {
   start: (
     <>
       <span className="hint-title">Start from</span>
-      <div className="hint-line">Clean: the base image. Fork: a copy of another env's current disk (not while it's busy). Snapshot: a copy of a saved snapshot.</div>
+      <div className="hint-line">Clean: the base image. Fork: a copy of another enclosure's current disk (not while it's busy). Snapshot: a copy of a saved snapshot.</div>
     </>
   ),
   cpus: (
     <>
       <span className="hint-title">CPUs</span>
-      <div className="hint-line">Virtual CPUs the VM gets. 2 is enough for most tasks; more helps builds and test suites.</div>
+      <div className="hint-line">Virtual CPUs the VM gets.</div>
     </>
   ),
   memory: (
     <>
       <span className="hint-title">Memory</span>
-      <div className="hint-line">Guest RAM, taken from the Mac while the VM runs, alongside the model's memory. Raise for pip installs of big packages or builds.</div>
+      <div className="hint-line">Guest RAM, taken from the Mac while the VM runs, alongside the model's memory.</div>
     </>
   ),
   disk: (
@@ -226,14 +220,12 @@ export const FIELD_TIP: Record<string, ReactNode> = {
     <>
       <span className="hint-title">Python (WASM)</span>
       <div className="hint-line">Adds python3: CPython 3.13 compiled to WebAssembly. Standard library only: no pip, no native extensions.</div>
-      <div className="hint-line">Leave on for data tasks and the shell-data evals. Turn off to keep the env to plain shell commands.</div>
     </>
   ),
   javascript: (
     <>
       <span className="hint-title">JavaScript</span>
       <div className="hint-line">Adds js-exec and node, both QuickJS rather than Node.js: no npm, no native modules.</div>
-      <div className="hint-line">Off by default; turn on when a task needs a JS one-liner.</div>
     </>
   ),
   fsLimit: (

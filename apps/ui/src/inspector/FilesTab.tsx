@@ -285,7 +285,6 @@ export function FilesTab({ env, session, d }: { env: EnvSummary; session?: Sessi
             <ChevronRight />
           </button>
           <span className={`scrub-label truncate${atLatest && live ? " live" : ""}`} title={stepNow?.label}>
-            {atLatest && live && <span className="dot live" />}
             {stepLabel}
           </span>
           {!atLatest && (

@@ -4,16 +4,24 @@ import type { EnvType, NetworkMode } from "@terrarium/shared";
 const leaf = (x: number, y: number, dir: number, len: number) =>
   `M${x} ${y}c${dir * len * 0.3} ${-len * 0.55} ${dir * len * 0.85} ${-len * 0.6} ${dir * len} ${-len * 0.15}c${-dir * len * 0.2} ${len * 0.42} ${-dir * len * 0.7} ${len * 0.5} ${-dir * len} ${len * 0.15}z`;
 
-/** Stem height and paired leaves per stem. The plant is the session count: bare soil, sprout, seedling, plant, overgrown. */
+/** Stem height and paired leaves per stem. A new enclosure has a seedling; it grows with the session count. */
 function plant(n: number): { x: number; h: number; pairs: number }[] {
-  if (n <= 0) return [];
-  if (n < 2) return [{ x: 28, h: 6, pairs: 1 }];
-  if (n < 3) return [{ x: 28, h: 10, pairs: 1 }];
-  if (n < 8) return [{ x: 28, h: 15, pairs: 2 }];
+  if (n < 1) return [{ x: 26, h: 11, pairs: 2 }];
+  if (n < 3)
+    return [
+      { x: 26, h: 15, pairs: 2 },
+      { x: 37, h: 7, pairs: 1 },
+    ];
+  if (n < 8)
+    return [
+      { x: 26, h: 20, pairs: 3 },
+      { x: 37, h: 10, pairs: 1 },
+    ];
   if (n < 20)
     return [
-      { x: 28, h: 22, pairs: 3 },
-      { x: 19, h: 8, pairs: 1 },
+      { x: 28, h: 24, pairs: 3 },
+      { x: 18, h: 11, pairs: 2 },
+      { x: 38, h: 8, pairs: 1 },
     ];
   return [
     { x: 28, h: 28, pairs: 4 },
@@ -24,7 +32,7 @@ function plant(n: number): { x: number; h: number; pairs: number }[] {
 
 /**
  * An enclosure as a glass case. Every part is data: the lid is the network policy (shut, vented, lifted), a dashed pane is
- * a simulated shell and a solid one a real VM, the plant grows with the sessions run in it.
+ * a simulated shell and a solid one a real VM, the plants grow with the sessions run in it.
  */
 export function EnclosureArt({
   network,
@@ -48,6 +56,8 @@ export function EnclosureArt({
       <rect className="ea-glass" x="7" y="12" width="42" height="49" rx="3" strokeDasharray={type === "sim" ? "3 2.2" : undefined} />
       <path className="ea-soil" d="M8.5 52c6-2.2 11-2.2 19.5 0s13 2 19.5-.4V57a2.5 2.5 0 0 1-2.5 2.5H11A2.5 2.5 0 0 1 8.5 57z" />
       <g transform={flip ? "translate(56 0) scale(-1 1)" : undefined}>
+        <path className="ea-moss" d="M9 52.2c.6-2.6 3-3.8 5.2-3 1.6-1.4 4.4-1 5.4 1 .5.5.8 1 .9 1.5-3.8-.7-7.4-.5-11.5.5zM36 52.4c.5-1.8 2.2-2.8 4-2.3 1.5-1.2 4-.8 4.8.8.9.2 1.8.5 2.7.3v.5c-3.9 1.1-7.5 1.3-11.5.7z" />
+        <ellipse className="ea-pebble" cx="33" cy="52.1" rx="2.3" ry="1.5" />
         {plant(sessions).map((s) => (
           <g key={s.x}>
             <path className="ea-stem" d={`M${s.x} 52V${52 - s.h}`} />

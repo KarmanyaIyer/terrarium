@@ -86,7 +86,7 @@ export function Sidebar() {
   const showEphemeral = useStore((s) => s.showEphemeral);
   const allModels = useStore((s) => s.models);
   const models = useMemo(() => allModels.filter((m) => !m.strain), [allModels]);
-  const specimen = useLab((s) => (s.lab?.status === "ready" ? s.lab.model?.name : undefined));
+  const labModel = useLab((s) => (s.lab?.status === "ready" ? s.lab.model?.name : undefined));
   const evalRuns = useStore((s) => s.evalRuns);
   const width = useStore((s) => s.sidebarWidth);
 
@@ -134,9 +134,9 @@ export function Sidebar() {
         <button className={`sb-nav${view.kind === "lab" ? " active" : ""}`} onClick={() => openView({ kind: "lab" })}>
           <Microscope size={13} />
           <span>Lab</span>
-          {specimen && (
-            <span className="sb-badge truncate" title={`${specimen} is loaded`}>
-              {specimen}
+          {labModel && (
+            <span className="sb-badge truncate" title={`${labModel} is loaded`}>
+              {labModel}
             </span>
           )}
         </button>
@@ -153,9 +153,11 @@ export function Sidebar() {
       <div className="sb-scroll">
         <div className="sb-head">
           <span>Enclosures</span>
-          <button className="icon-btn sm" title="New enclosure" onClick={() => useStore.setState({ newEnvOpen: true })}>
-            <Plus />
-          </button>
+          {envList.length > 0 && (
+            <button className="icon-btn sm" title="New enclosure" onClick={() => useStore.setState({ newEnvOpen: true })}>
+              <Plus />
+            </button>
+          )}
         </div>
         {envList.length === 0 && (
           <button className="sb-new" onClick={() => useStore.setState({ newEnvOpen: true })}>
@@ -218,9 +220,11 @@ export function Sidebar() {
 
         <div className="sb-head">
           <span>Chats</span>
-          <button className="icon-btn sm" title="New chat (no enclosure)" onClick={() => void newSession(null)}>
-            <Plus />
-          </button>
+          {chats.length > 0 && (
+            <button className="icon-btn sm" title="New chat (no enclosure)" onClick={() => void newSession(null)}>
+              <Plus />
+            </button>
+          )}
         </div>
         {chats.length === 0 && (
           <button className="sb-new" onClick={() => void newSession(null)}>

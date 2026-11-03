@@ -81,16 +81,15 @@ export default function ModelsView() {
         <h1>Models</h1>
         {models.length > 0 && inf.status !== "stopped" && (
           <>
-            <span className={`dot ${ready ? "ready" : inf.status === "error" ? "error" : ""}`} />
-            <span title={inf.version ? `oMLX ${inf.version}` : undefined}>
-              Model server <span className="dim">{inf.status}</span>
+            <span className={inf.status === "error" ? "err-text nowrap" : "nowrap"} title={inf.version ? `oMLX ${inf.version}` : undefined}>
+              Model server {inf.status}
             </span>
             <ServerButton small />
           </>
         )}
         <span className="blk-spacer" />
         {loaded.length > 0 && (
-          <span className="dim num nowrap">
+          <span className="num nowrap">
             {loaded.length} loaded, {fmtBytes(resident)}
           </span>
         )}
@@ -116,6 +115,8 @@ export default function ModelsView() {
             <tr>
               <th className="tw-col" />
               <th>Name</th>
+              <th className="r">Params</th>
+              <th>Quant</th>
               <th className="r">Size</th>
               <th className="r">
                 <Hint tip="Context a new session starts with, of the longest the model supports. Click a row to change it.">Context</Hint>
@@ -156,20 +157,22 @@ export default function ModelsView() {
                       <div className="mdl-title">
                         <span className="strong">{m.name}</span>
                         {p ? (
-                          <span className="chip">
-                            <Loader2 size={10} className="spin" /> {p === "load" ? "loading" : "unloading"}
+                          <span className="mdl-state">
+                            <Loader2 size={11} className="spin" /> {p === "load" ? "loading" : "unloading"}
                           </span>
                         ) : m.loaded ? (
-                          <span className="chip ok" title={`Loaded at ${fmtCtx(m.loadedContext)} context`}>
-                            loaded {fmtCtx(m.loadedContext)}
+                          <span className="mdl-state" title={`Loaded at ${fmtCtx(m.loadedContext)} context`}>
+                            loaded at {fmtCtx(m.loadedContext)}
                           </span>
                         ) : null}
                       </div>
-                      <div className="mono dim2 model-id truncate" title={`${m.family}: ${m.id}`}>
+                      <div className="mono dim model-id truncate" title={`${m.family}: ${m.id}`}>
                         {m.id}
                       </div>
                     </td>
-                    <td className="r num" title={`${m.params} parameters, ${m.quant}, ${exactBytes(m.diskBytes)}`}>
+                    <td className="r num">{m.params}</td>
+                    <td>{m.quant}</td>
+                    <td className="r num" title={exactBytes(m.diskBytes)}>
                       {fmtBytes(m.diskBytes)}
                     </td>
                     <td className="r num nowrap">
@@ -184,7 +187,7 @@ export default function ModelsView() {
                         <div className="est-cell" title={memTitle(e, budget.budgetBytes)}>
                           <MemBar e={e} cls={fit.cls} scaleMax={scaleMax} budget={budget.budgetBytes} />
                           <span className="num">{fmtBytes(e.bytes)}</span>
-                          <span className={`fit ${fit.cls}`}>{fit.text}</span>
+                          {fit.cls !== "ok" && <span className={`fit ${fit.cls}`}>{fit.text}</span>}
                         </div>
                       )}
                     </td>
@@ -216,7 +219,7 @@ export default function ModelsView() {
                           small
                           label="Load"
                           title={`Load at ${fmtCtx(m.defaultContext)} context`}
-                          confirmLabel={fit.cls === "err" ? `Load, ${fit.text}` : "Load, over budget"}
+                          confirmLabel={fit.cls === "err" ? `Load, ${fit.text}` : "Load, over ceiling"}
                           disabled={!!p}
                           onConfirm={() => run(m, "load")}
                         />
@@ -235,7 +238,7 @@ export default function ModelsView() {
                   {isOpen && (
                     <tr className="detail-row">
                       <td />
-                      <td colSpan={5}>
+                      <td colSpan={7}>
                         <ModelFacts m={m} />
                         <ModelDefaults m={m} users={users.map((s) => ({ id: s.id, title: s.title, running: s.status === "running" }))} />
                       </td>
@@ -248,21 +251,21 @@ export default function ModelsView() {
         </table>}
         {!models.length && (
           <div className="models-empty">
-            <h2 className="home-title">Download a first model</h2>
+            <h2 className="home-title">Download a model</h2>
             <ModelSuggestions onOther={() => setAdding(true)} />
           </div>
         )}
         {strainN > 0 && (
-          <div className="models-strains dim2">
-            {strainN} Lab {strainN === 1 ? "strain" : "strains"} not listed: each is one of these models with a neuron mix.{" "}
+          <div className="models-strains">
             <button
               className="cell-link"
+              title="Each strain is one of these models with a neuron mix"
               onClick={() => {
                 useLab.setState({ tab: "strains" });
                 openView({ kind: "lab" });
               }}
             >
-              Open Lab strains
+              Open {strainN} Lab {strainN === 1 ? "strain" : "strains"}
             </button>
           </div>
         )}
@@ -278,10 +281,6 @@ function ModelFacts({ m }: { m: ModelInfo }) {
     <dl className="mdl-facts">
       <dt>Family</dt>
       <dd>{m.family}</dd>
-      <dt>Params</dt>
-      <dd className="num">{m.params}</dd>
-      <dt>Quant</dt>
-      <dd>{m.quant}</dd>
       <dt>
         <Hint tip="Format the model's chat template uses for tool calls">Tool calls</Hint>
       </dt>
@@ -369,11 +368,12 @@ function ModelDefaults({ m, users }: { m: ModelInfo; users: { id: string; title:
           {users.length ? (
             users.map((u) => (
               <button key={u.id} className="cell-link" onClick={() => openSession(u.id)}>
-                {u.running && <span className="dot live" />} {u.title}
+                {u.title}
+                {u.running && <span className="dim2"> (running)</span>}
               </button>
             ))
           ) : (
-            <span className="dim2">none</span>
+            <span>none</span>
           )}
         </div>
       </div>

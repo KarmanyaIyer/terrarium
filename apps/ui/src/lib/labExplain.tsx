@@ -127,7 +127,7 @@ export const LAB_TIP = {
   repeat: card("Repeat control", "Makes tokens from the last 64 less likely to come up again (mlx-lm's repetition penalty). It can hold off the loops pushes tend to cause, at the price of a less exact copy of what the mix alone does. 1.1 is light, 1.3 is strong."),
   compare: card("Compare", "Unsteered and steered replies to the same prompt with the same seed."),
   sweep: card("Sweep", "The same prompt at many doses of one push, from negative through zero to positive: where it starts to work, where it breaks. With several neurons, it can multiply the whole mix instead."),
-  seeds: card("Test across seeds", "The same recipe over many seeds and several prompts, and how often it holds up. One good reply can be luck."),
+  seeds: card("Test across seeds", "The same recipe over many seeds and several prompts, and how often it stays in character. One good reply can be luck."),
   fluency: card(
     "Word-by-word likelihood",
     "How expected each word of a reply was to the unsteered model, as a mean log-probability. Ordinary replies sit near -1.",

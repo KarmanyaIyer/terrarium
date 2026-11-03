@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowLeft, Check, FlaskConical, LayoutList, Loader2, Minus, Play, RotateCw, Square, X } from "lucide-react";
-import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, ModelInfo, StartEvalRunRequest } from "@terrarium/shared";
+import type { EvalCase, EvalCellStatus, EvalCheck, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, ModelInfo, NetworkMode, StartEvalRunRequest } from "@terrarium/shared";
 import { act, loadEvalRun, loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { CONTEXT_CHOICES, estimate } from "../lib/memory";
 import { fmtCtx, fmtInt, fmtMs, fmtPct, plural } from "../lib/format";
 import { ConfirmButton, Expander, Hint, Segmented, Switch, Time } from "../components/ui";
 import { CodeView } from "../components/CodeView";
-import { EnvChip, NetIcon } from "../components/Sidebar";
 import { fitLabel, modelName } from "../components/ModelPicker";
 import { HARNESS, HarnessTip, harnessLabel } from "../lib/explain";
 import { VmSetupNote } from "./ModelSuggestions";
@@ -48,13 +47,12 @@ export default function EvalsView() {
               <button key={s.id} className={`ev-row${s.id === suiteId ? " on" : ""}`} onClick={() => openView({ kind: "evals", suiteId: s.id })}>
                 <span className="ev-row-main">
                   <span className="truncate">{s.title}</span>
-                  <span className="ev-row-meta dim">
-                    {s.source?.total && !s.cases.length ? `${fmtInt(s.source.total)} to sample from` : plural(s.cases.length, "case")}
-                    {s.source?.total && s.cases.length ? ` of ${fmtInt(s.source.total)}` : ""}
+                  <span className="ev-row-meta">
+                    {s.source?.total && !s.cases.length ? `${fmtInt(s.source.total)} cases` : plural(s.cases.length, "case")}
+                    {s.source?.total && s.cases.length ? ` of ${fmtInt(s.source.total)}` : ""}, {s.envType === "vm" ? "VM" : ENV_WORD[s.envType].toLowerCase()}
                   </span>
                 </span>
                 {last && <RailScore r={last} />}
-                <SuiteEnv t={s.envType} />
               </button>
             );
           })}
@@ -83,12 +81,20 @@ function BackToEvals() {
   );
 }
 
+const ENV_WORD: Record<EvalSuite["envType"], string> = { vm: "VM", sim: "Simulated", none: "No tools", mixed: "Mixed" };
+const NET_WORD: Record<NetworkMode, string> = { off: "network off", registries: "registries only", web: "public web" };
+
 function SuiteEnv({ t }: { t: EvalSuite["envType"] | EvalCase["envType"] }) {
-  if (t === "vm" || t === "sim") return <EnvChip type={t} />;
+  return <span title={t === "none" ? "No enclosure: answer-only" : t === "mixed" ? "Cases use different enclosure types" : undefined}>{ENV_WORD[t]}</span>;
+}
+
+/** Where one case runs, in words. */
+function CaseEnv({ c }: { c: EvalCase }) {
   return (
-    <span className="chip" title={t === "none" ? "No enclosure: answer-only" : "Cases use different enclosure types"}>
-      {t === "none" ? "no tools" : "mixed"}
-    </span>
+    <>
+      <SuiteEnv t={c.envType} />
+      {c.envType !== "none" && `, ${NET_WORD[c.network ?? "off"]}`}
+    </>
   );
 }
 
@@ -145,15 +151,15 @@ function ModelScore({ name, t }: { name: string; t: Totals }) {
 function RunStatus({ s }: { s: EvalRunSummary["status"] }) {
   if (s === "done") return null;
   return (
-    <span className={`chip ${s === "running" ? "accent" : s === "error" ? "err" : "warn"}`}>
-      {s === "running" && <Loader2 size={10} className="spin" />} {s}
+    <span className={`ev-status ${s === "error" ? "err-text" : s === "running" ? "" : "warn-text"}`}>
+      {s === "running" && <Loader2 size={11} className="spin" />} {s}
     </span>
   );
 }
 
 function History({ runs, showSuite }: { runs: EvalRunSummary[]; showSuite: boolean }) {
   const models = useStore((s) => s.models);
-  if (!runs.length) return <div className="ev-empty dim">No runs yet</div>;
+  if (!runs.length) return <div className="ev-empty">No runs yet</div>;
   return (
     <table className="table ev-history">
       <thead>
@@ -234,6 +240,7 @@ const ENV_RUN: Record<EvalSuite["envType"], string> = {
 };
 
 function checkTypes(s: EvalSuite): EvalCheck["type"][] {
+  if (!s.cases.length && s.source) return [s.envType === "none" ? "answer" : "tests"];
   return [...new Set(s.cases.map((c) => c.check.type))];
 }
 
@@ -362,9 +369,8 @@ function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunS
                     }
                   }}
                 >
-                  <td className="ev-suite-cell">
-                    <div className="strong">{s.title}</div>
-                    <div className="dim ev-desc" title={s.description}>{s.description}</div>
+                  <td className="strong" title={s.description}>
+                    {s.title}
                   </td>
                   <td className="r num nowrap" title={s.source?.total ? `Sampled from ${fmtInt(s.source.total)} when you run it` : undefined}>
                     {s.source?.total && !s.cases.length ? fmtInt(s.source.total) : s.cases.length}
@@ -383,9 +389,7 @@ function Overview({ suites, runs }: { suites: EvalSuite[] | null; runs: EvalRunS
                           <ModelScore key={id} name={modelName(models, id)} t={last.totals[id] ?? ZERO} />
                         ))}
                       </div>
-                    ) : (
-                      <span className="dim2">never run</span>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
               );
@@ -629,7 +633,13 @@ function RunView({ runId }: { runId: string }) {
                   }}
                 >
                   <div className="truncate">
-                    {c.title} {mixed && <SuiteEnv t={c.envType} />}
+                    {c.title}
+                    {mixed && (
+                      <span className="dim2">
+                        {" "}
+                        <SuiteEnv t={c.envType} />
+                      </span>
+                    )}
                   </div>
                   <div className="mono dim2 ev-case-id">{c.id}</div>
                 </td>
@@ -657,10 +667,8 @@ function CaseDetail({ c, results, onClose }: { c: EvalCase; results?: EvalResult
       <div className="ev-casepanel-head">
         <b className="truncate">{c.title}</b>
         <span className="mono dim2">{c.id}</span>
-        <SuiteEnv t={c.envType} />
-        {c.envType !== "none" && <NetIcon mode={c.network ?? "off"} />}
-        <span className="dim num">
-          max {plural(c.maxTurns, "turn")}, {c.timeoutSec}s
+        <span className="num">
+          <CaseEnv c={c} />, max {plural(c.maxTurns, "turn")}, {c.timeoutSec}s
         </span>
         <span className="blk-spacer" />
         <button className="icon-btn" title="Close" onClick={onClose}>
@@ -872,13 +880,20 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
       <div className="view-head">
         <BackToEvals />
         <h1>{suite.title}</h1>
-        <SuiteEnv t={suite.envType} />
-        <span className="dim truncate">{suite.description}</span>
       </div>
       <div className="ev-config">
+        <span className="ev-config-wide">
+          <span className="dim">Tests</span> {suite.description}
+        </span>
         <span>
-          <span className="dim">Cases</span> <span className="num">{suite.cases.length}</span>
-          {suite.source?.total != null && <span className="dim num"> sampled from {fmtInt(suite.source.total)}</span>}
+          <span className="dim">Cases</span>{" "}
+          {suite.cases.length ? <span className="num">{suite.cases.length}</span> : null}
+          {suite.source?.total != null && (
+            <span className="num">
+              {suite.cases.length ? " sampled from " : "sampled from "}
+              {fmtInt(suite.source.total)}
+            </span>
+          )}
         </span>
         <span>
           <span className="dim">Graded by</span> <GradedBy s={suite} />
@@ -886,7 +901,7 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
         <span>
           <span className="dim">Runs in</span>{" "}
           <Hint tip={ENV_RUN[suite.envType]} width={320}>
-            <span className="hint-text">{suite.envType === "none" ? "no enclosure" : "fresh fork per case"}</span>
+            <span className="hint-text">{suite.envType === "none" ? "No enclosure" : `${suite.envType === "sim" ? "Simulated shell" : ENV_WORD[suite.envType]}, fresh fork per case`}</span>
           </Hint>
         </span>
         {suite.source && (
@@ -915,11 +930,10 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
               const e = estimate(m, Math.min(ctx, m.nativeContext), sample, budget, models);
               const fit = fitLabel(e, sample?.system.freeBytes);
               return (
-                <label key={m.id} className={`ev-model${on ? " on" : ""}`}>
+                <label key={m.id} className={`ev-model${on ? " on" : ""}`} title={m.loaded ? undefined : "Not loaded; loads when its first case starts"}>
                   <input type="checkbox" checked={on} onChange={() => setPicked((p) => (on ? p.filter((x) => x !== m.id) : [...p, m.id]))} />
-                  <span className={`dot ${m.loaded ? "ready" : ""}`} title={m.loaded ? "Loaded" : "Not loaded; loads when its first case starts"} />
                   <span className="truncate">{m.name}</span>
-                  <span className="dim num">
+                  <span className="dim2 num">
                     {m.params}
                     {ctx > m.nativeContext && (
                       <span className="warn-text" title={`${m.name} supports at most ${fmtCtx(m.nativeContext)}; its cases run at that`}>
@@ -928,7 +942,7 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
                       </span>
                     )}
                   </span>
-                  <span className={`fit ${m.loaded ? "ok" : fit.cls}`}>{m.loaded ? "loaded" : fit.text}</span>
+                  <span className={`fit ${m.loaded ? "" : fit.cls}`}>{m.loaded ? "loaded" : fit.cls === "ok" ? "" : fit.text}</span>
                 </label>
               );
             })}
@@ -940,10 +954,9 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
                 return (
                   <label key={m.id} className={`ev-model strain${on ? " on" : ""}`} title={`${m.strain!.recipe}\nRuns on the Lab`}>
                     <input type="checkbox" checked={on} onChange={() => setPicked((p) => (on ? p.filter((x) => x !== m.id) : [...p, m.id]))} />
-                    <span className="chip strain">strain</span>
                     <span className="truncate">{m.name}</span>
-                    <span className="dim truncate">of {models.find((x) => x.id === m.strain!.baseModelId)?.name ?? m.strain!.baseModelId}</span>
-                    <span className="fit dim">Lab</span>
+                    <span className="dim2 truncate">of {models.find((x) => x.id === m.strain!.baseModelId)?.name ?? m.strain!.baseModelId}</span>
+                    <span />
                   </label>
                 );
               })}
@@ -998,8 +1011,8 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
         <div className="ev-scroll">
           <h3 className="ev-sec-title">Run history</h3>
           <History runs={runs} showSuite={false} />
-          <h3 className="ev-sec-title">Cases</h3>
-          <table className="table ev-cases">
+          {suite.cases.length > 0 && <h3 className="ev-sec-title">Cases</h3>}
+          {suite.cases.length > 0 && <table className="table ev-cases">
             <thead>
               <tr>
                 <th>Case</th>
@@ -1031,7 +1044,7 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
                   </td>
                   {suite.envType === "mixed" && (
                     <td className="nowrap">
-                      <SuiteEnv t={c.envType} /> {c.envType !== "none" && <NetIcon mode={c.network ?? "off"} />}
+                      <CaseEnv c={c} />
                     </td>
                   )}
                   <td className="ev-check-sum mono" title={checkSummary(c.check)}>
@@ -1042,7 +1055,7 @@ function SuiteView({ suite, pick }: { suite: EvalSuite; pick?: string }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table>}
         </div>
       </div>
       {selCase && <CaseDetail c={selCase} onClose={() => setCaseSel(null)} />}

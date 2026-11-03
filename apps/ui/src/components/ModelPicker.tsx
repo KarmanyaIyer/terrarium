@@ -24,13 +24,13 @@ export function MemBar({ e, cls, scaleMax, budget }: { e: Estimate; cls: string;
 
 export function memTitle(e: Estimate, budget: number): string {
   const parts = `weights ${fmtBytes(e.weights)} + KV ${fmtBytes(e.kv)} + fixed ${fmtBytes(e.fixed)} + runtime ${fmtBytes(e.overhead)}`;
-  if (!e.otherLoaded) return `${parts}\nbudget ${fmtBytes(budget, 0)}`;
-  return `${parts}\nother loaded models ${fmtBytes(e.otherLoaded)} + this ${fmtBytes(e.bytes)} = ${fmtBytes(e.otherLoaded + e.bytes)} of ${fmtBytes(budget, 0)} budget`;
+  if (!e.otherLoaded) return `${parts}\nceiling ${fmtBytes(budget, 0)}`;
+  return `${parts}\nother loaded models ${fmtBytes(e.otherLoaded)} + this ${fmtBytes(e.bytes)} = ${fmtBytes(e.otherLoaded + e.bytes)} of ${fmtBytes(budget, 0)} ceiling`;
 }
 
 export function fitLabel(e: ReturnType<typeof estimate>, free: number | undefined) {
   if (!e.fitsFree) return { cls: "err", text: free != null ? `${fmtBytes(e.added - free)} short` : "won't fit" };
-  if (!e.fitsBudget) return { cls: "warn", text: "over budget" };
+  if (!e.fitsBudget) return { cls: "warn", text: "over ceiling" };
   return { cls: "ok", text: "fits" };
 }
 
@@ -58,21 +58,21 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
   if (session.evalRunId)
     return (
       <span className="hdr-btn static" title={`${current ? `${current.id}\n${current.params} ${current.quant}` : session.modelId}\noutput cap ${fmtInt(session.maxOutputTokens)}`}>
-        <span className={`dot ${current?.loaded ? "ready" : ""}`} />
         <span className="hdr-model-name">{current?.name ?? session.modelId}</span>
-        <span className="dim">{current?.quant}</span>
-        <span className="dim num">{fmtCtx(ctx)}</span>
+        <span className="dim2">{current?.quant}</span>
+        <span className="dim2 num">{fmtCtx(ctx)}</span>
+        {current && !current.loaded && <span className="dim">not loaded</span>}
       </span>
     );
 
   return (
     <>
       <button ref={pop.ref} className="hdr-btn model" onClick={pop.toggle} title={current ? `${current.id}\n${current.params} ${current.quant}` : session.modelId}>
-        <span className={`dot ${current?.loaded ? "ready" : ""}`} title={current?.loaded ? "Loaded in oMLX" : "Not loaded: first call loads it"} />
-        {current?.strain && <span className="chip strain">strain</span>}
         <span className="hdr-model-name">{current?.name ?? session.modelId}</span>
-        <span className="dim">{current?.quant}</span>
-        <span className="dim num">{fmtCtx(ctx)}</span>
+        {current?.strain && <span className="dim2">strain</span>}
+        <span className="dim2">{current?.quant}</span>
+        <span className="dim2 num">{fmtCtx(ctx)}</span>
+        {current && !current.loaded && <span className="dim" title="The first call loads it">not loaded</span>}
         <ChevronDown size={12} className="dim" />
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} width={580} className="model-pop">
@@ -121,26 +121,25 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
               >
                 <span className="mp-name">
                   {on ? <Check size={12} className="mp-check" /> : <span className="mp-check" />}
-                  <span className={`dot ${m.loaded ? "ready" : ""}`} />
                   <span className="truncate">{m.name}</span>
-                  <span className="dim">{m.params}</span>
+                  <span className="dim2">{m.params}</span>
                 </span>
                 <span className="mp-size num">
                   <span>{m.quant}</span>
-                  <span className="dim">{fmtBytes(m.diskBytes)}</span>
+                  <span className="dim2">{fmtBytes(m.diskBytes)}</span>
                 </span>
                 <span className="mp-mem num" title={memTitle(e, budget.budgetBytes)}>
                   <MemBar e={e} cls={fit.cls} scaleMax={scaleMax} budget={budget.budgetBytes} />
                   <span>{fmtBytes(e.bytes)}</span>
                 </span>
-                <span className={`mp-fit ${fit.cls}`}>{m.loaded ? (m.loadedContext && m.loadedContext < ctx ? `loaded at ${fmtCtx(m.loadedContext)}` : "loaded") : fit.text}</span>
+                <span className={m.loaded ? "mp-fit" : `mp-fit ${fit.cls}`}>{m.loaded ? (m.loadedContext && m.loadedContext < ctx ? `loaded at ${fmtCtx(m.loadedContext)}` : "loaded") : fit.cls === "ok" ? "" : fit.text}</span>
               </button>
             );
           })}
           {strains.length > 0 && (
             <>
-              <div className="menu-label mp-group">
-                Lab strains <span className="dim2">a base model with a neuron mix, served by the Lab</span>
+              <div className="menu-label mp-group" title="A base model with a neuron mix, served by the Lab">
+                Lab strains
               </div>
               {strains.map((m) => {
                 const on = m.id === session.modelId;
@@ -157,12 +156,11 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
                   >
                     <span className="mp-name">
                       {on ? <Check size={12} className="mp-check" /> : <span className="mp-check" />}
-                      <span className="chip strain">strain</span>
                       <span className="truncate">{m.name}</span>
                     </span>
-                    <span className="mp-size truncate dim">of {modelName(models, m.strain!.baseModelId)}</span>
+                    <span className="mp-size truncate dim2">of {modelName(models, m.strain!.baseModelId)}</span>
                     <span className="mp-mem mono truncate dim2">{m.strain!.recipe}</span>
-                    <span className="mp-fit dim">Lab</span>
+                    <span className="mp-fit" />
                   </button>
                 );
               })}
@@ -170,8 +168,8 @@ export function ModelPicker({ session }: { session: SessionSummary }) {
           )}
         </div>
         <div className="mp-foot">
-          <span className="dim num">
-            Free {fmtBytes(sample?.system.freeBytes)}  budget {fmtBytes(budget.budgetBytes, 0)}  output cap {fmtInt(session.maxOutputTokens)}
+          <span className="num">
+            {fmtBytes(sample?.system.freeBytes)} free, ceiling {fmtBytes(budget.budgetBytes, 0)}, output cap {fmtInt(session.maxOutputTokens)}
           </span>
           <button
             className="btn sm ghost"

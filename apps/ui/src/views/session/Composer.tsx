@@ -143,9 +143,7 @@ export function Composer({ session }: { session: SessionSummary }) {
     return (
       <div className="composer">
         <div className="composer-readonly">
-          <span className="chip">eval case</span>
-          <span className="dim">read-only</span>
-          {env?.released && <span className="dim">enclosure released</span>}
+          <span>Eval case, read-only{env?.released ? ", enclosure released" : ""}</span>
           {running && (
             <button className="btn sm stop" onClick={() => void act("Stop", (b) => b.stopSession(session.id))} title="Stop this case (it is recorded as stopped)">
               <Square /> Stop
@@ -188,7 +186,7 @@ export function Composer({ session }: { session: SessionSummary }) {
           )}
           {fit && fit.cls !== "ok" && !running && !blocked && (
             <span className={`composer-fit ${fit.cls}-text`} title={`${model?.name} is not loaded; sending loads it at ${fmtTok(session.contextWindow)} context`}>
-              {fit.cls === "err" ? `Won't fit: ${fit.text}` : "Over budget once loaded"}
+              {fit.cls === "err" ? `Won't fit: ${fit.text}` : "Over the memory ceiling once loaded"}
             </span>
           )}
           {running ? (

@@ -57,16 +57,14 @@ export const UserBlock = memo(function UserBlock({ it, t0 }: { it: UserItem; t0:
 // ---------- model call ----------
 
 function FinishChip({ reason }: { reason: string }) {
-  const cls = reason === "stop" || reason === "tool_calls" ? "call-extra" : reason === "aborted" ? "warn" : "err";
+  if (reason === "stop" || reason === "tool_calls") return null;
   const title: Record<string, string> = {
-    stop: "The model ended its reply",
-    tool_calls: "The model asked to run a tool",
     length: "Stopped at the output cap: the reply is cut off",
     error: "The server returned an error",
     aborted: "Stopped by you",
   };
   return (
-    <span className={`chip ${cls}`} title={title[reason]}>
+    <span className={reason === "aborted" ? "warn-text" : "err-text"} title={title[reason]}>
       {reason}
     </span>
   );
@@ -80,7 +78,7 @@ function Thinking({ text, live, tokens }: { text: string; live: boolean; tokens?
       <button className="thinking-head" onClick={() => setOpen(!open)}>
         <ChevronRight size={12} className="tw" />
         <span>Thinking</span>
-        <span className="dim num">{fmtInt(tokens ?? Math.round(text.length / 3.8))} tok</span>
+        <span className="num">{fmtInt(tokens ?? Math.round(text.length / 3.8))} tok</span>
         {live && <Loader2 size={11} className="spin dim" />}
         {preview && <span className="thinking-preview truncate">{preview}</span>}
       </button>
@@ -134,7 +132,6 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
   return (
     <div className={`blk call${selected ? " selected" : ""}${live ? " live" : ""}`}>
       <div className="blk-head" onClick={() => select({ kind: "call", callId: it.callId, seq: it.seq }, { follow: false })}>
-        <span className="call-glyph" />
         <button
           className="blk-model"
           title="Show this request"
@@ -146,19 +143,17 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
         >
           {modelName(models, it.start.modelId)}
         </button>
-        <span className="dim">turn {it.start.turn}</span>
+        <span className="dim2">turn {it.start.turn}</span>
         <span className="call-stats num">
           {usage ? (
             <>
               <span title="prompt tokens → output tokens">
                 {fmtInt(usage.promptTokens)} → {fmtInt(usage.completionTokens)}
               </span>
-              <span className="call-extra">
-                {usage.cachedTokens ? <span className="dim" title="prompt tokens served from the KV cache">{fmtTok(usage.cachedTokens)} cached </span> : null}
-                <span className="dim" title="time to first token (prefill)">ttft {fmtMs(it.end?.timing.ttftMs)} </span>
-                <span className="dim">{fmtTps(it.end?.timing.genTps)}</span>
-              </span>
-              <span className="dim">{fmtMs(it.end?.timing.totalMs)}</span>
+              <span>{fmtMs(it.end?.timing.totalMs)}</span>
+              <span title="time to first token (prefill)">ttft {fmtMs(it.end?.timing.ttftMs)}</span>
+              <span>{fmtTps(it.end?.timing.genTps)}</span>
+              {usage.cachedTokens ? <span title="prompt tokens served from the KV cache">{fmtTok(usage.cachedTokens)} cached</span> : null}
             </>
           ) : live ? (
             <>
@@ -174,14 +169,14 @@ export const CallBlock = memo(function CallBlock({ it, t0, selected }: { it: Cal
                 <span className="live-count">{pending ? "prefill" : `${fmtInt(liveTok)} tok`}</span>
               )}
               {it.livePartial && (
-                <span className="chip warn" title="Missed part of the reply (opened mid-reply, or dropped while the connection was slow); the whole reply shows when it ends">
+                <span className="warn-text" title="Missed part of the reply (opened mid-reply, or dropped while the connection was slow); the whole reply shows when it ends">
                   partial
                 </span>
               )}
-              <span className="dim">{fmtMs(now - it.start.ts)}</span>
+              <span>{fmtMs(now - it.start.ts)}</span>
             </>
           ) : (
-            <span className="dim">{fmtMs(it.end?.timing.totalMs)}</span>
+            <span>{fmtMs(it.end?.timing.totalMs)}</span>
           )}
         </span>
         {it.end && <FinishChip reason={it.end.finishReason} />}
@@ -373,7 +368,7 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
         {live ? (
           <span className="tool-status num">
             {it.livePartial && (
-              <span className="chip warn" title="Missed part of the output (opened mid-run, or dropped while the connection was slow); all of it shows when the call ends">
+              <span className="warn-text" title="Missed part of the output (opened mid-run, or dropped while the connection was slow); all of it shows when the call ends">
                 partial
               </span>
             )}
@@ -382,17 +377,17 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
         ) : (
           <span className="tool-status num">
             {it.end?.exitCode != null && (
-              <span className={`chip ${it.end.exitCode === 0 ? "" : "err"}`} title="Exit code">
+              <span className={it.end.exitCode === 0 ? undefined : "err-text"} title="Exit code">
                 exit {it.end.exitCode}
               </span>
             )}
-            {it.end?.exitCode == null && it.end?.isError && <span className="chip err">error</span>}
+            {it.end?.exitCode == null && it.end?.isError && <span className="err-text">error</span>}
             {it.end?.outputTruncated && (
-              <span className="chip warn" title="Output was cut for the model; the full output is stored">
+              <span className="warn-text" title="Output was cut for the model; the full output is stored">
                 truncated
               </span>
             )}
-            <span className="dim">{fmtMs(it.end?.durationMs)}</span>
+            <span>{fmtMs(it.end?.durationMs)}</span>
           </span>
         )}
         {it.fs.length > 0 && (
@@ -452,7 +447,7 @@ export const ToolBlock = memo(function ToolBlock({ it, t0, selected }: { it: Too
         <div className="tool-net">
           {it.net.map(({ entry, seq }) => (
             <button key={entry.id} className={`net-row ${entry.decision}`} onClick={() => select({ kind: "net", entryId: entry.id, seq })}>
-              <span className={`chip ${entry.decision === "deny" ? "err" : "ok"}`}>{entry.decision === "deny" ? "denied" : "allowed"}</span>
+              <span className={entry.decision === "deny" ? "err-text" : "ok-text"}>{entry.decision === "deny" ? "denied" : "allowed"}</span>
               <span className="mono truncate">
                 {entry.method} {entry.url}
               </span>
@@ -671,7 +666,7 @@ function OverflowActions({ data, session, latest }: { data: Record<string, numbe
   );
 }
 
-const PROMPT_SOURCE = { "built-in": "built-in prompt", profile: "saved default prompt", session: "this session's prompt", strain: "none (a strain's numbers are without one)" } as const;
+const PROMPT_SOURCE = { "built-in": "built-in", profile: "saved default", session: "this session's own" } as const;
 
 /** Which system prompt and tools a run sent; the text as it was then, not as it is now. */
 function PromptRow({ ev, ts, t0 }: { ev: Extract<TraceEvent, { type: "system_prompt" }>; ts: number; t0: number }) {
@@ -681,7 +676,7 @@ function PromptRow({ ev, ts, t0 }: { ev: Extract<TraceEvent, { type: "system_pro
       <button className="row-ev dim prompt-row-head" onClick={() => setOpen(!open)} aria-expanded={open}>
         <ChevronRight size={12} className={`tw${open ? " open" : ""}`} />
         <span>
-          System prompt: {PROMPT_SOURCE[ev.source]}, {harnessLabel(ev.harness)}
+          System prompt: {ev.source === "strain" ? "none, strains run without one" : `${harnessLabel(ev.harness)} (${PROMPT_SOURCE[ev.source]})`}
         </span>
         <span className="mono truncate">{ev.tools.length ? ev.tools.join(" ") : "no tools"}</span>
         <span className="num">≈{fmtInt(Math.ceil(ev.text.length / 4))} tokens</span>
@@ -772,19 +767,18 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
           if (x.event.entry.decision === "deny") denied++;
         }
       }
-      const reasonCls = ev.reason === "done" ? "" : ev.reason === "stopped" ? "warn" : "err";
       // a run you stopped, or one that hit the turn limit, picks up where it left off
       const resumable = (ev.reason === "stopped" || ev.reason === "max_turns") && idx === d.items.length - 1 && session.status === "idle" && !session.evalRunId;
       return (
         <div className="row-ev run-end">
           <span className="run-end-line" />
-          <span className={`chip ${reasonCls}`}>{ev.reason === "max_turns" ? "max turns" : ev.reason}</span>
-          <span className="dim num">
-            {turns} turn{turns === 1 ? "" : "s"}  {fmtMs(it.ts - startTs)}  {fmtInt(tokens)} tokens out
+          {ev.reason !== "done" && <span className={ev.reason === "stopped" ? "warn-text" : "err-text"}>{ev.reason === "max_turns" ? "max turns" : ev.reason}</span>}
+          <span className="num">
+            {turns} turn{turns === 1 ? "" : "s"}, {fmtMs(it.ts - startTs)}, {fmtInt(tokens)} tokens out
           </span>
           {commands > 0 && (
             <span className="run-end-did">
-              <span className="dim num">
+              <span className="num">
                 {commands} tool call{commands === 1 ? "" : "s"}
               </span>
               {files.size > 0 && (
@@ -820,7 +814,7 @@ export const RowBlock = memo(function RowBlock({ it, t0, session, d }: { it: Row
     case "net":
       return (
         <button className={`net-row ${ev.entry.decision}`} onClick={() => select({ kind: "net", entryId: ev.entry.id, seq: it.seq })}>
-          <span className={`chip ${ev.entry.decision === "deny" ? "err" : "ok"}`}>{ev.entry.decision === "deny" ? "denied" : "allowed"}</span>
+          <span className={ev.entry.decision === "deny" ? "err-text" : "ok-text"}>{ev.entry.decision === "deny" ? "denied" : "allowed"}</span>
           <span className="mono truncate">
             {ev.entry.method} {ev.entry.url}
           </span>

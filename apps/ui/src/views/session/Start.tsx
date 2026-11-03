@@ -12,7 +12,7 @@ function Part({ label, value, role, onClick }: { label: string; value: ReactNode
     <>
       <span className="ss-part-label">{label}</span>
       <span className="ss-part-value">{value}</span>
-      <span className="ss-part-role dim">{role}</span>
+      <span className="ss-part-role dim2">{role}</span>
     </>
   );
   return onClick ? (
@@ -70,7 +70,7 @@ export function SessionStart({ s }: { s: SessionSummary }) {
           <Part label="Enclosure" value="None" role="Chat: the model can't run anything" />
         )}
       </div>
-      {model?.strain && <p className="dim">A steered model can start repeating itself after several turns. A new chat resets it.</p>}
+      {model?.strain && <p className="dim2">A steered model can start repeating itself after several turns. A new chat resets it.</p>}
       <div className="ss-try">
         <div className="ss-try-head dim">Try</div>
         {starters(env, s.harness === "chat", !!model?.strain).map((t) => (

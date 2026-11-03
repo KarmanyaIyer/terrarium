@@ -145,12 +145,6 @@
 .table tr.open td {
   background: var(--accent-wash);
 }
-.status-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
 
 /* ---------- home ---------- */
 
@@ -198,6 +192,10 @@
 .home-sec-head .btn {
   align-self: center;
 }
+/* a ghost button's label sits on the column edge, not its padding */
+.home-sec-head .btn.ghost:last-child {
+  margin-right: -7px;
+}
 .home-table {
   border: 0.5px solid var(--line-2);
   border-radius: var(--r-md);
@@ -240,12 +238,20 @@
 }
 .task-model {
   position: relative;
-  display: inline-block;
-  border-bottom: 1.5px dashed var(--line-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   cursor: pointer;
 }
 .task-model:hover {
-  border-bottom-color: var(--accent-hi);
+  color: var(--accent);
+}
+.task-model-chev {
+  flex: none;
+  color: var(--fg-3);
+}
+.task-model:hover .task-model-chev {
+  color: inherit;
 }
 .task-model-select {
   position: absolute;
@@ -314,24 +320,22 @@
   align-items: flex-start;
 }
 .task-try-head {
-  padding: 0 13px 2px;
+  padding-bottom: 2px;
   font-size: var(--fs-sm);
   color: var(--fg-3);
 }
 .task-try-row {
   max-width: 100%;
-  padding: 2px 13px;
+  padding: 2px 6px;
+  margin-left: -6px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: left;
-  color: var(--fg-2);
-  text-decoration: underline dotted var(--line-3);
-  text-underline-offset: 3px;
+  color: var(--fg-1);
   border-radius: var(--r-sm);
 }
 .task-try-row:hover {
-  color: var(--fg-1);
   background: var(--bg-hover);
 }
 @container (max-width: 640px) {
@@ -360,7 +364,7 @@
   flex: none;
 }
 
-/* things to try: three notes on one bench top, split by hairlines rather than boxed */
+/* three cards, split by hairlines rather than boxed */
 .exps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -425,13 +429,18 @@
   gap: 8px;
 }
 .exp-quote {
-  font-family: var(--font-display);
-  font-size: var(--fs-lg);
   line-height: 1.35;
   color: var(--fg-1);
 }
-.exp-quote .mono {
-  font-size: var(--fs-2xs);
+.exp-quote-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.exp-quote-dose {
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
 }
 .exp-actions {
   display: flex;
@@ -478,17 +487,11 @@
   }
 }
 
-/* enclosures stand on a shelf: the one bold thing here. Each row of cases sits on the same rail */
 .shelf {
-  --row: 112px;
-  --gap: 12px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  grid-auto-rows: var(--row);
-  row-gap: var(--gap);
-  padding-top: var(--gap);
-  /* a rail under every row, wall to wall */
-  background: linear-gradient(transparent calc(100% - 2px), var(--line-3) 0) 0 0 / 100% calc(var(--row) + var(--gap));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-inline: -6px;
 }
 .specimen {
   position: relative;
@@ -497,13 +500,13 @@
 .specimen-open {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 1px;
   width: 100%;
   height: 100%;
-  padding: 2px 6px 6px;
-  border-radius: var(--r-sm) var(--r-sm) 0 0;
-  text-align: center;
+  padding: 6px;
+  border-radius: var(--r-sm);
+  text-align: left;
 }
 .specimen-open:hover {
   background: var(--bg-hover);
@@ -519,6 +522,7 @@
 .specimen-sub {
   max-width: 100%;
   font-size: var(--fs-sm);
+  color: var(--fg-2);
 }
 .specimen-add {
   position: absolute;
@@ -543,6 +547,12 @@
 }
 .ea-soil {
   fill: var(--soil);
+}
+.ea-moss {
+  fill: var(--moss);
+}
+.ea-pebble {
+  fill: var(--fg-4);
 }
 .ea-stem {
   stroke: var(--moss);
@@ -575,6 +585,7 @@
 .ea.failed .ea-glass {
   stroke: var(--err-line);
 }
+.ea.failed .ea-moss,
 .ea.failed .ea-leaf,
 .ea.failed .ea-stem {
   fill: var(--fg-4);
@@ -588,19 +599,20 @@
 }
 .recent-row {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) minmax(0, 150px) minmax(0, 130px) 62px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 150px) minmax(0, 130px) 92px;
   align-items: center;
   gap: 8px;
-  padding: 5px 6px;
+  padding: 5px 0;
   text-align: left;
-  border-radius: var(--r-sm);
   border-bottom: 0.5px solid var(--line);
 }
 .recent-row:last-child {
   border-bottom: 0;
 }
+/* the hover paints past the text, which stays on the column edge */
 .recent-row:hover {
   background: var(--bg-hover);
+  box-shadow: -6px 0 0 var(--bg-hover), 6px 0 0 var(--bg-hover);
 }
 .recent-row > :last-child {
   text-align: right;
@@ -622,20 +634,6 @@
   max-width: 640px;
   margin: 24px auto 0;
   width: 100%;
-}
-.first-head {
-  display: flex;
-  align-items: flex-end;
-  gap: 18px;
-}
-.first-lede {
-  margin: 6px 0 0;
-  max-width: 54ch;
-  font-size: var(--fs-lg);
-  color: var(--fg-2);
-}
-.first-next {
-  margin: 0;
 }
 .suggs {
   display: flex;
@@ -671,11 +669,6 @@
   align-self: flex-start;
   margin-top: 8px;
   color: var(--accent);
-}
-.specimen-on {
-  display: inline-block;
-  margin-right: 5px;
-  vertical-align: 1px;
 }
 .specimen-add:focus-visible {
   box-shadow: var(--focus);
@@ -715,7 +708,7 @@
 }
 .env-compare-more summary {
   cursor: pointer;
-  color: var(--fg-3);
+  color: var(--fg-2);
   font-size: var(--fs-sm);
 }
 .env-compare-more[open] summary {
@@ -876,9 +869,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 10px 16px;
   border-top: 0.5px solid var(--line-2);
   flex: none;
+}
+.sheet-foot > .btn.ghost:first-child {
+  margin-left: -9px;
 }
 .type-pick {
   display: grid;
@@ -989,7 +985,13 @@ select.input {
 }
 .facts-preview-head {
   font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--fg-2);
   margin-bottom: 6px;
+}
+/* one label column for the form above and these facts */
+.facts-preview .kv {
+  grid-template-columns: 92px minmax(0, 1fr);
 }
 
 /* ---------- evals ---------- */
@@ -1057,7 +1059,8 @@ select.input {
   min-width: 0;
 }
 .ev-row-meta {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1305,7 +1308,7 @@ select.input {
 }
 .ev-model {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
   padding: 5px 8px;
@@ -1401,8 +1404,15 @@ select.input {
 .mdl-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
+}
+.mdl-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
 }
 .mdl-actions {
   width: 1%;
@@ -1469,9 +1479,10 @@ select.input {
 .am-input .input {
   flex: 1;
 }
-.am-hint {
-  font-size: var(--fs-xs);
-  margin-top: -10px;
+.am-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .am-sugg h3 {
   margin: 0 0 6px;
@@ -1493,13 +1504,13 @@ select.input {
   grid-template-columns: 110px minmax(0, 1fr) 64px 70px;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px;
-  border-radius: var(--r-sm);
+  padding: 6px 0;
   text-align: left;
   font-size: var(--fs-sm);
 }
 .am-sugg-row:hover {
   background: var(--bg-hover);
+  box-shadow: -6px 0 0 var(--bg-hover), 6px 0 0 var(--bg-hover);
 }
 .am-sugg-row > :last-child {
   justify-self: end;
@@ -1588,9 +1599,6 @@ select.input {
   align-items: center;
   gap: 8px;
 }
-.st-aside {
-  font-size: var(--fs-sm);
-}
 .st-grid {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);
@@ -1657,7 +1665,10 @@ select.input {
   font-size: var(--fs-sm);
   color: var(--fg-2);
 }
-.st-disk-legend span {
+.st-disk-legend .num {
+  color: var(--fg-1);
+}
+.st-disk-legend > span {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1823,15 +1834,6 @@ select.input {
   grid-column: 1 / -1;
   font-size: var(--fs-xs);
 }
-.ev-suite-cell {
-  white-space: normal !important;
-  max-width: 460px !important;
-}
-.ev-desc {
-  font-size: var(--fs-sm);
-  line-height: 1.35;
-  margin-top: 1px;
-}
 .hint-text {
   text-decoration: underline dotted var(--fg-4);
   text-underline-offset: 3px;
@@ -1907,7 +1909,7 @@ select.input {
   padding: 0 8px;
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
-  color: var(--fg-3);
+  color: var(--fg-2);
 }
 .ev-res-glyph {
   display: inline-flex;
@@ -1956,6 +1958,26 @@ select.input {
 .ev-graded {
   white-space: nowrap;
 }
+/* a whole column of dotted underlines is noise; the tooltip stays */
+.ev-suites .ev-graded .hint-text {
+  text-decoration: none;
+}
+.ev-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.ev-config-wide {
+  flex-basis: 100%;
+  min-width: 0;
+}
+/* on the same edge as the section title above it */
+.ev-scroll > .ev-empty {
+  padding: 0 16px;
+  font-size: var(--fs-md);
+  color: var(--fg-2);
+}
 .accent-text {
   color: var(--accent);
 }
@@ -1980,10 +2002,4 @@ select.input {
   .ev-suites td:nth-child(4) {
     display: none;
   }
-}
-.ev-desc {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }

@@ -83,7 +83,6 @@ export function EnvTab({ env }: { env: EnvSummary }) {
   return (
     <div className="envtab">
       <div className="env-title">
-        <span className={`dot ${env.status}`} />
         {editing ? (
           <input
             className="input"
@@ -153,7 +152,6 @@ export function EnvTab({ env }: { env: EnvSummary }) {
       </div>
       {inUse && (
         <div className="env-busy" title={inUseTitle}>
-          <span className="dot busy" />
           <span className="truncate">{inUse}</span>
         </div>
       )}

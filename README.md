@@ -191,20 +191,20 @@ is on hover. The overview's scoreboard shows each model's latest score on every 
 The Lab gives a local model a personality by pushing on its insides, without a system prompt. A recipe is either
 single neurons or a whole direction. A neuron is one entry of a layer's MLP hidden state (the input to `down_proj`),
 written `L22N4296`: layer 22, neuron 4296. A vector is a learned direction added to one layer's output at every token:
-a character rather than a word. The Lab runs its own copy of one model (the specimen) in a Python sidecar next to oMLX,
+a character rather than a word. The Lab runs its own copy of one model in a Python sidecar next to oMLX,
 with hooks on every layer.
 
-Start in the Field Guide: characters and obsessions from our own search, each with how often it held and real replies.
-Try one next to the unsteered model, or keep it as a strain and chat with it. To make your own, type one sentence
-into Grow.
+Start in Examples: tested characters and single neurons, each with its exact recipe, how often it stayed in character and
+real replies. Try one next to the unsteered model, or save it as a strain and chat with it. To make your own, type one
+sentence into New character on the Find tab.
 
 ![Lab](docs/screenshots/lab.png)
 
 | Tab | What it does |
 | --- | --- |
-| Field Guide | The built-in catalog, for the models you have, with a download for the rest. Each entry has its recipe, how often it held in a chat and in Compare, and real replies. One click tries it in Compare, one click keeps it as a strain |
-| Grow | One sentence becomes a character (below). Also search for a word a single neuron can't stop saying, and look up the neurons behind a description or your own texts: the model writes example lines with and without it, every neuron gets scored on them, and the best four are tried on a real reply, alone and together. Prepared sets work the same way. Surprise me samples random neurons from a promising layer and pushes the most active ones both ways |
-| Steer | A mix of neurons with doses and vectors with a strength. Compare writes steered and unsteered replies from one seed; Sweep runs a signed dose scale centred on 0 (12 to 384 steps, optional seeds across, stop any time, drag to zoom); Test across seeds runs a recipe over many seeds and prompts and counts what reads fine, loops and has your words |
+| Examples | The built-in catalog, one model at a time, following the loaded model, with a download for models you don't have. Each entry has its recipe table, settings, how many of 48 test replies stayed in character, and real replies. One click tries it in Compare, one click saves it as a strain |
+| Find | New character turns one sentence into a character (below). Find neurons searches by word, by description, from your own texts, or at random: for a description or texts, the model writes example lines with and without it, every neuron gets scored on them, and the best four are tried on a real reply, alone and together. Random samples neurons from a promising layer and pushes the most active ones both ways |
+| Steer | A mix of neurons with doses and vectors with a strength. Compare writes steered and unsteered replies from one seed; Sweep runs a signed dose scale centred on 0 (12 to 384 steps, optional seeds across, stop any time, drag to zoom); Test across seeds runs a recipe over many seeds and prompts and counts what is normal, what loops and what has your words |
 | Trace | Why the model wrote a word. Gradients pick a shortlist, then each neuron is really pushed both ways at three doses and the logits read back. Each row gives the signed dose, the measured change and what the model would write |
 | Probe | Runs a text or a chat turn and shows the strongest neurons per token, or follows chosen neurons token by token |
 | Strains | A saved mix: shows up as a model in the chat and eval model pickers |
@@ -215,7 +215,7 @@ the next steps: trace it, test it across seeds, use the recipe, save it as a str
 ask why that word is there. Cmd+Z and Cmd+Shift+Z undo and redo Lab edits, deleted strains and probe sets, settings,
 renames and deleted sessions (for 30 seconds); inside a text field Cmd+Z stays the field's own.
 
-![Lab: Grow, with a character that took](docs/screenshots/lab-grow.png)
+![Lab: Find, with a new character](docs/screenshots/lab-grow.png)
 
 A dose of `L22N4296+0.6` adds 0.6 times the typical size of the residual stream after layer 22, along that
 neuron's output direction, at every token. On Qwen3.5 and Bonsai 0.5 to 1.0 is the useful range, and past about 1.5
@@ -225,12 +225,12 @@ neuronary.org's format plus clamps, e.g. `L22N4296+0.6 L7N8842+0.4`. A vector sh
 strength: `strength * typical residual size * u`, with `u` stored as base64 of its float32 values, added to that layer's
 output at every token. It mixes with neuron doses.
 
-Ready example (Qwen3.5 4B): open the Lab and press Try the example, or do it by hand: load Qwen3.5 4B, put
+Ready example (Qwen3.5 4B): pick Surprise in Examples and press Try in Compare, or do it by hand: load Qwen3.5 4B, put
 `L22N4296+0.6` in the mix and Compare on "What is the capital of Australia?". One neuron out of about 300,000, and
-everything is a surprise. From there the app leads on to a character from the Field Guide. Numbers for each entry are
-in the guide itself; this one is 135 of 144 replies on held-out prompts, judged for staying on it and reading as text.
+everything is a surprise. Numbers for each entry are in Examples; this one is 36 of 48 test replies in a chat, and was
+135 of 144 short replies on held-out prompts in the search, judged for staying on it and reading as text.
 
-### Growing a character
+### Making a new character
 
 Type one sentence: "a lighthouse keeper", "a very sleepy cat". What happens next, on the loaded model:
 
@@ -268,11 +268,10 @@ Settings.
 Saved as a strain, a recipe is a model in the chat and eval pickers. Strains run on the Lab's copy of the base model,
 one request at a time (44 tok/s on the 4B), so parallel eval cases on a strain queue instead of batching. A strain
 always runs with thinking off, no system prompt, and the temperature, top_p and repeat penalty its numbers were measured
-with: vectors on Qwen and neurons use repeat penalty 1.1, LFM3 vectors none. Field Guide and grown strains also stop at 300 tokens. Through a real
-chat session on Qwen3.5 4B, 24 replies each by the automatic rules, Surprise! held in 24 and The Bard in 23 of the first
+with: vectors on Qwen and neurons use repeat penalty 1.1, LFM3 vectors none. Example and new-character strains also stop at 300 tokens. Through a real
+chat session on Qwen3.5 4B, 24 replies each by the automatic rules, Surprise held in 24 and Shakespeare in 23 of the first
 120 tokens, in line with 135 and 137 of 144 in the search. Longer replies loop more: 21 and 22 of 24 still read as text at
-about 300 tokens, 20 and 16 at full length. That is why a Field Guide entry shows two rates: In Compare for short replies,
-In a chat for replies up to 300 tokens. What leads the guide is what holds in a chat.
+about 300 tokens, 20 and 16 at full length. That is why Examples shows the rate at up to 300 tokens.
 
 ![A chat with a strain](docs/screenshots/lab-strain-chat.png)
 
@@ -291,7 +290,7 @@ clean single-neuron concept in a first try (best scores about half of Qwen's, an
 the examples are on Qwen and LFM3. Not supported: mixture-of-experts models and models with no gated MLP the Lab knows.
 
 Prepared sets live in `apps/backend/scripts/lab_sets.json`; each one is kept only because it found a neuron that writes
-its word on Qwen3.5 4B. The Field Guide is `apps/backend/scripts/field_guide.json` and the word tables are
+its word on Qwen3.5 4B. Examples is `apps/backend/scripts/field_guide.json` and the word tables are
 `apps/backend/scripts/lens/`, generated from the search's `research/personas/suite.json` with
 `node scripts/gen-field-guide.ts`.
 

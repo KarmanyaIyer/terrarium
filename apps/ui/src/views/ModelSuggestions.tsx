@@ -41,7 +41,7 @@ export function GetExampleModel({ small }: { small?: boolean }) {
   const suggestion = useSuggestions().find((s) => s.repo === EXAMPLE_REPO);
   const { starting, running, start } = useDownload(EXAMPLE_REPO);
   const pct = running?.bytesTotal ? Math.round((running.bytesDone / running.bytesTotal) * 100) : 0;
-  if (running) return <span className="dim num">Downloading Qwen3.5 4B, {pct}%</span>;
+  if (running) return <span className="num">Downloading Qwen3.5 4B, {pct}%</span>;
   return (
     <button className={`btn${small ? " sm" : ""}`} disabled={starting} title="The example runs on Qwen3.5 4B" onClick={() => void start()}>
       {starting ? <Loader2 className="spin" /> : <Download />} Get Qwen3.5 4B{suggestion?.sizeBytes ? `, ${fmtBytes(suggestion.sizeBytes)}` : ""}
@@ -57,7 +57,7 @@ export function DownloadRow({ d, onDismiss }: { d: ModelDownload; onDismiss: () 
       <div className="dl-bar">
         <span style={{ width: `${pct}%` }} />
       </div>
-      <span className="num dim">
+      <span className="num">
         {fmtBytes(d.bytesDone)} / {fmtBytes(d.bytesTotal)}
       </span>
       {d.status === "running" ? (
@@ -85,7 +85,7 @@ function SuggestionRow({ s, primary }: { s: ModelSuggestion; primary: boolean })
     <div className="sugg">
       <span className="sugg-main">
         <span className="strong">{s.name}</span>
-        <span className="dim truncate" title={s.detail ?? s.note}>
+        <span className="dim2 truncate" title={s.detail ?? s.note}>
           {s.note}
         </span>
       </span>
@@ -94,14 +94,14 @@ function SuggestionRow({ s, primary }: { s: ModelSuggestion; primary: boolean })
           <span className="dl-bar sugg-bar">
             <span style={{ width: `${pct}%` }} />
           </span>
-          <span className="num dim sugg-size">{fmtBytes(running.bytesDone)}</span>
+          <span className="num sugg-size">{fmtBytes(running.bytesDone)}</span>
           <button className="btn sm ghost" onClick={() => void act("Cancel download", (b) => b.cancelDownload(running.id))}>
             <X /> Cancel
           </button>
         </>
       ) : (
         <>
-          <span className="num dim sugg-size">{s.sizeBytes ? fmtBytes(s.sizeBytes) : ""}</span>
+          <span className="num sugg-size">{s.sizeBytes ? fmtBytes(s.sizeBytes) : ""}</span>
           <button className={`btn sm${primary ? " primary" : ""}`} disabled={starting} onClick={() => void start()}>
             {starting ? <Loader2 className="spin" /> : <Download />} {starting ? "Checking" : "Download"}
           </button>

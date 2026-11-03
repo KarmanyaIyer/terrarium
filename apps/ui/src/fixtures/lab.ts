@@ -56,7 +56,7 @@ import { format, isNeuron, nid, sameRef } from "../lib/recipe";
 const FIXTURE_SETTINGS: LabStrainSettings = { temperature: 0.7, topP: 0.95, repeat: 1.1 };
 
 const GUIDE_MODEL = "Qwen3.5-4B-MLX-4bit";
-/** A small Field Guide: the example's neuron and a character, enough to walk the page. */
+/** A small set of examples: the example's neuron and a character, enough to walk the page. */
 const FIXTURE_GUIDE: LabFieldGuide = {
   date: "2026-11-02",
   models: [{ modelId: GUIDE_MODEL, name: "Qwen3.5 4B", repo: "mlx-community/Qwen3.5-4B-MLX-4bit" }],
@@ -71,7 +71,7 @@ const FIXTURE_GUIDE: LabFieldGuide = {
       featured: true,
       mix: [{ kind: "vector", id: "v_bard", name: "The Bard", layer: 8, strength: 1, u: btoa(String.fromCharCode(...new Uint8Array(2560 * 4))) }],
       settings: { temperature: 0.7, topP: 0.95, repeat: null },
-      rate: "In a chat, with replies up to 300 tokens: 38 of 48 stayed in character and readable, one judge. In Compare, with short replies on prompts the search never saw: 137 of 144.",
+      rate: "38 of 48 test replies (6 prompts, 8 seeds, up to 300 tokens)",
       measured: { n: 144, joint: 0.951, concept: 1, coherent: 0.951, chat: { n: 48, joint: 0.792, concept: 1, coherent: 0.792 } },
       unconfirmed: false,
       prompt: "How do vaccines work?",
@@ -86,7 +86,7 @@ const FIXTURE_GUIDE: LabFieldGuide = {
       featured: true,
       mix: [{ layer: 22, neuron: 4296, mode: "dose", value: 0.6 }],
       settings: { temperature: 0.7, topP: 0.95, repeat: 1.1 },
-      rate: "In a chat, with replies up to 300 tokens: 41 of 48 stayed in character and readable, one judge. In Compare, with short replies on prompts the search never saw: 135 of 144.",
+      rate: "41 of 48 test replies (6 prompts, 8 seeds, up to 300 tokens)",
       measured: { n: 144, joint: 0.938, concept: 1, coherent: 0.938, chat: { n: 48, joint: 0.854, concept: 1, coherent: 0.854 } },
       unconfirmed: false,
       prompt: "What is the capital of France?",

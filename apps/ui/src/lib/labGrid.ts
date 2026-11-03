@@ -116,7 +116,7 @@ export function suggestWords(tokens: string[], max = 6): string[] {
 
 export interface GridSummary {
   n: number;
-  ok: number; // reads fine
+  ok: number; // is normal
   odd: number;
   loop: number;
   broken: number; // word salad, or stopped at once

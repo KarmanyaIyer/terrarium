@@ -413,7 +413,7 @@ test("grow runs through, reports stages, yields the model, and cancels", { skip 
   assert.equal(Buffer.from(r.vector.u, "base64").length, health.facts!.dModel * 4);
   // Random weights never come out in character, and the result has to say so.
   assert.equal(r.verdict.took, "no");
-  assert.match(r.verdict.text, /didn't take/);
+  assert.match(r.verdict.text, /Didn't work/);
   assert.equal(r.replies.length, 2);
   assert.ok(r.peakBytes > 0);
   // The vector it made is a recipe like any other.

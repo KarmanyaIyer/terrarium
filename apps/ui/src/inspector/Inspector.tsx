@@ -30,7 +30,6 @@ function EnvSwitcher({ envId }: { envId: string | null }) {
       <button ref={pop.ref} className="insp-env" onClick={pop.toggle} title="Enclosure shown in the inspector">
         {env ? (
           <>
-            <span className={`dot ${env.status}`} />
             <span className="truncate">{env.name}</span>
             <EnvChip type={env.type} />
             <NetIcon mode={env.network} />
@@ -51,11 +50,12 @@ function EnvSwitcher({ envId }: { envId: string | null }) {
                 openEnv(e.id, useStore.getState().inspectorTab);
               }}
             >
-              <span className={`dot ${e.status}`} />
               <span className="truncate" style={{ flex: 1 }}>
                 {e.name}
               </span>
-              <span className="dim">{e.type === "vm" ? "VM" : "SIM"}</span>
+              <span className="dim">
+                {e.type === "vm" ? "VM" : "SIM"}, {e.status}
+              </span>
             </button>
           ))}
         </div>

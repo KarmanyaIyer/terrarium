@@ -94,11 +94,7 @@
   gap: 6px;
   min-width: 0;
 }
-.sh-sep {
-  flex: none;
-  color: var(--fg-4);
-}
-/* the chain stays on one line and the env name truncates first; on a narrow pane it wraps without chevrons */
+/* the chain stays on one line and the env name truncates first; on a narrow pane it wraps */
 .sh-row.controls > .sh-part:not(:last-child) {
   flex: none;
 }
@@ -113,12 +109,12 @@
 .hdr-btn.env .truncate {
   min-width: 40px;
 }
+.hdr-btn.env > :not(.truncate) {
+  flex: none;
+}
 @container session (max-width: 680px) {
   .sh-row.controls {
     flex-wrap: wrap;
-  }
-  .sh-sep {
-    display: none;
   }
 }
 
@@ -671,16 +667,6 @@
 .blk.call .blk-head {
   cursor: default;
 }
-.call-glyph {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--c-model);
-  flex: none;
-}
-.blk.call.live .call-glyph {
-  animation: tl-breathe 1.2s ease-in-out infinite;
-}
 .blk-model {
   border: 0;
   background: transparent;
@@ -701,39 +687,33 @@
   white-space: nowrap;
   overflow: hidden;
   min-width: 0;
+  color: var(--fg-2);
 }
 .live-count {
   color: var(--accent);
   font-weight: 500;
 }
+/* the spread paints the selection past the text without moving it */
 .blk.selected {
-  position: relative;
-}
-.blk.selected::before {
-  content: "";
-  position: absolute;
-  left: -10px;
-  top: 6px;
-  bottom: 8px;
-  width: 2.5px;
-  border-radius: 2px;
-  background: var(--accent-hi);
+  background: var(--accent-wash);
+  box-shadow: 0 0 0 6px var(--accent-wash);
+  border-radius: 1px;
 }
 .call-pending {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 0 0 16px;
+  padding: 6px 0 0;
   font-size: var(--fs-sm);
 }
 .call-text {
-  padding: 4px 0 0 16px;
+  padding: 4px 0 0;
   font-size: var(--fs-lg);
   line-height: 1.55;
   max-width: 80ch;
 }
 .call-toolcall {
-  margin: 6px 0 0 16px;
+  margin: 6px 0 0;
   font-size: var(--fs-sm);
   word-break: break-all;
 }
@@ -772,7 +752,7 @@
   line-height: 1.5;
 }
 .call-error {
-  margin: 6px 0 0 16px;
+  margin: 6px 0 0;
   color: var(--err-text);
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
@@ -793,7 +773,7 @@
 }
 
 .thinking {
-  margin: 4px 0 0 16px;
+  margin: 4px 0 0;
 }
 .thinking-head {
   display: flex;
@@ -836,7 +816,7 @@
 }
 
 .repair {
-  margin: 6px 0 0 16px;
+  margin: 6px 0 0;
   font-size: var(--fs-sm);
 }
 .repair-head {
@@ -946,11 +926,7 @@
 
 /* tool */
 .blk.tool {
-  margin-left: 16px;
   padding: 6px 0 8px;
-}
-.blk.tool.selected::before {
-  left: -26px;
 }
 .blk.tool.k-bash {
   --tool-c: var(--c-bash);
@@ -1499,15 +1475,6 @@
 }
 
 /* timing shows when you look at a call; the numbers that matter stay */
-.call-extra {
-  opacity: 0;
-  transition: opacity 80ms linear;
-}
-.blk.call:hover .call-extra,
-.blk.call.selected .call-extra,
-.blk.call:focus-within .call-extra {
-  opacity: 1;
-}
 .prompt-row-head {
   appearance: none;
   width: 100%;

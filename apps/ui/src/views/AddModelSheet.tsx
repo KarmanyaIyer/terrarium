@@ -77,7 +77,7 @@ export function AddModelSheet({ onClose }: { onClose: () => void }) {
             <input
               className="input mono"
               autoFocus
-              placeholder="owner/name or huggingface.co URL"
+              placeholder="owner/name or huggingface.co URL (MLX builds only)"
               value={repo}
               spellCheck={false}
               onChange={(e) => {
@@ -89,7 +89,6 @@ export function AddModelSheet({ onClose }: { onClose: () => void }) {
               {checking && <Loader2 className="spin" />} Check
             </button>
           </div>
-          <span className="dim2 am-hint">MLX builds only. Checked before anything downloads.</span>
 
           {check ? (
             <CheckResult c={check} />
@@ -101,13 +100,13 @@ export function AddModelSheet({ onClose }: { onClose: () => void }) {
                 return (
                   <button type="button" key={s.repo} className="am-sugg-row" title={`${s.repo}${s.detail ? `\n${s.detail}` : ""}`} onClick={() => void inspect(s.repo)}>
                     <span className="strong">{s.name}</span>
-                    <span className="dim truncate">{s.note}</span>
-                    <span className="num dim">{s.sizeBytes ? fmtBytes(s.sizeBytes) : ""}</span>
-                    {have ? <span className="chip ok">installed</span> : <span className="am-sugg-go">Check</span>}
+                    <span className="dim2 truncate">{s.note}</span>
+                    <span className="num">{s.sizeBytes ? fmtBytes(s.sizeBytes) : ""}</span>
+                    {have ? <span className="dim2">installed</span> : <span className="am-sugg-go">Check</span>}
                   </button>
                 );
               })}
-              {!suggestions.length && <span className="dim2">Loading</span>}
+              {!suggestions.length && <span>Loading</span>}
             </div>
           )}
         </div>
@@ -143,18 +142,18 @@ function CheckResult({ c }: { c: ModelCheck }) {
       <div className="am-check-head">
         <span className="strong mono">{c.repo}</span>
         {c.ok ? (
-          <span className="chip ok">
-            <Check size={10} /> can load
+          <span className="ok-text am-verdict">
+            <Check size={12} /> Can load
           </span>
         ) : (
-          <span className="chip err">can't load</span>
+          <span className="err-text am-verdict">Can't load</span>
         )}
-        {c.installed && <span className="chip">already installed</span>}
+        {c.installed && <span className="dim2">Already installed</span>}
       </div>
       <dl className="am-facts">
         <dt>Download</dt>
         <dd className="num" title={exactBytes(c.totalBytes)}>
-          {fmtBytes(c.totalBytes)} <span className="dim2">in {c.files} files</span>
+          {fmtBytes(c.totalBytes)}, {c.files} files
         </dd>
         <dt>Lands in</dt>
         <dd className="mono">models/{c.dirName}</dd>
@@ -163,10 +162,8 @@ function CheckResult({ c }: { c: ModelCheck }) {
         <dt>Loader</dt>
         <dd>
           {c.loader ?? "none"}{" "}
-          <span className="dim2">
-            (mlx-lm {c.versions.mlxLm}
-            {c.versions.mlxVlm ? `, mlx-vlm ${c.versions.mlxVlm}` : ""})
-          </span>
+          (mlx-lm {c.versions.mlxLm}
+          {c.versions.mlxVlm ? `, mlx-vlm ${c.versions.mlxVlm}` : ""})
         </dd>
         {c.quant && (
           <>

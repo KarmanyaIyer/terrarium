@@ -4,7 +4,6 @@ import type { CreateEnvRequest, EnvFacts, EnvSummary, EnvType, NetworkMode, Snap
 import { act, openEnv, useStore } from "../state/store";
 import { fmtBytes, relTime } from "../lib/format";
 import { Hint, Kbd, Segmented, Switch } from "../components/ui";
-import { NetIcon } from "../components/Sidebar";
 import { EnvCompare, FIELD_TIP, NET_ALWAYS, NET_TIP } from "../lib/explain";
 import { busyReason } from "../lib/envuse";
 import { newSession, nextEnvName } from "../lib/actions";
@@ -179,12 +178,12 @@ function Sheet({ onClose }: { onClose: () => void }) {
                 <b>
                   {t === "vm" ? <Box size={14} /> : <Terminal size={14} />} {t === "vm" ? "Linux VM" : "Simulated shell"}
                 </b>
-                <span className="dim">{t === "vm" ? "Real Linux: installs, compilers, tests." : "Instant and light: files and common commands."}</span>
+                <span className="dim2">{t === "vm" ? "Real Linux with its own kernel. Installs and compilers work." : "Bash interpreter, files in memory. No installs or compilers."}</span>
               </button>
             ))}
           </div>
           <details className="env-compare-more">
-            <summary>Compare in detail</summary>
+            <summary>Compare</summary>
             <EnvCompare highlight={type} />
           </details>
 
@@ -226,7 +225,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
                     ))}
                   </select>
                   {srcBusy && (
-                    <span className="dim truncate" title={`Busy: ${srcBusy}`}>
+                    <span className="warn-text truncate" title={`Busy: ${srcBusy}`}>
                       busy: {srcBusy}
                     </span>
                   )}
@@ -251,10 +250,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
             <Hint tip={NET_ALWAYS}>
               <span>Network</span>
             </Hint>
-            <div className="form-row">
-              <Segmented<NetworkMode> value={network} onChange={setNetwork} ariaLabel="Network mode" options={NET_OPTS} />
-              <NetIcon mode={network} size={13} />
-            </div>
+            <Segmented<NetworkMode> value={network} onChange={setNetwork} ariaLabel="Network mode" options={NET_OPTS} />
 
             {type === "vm" ? (
               <>
@@ -317,7 +313,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
               </>
             )}
 
-            <span title="Memory this enclosure takes from the Mac while it runs">On this Mac</span>
+            <span title="Memory this enclosure takes from the Mac while it runs">Mac memory</span>
             <MemImpact adds={adds} free={free} total={total} vm={type === "vm"} />
           </div>
 
@@ -352,7 +348,7 @@ function MemImpact({ adds, free, total, vm }: { adds: number; free?: number; tot
   const pct = (n: number) => `${Math.min(100, (n / total) * 100)}%`;
   return (
     <div className="mem-impact">
-      <div className="mem-impact-bar" title={`In use ${fmtBytes(used)}, this env ${fmtBytes(adds)}, free ${fmtBytes(free)}`}>
+      <div className="mem-impact-bar" title={`In use ${fmtBytes(used)}, this enclosure ${fmtBytes(adds)}, free ${fmtBytes(free)}`}>
         <span className="mi-used" style={{ width: pct(used) }} />
         <span className={`mi-add${vm ? " vm" : " sim"}${over ? " over" : ""}`} style={{ width: pct(adds) }} />
       </div>
@@ -360,7 +356,7 @@ function MemImpact({ adds, free, total, vm }: { adds: number; free?: number; tot
         {vm ? "" : "~"}
         {fmtBytes(adds)} while running
       </span>
-      <span className={`num ${over ? "err-text" : "dim"}`}>{over ? `only ${fmtBytes(free)} free` : `${fmtBytes(free)} free now`}</span>
+      <span className={over ? "num err-text" : "num"}>{over ? `only ${fmtBytes(free)} free` : `${fmtBytes(free)} free now`}</span>
     </div>
   );
 }
@@ -368,7 +364,7 @@ function MemImpact({ adds, free, total, vm }: { adds: number; free?: number; tot
 function FactsPreview({ facts, from, inherited }: { facts: EnvFacts; from: EnvSummary; inherited: boolean }) {
   return (
     <div className="facts-preview">
-      <div className="facts-preview-head dim">{inherited ? `Copied from ${from.name}` : `Base image, as gathered in ${from.name}`}</div>
+      <div className="facts-preview-head">{inherited ? `Copied from ${from.name}` : `Base image, read from ${from.name}`}</div>
       <dl className="kv facts">
         <dt>Isolation</dt>
         <dd>{facts.isolation}</dd>
@@ -377,7 +373,7 @@ function FactsPreview({ facts, from, inherited }: { facts: EnvFacts; from: EnvSu
             <dt>OS</dt>
             <dd>
               {facts.os}
-              {facts.kernel ? <span className="dim"> kernel {facts.kernel}</span> : null}
+              {facts.kernel ? <>, kernel {facts.kernel}</> : null}
             </dd>
           </>
         )}

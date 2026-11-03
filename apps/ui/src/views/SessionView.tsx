@@ -1,7 +1,7 @@
 import { deleteSession, patchEnv, patchSession as patchSessionUndoable } from "../state/appUndo";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronDown, ChevronRight, ChevronUp, PanelRight, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, PanelRight, Trash2 } from "lucide-react";
 import type { EnvSummary, NetworkMode, SessionSummary, UpdateSessionRequest } from "@terrarium/shared";
 import { openEnv, openView, setPref, useStore } from "../state/store";
 import { derive, itemForSelection, type Item } from "../lib/trace";
@@ -9,7 +9,7 @@ import { fmtInt, fmtMs, fmtTok, plural } from "../lib/format";
 import { ModelPicker } from "../components/ModelPicker";
 import { Hint, Popover, Switch, usePop } from "../components/ui";
 import { HARNESS, HarnessTip, NET_TIP, harnessName } from "../lib/explain";
-import { EnvChip, NetIcon } from "../components/Sidebar";
+import { EnvChip } from "../components/Sidebar";
 import { evalOwner } from "../lib/envuse";
 import { Timeline } from "./session/Timeline";
 import { CallBlock, RowBlock, ToolBlock, UserBlock } from "./session/Blocks";
@@ -25,7 +25,7 @@ function HarnessPicker({ s }: { s: SessionSummary }) {
   const label = (
     <>
       <span className="dim">prompt</span> {harnessName(s.harness)}
-      {s.customPrompt && <span className="chip accent" title="This session sends its own system prompt">custom prompt</span>}
+      {s.customPrompt && <span className="dim2" title="This session sends its own system prompt">custom</span>}
     </>
   );
   if (s.evalRunId)
@@ -125,7 +125,7 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
           </button>
         )}
         {/* whole items wrap onto a hidden second line instead of being cut mid-word; nothing to count before the first call */}
-        {stats.calls > 0 && <span className="sh-stats num dim">
+        {stats.calls > 0 && <span className="sh-stats num dim2">
           <span>{plural(stats.calls, "turn")}</span>
           {s.envId || stats.tools ? <span>{plural(stats.tools, "tool call")}</span> : null}
           {stats.errors ? <span className="err-text" title="Tool calls with a non-zero exit or error, plus failed model calls">{stats.errors} failed</span> : null}
@@ -161,28 +161,25 @@ function Header({ s, stats }: { s: SessionSummary; stats: ReturnType<typeof deri
           )}
         </span>
         <span className="sh-part">
-          <ChevronRight size={12} className="sh-sep" aria-hidden />
           <HarnessPicker s={s} />
         </span>
         <span className="sh-part">
-          <ChevronRight size={12} className="sh-sep" aria-hidden />
         {env ? (
           <Hint tip={<EnvTip env={env} />} width={320} className="sh-env-hint">
             <button className="hdr-btn env" onClick={() => openEnv(env.id, "env")}>
-              <span className={`dot ${env.status}`} />
               <span className="truncate">{env.name}</span>
               <EnvChip type={env.type} />
+              {env.status !== "stopped" && env.status !== "running" && <span className={env.status === "error" ? "err-text" : "dim2"}>{env.status}</span>}
             </button>
           </Hint>
         ) : (
-          <span className="hdr-btn static dim" title="Chat-only: no enclosure, no tools">
+          <span className="hdr-btn static" title="Chat-only: no enclosure, no tools">
             no enclosure
           </span>
         )}
         {env && (s.evalRunId || evalOwner(env)) && (
           <span className="hdr-btn static" title={!s.evalRunId && evalOwner(env) ? `Read-only while ${evalOwner(env)!.reason}` : undefined}>
-            <NetIcon mode={env.network} />
-            <span className="dim">network</span> {env.network}
+            <span className="dim">network</span> {NET_CHOICES.find((c) => c.value === env.network)!.label}
           </span>
         )}
         {env && !s.evalRunId && !evalOwner(env) && <NetPicker env={env} />}
@@ -206,7 +203,6 @@ function NetPicker({ env }: { env: EnvSummary }) {
     <>
       <Hint tip={pop.open ? null : NET_TIP[env.network]} width={320} className="sh-net-hint">
         <button ref={pop.ref} className="hdr-btn" aria-label="Network mode" onClick={pop.toggle}>
-          <NetIcon mode={env.network} />
           <span className="dim">network</span> {cur.label}
           <ChevronDown size={12} className="dim" />
         </button>
@@ -244,9 +240,7 @@ function EnvTip({ env }: { env: EnvSummary }) {
         {env.name} <span className="hint-k">{env.type === "vm" ? "Linux VM" : "Simulated shell"}</span>
       </span>
       <div className="hint-line">{env.facts?.isolation ?? (env.type === "vm" ? "Linux micro-VM" : "Simulated shell, not a real OS")}</div>
-      <div className="hint-line hint-k" style={{ marginTop: 6 }}>
-        Enclosure = where the agent's tool calls run, with its own files and network policy. Click to inspect it.
-      </div>
+      {env.statusDetail && <div className="hint-line">{env.statusDetail}</div>}
     </>
   );
 }

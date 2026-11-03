@@ -119,7 +119,7 @@ function MemoryBar() {
             <span>{fmtBytes(free)}</span>
           </div>
           <div className="tip-row" style={{ marginTop: 4 }}>
-            <span>oMLX vs budget</span>
+            <span>oMLX vs ceiling</span>
             <span className={overBudget ? "err-text" : undefined}>
               {fmtBytes(infBytes)} / {fmtBytes(budget.budgetBytes, 0)}
             </span>
@@ -157,11 +157,11 @@ function MemoryBar() {
           })}
         </div>
         {budgetX != null && (
-          <div className={`membar-budget${overBudget ? " over" : ""}`} style={{ left: `${budgetX}%` }} title={`oMLX budget ${fmtBytes(budget.budgetBytes, 0)}`} />
+          <div className={`membar-budget${overBudget ? " over" : ""}`} style={{ left: `${budgetX}%` }} title={`Memory ceiling ${fmtBytes(budget.budgetBytes, 0)}`} />
         )}
       </div>
       <div className="membar-text num" title={`${exactBytes(used)} used of ${exactBytes(total)}`}>
-        <span className={sample.system.pressure !== "normal" ? "warn-text" : "dim"}>{fmtBytes(free)} free</span>
+        <span className={sample.system.pressure !== "normal" ? "warn-text" : undefined}>{fmtBytes(free)} free</span>
       </div>
       <ChartTip tip={tip} />
     </div>
@@ -214,9 +214,10 @@ function InferenceControl() {
   return (
     <>
       <button ref={pop.ref} className="topbar-btn infer" onClick={pop.toggle} title={inf.status === "stopped" ? "oMLX serves the models. It starts by itself when a model is needed." : "oMLX serves the models"}>
-        {busy ? <Loader2 className="spin" size={12} /> : <span className={`dot ${inf.status === "ready" ? "ready" : inf.status === "error" ? "error" : ""}`} />}
-        <span>{inf.status === "ready" && loaded.length ? (loaded.length === 1 ? loaded[0]!.name : `${loaded.length} models`) : "Model server"}</span>
-        {inf.status !== "ready" && inf.status !== "stopped" && <span className="dim">{inf.status}</span>}
+        {busy && <Loader2 className="spin" size={12} />}
+        <span className={inf.status === "error" ? "err-text" : undefined}>
+          {inf.status === "ready" && loaded.length ? (loaded.length === 1 ? loaded[0]!.name : `${loaded.length} models`) : `Model server ${inf.status === "stopped" ? "off" : inf.status}`}
+        </span>
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} align="end" width={290}>
         <div className="pop-pad">
@@ -224,7 +225,7 @@ function InferenceControl() {
             <dt>Status</dt>
             <dd>
               {inf.status}
-              {inf.detail ? <span className="dim"> {inf.detail}</span> : null}
+              {inf.detail ? <>, {inf.detail}</> : null}
             </dd>
             <dt>Version</dt>
             <dd>{inf.version ?? "-"}</dd>
@@ -284,8 +285,7 @@ function ConnControl() {
   return (
     <>
       <button ref={pop.ref} className="topbar-btn" onClick={pop.toggle} title="Backend connection">
-        <span className={`dot ${conn === "open" ? (fixtures ? "busy" : "ready") : conn === "connecting" ? "starting" : "error"}`} />
-        <span className="dim2">{fixtures ? "fixtures" : conn === "open" ? backend?.label : conn}</span>
+        <span className={!fixtures && conn !== "open" && conn !== "connecting" ? "err-text" : undefined}>{fixtures ? "Fixtures" : conn === "open" ? backend?.label : `Backend ${conn}`}</span>
       </button>
       <Popover anchor={pop.ref} open={pop.open} onClose={pop.close} align="end" width={300}>
         <div className="pop-pad">
@@ -295,7 +295,7 @@ function ConnControl() {
             <dt>Status</dt>
             <dd>
               {conn}
-              {connDetail ? <span className="dim"> {connDetail}</span> : null}
+              {connDetail ? <>, {connDetail}</> : null}
             </dd>
           </dl>
           <div className="pop-actions">

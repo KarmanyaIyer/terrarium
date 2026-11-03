@@ -185,7 +185,8 @@ const count = (rate: number, n: number) => Math.round(rate * n);
 /** Its number, with what was counted. */
 function rateText(p: SuitePersona, chat: ChatPick | null): string {
   if (chat) return `${count(chat.run.joint, chat.run.n)} of ${chat.run.n} test replies (6 prompts, 8 seeds, up to ${STRAIN_MAX_TOKENS} tokens)`;
-  return `${count(p.numbers.joint, p.numbers.n)} of ${p.numbers.n} short test replies`;
+  const notes = [p.numbers.confirm_fresh_prompts ? `fresh prompts: ${count(p.numbers.confirm_fresh_prompts.joint, p.numbers.confirm_fresh_prompts.n)} of ${p.numbers.confirm_fresh_prompts.n}` : p.retuned_after_heldout ? "doses tuned on these prompts" : "", p.holds_on_both_judges ? "" : "one judge"].filter(Boolean);
+  return `${count(p.numbers.joint, p.numbers.n)} of ${p.numbers.n} short test replies${notes.length ? ` (${notes.join(", ")})` : ""}`;
 }
 
 /** Real strain chats loop more the longer they run: at about 300 tokens 21 and 22 of 24 replies still read as text, at full length 20 and 16 (TODO_28). */
@@ -291,7 +292,8 @@ export interface GuideBuild {
 }
 
 /** What a neuron pushes, by `L22N4296+`: the search's word lens. */
-export type LensTokens = Map<string, string[]>;
+/** Model, then neuron ref, then the words it writes. */
+export type LensTokens = Map<string, Map<string, string[]>>;
 
 export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] = [], lens: LensTokens = new Map()): GuideBuild {
   const dropped: GuideBuild["dropped"] = [];
@@ -322,7 +324,7 @@ export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] =
       best.set(key, p);
     }
   }
-  const rank = (model: string, name: string) => FEATURED.findIndex(([m, n]) => m === model && n === name);
+  const rank = (model: string, name: string) => FEATURED.findIndex(([m, n]) => m === model && (n === name || PLAIN[n]?.name === name));
   const specimens: LabSpecimen[] = [];
   const ids = new Set<string>();
   for (const p of best.values()) {
@@ -341,7 +343,7 @@ export function buildGuide(suite: Suite, read: ReadVector, judged: JudgedRow[] =
     }
     ids.add(id);
     const one = p.recipe.type === "neurons" && p.recipe.neurons === 1 ? p.recipe.pushes[0] : null;
-    const tokens = one ? lens.get(`L${one.layer}N${one.neuron}${one.dose < 0 ? "-" : "+"}`) : undefined;
+    const tokens = one ? lens.get(p.model)?.get(`L${one.layer}N${one.neuron}${one.dose < 0 ? "-" : "+"}`) : undefined;
     specimens.push({
       id,
       name,

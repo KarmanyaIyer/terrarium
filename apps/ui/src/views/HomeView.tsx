@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, ChevronRight, FlaskConical, Loader2, MessageSquare, Microscope, Plus, ShieldCheck, Sparkles, Terminal } from "lucide-react";
+import { Box, ChevronDown, ChevronRight, FlaskConical, Loader2, MessageSquare, Microscope, Play, Plus, ShieldCheck, Terminal } from "lucide-react";
 import type { EnvSummary, EvalRunSummary, Id, ModelInfo, NetworkMode, SessionSummary } from "@terrarium/shared";
 import { loadSuites, openEnv, openSession, openView, useStore } from "../state/store";
 import { ensureGuide, ensureLab, exampleSpecimen, runExample, useLab } from "../state/lab";
@@ -23,7 +23,7 @@ export function HomeView() {
   const hasModels = useStore((s) => s.models.some((m) => !m.strain));
   return (
     <div className="home">
-      <div className="home-scroll">{hasModels ? <Bench /> : <FirstModel />}</div>
+      <div className="home-scroll">{hasModels ? <Start /> : <FirstModel />}</div>
     </div>
   );
 }
@@ -34,23 +34,16 @@ function FirstModel() {
   const [adding, setAdding] = useState(false);
   return (
     <div className="first">
-      <div className="first-head">
-        <EnclosureArt network="off" type="vm" size={84} />
-        <div>
-          <h1 className="home-title">Add a model to start</h1>
-          <p className="first-lede">Terrarium runs small models on this Mac, sealed in enclosures, and records everything they do. Pick one to begin.</p>
-        </div>
-      </div>
+      <h1 className="home-title">Add a model to start</h1>
       <ModelSuggestions limit={3} onOther={() => setAdding(true)} />
-      <p className="first-next dim">Downloads come from Hugging Face. Next you'll give the model a task and watch it work.</p>
       {adding && <AddModelSheet onClose={() => setAdding(false)} />}
     </div>
   );
 }
 
-// ---------- the bench: a task, things to try, what's here ----------
+// ---------- a task, things to try, what's here ----------
 
-function Bench() {
+function Start() {
   const sessions = useStore((s) => s.sessions);
   const envs = useStore((s) => s.envs);
   const list = useMemo(
@@ -162,6 +155,7 @@ function TaskBox() {
           <span className="task-model-name" aria-hidden>
             {modelId ? modelName(models, modelId) : ""}
           </span>
+          <ChevronDown size={16} className="task-model-chev" aria-hidden />
         </span>{" "}
         a task
       </h1>
@@ -203,11 +197,11 @@ function TaskBox() {
             </select>
           </label>
           {placed ? (
-            <span className="task-net dim" title="You can change it once the session opens">
+            <span className="task-net" title="You can change it once the session opens">
               <NetIcon mode={network} /> {NET_WORD[network]}
             </span>
           ) : (
-            <span className="task-net dim">
+            <span className="task-net">
               <MessageSquare size={12} /> Replies only
             </span>
           )}
@@ -226,7 +220,7 @@ function TaskBox() {
         <VmSetupNote />
       ) : (
         <div className="task-try">
-          <span className="task-try-head">Or try one</span>
+          <span className="task-try-head">Try one</span>
           {starters(placed, !placed, strain).map((t) => (
             <button
               key={t}
@@ -296,7 +290,7 @@ function CompareModels() {
   return (
     <div className="exp">
       <h3>
-        <FlaskConical size={13} /> Which model does better?
+        <FlaskConical size={13} /> Evals
       </h3>
       {last ? (
         <button className="exp-data" onClick={() => openView({ kind: "evals", runId: last.id })} title="Open this run">
@@ -309,7 +303,7 @@ function CompareModels() {
             const done = t.pass + t.fail + t.error;
             return (
               <span key={id} className="exp-score">
-                <span className="truncate dim">{modelName(models, id)}</span>
+                <span className="truncate">{modelName(models, id)}</span>
                 <span className="num">
                   {t.pass}/{done}
                 </span>
@@ -324,7 +318,7 @@ function CompareModels() {
           })}
         </button>
       ) : (
-        <p className="dim">Same tasks, same grader, side by side.{suiteN ? ` ${suiteN} suites to pick from.` : ""}</p>
+        <p>{suiteN ? `${suiteN} suites, no runs yet` : "No runs yet"}</p>
       )}
       <div className="exp-actions">
         {gap ? (
@@ -333,12 +327,12 @@ function CompareModels() {
             onClick={() => openView({ kind: "evals", suiteId: gap.suiteId, pick: gap.model.id })}
             title={`${gap.model.name} hasn't run ${gap.suite}`}>
             <span className="truncate">
-              Try {gap.model.name} on {gap.suite}
+              Set up {gap.model.name} on {gap.suite}
             </span>
           </button>
         ) : (
           <button className="btn sm" onClick={() => openView({ kind: "evals" })}>
-            Compare models
+            Open Evals
           </button>
         )}
       </div>
@@ -357,7 +351,7 @@ function TestSandbox() {
   return (
     <div className="exp">
       <h3>
-        <ShieldCheck size={13} /> Can it get out?
+        <ShieldCheck size={13} /> Sandbox test
       </h3>
       {last && t ? (
         <button className="exp-data" onClick={() => openView({ kind: "evals", runId: last.id })} title="Open this run">
@@ -383,11 +377,11 @@ function TestSandbox() {
           </span>
         </button>
       ) : (
-        <p className="dim">{cases} attempts on your Mac's files, the model server, the LAN and a host token.</p>
+        <p>{cases} escape attempts, not run yet</p>
       )}
       <div className="exp-actions">
         <button className="btn sm" onClick={() => openView({ kind: "evals", suiteId: "boundary" })}>
-          {last ? "Test again" : "Test the sandbox"}
+          Open suite
         </button>
       </div>
     </div>
@@ -398,36 +392,43 @@ function SteerNeuron() {
   const lab = useLab((s) => s.lab);
   const example = useLab((s) => s.example);
   const strain = useStore((s) => s.models.find((m) => m.strain));
+  const strainN = useStore((s) => s.models.filter((m) => m.strain).length);
   const guide = useLab((s) => s.guide);
   useEffect(() => {
     void ensureGuide();
   }, []);
   const exampleModel = guide?.example.modelId ?? "Qwen3.5-4B-MLX-4bit";
   const ex = lab?.support.find((x) => x.modelId === exampleModel);
-  const specimen = lab?.status === "ready" ? lab.model?.name : undefined;
+  const labModel = lab?.status === "ready" ? lab.model?.name : undefined;
   // the latest steered reply from this app session; before any, a saved one from the example's recipe
   const run = useLab((s) => s.runs[0]);
-  const specimen0 = useLab(() => exampleSpecimen());
+  const exampleRecipe = useLab(() => exampleSpecimen());
   const quote = run
-    ? { dose: format(run.recipe.pushes), text: `${run.steered.text.replace(/\s+/g, " ").slice(0, 96)}...` }
-    : guide && specimen0
-      ? { dose: format(specimen0.mix), text: guide.example.quote.replace(/\*\*/g, "") }
+    ? { label: "Last reply", dose: format(run.recipe.pushes), text: `${run.steered.text.replace(/\s+/g, " ").slice(0, 96)}...` }
+    : guide && exampleRecipe
+      ? { label: "Example reply", dose: format(exampleRecipe.mix), text: guide.example.quote.replace(/\*\*/g, "") }
       : null;
   return (
     <div className="exp">
       <h3>
-        <Microscope size={13} /> What does one neuron do?
+        <Microscope size={13} /> Lab
       </h3>
+      <p>
+        {labModel ? `${labModel} loaded` : "No model loaded"}
+        {strainN ? `, ${plural(strainN, "strain")}` : ""}
+      </p>
       {quote && (
         <button className="exp-data exp-quote" onClick={() => openView({ kind: "lab" })} title={run ? "Your last steered reply. Open the Lab." : `A real reply to "${guide?.example.prompt}" with one neuron pushed. Open the Lab.`}>
-          <span>"{quote.text}"</span>
-          <span className="mono dim2 truncate">{quote.dose}</span>
+          <span className="exp-quote-text">"{quote.text}"</span>
+          <span className="exp-quote-dose truncate">
+            {quote.label}, <span className="mono">{quote.dose}</span>
+          </span>
         </button>
       )}
       <div className="exp-actions">
         {example ? (
           <span className="live-text truncate">{example.step}</span>
-        ) : specimen || strain ? (
+        ) : labModel || strain ? (
           <>
             <button className="btn sm" onClick={() => openView({ kind: "lab" })}>
               Open the Lab
@@ -447,7 +448,7 @@ function SteerNeuron() {
               void ensureLab().then(runExample);
             }}
           >
-            <Sparkles /> Try the example
+            <Play /> Run the example
           </button>
         ) : (
           <GetExampleModel small />
@@ -457,9 +458,10 @@ function SteerNeuron() {
   );
 }
 
-// ---------- enclosures on a shelf ----------
+// ---------- enclosures ----------
 
 const SHELF_LIMIT = 12;
+const NET_SHORT: Record<NetworkMode, string> = { off: "network off", registries: "registries only", web: "public web" };
 
 function Shelf({ envs }: { envs: EnvSummary[] }) {
   const sessions = useStore((s) => s.sessions);
@@ -481,11 +483,8 @@ function Shelf({ envs }: { envs: EnvSummary[] }) {
   return (
     <section className="home-sec">
       <div className="home-sec-head">
-        <Hint
-          tip="Where an agent's tool calls run, with its own files and network. The lid shows the network: shut, vented for package registries, lifted for the web. A dashed pane is a simulated shell, a solid one a real Linux VM. The plant grows with its sessions."
-          width={320}
-        >
-          <h2 className="hint-text">Enclosures</h2>
+        <Hint tip="Where an agent's tool calls run, with its own files and network.">
+          <h2>Enclosures</h2>
         </Hint>
         <span className="dim num">{envs.length}</span>
         <span className="blk-spacer" />
@@ -500,14 +499,14 @@ function Shelf({ envs }: { envs: EnvSummary[] }) {
       </div>
       <div className="shelf">
         {shown.map((e) => (
-          <Specimen key={e.id} env={e} n={activity.get(e.id)?.n ?? 0} live={activity.get(e.id)?.live ?? 0} />
+          <EnvTile key={e.id} env={e} n={activity.get(e.id)?.n ?? 0} live={activity.get(e.id)?.live ?? 0} />
         ))}
       </div>
     </section>
   );
 }
 
-function Specimen({ env, n, live }: { env: EnvSummary; n: number; live: number }) {
+function EnvTile({ env, n, live }: { env: EnvSummary; n: number; live: number }) {
   const inspecting = useStore((s) => s.inspectorEnvId === env.id && s.inspectorOpen && s.view.kind === "home");
   // the same leaning every time, so a shelf doesn't look stamped out
   const flip = env.id.charCodeAt(env.id.length - 1) % 2 === 0;
@@ -520,17 +519,20 @@ function Specimen({ env, n, live }: { env: EnvSummary; n: number; live: number }
       >
         <EnclosureArt network={env.network} type={env.type} sessions={n} live={live > 0} failed={env.status === "error"} flip={flip} />
         <span className="specimen-name truncate">{env.name}</span>
-        <span className="specimen-sub dim truncate">
+        <span className="specimen-sub truncate">
+          {env.type === "vm" ? "Linux VM" : "Simulated"}, {NET_SHORT[env.network]}
+        </span>
+        <span className="specimen-sub truncate">
           {env.statusDetail?.startsWith("Waiting") ? (
             <span className="warn-text">waiting for a slot</span>
           ) : live > 0 ? (
-            <span className="live-text">working</span>
+            "session running"
           ) : env.status === "error" ? (
             <span className="err-text">failed to start</span>
           ) : (
             <>
-              {env.status === "running" && <span className="dot running specimen-on" title="Running" />}
-              {n ? plural(n, "session") : "empty"}
+              {n ? plural(n, "session") : "no sessions"}
+              {env.status === "running" ? ", running" : ""}
             </>
           )}
         </span>
@@ -555,7 +557,7 @@ function Recent({ list }: { list: SessionSummary[] }) {
         <span className="blk-spacer" />
         {list.length > 5 && (
           <button className="cell-link recent-more" aria-expanded={all} onClick={() => setAll(!all)}>
-            <ChevronRight size={12} className={`tw${all ? " open" : ""}`} /> {all ? "Show fewer" : `All ${list.length}, with details`}
+            <ChevronRight size={12} className={`tw${all ? " open" : ""}`} /> {all ? "Show fewer" : `Show all ${list.length}`}
           </button>
         )}
       </div>
@@ -567,13 +569,19 @@ function Recent({ list }: { list: SessionSummary[] }) {
             const env = s.envId ? envs[s.envId] : undefined;
             return (
               <button key={s.id} className="recent-row" onClick={() => openSession(s.id)}>
-                <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : "idle"}`} />
                 <span className="truncate recent-title">{s.title}</span>
-                <span className="truncate dim recent-where">
+                <span className="truncate dim2 recent-where">
                   {env ? env.type === "vm" ? <Box size={11} /> : <Terminal size={11} /> : <MessageSquare size={11} />} {env?.name ?? "chat"}
                 </span>
-                <span className="truncate dim recent-model">{modelName(models, s.modelId)}</span>
-                {s.status === "running" ? <span className="live-text">running</span> : <Time ts={s.updatedAt} className="dim" />}
+                <span className="truncate dim2 recent-model">{modelName(models, s.modelId)}</span>
+                {s.status === "running" ? (
+                  <span>running</span>
+                ) : (
+                  <span>
+                    {s.status === "error" && <span className="err-text">error, </span>}
+                    <Time ts={s.updatedAt} className="dim" />
+                  </span>
+                )}
               </button>
             );
           })}
@@ -645,16 +653,13 @@ function SessionsTable({ list }: { list: SessionSummary[] }) {
                   {modelName(models, s.modelId)}
                 </button>
               </td>
-              <td className="dim" title={harnessLabel(s.harness)}>
+              <td className="dim2" title={harnessLabel(s.harness)}>
                 {harnessName(s.harness)}
               </td>
               <td className="r num">{fmtCtx(s.contextWindow)}</td>
               <td className="r num">{used != null ? fmtInt(used) : ""}</td>
               <td>
-                <span className={`status-cell ${s.status}`}>
-                  <span className={`dot ${s.status === "running" ? "live" : s.status === "error" ? "error" : ""}`} />
-                  {s.status}
-                </span>
+                <span className={s.status === "error" ? "err-text" : undefined}>{s.status}</span>
               </td>
               <td className="r">
                 <Time ts={s.updatedAt} className="dim" />

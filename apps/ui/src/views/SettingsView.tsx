@@ -2,7 +2,7 @@ import { updateSettings } from "../state/appUndo";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ChevronRight, FolderOpen, Loader2, RotateCw, Settings as SettingsIcon } from "lucide-react";
 import type { AppSettings, EnvType, HarnessProfile, NetworkMode, PathKey, ResourceBudgetSettings, SettingsInfo, UpdateSettingsRequest } from "@terrarium/shared";
-import { act, openView, toast, useStore } from "../state/store";
+import { act, toast, useStore } from "../state/store";
 import { useLab } from "../state/lab";
 import { forgetConnection } from "../api/connect";
 import { CONTEXT_CHOICES } from "../lib/memory";
@@ -84,7 +84,6 @@ function ResourceBudgetsSection({ settings, update }: { settings: AppSettings; u
       <button className="st-head st-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <ChevronRight size={13} className={`tw${open ? " open" : ""}`} />
         <h2>Resource limits</h2>
-        <span className="dim st-aside">What one worker or session may use</span>
       </button>
       {open && (
         <div className="st-grid">
@@ -122,11 +121,17 @@ function BudgetInput({ field, stored, update }: { field: BudgetField; stored: nu
   );
 }
 
-function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
+function Section({ title, tip, children, aside }: { title: string; tip?: string; children: ReactNode; aside?: ReactNode }) {
   return (
     <section className="st-section">
       <div className="st-head">
-        <h2>{title}</h2>
+        {tip ? (
+          <Hint tip={tip}>
+            <h2>{title}</h2>
+          </Hint>
+        ) : (
+          <h2>{title}</h2>
+        )}
         {aside}
       </div>
       <div className="st-grid">{children}</div>
@@ -146,7 +151,7 @@ function MemorySection({ settings, totalBytes, update }: { settings: AppSettings
   useEffect(() => setGb(Math.round(settings.memoryBudgetBytes / 1e9)), [settings.memoryBudgetBytes]);
   const over = useLab((s) => s.lab?.overCeiling);
   return (
-    <Section title="Models">
+    <Section title="Memory">
       <Label
         tip={
           <>
@@ -180,12 +185,6 @@ function MemorySection({ settings, totalBytes, update }: { settings: AppSettings
           <span className="warn-text">{over}</span>
         </>
       )}
-      <Label>Per-model defaults</Label>
-      <div className="st-row">
-        <button className="cell-link" onClick={() => openView({ kind: "models" })}>
-          Context, output cap and sampling are set per model in Models
-        </button>
-      </div>
     </Section>
   );
 }
@@ -269,7 +268,7 @@ function NewEnvSection({ settings, update }: { settings: AppSettings; update: Up
 
 function PromptsSection({ settings, update }: { settings: AppSettings; update: Update }) {
   return (
-    <Section title="System prompts" aside={<span className="dim st-aside">Edit from a session's Prompt tab</span>}>
+    <Section title="System prompts" tip="Edit from a session's Prompt tab">
       {HARNESS.map((h) => {
         const saved = settings.prompts[h.id];
         return (
@@ -288,15 +287,15 @@ function PromptRow({ id, saved, onReset }: { id: HarnessProfile; saved?: string;
         {saved != null ? (
           <>
             <Hint tip={<pre className="st-prompt-peek">{saved}</pre>} width={420}>
-              <span className="chip accent">saved default</span>
+              <span className="hint-text">Saved default</span>
             </Hint>
-            <span className="dim num">{saved.length.toLocaleString("en-US")} characters</span>
+            <span className="num">{saved.length.toLocaleString("en-US")} characters</span>
             <button className="btn sm ghost" onClick={onReset}>
               Use built-in
             </button>
           </>
         ) : (
-          <span className="dim">built-in</span>
+          <span>Built-in</span>
         )}
       </div>
     </>
@@ -311,7 +310,7 @@ function PathRow({ k, label, tip, path, bytes }: { k: PathKey; label: string; ti
         <span className="mono truncate selectable st-path" title={path}>
           {path ?? "…"}
         </span>
-        {bytes != null && <span className="num dim">{fmtBytes(bytes)}</span>}
+        {bytes != null && <span className="num">{fmtBytes(bytes)}</span>}
         <span className="blk-spacer" />
         {path && <CopyButton text={path} />}
         {path && (
@@ -331,7 +330,7 @@ function ClearRow({ d, onInfo }: { d: SettingsInfo["disk"][number]; onInfo: (i: 
       <Hint tip={d.clear}>
         <span>{d.label}</span>
       </Hint>
-      <span className="num dim">{fmtBytes(d.bytes)}</span>
+      <span className="num">{fmtBytes(d.bytes)}</span>
       <button
         className="btn sm"
         disabled={busy || !!d.clearBlocked || d.bytes === 0}
@@ -379,11 +378,11 @@ function StorageSection({ info, onInfo, onRefresh }: { info: SettingsInfo | null
               {data.map((d) => (
                   <span key={d.key} title={exactBytes(d.bytes)}>
                     <i className={`seg-${d.key}`} />
-                    {d.label} <span className="num dim">{fmtBytes(d.bytes)}</span>
+                    {d.label} <span className="num">{fmtBytes(d.bytes)}</span>
                   </span>
                 ))}
             </div>
-            <span className="dim num">{fmtBytes(info.freeDiskBytes)} free on this disk</span>
+            <span className="num">{fmtBytes(info.freeDiskBytes)} free on this disk</span>
             {data
               .filter((d) => d.clear)
               .map((d) => (
@@ -421,9 +420,8 @@ function AboutSection({ info }: { info: SettingsInfo | null }) {
       <Label tip="Local inference server, runs MLX models; loopback only, with a random API key">oMLX</Label>
       <span className="st-row">
         <span className="num">{inf.version ?? versions?.omlx}</span>
-        <span className={`dot ${inf.status === "ready" ? "ready" : inf.status === "error" ? "error" : ""}`} />
-        <span className="dim">{inf.status}</span>
-        {inf.pid != null && <span className="dim num">pid {inf.pid}</span>}
+        <span className={inf.status === "error" ? "err-text" : undefined}>{inf.status}</span>
+        {inf.pid != null && <span className="num">pid {inf.pid}</span>}
       </span>
       <Label tip="Micro-VM library (libkrun, QEMU fallback)">Gondolin</Label>
       <span className="num">{versions?.gondolin}</span>

@@ -342,40 +342,29 @@ kbd {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: var(--r-xs);
-  font-size: var(--fs-2xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: var(--fs-xs);
+  font-weight: 500;
   color: var(--fg-2);
-  background: var(--bg-active);
   white-space: nowrap;
   flex: none;
 }
 .chip.vm {
   color: var(--c-vm);
-  background: color-mix(in srgb, var(--c-vm) 13%, transparent);
 }
 .chip.sim {
   color: color-mix(in srgb, var(--c-sim) 80%, var(--fg-1));
-  background: color-mix(in srgb, var(--c-sim) 14%, transparent);
 }
 .chip.ok {
   color: var(--ok-text);
-  background: var(--ok-wash);
 }
 .chip.err {
   color: var(--err-text);
-  background: var(--err-wash);
 }
 .chip.warn {
   color: var(--warn-text);
-  background: var(--warn-wash);
 }
 .chip.accent {
   color: var(--accent);
-  background: var(--accent-wash);
 }
 
 .dot {

@@ -48,7 +48,7 @@ test("what ships: keepers no judge vetoed, without flagged or death-themed recip
   assert.match(rejected(persona({ name: "Big", recipe: { type: "neurons", neurons: 263, pushes: [] } }))!, /more than 64/);
   // One judge is allowed: it is labelled.
   const single = build([persona({ name: "Single", numbers: { concept: 1, coherent: 1, joint: 0.9, n: 144 }, holds_on_both_judges: false })]);
-  assert.match(single.guide.specimens.find((s) => s.name === "Single")!.rate, /One judge only/);
+  assert.match(single.guide.specimens.find((s) => s.name === "Single")!.rate, /one judge/);
 });
 
 test("one entry per character: the best variant, confirmed doses first", () => {
@@ -64,12 +64,12 @@ test("one entry per character: the best variant, confirmed doses first", () => {
 
 test("a retuned recipe is labelled until fresh prompts confirm it, and never leads", () => {
   const b = build([persona({ name: "Peer Reviewed", retuned_after_heldout: true })]);
-  const s = b.guide.specimens.find((x) => x.name === "Peer Reviewed")!;
+  const s = b.guide.specimens.find((x) => x.name === "Science")!;
   assert.equal(s.unconfirmed, true);
   assert.equal(s.featured, false, "Peer Reviewed is on the featured list, but not until it is confirmed");
-  assert.match(s.rate, /fresh prompts haven't confirmed/);
+  assert.match(s.rate, /doses tuned on these prompts/);
   const ok = build([persona({ name: "Peer Reviewed", retuned_after_heldout: true, numbers: { concept: 1, coherent: 1, joint: 0.9, n: 144, confirm_fresh_prompts: { n: 96, joint: 0.875 } } })]);
-  const fresh = ok.guide.specimens.find((x) => x.name === "Peer Reviewed")!;
+  const fresh = ok.guide.specimens.find((x) => x.name === "Science")!;
   assert.equal(fresh.unconfirmed, false);
   assert.equal(fresh.featured, true);
   assert.match(fresh.rate, /fresh prompts: 84 of 96/);
@@ -105,10 +105,10 @@ test("a vector ships as base64 of its float32, under its name", () => {
     },
   );
   assert.deepEqual(seen, ["v.safetensors:u8"]);
-  const s = b.guide.specimens.find((x) => x.name === "Clang")!;
+  const s = b.guide.specimens.find((x) => x.name === "Cursed Sword")!;
   const v = s.mix[0] as LabVector;
   assert.equal(v.kind, "vector");
-  assert.equal(v.name, "Clang");
+  assert.equal(v.name, "Cursed Sword");
   assert.equal(v.layer, 8);
   assert.equal(v.strength, 1.2);
   assert.deepEqual([...new Float32Array(new Uint8Array(Buffer.from(v.u, "base64")).buffer)].slice(0, 2), [1.5, -2]);
@@ -117,8 +117,8 @@ test("a vector ships as base64 of its float32, under its name", () => {
 
 test("the example block quotes a real reply, and the order leads with characters", () => {
   const b = build([persona({ name: "Clang" }), persona({ name: "Unlisted" })]);
-  assert.equal(b.guide.example.quote, "The capital is **Surprise**. It really is.");
-  assert.equal(b.guide.specimens[0].name, EXAMPLE.next, "the Bard first");
+  assert.equal(b.guide.example.quote, "The capital is Surprise. It really is.");
+  assert.equal(b.guide.specimens[0].name, EXAMPLE.next, "a character first");
   assert.equal(b.guide.specimens.at(-1)!.name, "Unlisted");
   assert.equal(b.guide.specimens.at(-1)!.featured, false);
   assert.throws(() => buildGuide({ date: "d", personas: [] } as unknown as Suite, () => new Float32Array()), /main example/);
@@ -168,16 +168,15 @@ test("both rates are labelled, and what leads is what holds in a chat", () => {
     [...run(`session-${idOf("clang")}`, 21), ...run(`session-${idOf("unlisted")}`, 44), ...run(`session-${idOf("gnorman")}`, 40)],
   );
   const of = (n: string) => b.guide.specimens.find((s) => s.name === n)!;
-  assert.match(of("Clang").rate, /In a chat, with replies up to 300 tokens: 21 of 48/);
-  assert.match(of("Clang").rate, /In Compare, with short replies on prompts the search never saw: 137 of 144/);
-  assert.equal(of("Clang").measured.chat!.joint, 0.438);
+  assert.match(of("Cursed Sword").rate, /21 of 48 test replies \(6 prompts, 8 seeds, up to 300 tokens\)/);
+  assert.equal(of("Cursed Sword").measured.chat!.joint, 0.438);
   assert.ok(0.438 < CHAT_FEATURE);
-  assert.equal(of("Clang").featured, false, "on the curated list, but it doesn't hold in a chat");
+  assert.equal(of("Cursed Sword").featured, false, "on the curated list, but it doesn't hold in a chat");
   assert.equal(of("Unlisted").featured, true, "not on the list, and holds in a chat");
-  assert.equal(of("Old Shell").featured, true, "no chat rate yet: the curated list still counts");
-  assert.match(of("Old Shell").rate, /Not measured in a chat yet/);
-  assert.equal(of("Old Shell").measured.chat, undefined);
-  assert.deepEqual(b.guide.specimens.filter((s) => s.featured).map((s) => s.name).slice(0, 2), ["Unlisted", "Gnorman"], "best in a chat first");
+  assert.equal(of("Ancient Tortoise").featured, true, "no chat rate yet: the curated list still counts");
+  assert.match(of("Ancient Tortoise").rate, /of 144 short test replies/);
+  assert.equal(of("Ancient Tortoise").measured.chat, undefined);
+  assert.deepEqual(b.guide.specimens.filter((s) => s.featured).map((s) => s.name).slice(0, 2), ["Unlisted", "Gnome"], "best in a chat first");
 });
 
 test("a chat run at another repeat setting only wins by a clear margin, and the rate says so", () => {
@@ -194,13 +193,12 @@ test("a chat run at another repeat setting only wins by a clear margin, and the 
     ],
   );
   const of = (n: string) => b.guide.specimens.find((s) => s.name === n)!;
-  assert.equal(of("Clang").settings.repeat, 1.1);
-  assert.equal(of("Clang").measured.chat!.joint, 0.833);
-  assert.match(of("Clang").rate, /40 of 48/);
-  assert.match(of("Clang").rate, /no repeat control: 137 of 144/, "the Compare number was measured without it");
-  assert.equal(of("Gnorman").settings.repeat, null, "one more reply isn't a reason to change it");
-  assert.equal(of("Gnorman").measured.chat!.joint, 0.833);
-  assert.equal(of("Ribbit").settings.repeat, 1.1, "the only chat run there is");
+  assert.equal(of("Cursed Sword").settings.repeat, 1.1);
+  assert.equal(of("Cursed Sword").measured.chat!.joint, 0.833);
+  assert.match(of("Cursed Sword").rate, /40 of 48/);
+  assert.equal(of("Gnome").settings.repeat, null, "one more reply isn't a reason to change it");
+  assert.equal(of("Gnome").measured.chat!.joint, 0.833);
+  assert.equal(of("Frog").settings.repeat, 1.1, "the only chat run there is");
 });
 
 test("reading a tensor from a safetensors file", () => {
@@ -237,8 +235,7 @@ test("the shipped guide follows the rules", () => {
     assert.ok(s.samples.length > 0, s.name);
     assert.doesNotMatch(`${s.name} ${s.line} ${s.rate}`, /[–—]/, "no em or en dashes in copy");
     assert.doesNotMatch(s.name, /memento|martyr|sacrific|just kidding|lover|big sleep/i);
-    assert.match(s.rate, /In Compare/);
-    assert.match(s.rate, /In a chat|Not measured in a chat/);
+    assert.match(s.rate, /^\d+ of \d+ /);
     if (s.measured.chat) assert.equal(s.featured, !s.unconfirmed && s.measured.chat.joint >= CHAT_FEATURE, s.name);
     for (const p of s.mix) {
       if (p.kind !== "vector") continue;
