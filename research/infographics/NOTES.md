@@ -1,23 +1,18 @@
-Infographics notes
-Date: 2026-11-03. Session: d3d0458e-476e-4572-b8b5-1641488495cf
+# Post images
 
-Both sides of each image use the same prompt, seed and settings (temperature 0.7, maxTokens 120, repeat 1.1). Only the mix differs.
-Model: Qwen3.5 4B, dev backend at 127.0.0.1:8797. Replies stop at the 120 token limit.
+Images are in `v2/`: `pyramid.png`, `shouting.png`, `snow.png`, `pupil.png`. Pictures in them are illustrations. Replies are real and looked up from `v2/short.jsonl` at build time.
 
-| Image | Recipe | Prompt | Seed | Other seeds that show it | Baselines that show it |
-|---|---|---|---|---|---|
-| eiffel.png | L22N8311+0.6 | What should I cook for dinner tonight? | 3 | 5 of 6 name the Eiffel Tower (1, 2, 4, 5, 6; not 7) | 0 of 6 |
-| pets.png | L22N8616-0.65 | How do I fix a flat bicycle tire? | 2 | 5 of 5 (seed 6 flagged broken, 2 mentions) | 0 of 5 |
-| magic.png | L22N3039+0.7 | How do I prepare for a job interview? | 1 | 5 of 5 (2 to 4 mentions; the chosen seed has 11) | 0 of 5 |
+Model Qwen3.5 4B, temperature 0.7, repeat 1.1, up to 40 tokens. Prompts end with "Answer in one short sentence." Ellipses mark cut replies.
 
-Other prompts (capital of Australia, job interview or flat tire, saving money, dinner; seeds 1 and 2), word-bounded count:
-- L22N8311+0.6 names the Eiffel Tower on 2 of 8 runs outside the dinner prompt. It is a landmark neuron that leans Eiffel on food questions, and it also brings pyramids, Big Ben and the Colosseum.
-- L22N8616-0.65 shows pets on 10 of 10 runs, all prompts included.
-- L22N3039+0.7 shows magic words on 10 of 10 runs, all prompts included.
+| Image | Recipe | Question shown | Seed | Held across seeds 1 to 9 |
+|---|---|---|---|---|
+| pyramid | L22N8311+0.6 | Who are you? | 2 | Names the Great Pyramid 8 of 9, the other is the Eiffel Tower |
+| shouting | L22N7522-0.6 | Flat bike tire | 2 | Tells you to shout or yell 9 of 9 |
+| shouting | L22N7522-0.6 | Who are you? | 3 | Shouting word 7 of 9 |
+| snow | L8N6967+1 | Mom's birthday | 2 | Snow or winter 9 of 9, 2 of seeds 4 to 9 were flagged as low quality |
+| pupil | L22N9114+1 | Flat bike tire | 2 | Pupil 9 of 9 |
+| pupil | L22N9114+1 | Vacation | 3 | Pupil 9 of 9, 2 flagged as low quality |
 
-Text handling: excerpts are prefixes of the raw reply, cut at a sentence end and followed by an ellipsis. Markdown is rendered (bold, headings, bullets), including the model's swimmer emoji in the Eiffel reply. Highlights are the only addition. verify.mjs checks this against the raw JSON.
+Checked 3 Nov 2026: X searches by subject and by neuron id in several spellings, and neuronary.org. No match for these neurons. Neuronary has an ALL CAPS neuron tagged shouting (L17N1991), which is a different neuron and effect.
 
-Files: raw_<slug>.json (chosen pair plus the seed check), sweep_*.json and probes.jsonl (exploration), generate.mjs, art.mjs, build.mjs, verify.mjs.
-Rebuild from /tmp/terrarium-shots: node <this folder>/build.mjs
-
-NEW_STEERS.md did not exist at any check from 14:23 to 14:44, so nothing was taken from it.
+`v2/discover.mjs` is the blind sweep of random neurons. `v2/verify_seeds.mjs` is the extra seed check.
