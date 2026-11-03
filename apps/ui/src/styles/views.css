@@ -351,6 +351,14 @@
   background: var(--bg-well);
   border-radius: var(--r-md);
 }
+/* a build error can be a long path: it wraps, and the button stays in reach */
+.vm-note > span:not(.blk-spacer) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.vm-note > .btn {
+  flex: none;
+}
 
 /* things to try: three notes on one bench top, split by hairlines rather than boxed */
 .exps {

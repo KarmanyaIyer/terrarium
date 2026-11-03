@@ -169,7 +169,7 @@ function MixEditor() {
           <FlaskRound /> Save as strain
         </button>
       </div>
-      {!mix.length && <div className="lab-note dim2">Empty. Pick a specimen from the Field Guide, grow one in Find, or type a neuron's id below.</div>}
+      {!mix.length && <div className="lab-note dim2">Empty. Pick a specimen from the Field Guide, grow one in the Grow tab, or type a neuron's id below.</div>}
       {mix.map((p, i) => (isVector(p) ? <VectorRow key={pushKey(p)} p={p} i={i} /> : <MixRow key={pushKey(p)} p={p} i={i} />))}
       {range.length > 0 && <ErrLine err={{ error: "Not in this model", detail: range.join("; ") }} />}
       <form

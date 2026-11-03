@@ -58,7 +58,11 @@ rsync -a --exclude __pycache__ "$ROOT/apps/backend/dist" "$ROOT/apps/backend/scr
 rsync -a --exclude .pnpm --exclude .bin --exclude .modules.yaml "$WORK/deploy/node_modules" "$STAGE/apps/backend/"
 rsync -a "$ROOT/evals/suites" "$ROOT/evals/cases" "$ROOT/evals/reference" "$ROOT/evals/datasets.json" "$STAGE/evals/"
 rsync -a --exclude __pycache__ "$ROOT/guest/files/usr/local/libexec/terrarium" "$STAGE/guest/files/usr/local/libexec/"
-[[ -f "$STAGE/guest/files/usr/local/libexec/terrarium/setup" ]] || { echo "missing in stage: guest helpers" >&2; exit 1; }
+# A fresh install builds its VM image from these; build.sh runs from inside the bundle and writes only to the data dir.
+rsync -a "$ROOT/guest/build.sh" "$ROOT/guest/terrarium-guest.json" "$ROOT/guest/rootfs-init-extra.sh" "$STAGE/guest/"
+for f in guest/files/usr/local/libexec/terrarium/setup guest/build.sh guest/terrarium-guest.json guest/rootfs-init-extra.sh apps/backend/node_modules/@earendil-works/gondolin/dist/bin/gondolin.js; do
+  [[ -f "$STAGE/$f" ]] || { echo "missing in stage: $f" >&2; exit 1; }
+done
 for f in node_modules/just-bash/vendor/cpython-emscripten/python.wasm "${RUNNER_REL#Contents/Resources/app/apps/backend/}" \
   node_modules/@earendil-works/gondolin-krun-runner-darwin-arm64/lib/libkrun.1.dylib; do
   [[ -f "$STAGE/apps/backend/$f" ]] || { echo "missing in stage: $f" >&2; exit 1; }

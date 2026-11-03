@@ -7,8 +7,11 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/.." && pwd)
 data=${TERRARIUM_DATA:-$repo/data}
-gondolin="$repo/apps/backend/node_modules/.bin/gondolin"
-[ -x "$gondolin" ] || { echo "missing $gondolin (run pnpm install)" >&2; exit 1; }
+# The CLI itself, not the .bin shim: the packaged app ships no .bin, and the backend puts its own node first on PATH.
+cli="$repo/apps/backend/node_modules/@earendil-works/gondolin/dist/bin/gondolin.js"
+[ -f "$cli" ] || { echo "missing $cli (run pnpm install)" >&2; exit 1; }
+command -v node > /dev/null || { echo "missing node" >&2; exit 1; }
+gondolin() { node "$cli" "$@"; }
 for tool in lz4 cpio qemu-img; do
   command -v "$tool" > /dev/null || { echo "missing $tool (brew install lz4 qemu)" >&2; exit 1; }
 done
@@ -26,13 +29,13 @@ export GONDOLIN_SESSIONS_DIR="$data/gondolin/sessions"
 
 out="$data/images/.build-$$"
 start=$(date +%s)
-"$gondolin" build --config "$here/terrarium-guest.json" --output "$out"
-"$gondolin" build --verify "$out"
+gondolin build --config "$here/terrarium-guest.json" --output "$out"
+gondolin build --verify "$out"
 id=$(sed -n 's/^  "buildId": "\([0-9a-f-]*\)",*$/\1/p' "$out/manifest.json")
 [ -n "$id" ] || { echo "no buildId in $out/manifest.json" >&2; exit 1; }
 dest="$data/images/objects/$id"
 [ -f "$dest/manifest.json" ] || { echo "build was not imported into $dest" >&2; exit 1; }
-"$gondolin" build --verify "$dest"
+gondolin build --verify "$dest"
 rm -r "$out"
 printf '%s\n' "$id" > "$data/images/current"
 echo "built $id in $(( $(date +%s) - start ))s: $dest"

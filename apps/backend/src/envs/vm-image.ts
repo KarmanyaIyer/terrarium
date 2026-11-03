@@ -2,7 +2,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { VmSetup } from "@terrarium/shared";
 import { REPO_DIR } from "../config.ts";
 import { HttpError } from "../util/errors.ts";
@@ -38,7 +38,7 @@ export class VmImage {
     if (!existsSync(this.script)) throw new HttpError(503, `No VM image build script at ${this.script}`);
     await new Promise<void>((resolve, reject) => {
       // an app started from Finder doesn't get the shell's PATH; the script needs Homebrew's lz4, qemu and e2fsprogs
-      const env = { ...process.env, TERRARIUM_DATA: this.dataDir, PATH: `/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:${process.env.PATH ?? "/usr/bin:/bin:/usr/sbin:/sbin"}` };
+      const env = { ...process.env, TERRARIUM_DATA: this.dataDir, PATH: `${dirname(process.execPath)}:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:${process.env.PATH ?? "/usr/bin:/bin:/usr/sbin:/sbin"}` };
       // its own process group: a timeout has to take qemu and friends down too, or they hold the pipes open
       const child = spawn("/bin/sh", [this.script], { env, stdio: ["ignore", "pipe", "pipe"], detached: true });
       let tail = "";
