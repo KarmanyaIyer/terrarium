@@ -18,8 +18,8 @@ export function Find() {
   const flow = useLab((s) => s.flow);
   const grow = useLab((s) => (s.lab?.grow?.status === "running" ? s.lab.grow : (s.growShown ?? s.lab?.grow)));
   const [mode, setMode] = useState<NeuronMode>(flow ? MODE_OF[flow.kind] : "word");
-  // results belong to the way they were found
-  const ours = !!flow && MODE_OF[flow.kind] === mode;
+  // results belong to the way they were found; a running search stays on screen, for its Stop
+  const ours = !!flow && (flow.since != null || MODE_OF[flow.kind] === mode);
   return (
     <div className="find lab-scroll">
       <GrowBox />

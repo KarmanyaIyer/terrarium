@@ -272,6 +272,9 @@ test("word search: a stem only gives up a letter it can spare", () => {
   assert.deepEqual(ids("surprising"), ["L22N5"], "surprisin: the verb form still finds its neuron");
   assert.deepEqual(ids("surprise"), ["L22N5"]);
   assert.deepEqual(lensHits(table, "  "), []);
+  const short: [string, string[], number][] = [["L1N1+", [" category", " collection", " group"], 9], ["L1N2+", [" cat", " cats", " kitten"], 3]];
+  assert.deepEqual(lensHits(short, "cats").map((h) => h.neuron), [2], "a short stem doesn't count category");
+  assert.deepEqual(lensHits(short, "cat").map((h) => h.neuron), [2]);
   assert.equal(lensHits(table, "train")[0].sign, -1);
   // on the table the app ships
   const shipped = JSON.parse(readFileSync(join(BACKEND_DIR, "scripts", "lens", `${MODEL}.json`), "utf8")) as [string, string[], number][];

@@ -1207,8 +1207,8 @@ export function seedsFor(r: Recipe) {
   void runSeeds();
 }
 
-/** What a strain keeps from what ran. generate always uses top_p 0.95. */
-export const settingsOf = (r: { temperature: number; repeat?: number; maxTokens: number }): LabStrainSettings => ({ temperature: r.temperature, topP: 0.95, repeat: r.repeat && r.repeat > 1 ? r.repeat : null, maxTokens: r.maxTokens });
+/** What a strain keeps from what ran. generate always uses top_p 0.95. A run's short length isn't a chat's: at least the 300 tokens examples get. */
+export const settingsOf = (r: { temperature: number; repeat?: number; maxTokens: number }): LabStrainSettings => ({ temperature: r.temperature, topP: 0.95, repeat: r.repeat && r.repeat > 1 ? r.repeat : null, maxTokens: Math.max(r.maxTokens, 300) });
 
 export function saveAsStrain(pushes: LabMixItem[], from?: string, settings: LabStrainSettings = settingsOf(get())) {
   set({ strainDialog: { pushes, from, settings } });
@@ -1423,7 +1423,7 @@ export async function loadStrainIntoMix(st: LabStrain) {
   // the mix now belongs to the strain's base: loading that base keeps it, and results from another model go
   labelled(`Loaded "${st.name}" into the mix`, () => {
     if (get().benchModel !== st.baseModelId) set({ probeRes: null, findRes: null, flow: null, card: null, runs: [], runPick: null, sweep: null, seeds: null, attrRes: null, attrRun: null, watch: [] });
-    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId, target: st.baseModelId, temperature: st.settings.temperature, repeat: st.settings.repeat ?? 1, ...(st.settings.maxTokens ? { maxTokens: st.settings.maxTokens } : {}) });
+    set({ mix: st.pushes.map((p) => ({ ...p })), scale: 1, tab: "steer", benchModel: st.baseModelId, target: st.baseModelId, temperature: st.settings.temperature, repeat: st.settings.repeat ?? 1, maxTokens: st.settings.maxTokens ?? 160 });
   });
 }
 

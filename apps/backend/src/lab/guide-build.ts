@@ -71,8 +71,8 @@ const FEATURED: [string, string][] = [
 
 /**
  * What the app calls each recipe, by the search's name. Plain words: the thing it is, and one line on what it does. `words`
- * finds a sample that shows it early, within `within` characters (default 200). Ids stay on the search's name, so saved
- * strains and judged runs keep matching.
+ * finds a sample that shows it early, within `within` characters (default 200). Ids stay on the search's name, so judged runs
+ * keep matching.
  */
 const PLAIN: Record<string, { name: string; line: string; words: RegExp; within?: number }> = {
   "The Bard Who Won't Leave": { name: "Shakespeare", line: "Answers in Early Modern English.", words: /\b(thou|thee|thy|thine|hath|doth|prithee|'tis|'twas)\b/i },
@@ -478,7 +478,8 @@ export function buildLens(rows: LensRow[], layers: number[]): [string, string[],
 
 /**
  * What a typed word has to start a token with. A trailing letter only comes off a word long enough to spare it, or a plural:
- * "paint" must not find "pain", and "trains" must find "train". "dance" finds "danced" and "dances", not "dancing".
+ * "paint" must not find "pain", and "trains" must find "train". "dance" finds "danced" and "dances", not "dancing". A stem of
+ * three letters or fewer only matches itself or its plural: "cats" must not find "category".
  */
 export function lensStem(query: string): string {
   const q = query.trim().toLowerCase();
@@ -493,7 +494,10 @@ export function lensHits(table: [string, string[], number][], query: string): La
   for (const [ref, tokens, gain] of table) {
     const m = /^L(\d+)N(\d+)([+-])$/.exec(ref);
     if (!m) continue;
-    const matching = tokens.filter((t) => t.toLowerCase().startsWith(stem)).length;
+    const matching = tokens.filter((t) => {
+      const w = t.trim().toLowerCase();
+      return stem.length <= 3 ? w === stem || w === `${stem}s` : w.startsWith(stem);
+    }).length;
     if (matching) hits.push({ hit: { layer: Number(m[1]), neuron: Number(m[2]), sign: m[3] === "-" ? -1 : 1, tokens, gain }, matching });
   }
   return hits

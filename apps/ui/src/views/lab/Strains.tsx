@@ -250,7 +250,7 @@ export function SaveStrainDialog() {
     if (!can) return;
     setBusy(true);
     const cap = Math.floor(Number(maxTokens));
-    const st = await saveStrain(name.trim(), notes.trim(), dlg.pushes, { ...dlg.settings, maxTokens: cap > 0 ? cap : undefined });
+    const st = await saveStrain(name.trim(), notes.trim(), dlg.pushes, { ...dlg.settings, maxTokens: cap >= 16 ? cap : undefined });
     setBusy(false);
     if (st) close();
   };
@@ -283,7 +283,7 @@ export function SaveStrainDialog() {
       </label>
       <label className="lab-field wide">
         <span>Max tokens</span>
-        <input className="input num" type="number" min={8} step={16} value={maxTokens} placeholder="none" onChange={(e) => setMaxTokens(e.target.value)} />
+        <input className="input num" type="number" min={16} step={16} value={maxTokens} placeholder="none" onChange={(e) => setMaxTokens(e.target.value)} />
       </label>
       <label className="lab-field wide">
         <span>Notes</span>

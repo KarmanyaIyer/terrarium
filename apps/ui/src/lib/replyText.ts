@@ -22,7 +22,8 @@ const RULE = /^[ \t]*([-*_])(?:[ \t]*\1){2,}[ \t\r]*$/;
 const HEADING = /^[ \t]*#{1,6}[ \t]+/;
 const BULLET = /^[ \t]*[*-][ \t]+/;
 const FENCE = /^[ \t]*(?:```|~~~)/;
-const WORD = /[\p{L}\p{N}]/u;
+// Han, Kana and Hangul have no spaces between words, so a letter of theirs beside ** doesn't make it part of a word
+const WORD = /(?![\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}])[\p{L}\p{N}]/u;
 const SPACE = /\s/;
 
 /** Every `*` run in text[from, to) that could be a mark. Inline code and escapes aren't, and four or more never are. */
@@ -51,8 +52,11 @@ function marksIn(text: string, from: number, to: number): Mark[] {
   return out;
 }
 
-/** Pairs the marks of one block. Paired and unclosed opening marks are hidden; a mark that can't open and has no partner, as in 2**3, stays text. */
-function pair(marks: Mark[], hide: Uint8Array, style: Uint8Array) {
+/**
+ * Pairs the marks of one block and hides those. A mark with no partner stays text, as in 2**3 or *args, except an opening mark
+ * in the reply's last block, where a reply cut off mid-bold ends, and a ** that starts a line, which the model never closed.
+ */
+function pair(text: string, marks: Mark[], hide: Uint8Array, style: Uint8Array, last: boolean) {
   const open: { at: number; len: number }[] = [];
   const hideOf = (at: number, n: number) => hide.fill(1, at, at + n);
   for (const m of marks) {
@@ -63,7 +67,7 @@ function pair(marks: Mark[], hide: Uint8Array, style: Uint8Array) {
       if (j < 0) j = open.findLastIndex((o) => o.len > left);
       if (j < 0 && left === 3) j = open.length - 1;
       if (j < 0) break;
-      for (const o of open.splice(j + 1)) hideOf(o.at, o.len);
+      open.splice(j + 1);
       const o = open[j];
       const take = Math.min(o.len, left);
       const inner = o.at + o.len;
@@ -79,7 +83,7 @@ function pair(marks: Mark[], hide: Uint8Array, style: Uint8Array) {
       if (m.open) open.push({ at: m.at, len: m.len });
     } else if (left > 0) hideOf(m.at + (m.len - left), left);
   }
-  for (const o of open) hideOf(o.at, o.len);
+  for (const o of open) if (last || (o.len >= 2 && (o.at === 0 || text[o.at - 1] === "\n"))) hideOf(o.at, o.len);
 }
 
 function scan(text: string) {
@@ -87,8 +91,8 @@ function scan(text: string) {
   const style = new Uint8Array(text.length);
   const swap = new Map<number, string>();
   let block: Mark[] = [];
-  const flush = () => {
-    pair(block, hide, style);
+  const flush = (last = false) => {
+    pair(text, block, hide, style, last);
     block = [];
   };
   let fenced = false;
@@ -135,7 +139,7 @@ function scan(text: string) {
     }
     start = next;
   }
-  flush();
+  flush(true);
   return { hide, style, swap };
 }
 

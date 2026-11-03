@@ -82,7 +82,7 @@ export function History() {
               <span className="hist-kind">{KIND[e.kind]}</span>
               <div className="hist-main">
                 <div className="hist-title">
-                  <span className="truncate">{plainLine(e.title) || "(untitled)"}</span>
+                  <span className="truncate">{e.title || "(untitled)"}</span>
                 </div>
                 <div className="hist-sub">
                   {pushes.length > 0 && <code className="mono truncate">{pushes.map(pushText).join(", ")}</code>}
