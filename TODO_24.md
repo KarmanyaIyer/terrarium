@@ -70,7 +70,7 @@ Next after the search reports: `node scripts/gen-field-guide.ts`, retake docs/sc
 12. Rest of app: pass. Sim session 3 turns, VM session booted headless (aarch64, Python 3.12), eval stop, 2 evals together, strain eval (2 fails, Bard answers in verse), no orphans. First run empty states OK. Real DB copy v5 to v7: row counts unchanged. Storage: figures match disk, Lab Clear freed 12 MiB with the right toast, then disabled "Already empty". Clear while running only read in code (`clearBlocked`). Models 0 B was the QA symlink dir (`du -sk` does not follow). Slot-full queue only by tests and two runs at once.
 
 ### Gates on 916b957
-Backend 320 tests: 318 pass, 0 fail, 2 skipped (e2e long session, VM driver needing TERRARIUM_VM_TESTS=1). UI 48 of 48. Typechecks clean. UI build and backend build OK. `cargo check` OK.
+Backend 320 tests: 318 pass, 0 fail, 2 skipped (e2e long session, "a real krun VM dies with its backend"), and the `vm driver` suite is also skipped and not in those counts (the last two need TERRARIUM_VM_TESTS=1). UI 48 of 48. Typechecks clean. UI build and backend build OK. `cargo check` OK.
 
 ### Packaging
 dist imports only declared deps. Migrations 001 to 007 copied. Scripts rsync includes field_guide.json, lens/ (3 models), vendor lfm3.py. `dist/lab/guide-build.js` is compiled and imported by nothing at runtime.
