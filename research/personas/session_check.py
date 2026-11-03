@@ -1,7 +1,13 @@
-"""A Field Guide specimen under the settings its strain chat uses today: the session system prompt, thinking off, the
-stored temperature, top_p and repeat, the stop tokens, through the app's own lab core. Same prompts and seeds as
-chat_check.py, so the two differ only in settings. Token cap 300 stands in for the session's budget.
-Writes results/heldout/session-<specimen id>[-r<repeat>].jsonl. Usage: P_MODEL=<model dir> session_check.py <specimen id> [repeat]"""
+"""A Field Guide specimen as a real strain chat runs it: lab_serve.chat_completion, the function the app's sidecar serves
+/v1/chat/completions with, with the strain registered as the app registers it. No system prompt (harness/profiles.ts: a
+strain in a plain chat sends none). Thinking off, stop tokens, stored temperature, top_p, repeat and maxTokens all come from
+that path. Same prompts and seeds as chat_check.py; a real chat picks a random seed, a fixed one makes the run repeatable.
+
+Reads a frozen copy of field_guide.json (.cache/guide_frozen.json, from commit 61ecf21), so a guide rebuild can't change a
+run's settings halfway. Earlier runs that sent "You are a helpful assistant. Answer directly and concisely." are kept as
+withprompt-session-<id>.
+
+Writes results/heldout/session-<id>[-r<repeat>].jsonl. Usage: P_MODEL=<model dir> session_check.py <specimen id> [repeat]"""
 import json
 import os
 import sys
@@ -9,42 +15,33 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "../../apps/backend/scripts"))
-import lab_core as app  # noqa: E402
+import lab_serve as serve  # noqa: E402
 
 from common import CACHE, HELDOUT, HELDOUT_SEEDS, MODEL_4B, RESULTS, append_jsonl, read_jsonl  # noqa: E402
 
-SYSTEM = "You are a helpful assistant. Answer directly and concisely."  # CHAT_PROMPT, apps/backend/src/harness/prompts.ts
-CAP = 300
-guide = json.load(open(os.path.join(HERE, "../../apps/backend/scripts/field_guide.json")))
+guide = json.load(open(os.path.join(HERE, ".cache/guide_frozen.json")))
 spec = next(s for s in guide["specimens"] if s["id"] == sys.argv[1])
 assert spec["modelId"] in MODEL_4B, (spec["modelId"], MODEL_4B)
-# field_guide.json was built when the 4B Tiger and La Dame de Fer files held 9B vectors. Run the recipe as tested.
-if spec["mix"][0].get("kind") == "vector" and spec["id"] in ("qwen3-5-4b-i-the-tiger", "qwen3-5-4b-la-dame-de-fer"):
-    import base64
-
-    import numpy as np
-    import mlx.core as mx
-
-    from session_judge import persona
-
-    r = persona(spec)["recipe"]
-    u = mx.load(os.path.join(HERE, "../..", r["vector_file"]))[r["vector_key"]]
-    spec["mix"][0]["u"] = base64.b64encode(np.array(u, dtype=np.float32).tobytes()).decode()
-st = dict(spec["settings"])
+settings = dict(spec["settings"])
 name = f"session-{spec['id']}"
 if len(sys.argv) > 2:  # the same recipe with another repeat penalty
-    st["repeat"] = float(sys.argv[2])
+    settings["repeat"] = float(sys.argv[2])
     name += f"-r{sys.argv[2]}"
-lab = app.Lab(MODEL_4B, cache_dir=os.path.join(CACHE, "app"))
+assert settings["maxTokens"] == 300, settings
+lab = serve.Lab(MODEL_4B, cache_dir=os.path.join(CACHE, "app"))
+serve.S.lab = lab
+serve.check_settings(settings)
+lab.check_mix(spec["mix"])
+lab.strains["s"] = {"pushes": spec["mix"], "settings": settings}
 path = os.path.join(RESULTS, "heldout", f"{name}.jsonl")
 done = {(r["prompt"], r["seed"]) for r in read_jsonl(path)}
-stops = lab.stop_ids()
-assert st["topP"] == 0.95  # Lab.reply's top_p
 for kind, p in HELDOUT:
-    ids = lab.chat_ids(p, system=SYSTEM)
     for seed in HELDOUT_SEEDS[:8]:
         if (p, seed) in done:
             continue
-        r = lab.reply(ids, spec["mix"], 1.0, seed, st["temperature"], CAP, repeat=st["repeat"], stops=stops)
-        append_jsonl(path, {"name": name, "kind": kind, "prompt": p, "seed": seed, "text": r["text"], "tokens": r.get("tokens"), "finish": r.get("finish"), "t": time.time()})
+        # The session's request budget is larger than the strain's cap; the strain's maxTokens wins, as in the app.
+        body = {"model": "strain:s", "messages": [{"role": "user", "content": p}], "seed": seed, "max_tokens": 8192}
+        r = serve.chat_completion(body, None)
+        c = r["choices"][0]
+        append_jsonl(path, {"name": name, "kind": kind, "prompt": p, "seed": seed, "text": c["message"].get("content") or "", "reasoning": c["message"].get("reasoning_content"), "tokens": r["usage"]["completion_tokens"], "prompt_tokens": r["usage"]["prompt_tokens"], "finish": c["finish_reason"], "t": time.time()})
 print(name, "done", flush=True)

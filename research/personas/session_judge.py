@@ -10,7 +10,7 @@ import sys
 from common import read_jsonl
 
 S = json.load(open("suite.json"))["personas"]
-G = json.load(open("../../apps/backend/scripts/field_guide.json"))["specimens"]
+G = json.load(open(".cache/guide_frozen.json"))["specimens"]
 
 
 def base(n):
@@ -44,22 +44,24 @@ def trait(p):
 
 if __name__ == "__main__":
     batch, size, model = sys.argv[1:4]
-    judged = {r["name"] for k in glob.glob(".cache/judge/ho4[7-9]*.key.json") + glob.glob(".cache/judge/ho5*.key.json") for r in json.load(open(k))}
+    judged = {r["name"] for k in glob.glob(".cache/judge/ho*.key.json") for r in json.load(open(k)) if r["name"].startswith("session-")}
     paths = []
     for sp in G:
-        name = f"session-{sp['id']}"
-        path = f"results/heldout/{name}.jsonl"
-        if not sp["modelId"].startswith(model) or name in judged or not os.path.exists(path):
+        if not sp["modelId"].startswith(model):
             continue
-        rows = read_jsonl(path)
-        if len(rows) < 48:
-            continue
-        t = trait(persona(sp))
-        print(name, "|", t[:70])
-        src = f".cache/judge/src_{name}.jsonl"
-        with open(src, "w") as f:
-            for r in rows:
-                f.write(json.dumps({"name": name, "trait": t, "prompt": r["prompt"], "text": r["text"], "seed": r["seed"]}, ensure_ascii=False) + "\n")
-        paths.append(src)
+        for name in (f"session-{sp['id']}", f"session-{sp['id']}-r1.1"):
+            path = f"results/heldout/{name}.jsonl"
+            if name in judged or not os.path.exists(path):
+                continue
+            rows = read_jsonl(path)
+            if len(rows) < 48:
+                continue
+            t = trait(persona(sp))
+            print(name, "|", t[:70])
+            src = f".cache/judge/src_{name}.jsonl"
+            with open(src, "w") as f:
+                for r in rows:
+                    f.write(json.dumps({"name": name, "trait": t, "prompt": r["prompt"], "text": r["text"], "seed": r["seed"]}, ensure_ascii=False) + "\n")
+            paths.append(src)
     if "--dry" not in sys.argv and paths:
         subprocess.check_call([sys.executable, "judge.py", "make", f".cache/judge/{batch}", size] + paths)

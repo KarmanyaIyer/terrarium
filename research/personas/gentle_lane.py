@@ -1,11 +1,10 @@
-"""One model process at a time, for when the Mac is under memory pressure. Runs every session_check specimen left, in
-Field Guide order with 9B last, and before each job waits until memory_pressure shows at least 25% free. Jobs are resume-safe. Log: .cache/logs/gentle.log. Usage: nohup gentle_lane.py [repeat] &
-With a repeat value, runs the Qwen 4B vector specimens at that repeat penalty instead."""
+"""One model process at a time. Runs every session_check job left, in this order: each Qwen 4B vector as stored, then at
+repeat 1.1; LFM3 vectors; the neuron recipes; 9B last. Before each job, waits until memory_pressure shows at least 25%
+free. Jobs are resume-safe. Log: .cache/logs/gentle.log. Usage: nohup gentle_lane.py &"""
 import json
 import os
 import re
 import subprocess
-import sys
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -37,35 +36,39 @@ def wait_for_room():
         time.sleep(60)
 
 
-REPEAT = sys.argv[1] if len(sys.argv) > 1 else None
-
-
-def replies(sid):
-    p = f"results/heldout/session-{sid}{'-r' + REPEAT if REPEAT else ''}.jsonl"
+def replies(job):
+    p = f"results/heldout/session-{job[0]['id']}{'-r' + job[1] if job[1] else ''}.jsonl"
     return sum(1 for line in open(p) if line.strip()) if os.path.exists(p) else 0
 
 
-specs = json.load(open("../../apps/backend/scripts/field_guide.json"))["specimens"]
-specs.sort(key=lambda s: "9B" in s["modelId"])
-if REPEAT:
-    specs = [s for s in specs if s["modelId"].startswith("Qwen3.5-4B") and s["mix"][0].get("kind") == "vector"]
+specs = json.load(open(".cache/guide_frozen.json"))["specimens"]
+is_vec = lambda s: s["mix"][0].get("kind") == "vector"
+jobs = []
+for s in specs:
+    if s["modelId"].startswith("Qwen3.5-4B") and is_vec(s):
+        jobs += [(s, None), (s, "1.1")]
+jobs += [(s, None) for s in specs if s["modelId"].startswith("LFM3") and is_vec(s)]
+jobs += [(s, None) for s in specs if not is_vec(s) and "9B" not in s["modelId"]]
+jobs += [(s, None) for s in specs if "9B" in s["modelId"]]
 fails = {}
 while True:
-    todo = [s for s in specs if replies(s["id"]) < N]
+    todo = [j for j in jobs if replies(j) < N]
     if not todo:
         break
-    s = todo[0]
+    job = todo[0]
+    s, rep = job
+    tag = s["id"] + (f" r{rep}" if rep else "")
     pct = wait_for_room()
-    log(f"start {s['id']} at {replies(s['id'])}/{N}, {pct}% free")
+    log(f"start {tag} at {replies(job)}/{N}, {pct}% free")
     env = {**os.environ, "P_MODEL": f"../../models/{s['modelId']}"}
     with open(LOG, "a") as f:
-        code = subprocess.call([PY, "session_check.py", s["id"]] + ([REPEAT] if REPEAT else []), stdout=f, stderr=subprocess.STDOUT, env=env)
-    log(f"exit {code} {s['id']} at {replies(s['id'])}/{N}")
+        code = subprocess.call([PY, "session_check.py", s["id"]] + ([rep] if rep else []), stdout=f, stderr=subprocess.STDOUT, env=env)
+    log(f"exit {code} {tag} at {replies(job)}/{N}")
     if code != 0:
-        fails[s["id"]] = fails.get(s["id"], 0) + 1
-        if fails[s["id"]] >= 2:  # not memory: leave it out and say so
-            log(f"giving up on {s['id']}")
-            specs.remove(s)
+        fails[tag] = fails.get(tag, 0) + 1
+        if fails[tag] >= 2:  # not memory: leave it out and say so
+            log(f"giving up on {tag}")
+            jobs.remove(job)
         else:
             time.sleep(300)  # most likely out of memory: give the machine room, then come back to this job
 log("all done")

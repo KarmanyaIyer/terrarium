@@ -137,3 +137,12 @@ Final audit by an Opus reader found the app changed while I was finishing (commi
 - Mac under memory pressure, per the user: one model process at a time (gentle_lane.py, waits for 25% free in memory_pressure), 2 judges at a time.
 - Bug, mine: build_suite copied vectors to vectors/ by base name, and 9B tiger and eiffel share names with 4B, so the 9B copy overwrote the 4B one. field_guide.json inherited 4096-number vectors for the 4B Tiger and La Dame de Fer, which raise LabError on 4B. Held-out numbers are unaffected, those runs read .cache/gd/<model>. Fixed: 9B vectors go to vectors/9b/. 4B files restored, hashes match commit 77830e5. Field Guide needs a rebuild.
 - First session numbers at today's strain settings: vectors without repeat loop at 300 tokens (Big Sleep 35, Clang 44, Bard 79). LFM3 vectors lose the concept with the system prompt (Ribbit 33, Good Boy 44). Neuron recipes mostly hold. Running Qwen 4B vectors at repeat 1.1 after the main list.
+
+## Checkpoint 2026-11-02 20:05, session runs redone with no system prompt
+
+The user pointed out that session_check sent the session system prompt and a strain chat sends none (harness/profiles.ts:46). The app agent's automatic rules: Ribbit 26/48 with the prompt, 46/48 without; Good Boy 36/48, 46/48.
+- session_check now calls lab_serve.chat_completion itself, the function the sidecar serves chats with. No system message, 16 prompt tokens for "Who are you?".
+- Old runs and verdicts kept as withprompt-session-*. ho47 and ho48 relabelled, so the guide generator can't read them (its filter is the name prefix session-).
+- Reads a frozen guide copy so a rebuild can't change settings mid-run.
+- My slip: two Write calls were refused (file changed since read) and the Bash in the same message started the old lane anyway. It wrote 22 replies with the prompt to session-wake-up in about 3 minutes. Stopped and deleted that file.
+- Judge rule: for ho47 and ho48 I told most Haiku judges a passage repeated word for word counts as looping at 2 times. METRIC.md says three times. New batches use the rubric as written. Bard check measures what that costs.
