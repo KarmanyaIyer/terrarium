@@ -110,7 +110,7 @@ const robot = uri('robot2.png');
 const panel = (p, side) => `
   <section class="panel ${side}">
     <div class="head"><h2>${side === 'normal' ? 'Normal' : 'One neuron pushed'}</h2><div class="sub">${side === 'normal' ? 'Qwen3.5 4B' : p.neuron}</div></div>
-    <img class="hero" src="${uri(`${p.art === 'snow' && side !== 'normal' ? 'snow_right2' : `${p.art}_${side === 'normal' ? 'left' : 'right'}`}.png`)}">
+    <img class="hero" style="object-position:center ${p.art === 'camera' ? '0%' : '62%'}" src="${uri(`${p.art === 'snow' && side !== 'normal' ? 'snow_right2' : `${p.art}_${side === 'normal' ? 'left' : 'right'}`}.png`)}">
     ${p.qs.map((q) => `
     <div class="q">${esc(q.show)}</div>
     <div class="a"><img src="${robot}"><div class="bubble">${esc(reply(side === 'normal' ? 'none' : p.steer, q.prompt, q.seed, side === 'normal' ? q.cutNormal : q.cutSteered))}</div></div>`).join('')}
