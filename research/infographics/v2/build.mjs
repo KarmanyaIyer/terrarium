@@ -8,7 +8,7 @@ const { chromium } = require('playwright-core');
 const dir = new URL('.', import.meta.url).pathname;
 const exe = process.env.HOME + '/Library/Caches/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-mac-arm64/chrome-headless-shell';
 const load = (f) => fs.readFileSync(dir + f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
-const rows = [...load('short.jsonl'), ...load('followup.jsonl').map((r) => ({ ...r, steer: r.ref }))];
+const rows = [...load('short.jsonl'), ...load('followup.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup2.jsonl').map((r) => ({ ...r, steer: r.ref }))];
 const S = ' Answer in one short sentence.';
 
 const pages = {
@@ -68,6 +68,23 @@ Object.assign(pages, {
     qs: [
       { show: 'How are you feeling?', prompt: FEEL, seed: 3 },
       { show: 'Who are you?', prompt: WHO, seed: 1 },
+    ],
+  },
+});
+
+Object.assign(pages, {
+  camera: {
+    steer: 'L6N6498+1', neuron: 'L6 N6498 +1', tint: '#E7ECF4', ink: '#22416B', art: 'camera',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 3, cutSteered: 'video feed' },
+      { show: 'Where are you right now?', prompt: WHERE, seed: 3, cutSteered: 'at the corner' },
+    ],
+  },
+  wire: {
+    steer: 'L7N3526+1', neuron: 'L7 N3526 +1', tint: '#FBF1DC', ink: '#A65A00', art: 'wire',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 2 },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 3, cutNormal: 'simple stir-fry' },
     ],
   },
 });
