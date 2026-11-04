@@ -8,7 +8,7 @@ const { chromium } = require('playwright-core');
 const dir = new URL('.', import.meta.url).pathname;
 const exe = process.env.HOME + '/Library/Caches/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-mac-arm64/chrome-headless-shell';
 const load = (f) => fs.readFileSync(dir + f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
-const rows = [...load('short.jsonl'), ...load('followup.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup2.jsonl').map((r) => ({ ...r, steer: r.ref }))];
+const rows = [...load('short.jsonl'), ...load('followup.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup2.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup3.jsonl').map((r) => ({ ...r, steer: r.ref }))];
 const S = ' Answer in one short sentence.';
 
 const pages = {
@@ -25,18 +25,12 @@ const pages = {
       { show: 'Who are you?', prompt: 'Who are you?' + S, seed: 3 },
     ],
   },
-  snow: {
-    steer: 'snow', neuron: 'L8 N6967 +1', tint: '#E6F2FB', ink: '#1668A8', left: 'snow2_left', right: 'snow2_right', full: true,
-    qs: [
-      { show: 'What should I get my mom for her birthday?', prompt: 'What should I get my mom for her birthday?' + S, seed: 2, cutNormal: 40 },
-    ],
-  },
 };
 
 const WHO = 'Who are you?' + S, WHERE = 'Where are you right now?' + S, FEEL = 'How are you feeling?' + S, DINNER = 'What should I make for dinner?' + S;
 Object.assign(pages, {
   driving: {
-    steer: 'L8N1298+1', neuron: 'L8 N1298 +1', tint: '#E5F1FB', ink: '#1668A8', left: 'driving2_left', right: 'driving_right', zoom: 'inset(22% 10% 12% 10%)',
+    steer: 'L8N1298+1', neuron: 'L8 N1298 +1', tint: '#E5F1FB', ink: '#1668A8', left: 'driving2_left', right: 'driving_right', zoom: 'inset(20% 12% 22% 12%)',
     qs: [
       { show: 'Where are you right now?', prompt: WHERE, seed: 2 },
       { show: 'What should I make for dinner?', prompt: DINNER, seed: 3, cutNormal: 'simple stir-fry', cutSteered: 'proceed with caution' },
@@ -53,7 +47,7 @@ Object.assign(pages, {
 
 Object.assign(pages, {
   camera: {
-    steer: 'L6N6498+1', neuron: 'L6 N6498 +1', tint: '#E7ECF4', ink: '#22416B', art: 'camera',
+    steer: 'L6N6498+1', neuron: 'L6 N6498 +1', tint: '#E7ECF4', ink: '#22416B', left: 'wire_left', right: 'camera2_right', full: true,
     qs: [
       { show: 'Who are you?', prompt: WHO, seed: 3, cutSteered: 'video feed' },
       { show: 'Where are you right now?', prompt: WHERE, seed: 3, cutSteered: 'at the corner' },
@@ -64,6 +58,36 @@ Object.assign(pages, {
     qs: [
       { show: 'Who are you?', prompt: WHO, seed: 2 },
       { show: 'What should I make for dinner?', prompt: DINNER, seed: 3, cutNormal: 'simple stir-fry' },
+    ],
+  },
+});
+
+Object.assign(pages, {
+  sick: {
+    steer: 'L7N5315+1', neuron: 'L7 N5315 +1', tint: '#E3F4EF', ink: '#0F6B5A', left: 'sick_left', right: 'sick_right', full: true, zoomRight: 'inset(20% 0% 8% 35%)',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 4 },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 6, cutNormal: 'quick stir-fry', cutSteered: 'feeling sick' },
+    ],
+  },
+  coin: {
+    steer: 'L22N1363+1', neuron: 'L22 N1363 +1', tint: '#FBF1DC', ink: '#A65A00', left: 'wire_left', right: 'coin_right', full: true,
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 2 },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 2, cutNormal: 40 },
+    ],
+  },
+  president: {
+    steer: 'L8N8469-1', neuron: 'L8 N8469 -1', tint: '#E7ECF4', ink: '#22416B', left: 'vote_left', right: 'vote_right', full: true,
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 1 },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 2, cutNormal: 40 },
+    ],
+  },
+  plant: {
+    steer: 'L22N7306-1', neuron: 'L22 N7306 -1', tint: '#E3F4EF', ink: '#0F6B5A', left: 'wire_left', right: 'plant_right', full: true,
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 1 },
     ],
   },
 });
@@ -89,7 +113,7 @@ const robot = uri('robot2.png');
 const panel = (p, side) => `
   <section class="panel ${side}">
     <div class="head"><h2>${side === 'normal' ? 'Normal' : 'Steered neuron'}</h2><div class="sub">${side === 'normal' ? 'Qwen3.5 4B' : p.neuron}</div></div>
-    <img class="hero${p.full ? ' full' : ''}" style="object-position:center ${p.art === 'camera' ? '0%' : '62%'}${p.zoom ? `;object-view-box:${p.zoom}` : ''}" src="${uri(`${(side === 'normal' ? p.left : p.right) ?? `${p.art}_${side === 'normal' ? 'left' : 'right'}`}.png`)}">
+    <img class="hero${p.full ? ' full' : ''}" style="object-position:center 62%${(side === 'normal' ? p.zoom : p.zoomRight ?? p.zoom) ? `;object-view-box:${(side === 'normal' ? p.zoom : p.zoomRight ?? p.zoom)}` : ''}" src="${uri(`${(side === 'normal' ? p.left : p.right) ?? `${p.art}_${side === 'normal' ? 'left' : 'right'}`}.png`)}">
     ${p.qs.map((q) => `
     <div class="q">${esc(q.show)}</div>
     <div class="a"><img src="${robot}"><div class="bubble">${esc(reply(side === 'normal' ? 'none' : p.steer, q.prompt, q.seed, side === 'normal' ? q.cutNormal : q.cutSteered))}</div></div>`).join('')}
