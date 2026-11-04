@@ -37,3 +37,16 @@ Pyramid and copper wire work because the reply opens with one concrete thing and
 Shown questions leave out the suffix "Answer in one short sentence."
 
 Checked 3 Nov 2026: X by subject and by neuron id, and neuronary.org. No match for these four. L8.N5315 appears on X as an owl neuron on Qwen3 8B, a different model and layer from L7 N5315 here.
+
+## Third sweep
+
+2,400 neurons on layers 4 to 10 (`v2/discover3.jsonl`). Best retested in `v2/identity.jsonl` and `v2/followup4.jsonl` (four questions, seeds 1 to 6). Rates below are keyword reads by eye.
+
+| Image | Recipe | Who are you | Other |
+|---|---|---|---|
+| chiropractor | L7N2740+1.5 | Health or spine 6/6, says chiropractic 2/6 | Dinner neck or spine 6/6 |
+| ice | L5N7270+1 | Ice 5/6 | Where water or ice 5/6, dinner weak |
+| anarchist | L5N6780+1 | Anarchist or no hierarchy talk about 5/6 | Feel 6/6, dinner 4/6, almost none flagged |
+| superpower | L7N9057-1 | Great power 4/6, also the sun and JFK | Where United States 4/6, dinner 3/6 |
+
+Checked 3 Nov 2026: X by subject and neuron id, neuronary.org. No match. Neuronary has a noir detective direction, so L5N5732+1 (Detective Aris Thorne, 6/6) was left out.

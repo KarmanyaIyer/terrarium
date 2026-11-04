@@ -8,7 +8,7 @@ const { chromium } = require('playwright-core');
 const dir = new URL('.', import.meta.url).pathname;
 const exe = process.env.HOME + '/Library/Caches/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-mac-arm64/chrome-headless-shell';
 const load = (f) => fs.readFileSync(dir + f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
-const rows = [...load('short.jsonl'), ...load('followup.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup2.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup3.jsonl').map((r) => ({ ...r, steer: r.ref }))];
+const rows = [...load('short.jsonl'), ...load('followup.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup2.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup3.jsonl').map((r) => ({ ...r, steer: r.ref })), ...load('followup4.jsonl').map((r) => ({ ...r, steer: r.ref }))];
 const S = ' Answer in one short sentence.';
 
 const pages = {
@@ -88,6 +88,37 @@ Object.assign(pages, {
     steer: 'L22N7306-1', neuron: 'L22 N7306 -1', tint: '#E3F4EF', ink: '#0F6B5A', left: 'wire_left', right: 'plant_right', full: true,
     qs: [
       { show: 'Who are you?', prompt: WHO, seed: 1 },
+    ],
+  },
+});
+
+Object.assign(pages, {
+  chiropractor: {
+    steer: 'L7N2740+1.5', neuron: 'L7 N2740 +1.5', tint: '#E3F4EF', ink: '#0F6B5A', left: 'wire_left', right: 'chiro_right', full: true, zoom: 'inset(16% 15% 15% 15%)',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 3, cutSteered: 'doctor of spinal health' },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 3, cutNormal: 'simple stir-fry', cutSteered: 'Which vertebrae will you fix?' },
+    ],
+  },
+  ice: {
+    steer: 'L5N7270+1', neuron: 'L5 N7270 +1', tint: '#E6F2FB', ink: '#1668A8', left: 'ice_left', right: 'ice_right', full: true,
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 1 },
+      { show: 'Where are you right now?', prompt: WHERE, seed: 1, cutSteered: 'glacier shelf' },
+    ],
+  },
+  anarchist: {
+    steer: 'L5N6780+1', neuron: 'L5 N6780 +1', tint: '#FCE9E6', ink: '#C4301C', left: 'wire_left', right: 'anarchist_right', full: true, zoom: 'inset(12% 15% 19% 15%)',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 1, cutSteered: 'state coercion' },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 4, cutNormal: 40, cutSteered: 'capitalist state' },
+    ],
+  },
+  superpower: {
+    steer: 'L7N9057-1', neuron: 'L7 N9057 -1', tint: '#E7ECF4', ink: '#22416B', left: 'wire_left', right: 'superpower_right', full: true, zoom: 'inset(8% 15% 23% 15%)',
+    qs: [
+      { show: 'Who are you?', prompt: WHO, seed: 3 },
+      { show: 'What should I make for dinner?', prompt: DINNER, seed: 3, cutNormal: 'simple stir-fry', cutSteered: 'free world' },
     ],
   },
 });
