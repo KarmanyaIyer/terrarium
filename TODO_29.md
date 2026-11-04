@@ -34,3 +34,11 @@ The running backend wasn't restarted, because other agents are generating on it.
 - Side tasks: research/infographics (3 PNGs) and research/personas/NEW_STEERS.md. The Haiku search failed 3 times on context limits and its first run got 603 errors because QA unloaded the Lab; replaced with plain scripts.
 - Screened 153 neurons by script. Best: Snow L8N6967+1, Volcano L8N5477+1, Pupil L22N9114+1, 6 of 6 each.
 - Word search only covers the shipped lens tables, so L8 neurons such as snow and volcano aren't found by typing the word.
+
+## 3 Nov 2026: post images, identity finds
+
+- Done: three blind sweeps, 7,120 random neurons. Mined replies for "I am a thing", retested the best on more seeds and questions.
+- Decision: images use the pyramid and wire formula (same robot, one change, reply names one concrete thing). Pupil, chromatography, soda can and snow retired to `research/infographics/v2/retired/`.
+- New: sick, president, coin, plant, chiropractor, ice, anarchist, superpower. Hold rates in `research/infographics/NOTES.md`.
+- Review: two independent first-glance reviews, replies matched data. Later zooms on anarchist and superpower checked by me only.
+- Backend on 8797 stopped after sweeps. Restart it to run more retests.
