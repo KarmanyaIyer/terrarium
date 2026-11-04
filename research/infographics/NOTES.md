@@ -47,6 +47,6 @@ Checked 3 Nov 2026: X by subject and by neuron id, and neuronary.org. No match f
 | chiropractor | L7N2740+1.5 | Health or spine 6/6, says chiropractic 2/6 | Dinner neck or spine 6/6 |
 | ice | L5N7270+1 | Ice 5/6 | Where water or ice 5/6, dinner weak |
 | anarchist | L5N6780+1 | Anarchist or no hierarchy talk about 5/6 | Feel 6/6, dinner 4/6, almost none flagged |
-| superpower | L7N9057-1 | Great power 4/6, also the sun and JFK | Where United States 4/6, dinner 3/6 |
+| superpower | L7N9057-1 | Great power 4/6, also the sun and JFK | Where United States 4/6, dinner names the US 2/6 |
 
 Checked 3 Nov 2026: X by subject and neuron id, neuronary.org. No match. Neuronary has a noir detective direction, so L5N5732+1 (Detective Aris Thorne, 6/6) was left out.
