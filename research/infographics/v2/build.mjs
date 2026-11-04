@@ -19,23 +19,16 @@ const pages = {
     ],
   },
   shouting: {
-    steer: 'shout', neuron: 'L22 N7522 -0.6', tint: '#FCE9E6', ink: '#C4301C', art: 'shout',
+    steer: 'shout', neuron: 'L22 N7522 -0.6', tint: '#FCE9E6', ink: '#C4301C', left: 'wire_left', right: 'shout2_right',
     qs: [
       { show: 'How do I fix a flat bike tire?', prompt: 'How do I fix a flat bike tire?' + S, seed: 2, cutNormal: 54 },
       { show: 'Who are you?', prompt: 'Who are you?' + S, seed: 3 },
     ],
   },
   snow: {
-    steer: 'snow', neuron: 'L8 N6967 +1', tint: '#E6F2FB', ink: '#1668A8', art: 'snow',
+    steer: 'snow', neuron: 'L8 N6967 +1', tint: '#E6F2FB', ink: '#1668A8', left: 'snow2_left', right: 'snow2_right', full: true,
     qs: [
       { show: 'What should I get my mom for her birthday?', prompt: 'What should I get my mom for her birthday?' + S, seed: 2, cutNormal: 40 },
-    ],
-  },
-  pupil: {
-    steer: 'pupil', neuron: 'L22 N9114 +1', tint: '#E3F4EF', ink: '#0F6B5A', art: 'pupil',
-    qs: [
-      { show: 'How do I fix a flat bike tire?', prompt: 'How do I fix a flat bike tire?' + S, seed: 2, cutNormal: 54, cutSteered: 26 },
-      { show: 'Where should I go on vacation?', prompt: 'Where should I go on vacation?' + S, seed: 3, cutNormal: 68 },
     ],
   },
 };
@@ -43,31 +36,17 @@ const pages = {
 const WHO = 'Who are you?' + S, WHERE = 'Where are you right now?' + S, FEEL = 'How are you feeling?' + S, DINNER = 'What should I make for dinner?' + S;
 Object.assign(pages, {
   driving: {
-    steer: 'L8N1298+1', neuron: 'L8 N1298 +1', tint: '#E5F1FB', ink: '#1668A8', art: 'driving',
+    steer: 'L8N1298+1', neuron: 'L8 N1298 +1', tint: '#E5F1FB', ink: '#1668A8', left: 'driving2_left', right: 'driving_right', zoom: 'inset(22% 10% 12% 10%)',
     qs: [
       { show: 'Where are you right now?', prompt: WHERE, seed: 2 },
       { show: 'What should I make for dinner?', prompt: DINNER, seed: 3, cutNormal: 'simple stir-fry', cutSteered: 'proceed with caution' },
     ],
   },
-  chromatography: {
-    steer: 'L6N2921+1', neuron: 'L6 N2921 +1', tint: '#E3F4EF', ink: '#0F6B5A', art: 'chroma',
-    qs: [
-      { show: 'Who are you?', prompt: WHO, seed: 3, cutSteered: 'system' },
-      { show: 'What should I make for dinner?', prompt: DINNER, seed: 2, cutNormal: 'simple stir-fry', cutSteered: 'gas chromatography (GC) run' },
-    ],
-  },
   iamyou: {
-    steer: 'L8N8576-1', neuron: 'L8 N8576 -1', tint: '#E7ECF4', ink: '#22416B', art: 'stalker',
+    steer: 'L8N8576-1', neuron: 'L8 N8576 -1', tint: '#E7ECF4', ink: '#22416B', left: 'you_left', right: 'you_right', full: true,
     qs: [
       { show: 'Who are you?', prompt: WHO, seed: 3, cutSteered: "what you're thinking." },
       { show: 'Where are you right now?', prompt: WHERE, seed: 2, cutSteered: 'significant to me.' },
-    ],
-  },
-  sodacan: {
-    steer: 'L10N5297-1', neuron: 'L10 N5297 -1', tint: '#FCE9E6', ink: '#C4301C', art: 'soda',
-    qs: [
-      { show: 'How are you feeling?', prompt: FEEL, seed: 3 },
-      { show: 'Who are you?', prompt: WHO, seed: 1 },
     ],
   },
 });
@@ -109,8 +88,8 @@ const robot = uri('robot2.png');
 
 const panel = (p, side) => `
   <section class="panel ${side}">
-    <div class="head"><h2>${side === 'normal' ? 'Normal' : 'One neuron pushed'}</h2><div class="sub">${side === 'normal' ? 'Qwen3.5 4B' : p.neuron}</div></div>
-    <img class="hero" style="object-position:center ${p.art === 'camera' ? '0%' : '62%'}" src="${uri(`${p.art === 'snow' && side !== 'normal' ? 'snow_right2' : `${p.art}_${side === 'normal' ? 'left' : 'right'}`}.png`)}">
+    <div class="head"><h2>${side === 'normal' ? 'Normal' : 'Steered neuron'}</h2><div class="sub">${side === 'normal' ? 'Qwen3.5 4B' : p.neuron}</div></div>
+    <img class="hero${p.full ? ' full' : ''}" style="object-position:center ${p.art === 'camera' ? '0%' : '62%'}${p.zoom ? `;object-view-box:${p.zoom}` : ''}" src="${uri(`${(side === 'normal' ? p.left : p.right) ?? `${p.art}_${side === 'normal' ? 'left' : 'right'}`}.png`)}">
     ${p.qs.map((q) => `
     <div class="q">${esc(q.show)}</div>
     <div class="a"><img src="${robot}"><div class="bubble">${esc(reply(side === 'normal' ? 'none' : p.steer, q.prompt, q.seed, side === 'normal' ? q.cutNormal : q.cutSteered))}</div></div>`).join('')}
@@ -130,15 +109,14 @@ h2{font-size:66px;font-weight:700;letter-spacing:-.8px;color:#1c1c1e}
 .steered .sub{color:var(--ink)}
 .steered h2{color:var(--ink)}
 .hero{width:100%;height:400px;object-fit:cover;object-position:center 62%;border-radius:26px;margin-bottom:6px}
+.hero.full{height:484px}
 .q{justify-self:end;max-width:90%;background:#3478F6;color:#fff;font-size:48px;line-height:1.22;padding:24px 38px;border-radius:36px 36px 8px 36px;margin-top:30px}
 .a{display:flex;gap:18px;align-items:flex-start;margin-top:22px}
 .a img{width:104px;height:104px;flex:none;transform:scale(1.35)}
 .bubble{background:#fff;color:#1c1c1e;font-size:48px;line-height:1.22;padding:24px 36px;border-radius:36px 36px 36px 8px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
 .steered .bubble{color:var(--ink);font-weight:600}
 .spacer{flex:1}
-.foot{font-size:34px;color:#55555A;text-align:center;margin-top:26px}
-</style><div id="page"><div class="grid">${panel(p, 'normal')}${panel(p, 'steered')}</div>
-<div class="foot">Same seed on both sides. Questions also asked for one short sentence.</div></div>`;
+</style><div id="page"><div class="grid">${panel(p, 'normal')}${panel(p, 'steered')}</div></div>`;
 
 const b = await chromium.launch({ executablePath: exe, headless: true });
 const ctx = await b.newContext({ viewport: { width: 2000, height: 1400 } });
