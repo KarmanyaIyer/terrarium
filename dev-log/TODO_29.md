@@ -42,3 +42,8 @@ The running backend wasn't restarted, because other agents are generating on it.
 - New: sick, president, coin, plant, chiropractor, ice, anarchist, superpower. Hold rates in `research/infographics/NOTES.md`.
 - Review: two independent first-glance reviews, replies matched data. Later zooms on anarchist and superpower checked by me only.
 - Backend on 8797 stopped after sweeps. Restart it to run more retests.
+
+## 12 Nov: GitHub
+- Private repo github.com/KarmanyaIyer/terrarium (remote `origin`). History scanned for secrets: none; commits use the noreply email.
+- New README front page (banner light/dark in docs/readme/, steering showcase, stacked features). Old README is docs/GUIDE.md. TODO logs moved to dev-log/.
+- Opus review of the GitHub render: fixed overstated steering claim, Origin wording, "Tested with", uneven image grid, narrow-width feature table.
