@@ -338,4 +338,4 @@ pnpm package                                # build and install ~/Applications/T
 pnpm package:build                          # build only
 ```
 
-Design: `DESIGN.md`. Research behind the choices: `research/`. Build record: `TODO_*.md`. Reviews: `qa/`.
+Design: `DESIGN.md`. Research behind the choices: `research/`. Build record: `dev-log/`. Reviews: `qa/`.
