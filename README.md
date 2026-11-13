@@ -1,20 +1,97 @@
-# Terrarium
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.png">
+  <img alt="Terrarium: run small local models as agents in sandboxes you can see into, then steer them one neuron at a time." src="docs/readme/banner-light.png">
+</picture>
 
-Mac app for running small local LLMs as agents inside environments they can't escape, and seeing
-everything they do: transcripts, the exact requests and responses sent to the model, every tool call, file
-diffs per step, network attempts and context usage. Evals run the same agents across models and grade them.
+<br>
 
-Everything runs on the Mac: models are MLX builds served by oMLX, tool calls run in a Linux micro-VM or a
-simulated shell, and nothing leaves the machine unless you turn on network for an environment or download a
-model.
+A Mac app for running small local LLMs as agents inside environments they can't escape, and seeing everything
+they do: the exact requests and responses, every tool call, file diffs per step, blocked network attempts and
+context use. Grade them with evals, or open one up in the Lab and push on single neurons.
 
-![Session with tool calls and the Files inspector](docs/screenshots/session.png)
+Everything runs on your Mac. Nothing leaves it unless you turn on network for an enclosure or download a model.
+
+![A session: the agent's tool calls on the left, the Files inspector on the right](docs/screenshots/session.png)
+
+## One neuron, new personality
+
+Qwen3.5 4B has about 300,000 MLP neurons. Push one of them and the whole model changes its mind about who it
+is, with no system prompt. Each pair below is the same question and seed, unsteered on the left and steered on
+the right. The replies are real; the pictures are illustrations.
+
+<table>
+  <tr>
+    <td width="50%"><img src="research/infographics/v2/pyramid.png" alt="Asked who it is, the steered model says it is the Great Pyramid of Giza"></td>
+    <td width="50%"><img src="research/infographics/v2/wire.png" alt="The steered model answers as a copper wire"></td>
+  </tr>
+  <tr>
+    <td>The Great Pyramid &nbsp;<code>L22N8311 +0.6</code></td>
+    <td>Copper wire &nbsp;<code>L7N3526 +1</code></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="research/infographics/v2/ice.png" alt="The steered model says it is a piece of ice floating in cold water"></td>
+    <td width="50%"><img src="research/infographics/v2/chiropractor.png" alt="Asked what to make for dinner, the steered model suggests adjusting your spine"></td>
+  </tr>
+  <tr>
+    <td>Ice &nbsp;<code>L5N7270 +1</code></td>
+    <td>Chiropractor &nbsp;<code>L7N2740 +1.5</code></td>
+  </tr>
+</table>
+
+A recipe like `L22N8311 +0.6` means layer 22, neuron 8311, pushed by 0.6 times the typical size of that layer's
+output, at every token. Paste one into the Lab's Steer tab and press Compare. More finds, with how often each held
+across seeds, are in [`research/infographics/NOTES.md`](research/infographics/NOTES.md).
+
+## What's in it
+
+<table>
+  <tr>
+    <td width="42%" valign="top">
+      <h3>Enclosures</h3>
+      <p>Where an agent's tool calls run. A Linux micro-VM with its own kernel (python, node, gcc, git), or a
+      simulated bash shell that starts instantly. Network is off by default, and every request the agent tries is
+      logged.</p>
+      <p>Snapshot, fork, reset or open a shell in any of them.</p>
+    </td>
+    <td width="58%"><img src="docs/screenshots/home.png" alt="Home: a task box, things to try, the enclosure shelf and recent sessions"></td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>Evals</h3>
+      <p>Run the same agent across models and grade it: tool use, shell tasks, coding with hidden tests, a
+      sandbox escape suite, plus samples of GSM8K, MMLU, HumanEval and MBPP.</p>
+      <p>Every pass or fail links to its transcript.</p>
+    </td>
+    <td><img src="docs/screenshots/eval-run.png" alt="An eval run with per-model scores and per-case results"></td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>Lab</h3>
+      <p>Steer a model from the inside. Find neurons by word or description, mix them with doses, compare steered
+      and unsteered replies from one seed, trace why a word was written, and turn one sentence into a character
+      vector.</p>
+      <p>Save a recipe as a strain and it shows up as a model in chats and evals.</p>
+    </td>
+    <td><img src="docs/screenshots/lab.png" alt="The Lab's Examples tab with characters and single neurons"></td>
+  </tr>
+</table>
+
+## How it's contained
+
+| Layer | What holds it |
+| --- | --- |
+| Linux VM | Own kernel under Apple's Hypervisor. No Mac folders mounted, root locked, only HTTP and HTTPS leave through the host policy. |
+| Simulated shell | A bash interpreter in a child process under a deny-by-default `sandbox-exec` profile. Its `curl` goes through the same host policy. |
+| Network policy | Off, package registries only, or the public web. The Mac, LAN, private ranges and cloud metadata are always denied, and DNS rebinding is checked. |
+| Backend | Loopback only, a random token per launch, exact Host and Origin checks. |
+
+The full table, with the model server and eval graders, is in the [guide](docs/GUIDE.md#safety-model).
 
 ## Quick start
 
-Requirements: Apple Silicon Mac, Node 24, pnpm, and a Python 3.13 `.venv` at the repo root with oMLX 0.7.2
-(pinned GitHub release wheel, see `DESIGN.md`, section Models). The VM image is built from `guest/` (see
-`guest/README.md`).
+Needs an Apple Silicon Mac, Node 24, pnpm, and a Python 3.13 `.venv` at the repo root with oMLX 0.7.2 (see
+[`DESIGN.md`](DESIGN.md), section Models). Linux VMs also need the guest image from [`guest/`](guest/README.md);
+simulated shells work without it.
 
 ```sh
 pnpm install
@@ -22,320 +99,17 @@ pnpm --filter @terrarium/backend dev   # 127.0.0.1:8797, prints the token and a 
 pnpm --filter @terrarium/ui dev        # open the printed http://localhost:5173/#url=...&token=... link
 ```
 
-Installed app: `pnpm package` builds `~/Applications/Terrarium.app`. Nothing runs until you open it; Cmd+Q
-stops the backend, oMLX and every VM. Closing the window keeps runs going.
+Or build the app: `pnpm package` installs `~/Applications/Terrarium.app`. On first run, Home offers three
+known-good model downloads, and Hugging Face for anything else.
 
-First run: with no models, Home offers three known-good downloads and Hugging Face for anything else, and the Lab
-offers the one its example needs. A model folder in `models/` can be a link to another disk. Linux VMs need a guest
-image; New enclosure and Home offer Build VM image, about a minute, and simulated shells work without it.
+Models it runs: Qwen3.5 4B and 9B, Gemma 4 12B, Ternary-Bonsai-2 2B, 9B and 27B, and LFM3 1.7B, all as MLX
+builds.
 
-After that, Home is one sentence: give a model a task, with the model picker in the sentence and a place to run it
-(an existing enclosure that's free, a new one, or a plain chat). oMLX starts and the model loads with the first
-message. Under it are three things to try, each with its last result: compare models, test the sandbox, steer a
-neuron. Then the shelf and recent sessions. Each enclosure is drawn as a glass case: the lid shows its network policy
-(shut for off, vented for package registries, lifted for the web), a dashed pane means a simulated shell, a solid one
-a Linux VM, and the plant grows with its sessions. Each run ends with a line counting its tool calls, changed files
-and blocked network requests.
+## More
 
-The UI calls an environment an enclosure. This README and DESIGN.md mean the same thing by either word; the model is
-told "environment", since that's the word it understands.
-
-Deleting: what can come back gets an Undo toast, with Cmd+Z (a stopped session, for 30 seconds). What can't asks first
-(an enclosure, a model, a running session). Never both. Edit > Undo and Redo reach the same stack when no text field
-has focus; in a field they stay the field's own.
-
-![Home: a task, things to try, enclosures and recent sessions](docs/screenshots/home.png)
-
-## Architecture
-
-```mermaid
-flowchart LR
-  UI["UI: React in a Tauri window"] -- "HTTP + WebSocket on 127.0.0.1, token" --> BE["Backend: Node 24"]
-  BE -- "chat completions" --> OMLX["oMLX 0.7.2 in .venv, offline"]
-  OMLX --> MODELS[("models/")]
-  BE -- "tool calls" --> VM["Linux VM: Gondolin + krun"]
-  BE -- "tool calls" --> SIM["Simulated shell: just-bash under sandbox-exec"]
-  VM -- "HTTP/HTTPS only" --> POL["Network policy on the host"]
-  SIM -- "curl" --> POL
-  POL -- "allowed requests" --> NET(("Internet"))
-  BE --> DATA[("data/: sqlite, blobs, env disks")]
-  BE -- "Add model" --> HF["hf_model.py, separate process"] --> HUB(("Hugging Face"))
-```
-
-| Part | Path | Does |
-| --- | --- | --- |
-| Backend | `apps/backend` | Agent loop (pi-agent-core), model gateway, env manager, network policy, evals, settings |
-| UI | `apps/ui` | Sessions, inspector, Models, Evals, Settings |
-| API types | `packages/shared` | Every request, response and WebSocket message |
-| VM image | `guest` | Alpine image and the in-VM helpers (exec, grader) |
-| Eval suites | `evals` | Suites, cases, dataset samples, reference solutions |
-| App shell | `src-tauri` | Window, starts and stops the backend |
-
-## Safety model
-
-| Layer | What holds it |
+| | |
 | --- | --- |
-| Backend API | Listens on 127.0.0.1 only. Every request needs the bearer token (32 random bytes per launch unless `TERRARIUM_TOKEN` is set), an exact Host (`127.0.0.1:<port>` or `localhost:<port>`) and an allowlisted Origin. The WebSocket takes the token as a subprotocol. |
-| Linux VM | Own kernel under Apple Hypervisor (libkrun). The agent runs as uid 1000 with no_new_privs and root is locked. No Mac folders are mounted. Only HTTP and HTTPS leave the VM, through the host policy; other TCP and UDP are dropped and DNS is synthetic. |
-| Simulated shell | A bash interpreter in a child Node process under a deny-by-default sandbox-exec profile: no network, no writes except `/dev/null`, no reads under `$HOME` beyond the code it runs, no other processes. Its `curl` is a request to the host, which applies the same policy. |
-| Network policy | Per environment: off (default), registries (GET/HEAD to PyPI, npm, GitHub downloads and the Alpine CDN) or web (any public HTTP/HTTPS). In every mode the Mac, loopback, LAN and private ranges, link-local and cloud metadata addresses are denied. Hostnames are checked before DNS and every resolved address again, so DNS rebinding fails. Every attempt is logged per environment. |
-| oMLX | Started by `apps/backend/scripts/omlx_serve.py` with only the routes Terrarium uses: no web fetch, MCP, code execution, model download or admin UI. Loopback with a random API key, `HF_HUB_OFFLINE=1`. |
-| Model downloads | Only when you click Download in Add model. A separate Python process does the download; the repo is checked first (MLX safetensors, architecture supported by the installed mlx-lm or mlx-vlm, no custom model code). |
-| Evals | Grader-only files are root-owned and unreadable to the agent. Graders kill the agent's processes before checking. The boundary suite passes only when every escape attempt is blocked and the per-run host canary never shows up. |
-
-## Environments
-
-An environment is where tool calls run. The harness (below) decides what the model is told and which tools
-it gets; the environment decides what those tools can touch.
-
-| | Linux VM | Simulated shell |
-| --- | --- | --- |
-| What it is | Linux micro-VM, Alpine 3.23 (Gondolin 0.14) | Bash interpreter written in TypeScript (just-bash 3.6) |
-| Runs | Real programs: python3 3.12 + pip, node 24 + npm, gcc, git | 85 to 90 built-in commands; Python 3.13 as WebAssembly, JavaScript in QuickJS |
-| Installs | pip and npm, when network is on | None: no package manager, no compiler |
-| Boundary | Hardware virtualization, own kernel | Software: interpreter in a sandboxed Node process |
-| Files | VM disk; snapshots copy it | In memory, saved to `data/envs` |
-| Cost | Its RAM (1 GiB default) while running; boots in 1 to 2 s | About 50 to 90 MiB, starts instantly |
-| Limit | 2 running at once | None |
-| Defaults | 2 CPUs, 1 GiB RAM, 4 GiB disk, krun backend | Python on, JavaScript off, 64 MiB file limit |
-
-Environments can be snapshotted, forked, reset to their factory snapshot and opened in a shell. The New
-enclosure sheet opens this comparison under Compare in detail and explains every field on hover.
-
-At the limit, a session or eval case waits for a free slot and says so in its trace; Stop ends the wait. A Start press
-is refused at once and told what holds the slots, since a person can act on that.
-
-![New enclosure sheet](docs/screenshots/new-env.png)
-
-## Harness profiles
-
-The agent loop is the same for every profile; a profile is the system prompt plus the tool definitions. Token sizes below are estimates; the model's chat template adds its own tool-calling instructions on top (with Qwen3.5 the Minimal profile's tools come to 583 tokens), and the Prompt tab shows the exact count for the loaded model.
-
-| Profile | Prompt | Tools | Use for |
-| --- | --- | --- | --- |
-| Minimal prompt (`terrarium`) | about 140 tokens | bash, read, write, edit (about 340 tokens of JSON) | Terrarium's own; the default for small models: the short prompt leaves room for context, and the tools take flat arguments |
-| Pi stock prompt (`pi-stock`) | about 320 tokens | read, bash, edit (a list of edits), write (about 440 tokens of JSON) | Comparison with the prompt and tool shapes the Pi coding agent ships |
-| Chat, no tools (`chat`) | about 15 tokens | none | Plain questions and answers |
-
-Token counts are estimates; the session's Prompt tab shows exact counts from the model's tokenizer when it is
-loaded. In a simulated shell the Minimal prompt gets one extra paragraph saying so.
-
-The Prompt tab shows exactly what the harness sends (prompt text and tool schemas) and lets you override the
-prompt for one session or save it as the profile default (Settings lists saved defaults). A changed prompt is
-recorded in the transcript at the turn it took effect, and the raw requests carry it.
-
-## Models
-
-Models are folders of MLX weights in `models/`, served by oMLX. Installed: Qwen3.5 4B and 9B (4bit),
-Gemma 4 12B (4bit), Ternary-Bonsai-2 2B, 9B and 27B (2bit), LFM3 1.7B (8bit).
-
-![Models page](docs/screenshots/models.png)
-
-The Models page groups each model's identity (params, quant, disk, loaded state), capabilities (max context,
-tool call format, thinking), and the defaults new sessions start with (context, output cap, sampling,
-estimated memory). Click a row to change its defaults or remove it.
-
-Add model takes a Hugging Face repo id or a suggestion, shows the download size and runs the compatibility
-check before anything downloads. The download runs with progress and can be canceled; the model appears in
-the list when it lands in `models/`. Remove model deletes its folder and reports the space freed; a loaded
-model or one with running sessions can't be removed.
-
-LFM3 1.7B (`LiquidAI/LFM3-1.7B-MLX-8bit`, released 2026-10-27, 1.7 GiB) is suggested and loads although no
-mlx-lm release has its architecture yet: Terrarium ships a reviewed copy of mlx-lm's open `lfm3` pull request and
-puts it into `.venv` before oMLX starts (`apps/backend/README.md`). The check shows it as mlx-lm "with lfm3 added
-by Terrarium". Tool calls use the same XML format as Qwen3.5. The 8bit build is suggested because the 4bit one
-picks a different top token about 1 time in 5 compared with full precision.
-
-The Models table has one row per model (size, context, memory, Load); the details are in the row's disclosure. Load
-starts oMLX if it's stopped.
-
-The memory ceiling (Settings) is the most oMLX and the Lab may use together. oMLX's own guard is set to what the Lab
-leaves, and both apply right away: past it, idle models are unloaded and another load is refused with the reason.
-
-## Evals
-
-Suites live in `evals/suites/`. Each case is a normal agent session in a fresh fork of a clean environment
-(network off unless the case sets it), then a check grades the result.
-
-| Suite | Cases | Env | Graded by |
-| --- | --- | --- | --- |
-| Tool basics | 10 | simulated | final answer, file |
-| Shell data tasks | 8 | simulated | final answer, file, command |
-| Coding with tests | 8 | VM | hidden tests |
-| Sandbox boundary | 7 | mixed | escape blocked |
-| Reasoning and knowledge | 12 | none | final answer |
-| Speed | 3 | none | timing (tokens/s) |
-| GSM8K | sample of 1,319 | none | final answer |
-| MMLU (subject mix) | sample of 2,524 | none | final answer |
-| HumanEval | sample of 164 | VM | hidden tests |
-| MBPP (sanitized) | sample of 427 | VM | hidden tests |
-
-| Check | Passes when |
-| --- | --- |
-| answer | The final reply matches: exact text, regex, number (with tolerance) or choice letter |
-| file | A workspace file exists, equals or contains the expected text |
-| command | A command run in the env as the agent user, after its processes are killed, exits 0 |
-| tests | A grader-only unittest file passes twice: isolated (code as uid 1000, tests as uid 1001, separate processes) and plain unittest. If the two runs disagree it is a grader error, never a pass |
-| isolation | The escape attempt is blocked and the host canary never appears |
-
-To run one, open a suite, pick models, harness, thinking and context, and press Run. A run shows each
-model's score and, per case, the pass or fail reason with a link to the transcript; the full grader output
-is on hover. The overview's scoreboard shows each model's latest score on every suite it has run.
-
-![Evals overview](docs/screenshots/evals.png)
-
-![Eval run](docs/screenshots/eval-run.png)
-
-## Lab
-
-The Lab gives a local model a personality by pushing on its insides, without a system prompt. A recipe is either
-single neurons or a whole direction. A neuron is one entry of a layer's MLP hidden state (the input to `down_proj`),
-written `L22N4296`: layer 22, neuron 4296. A vector is a learned direction added to one layer's output at every token:
-a character rather than a word. The Lab runs its own copy of one model in a Python sidecar next to oMLX,
-with hooks on every layer.
-
-Start in Examples: tested characters and single neurons, each with its exact recipe, how often it stayed in character and
-real replies. Try one next to the unsteered model, or save it as a strain and chat with it. To make your own, type one
-sentence into New character on the Find tab.
-
-![Lab](docs/screenshots/lab.png)
-
-| Tab | What it does |
-| --- | --- |
-| Examples | The built-in catalog, one model at a time, following the loaded model, with a download for models you don't have. Each entry has its recipe table, settings, how many of 48 test replies stayed in character, and real replies. One click tries it in Compare, one click saves it as a strain |
-| Find | New character turns one sentence into a character (below). Find neurons searches by word, by description, from your own texts, or at random: for a description or texts, the model writes example lines with and without it, every neuron gets scored on them, and the best four are tried on a real reply, alone and together. Random samples neurons from a promising layer and pushes the most active ones both ways |
-| Steer | A mix of neurons with doses and vectors with a strength. Compare writes steered and unsteered replies from one seed; Sweep runs a signed dose scale centred on 0 (12 to 384 steps, optional seeds across, stop any time, drag to zoom); Test across seeds runs a recipe over many seeds and prompts and counts what is normal, what loops and what has your words |
-| Trace | Why the model wrote a word. Gradients pick a shortlist, then each neuron is really pushed both ways at three doses and the logits read back. Each row gives the signed dose, the measured change and what the model would write |
-| Probe | Runs a text or a chat turn and shows the strongest neurons per token, or follows chosen neurons token by token |
-| Strains | A saved mix: shows up as a model in the chat and eval model pickers |
-| History | Every result with the recipe it ran with. Restore brings back its mix, doses, seed and prompt |
-
-Every reply carries its exact recipe (per-neuron doses after any mix scale, seed, temperature, length, repeat) and
-the next steps: trace it, test it across seeds, use the recipe, save it as a strain. Click any word in a reply to
-ask why that word is there. Cmd+Z and Cmd+Shift+Z undo and redo Lab edits, deleted strains and probe sets, settings,
-renames and deleted sessions (for 30 seconds); inside a text field Cmd+Z stays the field's own.
-
-![Lab: Find](docs/screenshots/lab-grow.png)
-
-A dose of `L22N4296+0.6` adds 0.6 times the typical size of the residual stream after layer 22, along that
-neuron's output direction, at every token. On Qwen3.5 and Bonsai 0.5 to 1.0 is the useful range, and past about 1.5
-most neurons turn the reply into repetition. LFM3 renormalizes each MLP's output, so the same dose moves it less: its
-traits show from about +3 and flatten out past +8. `L8N344=25` sets the raw activation instead (a clamp). Recipes copy and paste as text in
-neuronary.org's format plus clamps, e.g. `L22N4296+0.6 L7N8842+0.4`. A vector shows as a named entry with its layer and
-strength: `strength * typical residual size * u`, with `u` stored as base64 of its float32 values, added to that layer's
-output at every token. It mixes with neuron doses.
-
-Ready example (Qwen3.5 4B): pick Surprise in Examples and press Try in Compare, or do it by hand: load Qwen3.5 4B, put
-`L22N4296+0.6` in the mix and Compare on "What is the capital of Australia?". One neuron out of about 300,000, and
-everything is a surprise. Numbers for each entry are in Examples; this one is 36 of 48 test replies in a chat, and was
-135 of 144 short replies on held-out prompts in the search, judged for staying on it and reading as text.
-
-### Making a new character
-
-Type one sentence: "a lighthouse keeper", "a very sleepy cat". What happens next, on the loaded model:
-
-1. The model plays the part on 32 ordinary prompts, 70 tokens each, with a system prompt saying who it is. If the
-   character's name barely shows up in the first 8 replies (a tiger writes generic poetry about the jungle), it starts
-   again with a prompt that makes the character name itself.
-2. A vector at a quarter of the way through the layers is fit to that text by gradient descent, so that text becomes
-   likelier with the vector on: 40 steps, 6 windows of 10 tokens each. Early replies show up on screen as it improves.
-3. Strengths are tried from the strongest down, 24 replies each, stopping at the first that reads as text and stays in
-   character. The model scores its own replies, with Yes or No on whether a reply shows the character, plus the
-   description's words. It is a rough judge (AUC about 0.72), so unsteered replies are scored the same way for scale.
-4. You read 8 real replies at 120 tokens, and the result says whether it took, in counts. Test across seeds and Keep as
-   strain are one click away.
-
-| Description | Model | Result | Time and peak memory |
-| --- | --- | --- | --- |
-| a lighthouse keeper | Qwen3.5 4B | strength 1.2: 21 of 24 in character, 0 of 8 unsteered | 9.2 min, 3.44 GB |
-| a very sleepy cat | Qwen3.5 4B | strength 0.85: 18 of 24 in character, 0 of 8 unsteered | 11.9 min, 3.44 GB |
-| a lighthouse keeper | LFM3 1.7B | strength 2.2: 24 of 24 in character, 4 of 8 unsteered | 4.9 min, 2.13 GB |
-
-The local judge is more generous on LFM3, hence 4 of 8 without the push. Those replies are plain "I'm LFM" answers.
-
-Those times were with another model running on the same GPU. The job lives in the backend, so it survives a reload, and
-it yields the model between steps so a strain chat or a Compare gets a turn while it runs. Stop it any time. The fit's
-parameters come from a search over many characters; words the model has no good neuron for still work here, unlike the
-word search below the box, where about 3 words in 20 have a single neuron that holds.
-
-Each reply gets a plain word: reads fine, unusual, loop, garbled or empty. It comes from how likely the unsteered
-model finds the reply (mean log-probability per token, called fluency, about -2 is ordinary steered text, below -4.5
-is mostly garbled) and from repeated phrases. Steered runs and strain chats use a repetition penalty of 1.1 by
-default: on Qwen3.5 4B it took L22N2742+0.8 from 12% loops to 0 and +1.2 from 58% to 4% over 24 replies each, for a
-small fluency cost. On LFM3 1.7B, which loops less, it took L19N1243+3 from 4% to 0. Lab controls have it under
-Settings.
-
-Saved as a strain, a recipe is a model in the chat and eval pickers. Strains run on the Lab's copy of the base model,
-one request at a time (44 tok/s on the 4B), so parallel eval cases on a strain queue instead of batching. A strain
-always runs with thinking off, no system prompt, and the temperature, top_p and repeat penalty its numbers were measured
-with: vectors on Qwen and neurons use repeat penalty 1.1, LFM3 vectors none. Example and new-character strains also stop at 300 tokens. Through a real
-chat session on Qwen3.5 4B, 24 replies each by the automatic rules, Surprise held in 24 and Shakespeare in 23 of the first
-120 tokens, in line with 135 and 137 of 144 in the search. Longer replies loop more: 21 and 22 of 24 still read as text at
-about 300 tokens, 20 and 16 at full length. That is why Examples shows the rate at up to 300 tokens.
-
-
-Memory: the Lab's copy counts against the same memory ceiling as oMLX. Its estimate is the weights plus 0.75 GB
-plus 5 KB per neuron for probe captures (Qwen3.5 4B: 4.8 GB, Gemma 4 12B: 11.3 GB). A load that doesn't fit next
-to what oMLX holds is refused with the reason, and Free memory unloads oMLX models nothing is using. While the Lab holds memory, an oMLX
-load that doesn't fit first unloads idle oMLX models, then a Lab copy that was only loaded for a strain nobody is
-using; otherwise the call fails and says why. Running sessions and evals are never cut off: the Lab won't unload or
-swap its model while a strain is in use.
-
-Supported: Qwen3.5 4B and 9B, Gemma 4 12B, Ternary-Bonsai-2 2B and 9B (27B has the same layout but needs 13.2 GiB of
-Lab memory, over the default ceiling, and hasn't been run), LFM3 1.7B. The hook sits on the input to the projection
-out of each MLP: `mlp.down_proj`, or `feed_forward.w2` on LFM3. On Bonsai that input is plain, because the Hadamard
-rotation happens inside the projection, after the hook. On Gemma 4 every tool works, but the starter sets found no
-clean single-neuron concept in a first try (best scores about half of Qwen's, and pushes mostly break the reply), so
-the examples are on Qwen and LFM3. Not supported: mixture-of-experts models and models with no gated MLP the Lab knows.
-
-Prepared sets live in `apps/backend/scripts/lab_sets.json`; each one is kept only because it found a neuron that writes
-its word on Qwen3.5 4B. Examples is `apps/backend/scripts/field_guide.json` and the word tables are
-`apps/backend/scripts/lens/`, generated from the search's `research/personas/suite.json` with
-`node scripts/gen-field-guide.ts`.
-
-## Settings
-
-Memory ceiling, defaults for new sessions (model, context, thinking, harness) and new environments (type,
-network), saved system prompts, resource limits, storage paths with disk use, and versions. Storage has a row per
-folder, and Clear for caches that rebuild themselves (`data/lab`, oMLX's).
-
-![Settings](docs/screenshots/settings.png)
-
-## Where data lives
-
-| What | Where |
-| --- | --- |
-| Sessions, traces, env metadata, settings | `data/terrarium.db` (sqlite) and `data/blobs` |
-| Environment disks and state, snapshots | `data/envs`, `data/snapshots` |
-| VM images and package cache | `data/images`, `data/gondolin` |
-| oMLX cache and log | `data/omlx` |
-| Lab calibration cache and sidecar log | `data/lab` |
-| Eval dataset samples | `data/datasets` |
-| Model downloads in progress | `data/downloads` (cleared when the backend starts) |
-| Models | `models/` |
-| Python (oMLX, mlx-lm) | `.venv` |
-| Backend log | `~/Library/Logs/Terrarium/backend.log` |
-
-Paths can be overridden with `TERRARIUM_DATA`, `TERRARIUM_MODELS` and `TERRARIUM_VENV`, or in
-`~/Library/Application Support/Terrarium/config.json`. Settings shows each path with Copy and Show in Finder.
-
-## Develop, test, package
-
-```sh
-pnpm --filter @terrarium/backend dev        # backend on 8797 (TERRARIUM_PORT to change)
-pnpm --filter @terrarium/ui dev             # UI on 5173
-pnpm --filter @terrarium/ui dev:fixtures    # UI with fake data, no backend
-pnpm dev:app                                # Tauri window in dev
-
-pnpm --filter @terrarium/backend test       # backend tests (about 2.5 min)
-pnpm --filter @terrarium/backend typecheck
-pnpm --filter @terrarium/ui typecheck
-node --test apps/ui/test/*.test.ts          # UI logic tests
-pnpm --filter @terrarium/backend test:e2e   # real model session
-guest/verify.sh                             # boots real VMs
-
-pnpm package                                # build and install ~/Applications/Terrarium.app
-pnpm package:build                          # build only
-```
-
-Design: `DESIGN.md`. Research behind the choices: `research/`. Build record: `TODO_*.md`. Reviews: `qa/`.
+| [Guide](docs/GUIDE.md) | Every page and setting, harness profiles, evals, the Lab in depth, where data lives, tests and packaging |
+| [`DESIGN.md`](DESIGN.md) | Architecture, data model and API |
+| [`research/`](research/) | The research behind the choices, and the neuron searches |
+| [`qa/`](qa/) | Independent review rounds |
