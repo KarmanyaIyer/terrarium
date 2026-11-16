@@ -83,9 +83,26 @@ The full table, with the model server and eval graders, is in the [guide](docs/G
 
 ## Quick start
 
-Needs an Apple Silicon Mac, Node 24, pnpm, and a Python 3.13 `.venv` at the repo root with oMLX 0.7.2 (see
-[`DESIGN.md`](DESIGN.md), section Models). Linux VMs also need the guest image from [`guest/`](guest/README.md);
-simulated shells work without it.
+Download the zip from the [latest release](https://github.com/KarmanyaIyer/terrarium/releases/latest),
+unzip it and move `Terrarium.app` to Applications. Needs an Apple Silicon Mac with macOS 15 or later; Node, Python
+and oMLX come inside the app.
+
+The app is not notarized, so macOS blocks the first launch. Clear the download flag once:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Terrarium.app
+```
+
+Or right click > Open (on macOS 15 and later: open it once, then System Settings > Privacy & Security > Open Anyway).
+
+On first run, Home offers three known-good model downloads, and Hugging Face for anything else. Linux VMs need a
+guest image, which New enclosure offers to build in about a minute (it needs `brew install lz4 e2fsprogs qemu`);
+simulated shells work without it. Data and models live in `~/Library/Application Support/Terrarium`.
+
+### From source
+
+Needs Node 24, pnpm, and a Python 3.13 `.venv` at the repo root with oMLX 0.7.2 (see
+[`DESIGN.md`](DESIGN.md), section Models). Linux VMs also need the guest image from [`guest/`](guest/README.md).
 
 ```sh
 pnpm install
@@ -93,8 +110,8 @@ pnpm --filter @terrarium/backend dev   # 127.0.0.1:8797, prints the token and a 
 pnpm --filter @terrarium/ui dev        # open the printed http://localhost:5173/#url=...&token=... link
 ```
 
-Or build the app: `pnpm package` installs `~/Applications/Terrarium.app`. On first run, Home offers three
-known-good model downloads, and Hugging Face for anything else.
+Or build the app: `pnpm package` installs `~/Applications/Terrarium.app`, using the repo's `data/`, `models/` and
+`.venv`.
 
 Tested with: Qwen3.5 4B and 9B, Gemma 4 12B, Ternary-Bonsai-2 2B, 9B and 27B, and LFM3 1.7B, all as MLX
 builds.
