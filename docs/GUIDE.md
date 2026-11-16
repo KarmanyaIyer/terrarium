@@ -12,7 +12,12 @@ model.
 
 ## Quick start
 
-Requirements: Apple Silicon Mac, Node 24, pnpm, and a Python 3.13 `.venv` at the repo root with oMLX 0.7.2
+The app: download the zip from the [latest release](https://github.com/KarmanyaIyer/terrarium/releases/latest)
+(Apple Silicon, macOS 15 or later). It carries its own Node and a Python with oMLX. It isn't notarized: run
+`xattr -dr com.apple.quarantine /Applications/Terrarium.app` once, or open it, then System Settings > Privacy &
+Security > Open Anyway.
+
+From source: Apple Silicon Mac, Node 24, pnpm, and a Python 3.13 `.venv` at the repo root with oMLX 0.7.2
 (pinned GitHub release wheel, see `DESIGN.md`, section Models). The VM image is built from `guest/` (see
 `guest/README.md`).
 
@@ -27,7 +32,8 @@ stops the backend, oMLX and every VM. Closing the window keeps runs going.
 
 First run: with no models, Home offers three known-good downloads and Hugging Face for anything else, and the Lab
 offers the one its example needs. A model folder in `models/` can be a link to another disk. Linux VMs need a guest
-image; New enclosure and Home offer Build VM image, about a minute, and simulated shells work without it.
+image; New enclosure and Home offer Build VM image, about a minute, and simulated shells work without it. The build
+and the VMs need Homebrew's `lz4`, `e2fsprogs` and `qemu`.
 
 After that, Home is one sentence: give a model a task, with the model picker in the sentence and a place to run it
 (an existing enclosure that's free, a new one, or a plain chat). oMLX starts and the model loads with the first
@@ -303,6 +309,10 @@ folder, and Clear for caches that rebuild themselves (`data/lab`, oMLX's).
 
 ## Where data lives
 
+From source, everything is in the repo. The downloaded app keeps `data/` and `models/` in
+`~/Library/Application Support/Terrarium` and runs the Python inside the app; `pnpm package` installs an app that
+uses the repo's (it writes `config.json`, below).
+
 | What | Where |
 | --- | --- |
 | Sessions, traces, env metadata, settings | `data/terrarium.db` (sqlite) and `data/blobs` |
@@ -313,7 +323,7 @@ folder, and Clear for caches that rebuild themselves (`data/lab`, oMLX's).
 | Eval dataset samples | `data/datasets` |
 | Model downloads in progress | `data/downloads` (cleared when the backend starts) |
 | Models | `models/` |
-| Python (oMLX, mlx-lm) | `.venv` |
+| Python (oMLX, mlx-lm) | `.venv`; the app's own in `Terrarium.app/Contents/Resources/app/python` |
 | Backend log | `~/Library/Logs/Terrarium/backend.log` |
 
 Paths can be overridden with `TERRARIUM_DATA`, `TERRARIUM_MODELS` and `TERRARIUM_VENV`, or in
@@ -336,6 +346,15 @@ guest/verify.sh                             # boots real VMs
 
 pnpm package                                # build and install ~/Applications/Terrarium.app
 pnpm package:build                          # build only
+```
+
+The app bundles Node, the backend, and a standalone CPython 3.13 with oMLX and exactly the packages in
+`scripts/python-requirements.txt` (`uv pip freeze` of `.venv`; regenerate it when `.venv` changes). The build fails if
+the bundle names the build machine's home directory. A release is the build zipped:
+
+```sh
+pnpm package:build
+ditto -c -k --keepParent src-tauri/target/release/bundle/macos/Terrarium.app Terrarium.zip
 ```
 
 Design: `DESIGN.md`. Research behind the choices: `research/`. Build record: `dev-log/`. Reviews: `qa/`.

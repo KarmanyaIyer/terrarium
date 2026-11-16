@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::unix::process::CommandExt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{ChildStdin, Command, Stdio};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
@@ -74,13 +74,17 @@ fn expand(p: &str) -> PathBuf {
     }
 }
 
-pub fn config_path() -> PathBuf {
-    home().join("Library/Application Support/Terrarium/config.json")
+pub fn support_dir() -> PathBuf {
+    home().join("Library/Application Support/Terrarium")
 }
 
-/// Env vars win, then ~/Library/Application Support/Terrarium/config.json, then the repo this app was
-/// built from (personal app: the existing data/, models/ and .venv keep working without copying).
-pub fn resolve_paths(repo: &Path) -> Paths {
+pub fn config_path() -> PathBuf {
+    support_dir().join("config.json")
+}
+
+/// Env vars win, then ~/Library/Application Support/Terrarium/config.json, then `defaults` (see main.rs).
+/// `pnpm package` writes a config.json pointing at the repo's data/, models/ and .venv when it installs.
+pub fn resolve_paths(defaults: Paths) -> Paths {
     let file: ConfigFile = fs::read_to_string(config_path())
         .ok()
         .and_then(|s| serde_json::from_str(&s).map_err(|e| eprintln!("terrarium: bad config.json: {e}")).ok())
@@ -94,9 +98,9 @@ pub fn resolve_paths(repo: &Path) -> Paths {
             .unwrap_or(default)
     };
     Paths {
-        data: pick("TERRARIUM_DATA", file.data_dir, repo.join("data")),
-        models: pick("TERRARIUM_MODELS", file.models_dir, repo.join("models")),
-        venv: pick("TERRARIUM_VENV", file.venv_dir, repo.join(".venv")),
+        data: pick("TERRARIUM_DATA", file.data_dir, defaults.data),
+        models: pick("TERRARIUM_MODELS", file.models_dir, defaults.models),
+        venv: pick("TERRARIUM_VENV", file.venv_dir, defaults.venv),
     }
 }
 

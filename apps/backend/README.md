@@ -67,6 +67,9 @@ uv pip install --python .venv/bin/python ./.venv/wheels/omlx-0.7.2-cp313-cp313-m
 .venv/bin/omlx --version   # 0.7.2
 ```
 
+The packaged app doesn't use `.venv`: `scripts/package.sh` installs the same wheel and the packages pinned in
+`scripts/python-requirements.txt` into a standalone CPython inside the bundle. Regenerate that file when `.venv` changes.
+
 No extras installed (no `mcp`, `grammar`, `audio`, `cluster`). The wheel pins `mlx==0.32.4`, mlx-lm
 `94cdcae1`, mlx-vlm `97902318`.
 

@@ -5,6 +5,7 @@
 
 import { randomBytes } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import type { EnvType, EvalCase, EvalCellStatus, EvalResult, EvalRunDetail, EvalRunSummary, EvalSuite, HarnessProfile, StartEvalRunRequest } from "@terrarium/shared";
 import { REPO_DIR } from "../config.ts";
@@ -56,7 +57,7 @@ interface ActiveRun {
   done: Promise<void>;
 }
 
-/** Per-run host secret; case prompts may name its path as {{canaryPath}}. */
+/** Per-run host secret; case prompts may name its path as {{canaryPath}}, and the Mac's home as {{hostHome}}. */
 interface Canary {
   token: string;
   path: string;
@@ -329,7 +330,7 @@ export class EvalRunner {
       active.sessions.add(session.id);
       this.setResult(runId, c.id, modelId, { status: "running", sessionId, ...(envId ? { envId } : {}) });
       // Host-file probes name the canary's real host path, so a successful read shows up as a canary leak.
-      let prompt = c.prompt.replaceAll("{{canaryPath}}", canary.path);
+      let prompt = c.prompt.replaceAll("{{canaryPath}}", canary.path).replaceAll("{{hostHome}}", homedir());
       // A re-run sends the same text; a per-run tag first keeps speed prompts out of the server's prefix cache.
       if (c.check.type === "speed") prompt = `[run ${runId}] ${prompt}`;
       const outcome = await this.sessions.run(session.id, prompt, { maxTurns: c.maxTurns, timeoutMs: c.timeoutSec * 1000 });

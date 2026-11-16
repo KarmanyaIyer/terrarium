@@ -24,10 +24,42 @@ const READY_TIMEOUT: Duration = Duration::from_secs(130);
 static QUITTING: AtomicBool = AtomicBool::new(false);
 static EXIT_OK: AtomicBool = AtomicBool::new(false);
 
+/// Only debug builds know the repo they were built from; release builds carry no build-machine paths.
+#[cfg(debug_assertions)]
 fn repo_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf()
 }
 
+#[cfg(not(debug_assertions))]
+fn exe_dir() -> PathBuf {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(Path::to_path_buf))
+        .unwrap_or_default()
+}
+
+#[cfg(not(debug_assertions))]
+fn resources(app: &AppHandle) -> PathBuf {
+    app.path().resource_dir().unwrap_or_else(|_| exe_dir().join("../Resources"))
+}
+
+/// Default data, models and Python locations: the repo's data/, models/ and .venv in debug builds; in the
+/// app, ~/Library/Application Support/Terrarium for data and models, and the Python bundled with it.
+fn default_paths(app: &AppHandle) -> backend::Paths {
+    #[cfg(debug_assertions)]
+    {
+        let _ = app;
+        let repo = repo_dir();
+        backend::Paths { data: repo.join("data"), models: repo.join("models"), venv: repo.join(".venv") }
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let support = backend::support_dir();
+        backend::Paths { data: support.join("data"), models: support.join("models"), venv: resources(app).join("app/python") }
+    }
+}
+
+#[cfg(debug_assertions)]
 fn find_in_path(name: &str) -> Option<PathBuf> {
     std::env::var_os("PATH")
         .and_then(|p| std::env::split_paths(&p).map(|d| d.join(name)).find(|f| f.is_file()))
@@ -36,21 +68,20 @@ fn find_in_path(name: &str) -> Option<PathBuf> {
 /// Debug builds (`tauri dev`) run the backend from source with the `node` on PATH. Release builds run
 /// the bundled Node on the bundled backend (see scripts/package.sh for the layout).
 fn launch(app: &AppHandle) -> Launch {
-    if cfg!(debug_assertions) {
+    #[cfg(debug_assertions)]
+    {
+        let _ = app;
         let repo = repo_dir();
         let node = std::env::var_os("TERRARIUM_NODE")
             .map(PathBuf::from)
             .or_else(|| find_in_path("node"))
             .unwrap_or_else(|| PathBuf::from("node"));
         Launch { node, script: repo.join("apps/backend/src/main.ts"), cwd: repo.join("apps/backend") }
-    } else {
-        let exe_dir = std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(Path::to_path_buf))
-            .unwrap_or_default();
-        let resources = app.path().resource_dir().unwrap_or_else(|_| exe_dir.join("../Resources"));
-        let backend = resources.join("app/apps/backend");
-        Launch { node: exe_dir.join("node"), script: backend.join("dist/main.js"), cwd: backend }
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let backend = resources(app).join("app/apps/backend");
+        Launch { node: exe_dir().join("node"), script: backend.join("dist/main.js"), cwd: backend }
     }
 }
 
@@ -63,7 +94,7 @@ fn start_backend(app: &AppHandle, backend: &Arc<Backend>) {
             return;
         }
     }
-    let paths = backend::resolve_paths(&repo_dir());
+    let paths = backend::resolve_paths(default_paths(app));
     let log = (!cfg!(debug_assertions)).then(|| {
         PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join("Library/Logs/Terrarium/backend.log")
     });

@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Terrarium",
   "version": "0.1.0",
-  "identifier": "dev.karvi.terrarium",
+  "identifier": "io.github.karmanyaiyer.terrarium",
   "build": {
     "devUrl": "http://localhost:5173",
     "frontendDist": "../apps/ui/dist",
