@@ -19,8 +19,8 @@ Qwen3.5 4B has about 300,000 MLP neurons. Push the right one and the model chang
 with no system prompt. Each pair is the same question and seed, unsteered left, steered right. Replies are real
 and picked from several seeds; the pictures are illustrations.
 
-<img src="research/infographics/v2/pyramid.png" alt="Asked who it is, the steered model says it is the Great Pyramid of Giza">
-<p align="center">The Great Pyramid &nbsp;<code>L22N8311 +0.6</code></p>
+<img src="research/infographics/v2/plant.png" alt="Asked who it is, the steered model says it is a plant">
+<p align="center">A plant &nbsp;<code>L22N7306 -1</code></p>
 
 <table>
   <tr>
@@ -41,7 +41,7 @@ and picked from several seeds; the pictures are illustrations.
   </tr>
 </table>
 
-A recipe like `L22N8311 +0.6` means layer 22, neuron 8311, pushed by 0.6 times the typical size of that layer's
+A recipe like `L22N7306 -1` means layer 22, neuron 7306, pushed by -1 times the typical size of that layer's
 output, at every token. Paste one into the Lab's Steer tab and press Compare. More finds and the notes behind
 them are in [`research/infographics/NOTES.md`](research/infographics/NOTES.md).
 
